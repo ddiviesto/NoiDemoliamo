@@ -1,10 +1,19 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 export default function Home() {
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">NoiDemoliamo</h1>
+        <div className="flex justify-center mb-4">
+          <Image
+            src="/NoiDemoliamoLogo.png"
+            alt="NoiDemoliamo Logo"
+            width={160}
+            height={160}
+            className="rounded-xl"
+          />
+        </div>
         <p className="text-gray-500 mb-8">Demolizione auto gratuita in tutta Italia</p>
         
         <div className="space-y-3">
