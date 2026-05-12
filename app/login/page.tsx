@@ -26,7 +26,10 @@ export default function Login() {
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md relative">
+        <Link href="/" className="absolute top-4 left-4 text-gray-400 hover:text-gray-700 transition text-2xl">
+          ←
+        </Link>
         <div className="flex justify-center mb-6">
           <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={120} height={120} className="rounded-xl" />
         </div>
