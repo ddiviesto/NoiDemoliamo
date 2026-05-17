@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
 interface Pratica {
@@ -40,8 +40,11 @@ const TIMELINE = [
 
 const STATI_ORDINE = ['in_attesa_documenti', 'in_attesa_assegnazione', 'assegnata', 'ritirata', 'certificato_rottamazione_caricato', 'completata']
 
-export default function DettaglioPratica({ params }: { params: { id: string } }) {
+export default function DettaglioPratica() {
   const router = useRouter()
+  const params = useParams()
+  const id = params.id as string
+
   const [pratica, setPratica] = useState<Pratica | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeChat, setActiveChat] = useState<'operatore' | 'demolitore'>('operatore')
@@ -53,19 +56,19 @@ export default function DettaglioPratica({ params }: { params: { id: string } })
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
 
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('pratiche')
         .select('*')
-        .eq('id', params.id)
+        .eq('id', id)
         .eq('user_id', session.user.id)
         .single()
 
-      if (!data) { router.push('/dashboard'); return }
+      if (error || !data) { router.push('/dashboard'); return }
       setPratica(data)
       setLoading(false)
     }
-    carica()
-  }, [params.id, router])
+    if (id) carica()
+  }, [id, router])
 
   function statoIndex() {
     if (!pratica) return 0
@@ -93,7 +96,6 @@ export default function DettaglioPratica({ params }: { params: { id: string } })
 
   return (
     <main className="min-h-screen bg-[#f0f4f8]">
-      {/* TOP BAR */}
       <div className="bg-[#0d2144] px-6 py-4 flex items-center gap-4">
         <button onClick={() => router.push('/dashboard')} className="text-blue-300 hover:text-white transition-colors text-sm flex items-center gap-1.5">
           ← Indietro
