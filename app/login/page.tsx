@@ -19,8 +19,17 @@ export default function Login() {
     if (error) {
       setErrore('Email o password non corretti')
     } else {
-      router.push('/dashboard')
-    }
+      const { data: utenteData } = await supabase
+          .from('utenti')
+          .select('tipo')
+          .eq('id', data.user.id)
+          .single()
+        
+        if (utenteData?.tipo === 'admin') {
+          router.push('/admin')
+        } else {
+          router.push('/dashboard')
+        }
     setCaricamento(false)
   }
 
