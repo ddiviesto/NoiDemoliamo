@@ -15,21 +15,28 @@ export default function Login() {
   const handleLogin = async () => {
     setCaricamento(true)
     setErrore('')
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       setErrore('Email o password non corretti')
+      setCaricamento(false)
+      return
+    }
+
+    const userId = data.user?.id
+    if (!userId) { setCaricamento(false); return }
+
+    const { data: utenteData } = await supabase
+      .from('utenti')
+      .select('tipo')
+      .eq('id', userId)
+      .single()
+
+    if (utenteData?.tipo === 'admin') {
+      router.push('/admin')
     } else {
-      const { data: utenteData } = await supabase
-          .from('utenti')
-          .select('tipo')
-          .eq('id', data.user.id)
-          .single()
-        
-        if (utenteData?.tipo === 'admin') {
-          router.push('/admin')
-        } else {
-          router.push('/dashboard')
-        }
+      router.push('/dashboard')
+    }
+
     setCaricamento(false)
   }
 
@@ -79,7 +86,7 @@ export default function Login() {
 
         <p className="text-center text-sm text-gray-500 mt-6">
           Non hai un account?{' '}
-          <Link href="/registrati" className="text-blue-600 font-semibold">Registrati</Link>
+          <Link href="/inizia" className="text-blue-600 font-semibold">Registrati</Link>
         </p>
       </div>
     </main>
