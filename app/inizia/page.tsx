@@ -131,7 +131,7 @@ export default function IniziaPage() {
         marciante: dati.veicolo.marciante === 'si',
         va_in_moto: dati.veicolo.vaInMoto === 'si',
         parti_mancanti: dati.veicolo.partiMancanti === 'si',
-        note: dati.veicolo.note || null,
+        note_veicolo: dati.veicolo.note || null,
         ruolo_richiedente: dati.ruolo,
         eredita: dati.eredita,
         libretto: dati.libretto,
@@ -141,6 +141,14 @@ export default function IniziaPage() {
         stato: 'in_attesa_documenti',
       })
       if (dbError) throw dbError
+      await supabase.from('utenti').insert({
+  id: userId,
+  nome: dati.nome,
+  email: dati.email,
+  telefono: dati.telefono,
+  tipo: 'cliente',
+  stato: 'attivo',
+})
       router.push('/dashboard')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Errore imprevisto. Riprova.')
