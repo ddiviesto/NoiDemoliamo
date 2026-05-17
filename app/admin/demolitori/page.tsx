@@ -178,7 +178,7 @@ export default function GestioneDemolitori() {
         ) : (
           <div className="flex flex-col gap-3">
             {demolitori.map(d => (
-              <div key={d.id} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-blue-200">
+              <div key={d.id} onClick={() => router.push(`/admin/demolitori/${d.id}`)} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-blue-200">
                 <div className="flex items-start justify-between mb-2">
                   <div>
                     <span className="font-bold text-gray-900">{d.ragione_sociale}</span>
