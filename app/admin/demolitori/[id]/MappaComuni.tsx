@@ -16,15 +16,11 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   const [provinceSelezionate, setProvinceSelezionate] = useState<Set<string>>(new Set())
   const [comuniEsclusi, setComuniEsclusi] = useState<Set<string>>(new Set())
   const provinceSelRef = useRef<Set<string>>(new Set())
-  const comuniEsclusiRef = useRef<Set<string>>(new Set())
+  const comuniLoadedRef = useRef(false)
 
   useEffect(() => {
     provinceSelRef.current = provinceSelezionate
   }, [provinceSelezionate])
-
-  useEffect(() => {
-    comuniEsclusiRef.current = comuniEsclusi
-  }, [comuniEsclusi])
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -35,145 +31,171 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       container: mapRef.current,
       style: 'mapbox://styles/mapbox/light-v11',
       center: [12.5, 42.0],
-      zoom: 5,
+      zoom: 5.5,
       scrollZoom: true,
     })
 
     map.addControl(new mapboxgl.NavigationControl(), 'bottom-right')
-
     mapInstanceRef.current = map
 
-    map.on('load', () => {
-      // Layer fill province
-      map.addSource('province', {
-        type: 'vector',
-        url: 'mapbox://mapbox.boundaries-adm2-v4',
-      })
+    map.on('load', async () => {
+      try {
+        const res = await fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_provinces.geojson')
+        const data = await res.json()
 
-      map.addLayer({
-        id: 'province-fill',
-        type: 'fill',
-        source: 'province',
-        'source-layer': 'boundaries_admin_2',
-        filter: ['==', ['get', 'iso_3166_1'], 'IT'],
-        paint: {
-          'fill-color': [
-            'case',
-            ['in', ['get', 'name'], ['literal', []]],
-            '#3b82f6',
-            '#f0fdf4'
-          ],
-          'fill-opacity': 0.5,
-        },
-      })
+        map.addSource('province', { type: 'geojson', data })
 
-      map.addLayer({
-        id: 'province-border',
-        type: 'line',
-        source: 'province',
-        'source-layer': 'boundaries_admin_2',
-        filter: ['==', ['get', 'iso_3166_1'], 'IT'],
-        paint: {
-          'line-color': '#1d4ed8',
-          'line-width': 1.5,
-        },
-      })
-
-      // Layer comuni (visibile da zoom 9)
-      map.addSource('comuni', {
-        type: 'vector',
-        url: 'mapbox://mapbox.boundaries-adm3-v4',
-      })
-
-      map.addLayer({
-        id: 'comuni-fill',
-        type: 'fill',
-        source: 'comuni',
-        'source-layer': 'boundaries_admin_3',
-        filter: ['==', ['get', 'iso_3166_1'], 'IT'],
-        minzoom: 8,
-        paint: {
-          'fill-color': '#bbf7d0',
-          'fill-opacity': 0.3,
-        },
-      })
-
-      map.addLayer({
-        id: 'comuni-border',
-        type: 'line',
-        source: 'comuni',
-        'source-layer': 'boundaries_admin_3',
-        filter: ['==', ['get', 'iso_3166_1'], 'IT'],
-        minzoom: 8,
-        paint: {
-          'line-color': '#16a34a',
-          'line-width': 0.8,
-        },
-      })
-
-      // Click su province
-      map.on('click', 'province-fill', (e) => {
-        if (!e.features || !e.features[0]) return
-        const nome = e.features[0].properties?.name as string
-        if (!nome) return
-
-        setProvinceSelezionate(prev => {
-          const next = new Set(prev)
-          if (next.has(nome)) {
-            next.delete(nome)
-          } else {
-            next.add(nome)
-          }
-          // Aggiorna colore
-          map.setPaintProperty('province-fill', 'fill-color', [
-            'case',
-            ['in', ['get', 'name'], ['literal', Array.from(next)]],
-            '#3b82f6',
-            '#f0fdf4'
-          ])
-          return next
+        map.addLayer({
+          id: 'province-fill',
+          type: 'fill',
+          source: 'province',
+          paint: {
+            'fill-color': [
+              'case',
+              ['in', ['get', 'prov_name'], ['literal', []]],
+              '#3b82f6',
+              'rgba(0,0,0,0)'
+            ],
+            'fill-opacity': 0.5,
+          },
         })
-      })
 
-      // Click su comuni
-      map.on('click', 'comuni-fill', (e) => {
-        if (!e.features || !e.features[0]) return
-        const nomeComune = e.features[0].properties?.name as string
-        if (!nomeComune) return
-
-        setComuniEsclusi(prev => {
-          const next = new Set(prev)
-          if (next.has(nomeComune)) {
-            next.delete(nomeComune)
-          } else {
-            next.add(nomeComune)
-          }
-          // Aggiorna colore comuni esclusi
-          map.setPaintProperty('comuni-fill', 'fill-color', [
-            'case',
-            ['in', ['get', 'name'], ['literal', Array.from(next)]],
-            '#ef4444',
-            '#bbf7d0'
-          ])
-          return next
+        map.addLayer({
+          id: 'province-border',
+          type: 'line',
+          source: 'province',
+          paint: {
+            'line-color': '#1d4ed8',
+            'line-width': 1.5,
+          },
         })
-      })
 
-      // Cursore pointer su hover
-      map.on('mouseenter', 'province-fill', () => {
-        map.getCanvas().style.cursor = 'pointer'
-      })
-      map.on('mouseleave', 'province-fill', () => {
-        map.getCanvas().style.cursor = ''
-      })
-      map.on('mouseenter', 'comuni-fill', () => {
-        map.getCanvas().style.cursor = 'pointer'
-      })
-      map.on('mouseleave', 'comuni-fill', () => {
-        map.getCanvas().style.cursor = ''
-      })
+        map.addLayer({
+          id: 'province-label',
+          type: 'symbol',
+          source: 'province',
+          maxzoom: 9,
+          layout: {
+            'text-field': ['get', 'prov_name'],
+            'text-size': 11,
+            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Regular'],
+          },
+          paint: {
+            'text-color': '#1e40af',
+            'text-halo-color': 'white',
+            'text-halo-width': 1.5,
+          },
+        })
 
-      setLoading(false)
+        map.on('click', 'province-fill', (e) => {
+          if (!e.features?.[0]) return
+          const nome = e.features[0].properties?.prov_name as string
+          if (!nome) return
+
+          setProvinceSelezionate(prev => {
+            const next = new Set(prev)
+            if (next.has(nome)) next.delete(nome)
+            else next.add(nome)
+
+            map.setPaintProperty('province-fill', 'fill-color', [
+              'case',
+              ['in', ['get', 'prov_name'], ['literal', Array.from(next)]],
+              '#3b82f6',
+              'rgba(0,0,0,0)'
+            ])
+            return next
+          })
+        })
+
+        map.on('mouseenter', 'province-fill', () => { map.getCanvas().style.cursor = 'pointer' })
+        map.on('mouseleave', 'province-fill', () => { map.getCanvas().style.cursor = '' })
+
+        // Carica comuni quando zoom >= 9
+        map.on('zoomend', async () => {
+          if (map.getZoom() >= 9 && !comuniLoadedRef.current) {
+            comuniLoadedRef.current = true
+            try {
+              const res2 = await fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_municipalities.geojson')
+              const data2 = await res2.json()
+
+              map.addSource('comuni', { type: 'geojson', data: data2 })
+
+              map.addLayer({
+                id: 'comuni-fill',
+                type: 'fill',
+                source: 'comuni',
+                paint: {
+                  'fill-color': [
+                    'case',
+                    ['in', ['get', 'name'], ['literal', []]],
+                    '#ef4444',
+                    'rgba(0,0,0,0)'
+                  ],
+                  'fill-opacity': 0.5,
+                },
+              })
+
+              map.addLayer({
+                id: 'comuni-border',
+                type: 'line',
+                source: 'comuni',
+                paint: {
+                  'line-color': '#16a34a',
+                  'line-width': 0.8,
+                },
+              })
+
+              map.addLayer({
+                id: 'comuni-label',
+                type: 'symbol',
+                source: 'comuni',
+                layout: {
+                  'text-field': ['get', 'name'],
+                  'text-size': 10,
+                  'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Regular'],
+                },
+                paint: {
+                  'text-color': '#166534',
+                  'text-halo-color': 'white',
+                  'text-halo-width': 1,
+                },
+              })
+
+              map.on('click', 'comuni-fill', (e) => {
+                if (!e.features?.[0]) return
+                const nome = e.features[0].properties?.name as string
+                const prov = e.features[0].properties?.prov_name as string
+                if (!nome || !provinceSelRef.current.has(prov)) return
+
+                setComuniEsclusi(prev => {
+                  const next = new Set(prev)
+                  if (next.has(nome)) next.delete(nome)
+                  else next.add(nome)
+
+                  map.setPaintProperty('comuni-fill', 'fill-color', [
+                    'case',
+                    ['in', ['get', 'name'], ['literal', Array.from(next)]],
+                    '#ef4444',
+                    'rgba(0,0,0,0)'
+                  ])
+                  return next
+                })
+              })
+
+              map.on('mouseenter', 'comuni-fill', () => { map.getCanvas().style.cursor = 'pointer' })
+              map.on('mouseleave', 'comuni-fill', () => { map.getCanvas().style.cursor = '' })
+            } catch (err) {
+              console.error('Errore caricamento comuni:', err)
+              comuniLoadedRef.current = false
+            }
+          }
+        })
+
+        setLoading(false)
+      } catch (err) {
+        console.error('Errore caricamento province:', err)
+        setLoading(false)
+      }
     })
 
     return () => map.remove()
@@ -189,8 +211,6 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
 
   return (
     <div style={{ display: 'flex', gap: '12px', height: '580px' }}>
-
-      {/* Sidebar */}
       <div style={{ width: '200px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
         <div className="bg-white border border-gray-200 rounded-xl p-3 flex-1 overflow-y-auto">
           <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Area selezionata</p>
@@ -226,16 +246,12 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
         </div>
 
         {provinceSelezionate.size > 0 && (
-          <button
-            onClick={handleSalva}
-            className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
-          >
+          <button onClick={handleSalva} className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all">
             Salva copertura
           </button>
         )}
       </div>
 
-      {/* Mappa */}
       <div style={{ flex: 1, position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
@@ -247,7 +263,6 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
         )}
         <div ref={mapRef} style={{ width: '100%', height: '100%' }} />
       </div>
-
     </div>
   )
 }
