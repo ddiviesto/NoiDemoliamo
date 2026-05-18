@@ -1,51 +1,36 @@
 'use client'
+
 /// <reference types="@types/google.maps" />
 
 import { useEffect, useRef, useState } from 'react'
-
-interface Comune {
-  nome: string
-  provincia: string
-  lat: number
-  lng: number
-  selezionato: boolean
-  escluso: boolean
-}
 
 interface Props {
   onSalva: (comuni: { comune: string; provincia: string; fee_comune?: number; distanza_km?: number }[]) => void
   comuniSalvati: string[]
 }
 
-declare global {
-  interface Window {
-    google: typeof google
-    initMap: () => void
-  }
-}
-
 export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
-  const [province, setProvince] = useState<string[]>([])
-  const [provinceSelezionate, setProvinceSelezionate] = useState<Set<string>>(new Set())
   const [loading, setLoading] = useState(true)
+  const [provinceSelezionate, setProvinceSelezionate] = useState<Set<string>>(new Set())
+  const featuresRef = useRef<Map<string, google.maps.Data.Feature>>(new Map())
+  const dataLayerRef = useRef<google.maps.Data | null>(null)
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
     if (!apiKey) return
 
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&language=it&region=IT`
-    script.async = true
-    script.onload = () => {
+    if (window.google?.maps) {
       initMappa()
+      return
     }
-    document.head.appendChild(script)
 
-    return () => {
-      document.head.removeChild(script)
-    }
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&language=it&region=IT`
+    script.async = true
+    script.onload = initMappa
+    document.head.appendChild(script)
   }, [])
 
   function initMappa() {
@@ -56,45 +41,42 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       zoom: 5,
       mapTypeControl: false,
       streetViewControl: false,
-      fullscreenControl: false,
+      fullscreenControl: true,
       styles: [
-        { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#1a56db' }, { weight: 2 }] },
-        { featureType: 'administrative.locality', elementType: 'geometry.stroke', stylers: [{ color: '#93c5fd' }, { weight: 1 }] },
         { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#bfdbfe' }] },
         { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f0fdf4' }] },
         { featureType: 'road', elementType: 'geometry', stylers: [{ visibility: 'simplified' }, { color: '#e2e8f0' }] },
         { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+        { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#1a56db' }, { weight: 2 }] },
+        { featureType: 'administrative.locality', elementType: 'labels.text', stylers: [{ visibility: 'simplified' }] },
       ],
     })
 
     mapInstanceRef.current = map
-    setLoading(false)
 
-    // Aggiungi layer province italiane
-    const italyLayer = new window.google.maps.Data()
-    
-    // Usa il Data Layer per le province
-    fetch('https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_IT_provinces.geojson')
+    const dataLayer = new window.google.maps.Data({ map })
+    dataLayerRef.current = dataLayer
+
+    dataLayer.setStyle({
+      fillColor: '#dbeafe',
+      fillOpacity: 0,
+      strokeColor: '#1a56db',
+      strokeWeight: 1,
+      clickable: true,
+    })
+
+    // Carica GeoJSON province italiane
+    fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_provinces.geojson')
       .then(r => r.json())
       .then(data => {
-        italyLayer.addGeoJson(data)
-        italyLayer.setStyle({
-          fillColor: '#dbeafe',
-          fillOpacity: 0.3,
-          strokeColor: '#1a56db',
-          strokeWeight: 1.5,
-          clickable: true,
+        dataLayer.addGeoJson(data)
+        
+        dataLayer.forEach(feature => {
+          const nome = feature.getProperty('prov_name') as string
+          featuresRef.current.set(nome, feature)
         })
-        italyLayer.setMap(map)
 
-        const prov: string[] = []
-        italyLayer.forEach(f => {
-          const nome = f.getProperty('prov_name') as string
-          if (nome && !prov.includes(nome)) prov.push(nome)
-        })
-        setProvince(prov.sort())
-
-        italyLayer.addListener('click', (e: google.maps.Data.MouseEvent) => {
+        dataLayer.addListener('click', (e: google.maps.Data.MouseEvent) => {
           const feature = e.feature
           const nome = feature.getProperty('prov_name') as string
           
@@ -102,17 +84,26 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
             const next = new Set(prev)
             if (next.has(nome)) {
               next.delete(nome)
-              italyLayer.overrideStyle(feature, { fillColor: '#dbeafe', fillOpacity: 0.3 })
+              dataLayer.overrideStyle(feature, {
+                fillColor: '#dbeafe',
+                fillOpacity: 0,
+              })
             } else {
               next.add(nome)
-              italyLayer.overrideStyle(feature, { fillColor: '#1a56db', fillOpacity: 0.6 })
+              dataLayer.overrideStyle(feature, {
+                fillColor: '#1a56db',
+                fillOpacity: 0.5,
+              })
             }
             return next
           })
         })
+
+        setLoading(false)
       })
-      .catch(() => {
-        console.error('Errore caricamento GeoJSON province')
+      .catch(err => {
+        console.error('Errore GeoJSON:', err)
+        setLoading(false)
       })
   }
 
@@ -122,29 +113,55 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       provincia: p.substring(0, 2).toUpperCase(),
     }))
     onSalva(comuni)
+    setProvinceSelezionate(new Set())
   }
 
   return (
     <div className="flex flex-col gap-3">
       {loading && (
-        <div className="flex items-center justify-center h-64 bg-gray-50 rounded-xl">
-          <div className="text-sm text-gray-400">Caricamento mappa...</div>
+        <div className="flex items-center justify-center h-64 bg-gray-50 rounded-xl border border-gray-100">
+          <div className="flex flex-col items-center gap-2">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"/>
+            <div className="text-sm text-gray-400">Caricamento mappa...</div>
+          </div>
         </div>
       )}
-      
-      <div ref={mapRef} style={{ height: '500px', width: '100%', borderRadius: '12px', overflow: 'hidden', display: loading ? 'none' : 'block' }} />
+
+      <div
+        ref={mapRef}
+        style={{
+          height: '500px',
+          width: '100%',
+          borderRadius: '12px',
+          overflow: 'hidden',
+          display: loading ? 'none' : 'block',
+          border: '1px solid #e2e8f0'
+        }}
+      />
+
+      {!loading && (
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
+          <p className="text-xs text-blue-600 font-medium">
+            💡 Clicca su una provincia per selezionarla. Clicca di nuovo per deselezionarla.
+          </p>
+        </div>
+      )}
 
       {provinceSelezionate.size > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-          <p className="text-xs font-medium text-blue-700 mb-2">Province selezionate ({provinceSelezionate.size}):</p>
-          <div className="flex flex-wrap gap-2">
-            {Array.from(provinceSelezionate).map(p => (
-              <span key={p} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-lg">{p}</span>
+        <div className="bg-white border border-blue-200 rounded-xl p-4">
+          <p className="text-xs font-medium text-gray-600 mb-2">
+            Province selezionate ({provinceSelezionate.size}):
+          </p>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {Array.from(provinceSelezionate).sort().map(p => (
+              <span key={p} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-lg font-medium">
+                {p}
+              </span>
             ))}
           </div>
           <button
             onClick={handleSalva}
-            className="mt-3 w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
+            className="w-full bg-blue-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
           >
             Salva area di copertura ({provinceSelezionate.size} province)
           </button>
