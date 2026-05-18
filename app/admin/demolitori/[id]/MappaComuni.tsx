@@ -16,9 +16,8 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   const [provinceSelezionate, setProvinceSelezionate] = useState<Set<string>>(new Set())
   const [comuniEsclusi, setComuniEsclusi] = useState<Set<string>>(new Set())
   const dataProvinceRef = useRef<google.maps.Data | null>(null)
-  const dataComuniRef = useRef<google.maps.Data | null>(null)
-  const comuniLoadedRef = useRef(false)
   const provinceSelRef = useRef<Set<string>>(new Set())
+  const markersRef = useRef<google.maps.Marker[]>([])
 
   useEffect(() => {
     provinceSelRef.current = provinceSelezionate
@@ -49,13 +48,14 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
-      gestureHandling: 'greedy', // scroll senza Ctrl!
+      gestureHandling: 'greedy',
       styles: [
         { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#bfdbfe' }] },
         { featureType: 'landscape', elementType: 'geometry', stylers: [{ color: '#f8fafc' }] },
         { featureType: 'road', elementType: 'geometry', stylers: [{ visibility: 'simplified' }, { color: '#e2e8f0' }] },
         { featureType: 'poi', stylers: [{ visibility: 'off' }] },
         { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#1a56db' }, { weight: 2 }] },
+        { featureType: 'administrative.locality', elementType: 'geometry.stroke', stylers: [{ color: '#16a34a' }, { weight: 1 }] },
       ],
     })
 
@@ -68,16 +68,6 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       fillOpacity: 0,
       strokeColor: '#1a56db',
       strokeWeight: 1.5,
-      clickable: true,
-    })
-
-    // Layer comuni
-    const dataComuni = new window.google.maps.Data()
-    dataComuniRef.current = dataComuni
-    dataComuni.setStyle({
-      fillOpacity: 0,
-      strokeColor: '#16a34a',
-      strokeWeight: 0.8,
       clickable: true,
     })
 
@@ -108,55 +98,74 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       })
       .catch(() => setLoading(false))
 
-    // Gestione zoom
-    map.addListener('zoom_changed', () => {
+    // Zoom alto — usa geocoder per cercare comuni cliccati
+    map.addListener('click', async (e: google.maps.MapMouseEvent) => {
       const z = map.getZoom() || 6
+      if (z < 9) return
+      if (!e.latLng) return
 
-      if (z >= 9) {
-        dataProvince.setMap(null)
-        dataComuni.setMap(map)
+      const geocoder = new window.google.maps.Geocoder()
+      geocoder.geocode(
+        { location: e.latLng, language: 'it', region: 'IT' },
+        (results, status) => {
+          if (status !== 'OK' || !results) return
 
-        if (!comuniLoadedRef.current) {
-          comuniLoadedRef.current = true
-          fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_municipalities.geojson')
-            .then(r => r.json())
-            .then(data => {
-              dataComuni.addGeoJson(data)
+          let nomeComune = ''
+          let nomeProvincia = ''
 
-              // Colora i comuni delle province selezionate
-              dataComuni.forEach(f => {
-                const prov = f.getProperty('prov_name') as string
-                if (provinceSelRef.current.has(prov)) {
-                  dataComuni.overrideStyle(f, { fillColor: '#1a56db', fillOpacity: 0.3 })
+          for (const result of results) {
+            for (const comp of result.address_components) {
+              if (comp.types.includes('administrative_area_level_3')) {
+                nomeComune = comp.long_name
+              }
+              if (comp.types.includes('administrative_area_level_2')) {
+                nomeProvincia = comp.long_name
+              }
+            }
+            if (nomeComune) break
+          }
+
+          if (!nomeComune) return
+          if (!provinceSelRef.current.has(nomeProvincia)) return
+
+          // Aggiungi marker sul comune cliccato
+          const key = `${nomeComune}-${nomeProvincia}`
+
+          setComuniEsclusi(prev => {
+            const next = new Set(prev)
+            if (next.has(key)) {
+              next.delete(key)
+              // Rimuovi marker
+              markersRef.current = markersRef.current.filter(m => {
+                if ((m as unknown as { key: string }).key === key) {
+                  m.setMap(null)
+                  return false
                 }
+                return true
               })
-
-              dataComuni.addListener('click', (e: google.maps.Data.MouseEvent) => {
-                const feature = e.feature
-                const nome = feature.getProperty('name') as string
-                const prov = feature.getProperty('prov_name') as string
-
-                if (!provinceSelRef.current.has(prov)) return
-
-                setComuniEsclusi(prev => {
-                  const next = new Set(prev)
-                  if (next.has(nome)) {
-                    next.delete(nome)
-                    dataComuni.overrideStyle(feature, { fillColor: '#1a56db', fillOpacity: 0.3 })
-                  } else {
-                    next.add(nome)
-                    dataComuni.overrideStyle(feature, { fillColor: '#ef4444', fillOpacity: 0.6 })
-                  }
-                  return next
-                })
-              })
-            })
-            .catch(err => console.error('Errore comuni:', err))
+            } else {
+              next.add(key)
+              // Aggiungi marker rosso
+              const marker = new window.google.maps.Marker({
+                position: e.latLng!,
+                map,
+                title: nomeComune,
+                icon: {
+                  path: window.google.maps.SymbolPath.CIRCLE,
+                  scale: 8,
+                  fillColor: '#ef4444',
+                  fillOpacity: 0.9,
+                  strokeColor: '#dc2626',
+                  strokeWeight: 2,
+                },
+              });
+              (marker as unknown as { key: string }).key = key
+              markersRef.current.push(marker)
+            }
+            return next
+          })
         }
-      } else {
-        dataComuni.setMap(null)
-        dataProvince.setMap(map)
-      }
+      )
     })
   }
 
@@ -171,7 +180,7 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   return (
     <div className="flex gap-4" style={{ height: '580px' }}>
 
-      {/* Sidebar sinistra */}
+      {/* Sidebar */}
       <div style={{ width: '220px', flexShrink: 0 }} className="flex flex-col gap-3">
         <div className="bg-white border border-gray-200 rounded-xl p-3 flex-1 overflow-y-auto">
           <p className="text-xs font-semibold text-gray-600 mb-2 uppercase tracking-wide">Area selezionata</p>
@@ -188,11 +197,11 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
               ))}
               {comuniEsclusi.size > 0 && (
                 <>
-                  <p className="text-xs font-semibold text-red-500 mt-2 mb-1">Esclusi:</p>
+                  <p className="text-xs font-semibold text-red-500 mt-2 mb-1">Comuni esclusi:</p>
                   {Array.from(comuniEsclusi).sort().map(c => (
                     <div key={c} className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-2 py-1.5">
                       <div className="w-2.5 h-2.5 rounded-full bg-red-500 flex-shrink-0" />
-                      <span className="text-xs font-medium text-red-700 flex-1">{c}</span>
+                      <span className="text-xs font-medium text-red-700 flex-1">{c.split('-')[0]}</span>
                     </div>
                   ))}
                 </>
@@ -203,8 +212,8 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
 
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
           <p className="text-xs text-blue-600 font-medium mb-1">Come usare:</p>
-          <p className="text-xs text-blue-500 leading-relaxed">🔵 Clicca province per selezionare</p>
-          <p className="text-xs text-blue-500 leading-relaxed">🔴 Ingrandisci e clicca comuni per escludere</p>
+          <p className="text-xs text-blue-500 leading-relaxed">🔵 Clicca sulle province per selezionarle</p>
+          <p className="text-xs text-blue-500 leading-relaxed mt-1">🔴 Ingrandisci e clicca su un comune per escluderlo</p>
         </div>
 
         {provinceSelezionate.size > 0 && (
