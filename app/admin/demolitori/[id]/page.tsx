@@ -210,83 +210,30 @@ export default function DettaglioDemolitore() {
           </div>
         </div>
 
-        {/* AREA DI COPERTURA */}
+{/* AREA DI COPERTURA */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800 flex items-center gap-2">
               <span>📍</span> Area di copertura
-              <span className="text-xs text-gray-400 font-normal ml-1">({comuni.length} comuni)</span>
             </h2>
-            <button
-              onClick={() => setShowAddComune(!showAddComune)}
-              className="bg-blue-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-blue-700 transition-all"
-            >
-              + Aggiungi comune
-            </button>
           </div>
-
-          {/* Form aggiungi comune */}
-          {showAddComune && (
-            <div className="bg-gray-50 rounded-xl p-4 mb-4">
-              <div className="grid grid-cols-2 gap-2 mb-3">
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Comune *</label>
-                  <input type="text" value={nuovoComune.comune} onChange={e => setNuovoComune(p => ({ ...p, comune: e.target.value }))} placeholder="Es. Roma" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Provincia</label>
-                  <input type="text" value={nuovoComune.provincia} onChange={e => setNuovoComune(p => ({ ...p, provincia: e.target.value.toUpperCase() }))} placeholder="Es. RM" maxLength={2} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500 uppercase" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Fee specifica (€) — opzionale</label>
-                  <input type="number" value={nuovoComune.fee_comune} onChange={e => setNuovoComune(p => ({ ...p, fee_comune: e.target.value }))} placeholder="Lascia vuoto per fee standard" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500" />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 mb-1 block">Distanza km — opzionale</label>
-                  <input type="number" value={nuovoComune.distanza_km} onChange={e => setNuovoComune(p => ({ ...p, distanza_km: e.target.value }))} placeholder="Es. 25" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm bg-white outline-none focus:border-blue-500" />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <button onClick={aggiungiComune} disabled={!nuovoComune.comune} className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${nuovoComune.comune ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                  Aggiungi
-                </button>
-                <button onClick={() => setShowAddComune(false)} className="px-4 py-2 rounded-xl text-sm text-gray-500 hover:bg-gray-100 transition-all">
-                  Annulla
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Lista comuni */}
-          {comuni.length === 0 ? (
-            <div className="text-center py-6 text-sm text-gray-300">
-              Nessun comune ancora — aggiungi i comuni coperti da questo demolitore
-            </div>
-          ) : (
-            <div className="flex flex-col gap-2">
-              {comuni.map(c => (
-                <div key={c.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-gray-800">{c.comune}</span>
-                    <span className="text-xs text-gray-400 ml-2">({c.provincia})</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    {c.distanza_km && <span>📍 {c.distanza_km} km</span>}
-                    {c.fee_comune ? (
-                      <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg font-medium">€{c.fee_comune}/pratica</span>
-                    ) : (
-                      <span className="bg-gray-100 text-gray-400 px-2 py-0.5 rounded-lg">Fee standard</span>
-                    )}
-                  </div>
-                  <button onClick={() => rimuoviComune(c.id)} className="w-6 h-6 rounded-full bg-red-100 text-red-500 flex items-center justify-center text-xs hover:bg-red-200 transition-all flex-shrink-0">
-                    ✕
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
+          <MappaComuni
+            onSalva={async (nuoviComuni) => {
+              for (const c of nuoviComuni) {
+                await supabase.from('demolitori_comuni').insert({
+                  demolitore_id: id,
+                  comune: c.comune,
+                  provincia: c.provincia,
+                  fee_comune: c.fee_comune || null,
+                  distanza_km: c.distanza_km || null,
+                })
+              }
+              const { data } = await supabase.from('demolitori_comuni').select('*').eq('demolitore_id', id)
+              if (data) setComuni(data)
+            }}
+            comuniSalvati={comuni.map(c => c.comune)}
+          />
+</div>
       </div>
     </main>
   )
