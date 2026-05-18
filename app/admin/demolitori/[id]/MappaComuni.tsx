@@ -9,6 +9,45 @@ interface Props {
   comuniSalvati: string[]
 }
 
+const PROVINCE_REGIONI: Record<string, string> = {
+  'Torino': 'piemonte', 'Vercelli': 'piemonte', 'Novara': 'piemonte', 'Cuneo': 'piemonte',
+  'Asti': 'piemonte', 'Alessandria': 'piemonte', 'Biella': 'piemonte', 'Verbano-Cusio-Ossola': 'piemonte',
+  'Aosta': 'valle-d-aosta',
+  'Genova': 'liguria', 'Savona': 'liguria', 'La Spezia': 'liguria', 'Imperia': 'liguria',
+  'Milano': 'lombardia', 'Bergamo': 'lombardia', 'Brescia': 'lombardia', 'Como': 'lombardia',
+  'Cremona': 'lombardia', 'Lecco': 'lombardia', 'Lodi': 'lombardia', 'Mantova': 'lombardia',
+  'Monza e della Brianza': 'lombardia', 'Pavia': 'lombardia', 'Sondrio': 'lombardia', 'Varese': 'lombardia',
+  'Bolzano/Bozen': 'trentino-alto-adige', 'Trento': 'trentino-alto-adige',
+  'Venezia': 'veneto', 'Padova': 'veneto', 'Treviso': 'veneto', 'Verona': 'veneto',
+  'Vicenza': 'veneto', 'Belluno': 'veneto', 'Rovigo': 'veneto',
+  'Trieste': 'friuli-venezia-giulia', 'Udine': 'friuli-venezia-giulia',
+  'Gorizia': 'friuli-venezia-giulia', 'Pordenone': 'friuli-venezia-giulia',
+  'Bologna': 'emilia-romagna', 'Ferrara': 'emilia-romagna', 'Forlì-Cesena': 'emilia-romagna',
+  'Modena': 'emilia-romagna', 'Parma': 'emilia-romagna', 'Piacenza': 'emilia-romagna',
+  'Ravenna': 'emilia-romagna', 'Reggio nell\'Emilia': 'emilia-romagna', 'Rimini': 'emilia-romagna',
+  'Firenze': 'toscana', 'Arezzo': 'toscana', 'Grosseto': 'toscana', 'Livorno': 'toscana',
+  'Lucca': 'toscana', 'Massa-Carrara': 'toscana', 'Pisa': 'toscana', 'Pistoia': 'toscana',
+  'Prato': 'toscana', 'Siena': 'toscana',
+  'Perugia': 'umbria', 'Terni': 'umbria',
+  'Ancona': 'marche', 'Ascoli Piceno': 'marche', 'Fermo': 'marche',
+  'Macerata': 'marche', 'Pesaro e Urbino': 'marche',
+  'Roma': 'lazio', 'Frosinone': 'lazio', 'Latina': 'lazio', 'Rieti': 'lazio', 'Viterbo': 'lazio',
+  'L\'Aquila': 'abruzzo', 'Chieti': 'abruzzo', 'Pescara': 'abruzzo', 'Teramo': 'abruzzo',
+  'Campobasso': 'molise', 'Isernia': 'molise',
+  'Napoli': 'campania', 'Avellino': 'campania', 'Benevento': 'campania',
+  'Caserta': 'campania', 'Salerno': 'campania',
+  'Bari': 'puglia', 'Brindisi': 'puglia', 'Foggia': 'puglia', 'Lecce': 'puglia',
+  'Taranto': 'puglia', 'Barletta-Andria-Trani': 'puglia',
+  'Potenza': 'basilicata', 'Matera': 'basilicata',
+  'Catanzaro': 'calabria', 'Cosenza': 'calabria', 'Crotone': 'calabria',
+  'Reggio di Calabria': 'calabria', 'Vibo Valentia': 'calabria',
+  'Palermo': 'sicilia', 'Agrigento': 'sicilia', 'Caltanissetta': 'sicilia',
+  'Catania': 'sicilia', 'Enna': 'sicilia', 'Messina': 'sicilia',
+  'Ragusa': 'sicilia', 'Siracusa': 'sicilia', 'Trapani': 'sicilia',
+  'Cagliari': 'sardegna', 'Nuoro': 'sardegna', 'Oristano': 'sardegna',
+  'Sassari': 'sardegna', 'Sud Sardegna': 'sardegna',
+}
+
 export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
@@ -18,24 +57,17 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   const provinceSelRef = useRef<Set<string>>(new Set())
   const comuniEsclusiRef = useRef<Set<string>>(new Set())
   const poligoniProvince = useRef<Map<string, google.maps.Polygon[]>>(new Map())
-  const poligoniComuni = useRef<Map<string, google.maps.Polygon>>(new Map())
+  const poligoniComuni = useRef<Map<string, google.maps.Polygon[]>>(new Map())
+  const regioniCaricate = useRef<Set<string>>(new Set())
 
-  useEffect(() => {
-    provinceSelRef.current = provinceSelezionate
-  }, [provinceSelezionate])
-
-  useEffect(() => {
-    comuniEsclusiRef.current = comuniEsclusi
-  }, [comuniEsclusi])
+  useEffect(() => { provinceSelRef.current = provinceSelezionate }, [provinceSelezionate])
+  useEffect(() => { comuniEsclusiRef.current = comuniEsclusi }, [comuniEsclusi])
 
   useEffect(() => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
     if (!apiKey) return
 
-    if (window.google?.maps) {
-      initMappa()
-      return
-    }
+    if (window.google?.maps) { initMappa(); return }
 
     const script = document.createElement('script')
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&language=it&region=IT`
@@ -43,10 +75,93 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
     script.onload = initMappa
     document.head.appendChild(script)
 
-    return () => {
-      if (document.head.contains(script)) document.head.removeChild(script)
-    }
+    return () => { if (document.head.contains(script)) document.head.removeChild(script) }
   }, [])
+
+  async function caricaComuniRegione(regione: string, map: google.maps.Map) {
+    if (regioniCaricate.current.has(regione)) return
+    regioniCaricate.current.add(regione)
+
+    try {
+      const url = `https://raw.githubusercontent.com/openpolis/geojson-italy/master/geojson/limits_R_${regione}_municipalities.geojson`
+      const res = await fetch(url)
+      if (!res.ok) throw new Error('File non trovato')
+      const data = await res.json()
+
+      for (const feature of data.features) {
+        const nomeComune = feature.properties.name
+        const nomeProv = feature.properties.prov_name
+        const geom = feature.geometry
+        if (!geom) continue
+
+        const coords = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates
+        const poligoni: google.maps.Polygon[] = []
+
+        for (const poly of coords) {
+          const paths = poly.map((ring: number[][]) =>
+            ring.map((c: number[]) => ({ lat: c[1], lng: c[0] }))
+          )
+
+          const isEscluso = comuniEsclusiRef.current.has(nomeComune)
+          const isProvSel = provinceSelRef.current.has(nomeProv)
+
+          const polygon = new window.google.maps.Polygon({
+            paths,
+            map,
+            fillColor: isEscluso ? '#ef4444' : '#3b82f6',
+            fillOpacity: isEscluso ? 0.5 : (isProvSel ? 0.1 : 0),
+            strokeColor: isEscluso ? '#dc2626' : '#16a34a',
+            strokeWeight: 0.8,
+            clickable: true,
+            zIndex: 2,
+          })
+
+          polygon.addListener('click', () => {
+            if (!provinceSelRef.current.has(nomeProv)) return
+
+            setComuniEsclusi(prev => {
+              const next = new Set(prev)
+              if (next.has(nomeComune)) {
+                next.delete(nomeComune)
+                poligoniComuni.current.get(nomeComune)?.forEach(p =>
+                  p.setOptions({ fillColor: '#3b82f6', fillOpacity: 0.1, strokeColor: '#16a34a' })
+                )
+              } else {
+                next.add(nomeComune)
+                poligoniComuni.current.get(nomeComune)?.forEach(p =>
+                  p.setOptions({ fillColor: '#ef4444', fillOpacity: 0.5, strokeColor: '#dc2626' })
+                )
+              }
+              return next
+            })
+          })
+
+          polygon.addListener('mouseover', () => {
+            if (!comuniEsclusiRef.current.has(nomeComune) && provinceSelRef.current.has(nomeProv)) {
+              polygon.setOptions({ fillOpacity: 0.3 })
+            }
+          })
+
+          polygon.addListener('mouseout', () => {
+            if (!comuniEsclusiRef.current.has(nomeComune)) {
+              polygon.setOptions({ fillOpacity: provinceSelRef.current.has(nomeProv) ? 0.1 : 0 })
+            }
+          })
+
+          poligoni.push(polygon)
+        }
+
+        if (poligoniComuni.current.has(nomeComune)) {
+          poligoniComuni.current.get(nomeComune)!.push(...poligoni)
+        } else {
+          poligoniComuni.current.set(nomeComune, poligoni)
+        }
+      }
+    } catch (err) {
+      console.error(`Errore caricamento comuni ${regione}:`, err)
+      regioniCaricate.current.delete(regione)
+    }
+  }
 
   async function initMappa() {
     if (!mapRef.current) return
@@ -58,12 +173,10 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: true,
-      mapTypeId: 'roadmap',
     })
 
     mapInstanceRef.current = map
 
-    // Carica GeoJSON province
     try {
       const res = await fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_provinces.geojson')
       const data = await res.json()
@@ -71,9 +184,8 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       for (const feature of data.features) {
         const nomeProv = feature.properties.prov_name
         const geom = feature.geometry
-        const poligoni: google.maps.Polygon[] = []
-
         const coords = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates
+        const poligoni: google.maps.Polygon[] = []
 
         for (const poly of coords) {
           const paths = poly.map((ring: number[][]) =>
@@ -81,39 +193,45 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
           )
 
           const polygon = new window.google.maps.Polygon({
-            paths,
-            map,
+            paths, map,
             fillColor: '#3b82f6',
             fillOpacity: 0,
             strokeColor: '#1d4ed8',
             strokeWeight: 1.5,
             clickable: true,
+            zIndex: 1,
           })
 
-          polygon.addListener('click', () => {
+          polygon.addListener('click', async () => {
             setProvinceSelezionate(prev => {
               const next = new Set(prev)
               if (next.has(nomeProv)) {
                 next.delete(nomeProv)
                 poligoniProvince.current.get(nomeProv)?.forEach(p => p.setOptions({ fillOpacity: 0 }))
+                poligoniComuni.current.forEach((polys, nome) => {
+                  const provComune = [...data.features].find((f: {properties: {name: string}}) => f.properties.name === nome)?.properties?.prov_name
+                  if (provComune === nomeProv) {
+                    polys.forEach(p => p.setOptions({ fillOpacity: 0 }))
+                  }
+                })
               } else {
                 next.add(nomeProv)
-                poligoniProvince.current.get(nomeProv)?.forEach(p => p.setOptions({ fillOpacity: 0.4 }))
+                poligoniProvince.current.get(nomeProv)?.forEach(p => p.setOptions({ fillOpacity: 0.3 }))
+                // Carica comuni regione
+                const regione = PROVINCE_REGIONI[nomeProv]
+                if (regione && map.getZoom()! >= 8) {
+                  caricaComuniRegione(regione, map)
+                }
               }
               return next
             })
           })
 
           polygon.addListener('mouseover', () => {
-            if (!provinceSelRef.current.has(nomeProv)) {
-              polygon.setOptions({ fillOpacity: 0.15 })
-            }
+            if (!provinceSelRef.current.has(nomeProv)) polygon.setOptions({ fillOpacity: 0.1 })
           })
-
           polygon.addListener('mouseout', () => {
-            if (!provinceSelRef.current.has(nomeProv)) {
-              polygon.setOptions({ fillOpacity: 0 })
-            }
+            if (!provinceSelRef.current.has(nomeProv)) polygon.setOptions({ fillOpacity: 0 })
           })
 
           poligoni.push(polygon)
@@ -128,74 +246,13 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       setLoading(false)
     }
 
-    // Zoom alto — carica comuni per regione
-    map.addListener('zoom_changed', async () => {
+    // Carica comuni quando zoom >= 8
+    map.addListener('zoom_changed', () => {
       const z = map.getZoom() || 6
-
-      if (z >= 9) {
-        const bounds = map.getBounds()
-        if (!bounds) return
-
-        // Carica comuni visibili usando geocoding al click
-        map.addListener('click', async (e: google.maps.MapMouseEvent) => {
-          if (!e.latLng) return
-          const currentZ = map.getZoom() || 6
-          if (currentZ < 9) return
-
-          const geocoder = new window.google.maps.Geocoder()
-          geocoder.geocode(
-            { location: e.latLng, language: 'it', region: 'IT' },
-            (results, status) => {
-              if (status !== 'OK' || !results) return
-
-              let nomeComune = ''
-              let nomeProvincia = ''
-
-              for (const result of results) {
-                for (const comp of result.address_components) {
-                  if (comp.types.includes('administrative_area_level_3') && !nomeComune) {
-                    nomeComune = comp.long_name
-                  }
-                  if (comp.types.includes('administrative_area_level_2') && !nomeProvincia) {
-                    nomeProvincia = comp.long_name
-                  }
-                }
-                if (nomeComune && nomeProvincia) break
-              }
-
-              if (!nomeComune || !provinceSelRef.current.has(nomeProvincia)) return
-
-              const key = nomeComune
-
-              setComuniEsclusi(prev => {
-                const next = new Set(prev)
-                if (next.has(key)) {
-                  next.delete(key)
-                  // Rimuovi marker
-                  const marker = poligoniComuni.current.get(key)
-                  if (marker) {
-                    marker.setMap(null)
-                    poligoniComuni.current.delete(key)
-                  }
-                } else {
-                  next.add(key)
-                  // Aggiungi cerchio rosso sul comune
-                  const circle = new window.google.maps.Circle({
-                    center: e.latLng!,
-                    radius: 3000,
-                    map,
-                    fillColor: '#ef4444',
-                    fillOpacity: 0.4,
-                    strokeColor: '#dc2626',
-                    strokeWeight: 2,
-                    clickable: false,
-                  })
-                  poligoniComuni.current.set(key, circle as unknown as google.maps.Polygon)
-                }
-                return next
-              })
-            }
-          )
+      if (z >= 8) {
+        provinceSelRef.current.forEach(prov => {
+          const regione = PROVINCE_REGIONI[prov]
+          if (regione) caricaComuniRegione(regione, map)
         })
       }
     })
@@ -242,7 +299,7 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
           <p className="text-xs text-blue-600 font-medium mb-1">Come usare:</p>
           <p className="text-xs text-blue-500 leading-relaxed">Clicca province per selezionare</p>
-          <p className="text-xs text-blue-500 leading-relaxed mt-1">Ingrandisci e clicca su un comune per escluderlo</p>
+          <p className="text-xs text-blue-500 leading-relaxed mt-1">Ingrandisci zoom 8+ e clicca comuni per escludere</p>
         </div>
 
         {provinceSelezionate.size > 0 && (
