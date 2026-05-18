@@ -52,8 +52,8 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
     if (!mapRef.current) return
 
     const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 41.9, lng: 12.5 },
-      zoom: 6,
+      center: { lat: 42.5, lng: 12.5 },
+      zoom: 5,
       mapTypeControl: false,
       streetViewControl: false,
       fullscreenControl: false,
