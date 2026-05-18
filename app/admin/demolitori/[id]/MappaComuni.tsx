@@ -1,8 +1,8 @@
 'use client'
 
+/// <reference types="@types/google.maps" />
+
 import { useEffect, useRef, useState } from 'react'
-import mapboxgl from 'mapbox-gl'
-import 'mapbox-gl/dist/mapbox-gl.css'
 
 interface Props {
   onSalva: (comuni: { comune: string; provincia: string; fee_comune?: number; distanza_km?: number }[]) => void
@@ -11,195 +11,195 @@ interface Props {
 
 export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   const mapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<mapboxgl.Map | null>(null)
+  const mapInstanceRef = useRef<google.maps.Map | null>(null)
   const [loading, setLoading] = useState(true)
   const [provinceSelezionate, setProvinceSelezionate] = useState<Set<string>>(new Set())
   const [comuniEsclusi, setComuniEsclusi] = useState<Set<string>>(new Set())
   const provinceSelRef = useRef<Set<string>>(new Set())
-  const comuniLoadedRef = useRef(false)
+  const comuniEsclusiRef = useRef<Set<string>>(new Set())
+  const poligoniProvince = useRef<Map<string, google.maps.Polygon[]>>(new Map())
+  const poligoniComuni = useRef<Map<string, google.maps.Polygon>>(new Map())
 
   useEffect(() => {
     provinceSelRef.current = provinceSelezionate
   }, [provinceSelezionate])
 
   useEffect(() => {
+    comuniEsclusiRef.current = comuniEsclusi
+  }, [comuniEsclusi])
+
+  useEffect(() => {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+    if (!apiKey) return
+
+    if (window.google?.maps) {
+      initMappa()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&language=it&region=IT`
+    script.async = true
+    script.onload = initMappa
+    document.head.appendChild(script)
+
+    return () => {
+      if (document.head.contains(script)) document.head.removeChild(script)
+    }
+  }, [])
+
+  async function initMappa() {
     if (!mapRef.current) return
 
-    mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN || ''
-
-    const map = new mapboxgl.Map({
-      container: mapRef.current,
-      style: 'mapbox://styles/mapbox/light-v11',
-      center: [12.5, 42.0],
-      zoom: 5.5,
-      scrollZoom: true,
+    const map = new window.google.maps.Map(mapRef.current, {
+      center: { lat: 42.5, lng: 12.5 },
+      zoom: 6,
+      gestureHandling: 'greedy',
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      mapTypeId: 'roadmap',
     })
 
-    map.addControl(new mapboxgl.NavigationControl(), 'bottom-right')
     mapInstanceRef.current = map
 
-    map.on('load', async () => {
-      try {
-        const res = await fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_provinces.geojson')
-        const data = await res.json()
+    // Carica GeoJSON province
+    try {
+      const res = await fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_provinces.geojson')
+      const data = await res.json()
 
-        map.addSource('province', { type: 'geojson', data })
+      for (const feature of data.features) {
+        const nomeProv = feature.properties.prov_name
+        const geom = feature.geometry
+        const poligoni: google.maps.Polygon[] = []
 
-        map.addLayer({
-          id: 'province-fill',
-          type: 'fill',
-          source: 'province',
-          paint: {
-            'fill-color': [
-              'case',
-              ['in', ['get', 'prov_name'], ['literal', []]],
-              '#3b82f6',
-              'rgba(0,0,0,0)'
-            ],
-            'fill-opacity': 0.5,
-          },
-        })
+        const coords = geom.type === 'Polygon' ? [geom.coordinates] : geom.coordinates
 
-        map.addLayer({
-          id: 'province-border',
-          type: 'line',
-          source: 'province',
-          paint: {
-            'line-color': '#1d4ed8',
-            'line-width': 1.5,
-          },
-        })
+        for (const poly of coords) {
+          const paths = poly.map((ring: number[][]) =>
+            ring.map((c: number[]) => ({ lat: c[1], lng: c[0] }))
+          )
 
-        map.addLayer({
-          id: 'province-label',
-          type: 'symbol',
-          source: 'province',
-          maxzoom: 9,
-          layout: {
-            'text-field': ['get', 'prov_name'],
-            'text-size': 11,
-            'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Regular'],
-          },
-          paint: {
-            'text-color': '#1e40af',
-            'text-halo-color': 'white',
-            'text-halo-width': 1.5,
-          },
-        })
-
-        map.on('click', 'province-fill', (e) => {
-          if (!e.features?.[0]) return
-          const nome = e.features[0].properties?.prov_name as string
-          if (!nome) return
-
-          setProvinceSelezionate(prev => {
-            const next = new Set(prev)
-            if (next.has(nome)) next.delete(nome)
-            else next.add(nome)
-
-            map.setPaintProperty('province-fill', 'fill-color', [
-              'case',
-              ['in', ['get', 'prov_name'], ['literal', Array.from(next)]],
-              '#3b82f6',
-              'rgba(0,0,0,0)'
-            ])
-            return next
+          const polygon = new window.google.maps.Polygon({
+            paths,
+            map,
+            fillColor: '#3b82f6',
+            fillOpacity: 0,
+            strokeColor: '#1d4ed8',
+            strokeWeight: 1.5,
+            clickable: true,
           })
-        })
 
-        map.on('mouseenter', 'province-fill', () => { map.getCanvas().style.cursor = 'pointer' })
-        map.on('mouseleave', 'province-fill', () => { map.getCanvas().style.cursor = '' })
+          polygon.addListener('click', () => {
+            setProvinceSelezionate(prev => {
+              const next = new Set(prev)
+              if (next.has(nomeProv)) {
+                next.delete(nomeProv)
+                poligoniProvince.current.get(nomeProv)?.forEach(p => p.setOptions({ fillOpacity: 0 }))
+              } else {
+                next.add(nomeProv)
+                poligoniProvince.current.get(nomeProv)?.forEach(p => p.setOptions({ fillOpacity: 0.4 }))
+              }
+              return next
+            })
+          })
 
-        // Carica comuni quando zoom >= 9
-        map.on('zoomend', async () => {
-          if (map.getZoom() >= 9 && !comuniLoadedRef.current) {
-            comuniLoadedRef.current = true
-            try {
-              const res2 = await fetch('https://cdn.jsdelivr.net/gh/openpolis/geojson-italy@master/geojson/limits_IT_municipalities.geojson')
-              const data2 = await res2.json()
-
-              map.addSource('comuni', { type: 'geojson', data: data2 })
-
-              map.addLayer({
-                id: 'comuni-fill',
-                type: 'fill',
-                source: 'comuni',
-                paint: {
-                  'fill-color': [
-                    'case',
-                    ['in', ['get', 'name'], ['literal', []]],
-                    '#ef4444',
-                    'rgba(0,0,0,0)'
-                  ],
-                  'fill-opacity': 0.5,
-                },
-              })
-
-              map.addLayer({
-                id: 'comuni-border',
-                type: 'line',
-                source: 'comuni',
-                paint: {
-                  'line-color': '#16a34a',
-                  'line-width': 0.8,
-                },
-              })
-
-              map.addLayer({
-                id: 'comuni-label',
-                type: 'symbol',
-                source: 'comuni',
-                layout: {
-                  'text-field': ['get', 'name'],
-                  'text-size': 10,
-                  'text-font': ['DIN Offc Pro Medium', 'Arial Unicode MS Regular'],
-                },
-                paint: {
-                  'text-color': '#166534',
-                  'text-halo-color': 'white',
-                  'text-halo-width': 1,
-                },
-              })
-
-              map.on('click', 'comuni-fill', (e) => {
-                if (!e.features?.[0]) return
-                const nome = e.features[0].properties?.name as string
-                const prov = e.features[0].properties?.prov_name as string
-                if (!nome || !provinceSelRef.current.has(prov)) return
-
-                setComuniEsclusi(prev => {
-                  const next = new Set(prev)
-                  if (next.has(nome)) next.delete(nome)
-                  else next.add(nome)
-
-                  map.setPaintProperty('comuni-fill', 'fill-color', [
-                    'case',
-                    ['in', ['get', 'name'], ['literal', Array.from(next)]],
-                    '#ef4444',
-                    'rgba(0,0,0,0)'
-                  ])
-                  return next
-                })
-              })
-
-              map.on('mouseenter', 'comuni-fill', () => { map.getCanvas().style.cursor = 'pointer' })
-              map.on('mouseleave', 'comuni-fill', () => { map.getCanvas().style.cursor = '' })
-            } catch (err) {
-              console.error('Errore caricamento comuni:', err)
-              comuniLoadedRef.current = false
+          polygon.addListener('mouseover', () => {
+            if (!provinceSelRef.current.has(nomeProv)) {
+              polygon.setOptions({ fillOpacity: 0.15 })
             }
-          }
-        })
+          })
 
-        setLoading(false)
-      } catch (err) {
-        console.error('Errore caricamento province:', err)
-        setLoading(false)
+          polygon.addListener('mouseout', () => {
+            if (!provinceSelRef.current.has(nomeProv)) {
+              polygon.setOptions({ fillOpacity: 0 })
+            }
+          })
+
+          poligoni.push(polygon)
+        }
+
+        poligoniProvince.current.set(nomeProv, poligoni)
+      }
+
+      setLoading(false)
+    } catch (err) {
+      console.error('Errore province:', err)
+      setLoading(false)
+    }
+
+    // Zoom alto — carica comuni per regione
+    map.addListener('zoom_changed', async () => {
+      const z = map.getZoom() || 6
+
+      if (z >= 9) {
+        const bounds = map.getBounds()
+        if (!bounds) return
+
+        // Carica comuni visibili usando geocoding al click
+        map.addListener('click', async (e: google.maps.MapMouseEvent) => {
+          if (!e.latLng) return
+          const currentZ = map.getZoom() || 6
+          if (currentZ < 9) return
+
+          const geocoder = new window.google.maps.Geocoder()
+          geocoder.geocode(
+            { location: e.latLng, language: 'it', region: 'IT' },
+            (results, status) => {
+              if (status !== 'OK' || !results) return
+
+              let nomeComune = ''
+              let nomeProvincia = ''
+
+              for (const result of results) {
+                for (const comp of result.address_components) {
+                  if (comp.types.includes('administrative_area_level_3') && !nomeComune) {
+                    nomeComune = comp.long_name
+                  }
+                  if (comp.types.includes('administrative_area_level_2') && !nomeProvincia) {
+                    nomeProvincia = comp.long_name
+                  }
+                }
+                if (nomeComune && nomeProvincia) break
+              }
+
+              if (!nomeComune || !provinceSelRef.current.has(nomeProvincia)) return
+
+              const key = nomeComune
+
+              setComuniEsclusi(prev => {
+                const next = new Set(prev)
+                if (next.has(key)) {
+                  next.delete(key)
+                  // Rimuovi marker
+                  const marker = poligoniComuni.current.get(key)
+                  if (marker) {
+                    marker.setMap(null)
+                    poligoniComuni.current.delete(key)
+                  }
+                } else {
+                  next.add(key)
+                  // Aggiungi cerchio rosso sul comune
+                  const circle = new window.google.maps.Circle({
+                    center: e.latLng!,
+                    radius: 3000,
+                    map,
+                    fillColor: '#ef4444',
+                    fillOpacity: 0.4,
+                    strokeColor: '#dc2626',
+                    strokeWeight: 2,
+                    clickable: false,
+                  })
+                  poligoniComuni.current.set(key, circle as unknown as google.maps.Polygon)
+                }
+                return next
+              })
+            }
+          )
+        })
       }
     })
-
-    return () => map.remove()
-  }, [])
+  }
 
   function handleSalva() {
     const result = Array.from(provinceSelezionate).map(p => ({
@@ -242,7 +242,7 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
           <p className="text-xs text-blue-600 font-medium mb-1">Come usare:</p>
           <p className="text-xs text-blue-500 leading-relaxed">Clicca province per selezionare</p>
-          <p className="text-xs text-blue-500 leading-relaxed mt-1">Ingrandisci e clicca comuni per escludere</p>
+          <p className="text-xs text-blue-500 leading-relaxed mt-1">Ingrandisci e clicca su un comune per escluderlo</p>
         </div>
 
         {provinceSelezionate.size > 0 && (
