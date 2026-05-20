@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import MappaComuni from './MappaComuni'
+import MappaComuni, { CoperturaRecord } from './MappaComuni'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -24,26 +24,17 @@ interface Demolitore {
   max_pratiche_settimanali: number
 }
 
-interface Comune {
-  id: string
-  comune: string
-  provincia: string
-  cap: string | null
-  fee_comune: number | null
-  distanza_km: number | null
-}
-
 export default function DettaglioDemolitore() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
   const [demolitore, setDemolitore] = useState<Demolitore | null>(null)
-  const [comuni, setComuni] = useState<Comune[]>([])
+  // copertura = lista di record letti dalla tabella demolitori_comuni
+  const [copertura, setCopertura] = useState<CoperturaRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
-  const [showAddComune, setShowAddComune] = useState(false)
-  const [nuovoComune, setNuovoComune] = useState({ comune: '', provincia: '', cap: '', fee_comune: '', distanza_km: '' })
+  const [messaggio, setMessaggio] = useState<string | null>(null)
 
   useEffect(() => {
     async function carica() {
@@ -54,8 +45,12 @@ export default function DettaglioDemolitore() {
       if (!dem) { router.push('/admin/demolitori'); return }
       setDemolitore(dem)
 
-      const { data: com } = await supabase.from('demolitori_comuni').select('*').eq('demolitore_id', id)
-      if (com) setComuni(com)
+      // Carica la copertura del demolitore.
+      const { data: cov } = await supabase
+        .from('demolitori_comuni')
+        .select('*')
+        .eq('demolitore_id', id)
+      if (cov) setCopertura(cov as CoperturaRecord[])
 
       setLoading(false)
     }
@@ -81,26 +76,48 @@ export default function DettaglioDemolitore() {
     setDemolitore(prev => prev ? { ...prev, fee_per_pratica: fee } : null)
   }
 
-  async function aggiungiComune() {
-    if (!nuovoComune.comune.trim()) return
-    const { data } = await supabase.from('demolitori_comuni').insert({
-      demolitore_id: id,
-      comune: nuovoComune.comune,
-      provincia: nuovoComune.provincia,
-      cap: nuovoComune.cap || null,
-      fee_comune: nuovoComune.fee_comune ? parseFloat(nuovoComune.fee_comune) : null,
-      distanza_km: nuovoComune.distanza_km ? parseFloat(nuovoComune.distanza_km) : null,
-    }).select().single()
-    if (data) {
-      setComuni(prev => [...prev, data])
-      setNuovoComune({ comune: '', provincia: '', cap: '', fee_comune: '', distanza_km: '' })
-      setShowAddComune(false)
-    }
-  }
+  // Salva la copertura dalla mappa: prima cancella tutti i vecchi record di
+  // questo demolitore, poi inserisce quelli nuovi. Niente duplicati possibili.
+  async function salvaCopertura(records: CoperturaRecord[]) {
+    setSalvando(true)
+    setMessaggio(null)
+    try {
+      const { error: errDel } = await supabase
+        .from('demolitori_comuni')
+        .delete()
+        .eq('demolitore_id', id)
+      if (errDel) throw errDel
 
-  async function rimuoviComune(comuneId: string) {
-    await supabase.from('demolitori_comuni').delete().eq('id', comuneId)
-    setComuni(prev => prev.filter(c => c.id !== comuneId))
+      if (records.length > 0) {
+        const righe = records.map(r => ({
+          demolitore_id: id,
+          comune: r.comune,
+          provincia: r.provincia,
+          tipo: r.tipo,
+          fee_comune: r.fee_comune ?? null,
+          distanza_km: r.distanza_km ?? null,
+        }))
+        const { error: errIns } = await supabase
+          .from('demolitori_comuni')
+          .insert(righe)
+        if (errIns) throw errIns
+      }
+
+      const { data } = await supabase
+        .from('demolitori_comuni')
+        .select('*')
+        .eq('demolitore_id', id)
+      if (data) setCopertura(data as CoperturaRecord[])
+
+      setMessaggio('✅ Copertura salvata correttamente')
+      setTimeout(() => setMessaggio(null), 3000)
+    } catch (err) {
+      console.error('Errore salvataggio copertura:', err)
+      setMessaggio('❌ Errore durante il salvataggio')
+      setTimeout(() => setMessaggio(null), 4000)
+    } finally {
+      setSalvando(false)
+    }
   }
 
   if (loading) return (
@@ -167,7 +184,6 @@ export default function DettaglioDemolitore() {
           </h2>
           <div className="flex flex-col gap-3">
 
-            {/* Stato */}
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Stato demolitore</label>
               <div className="flex gap-2">
@@ -188,7 +204,6 @@ export default function DettaglioDemolitore() {
               </div>
             </div>
 
-            {/* Contratto */}
             <div>
               <label className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 block">Contratto</label>
               <div className="flex gap-2">
@@ -210,30 +225,23 @@ export default function DettaglioDemolitore() {
           </div>
         </div>
 
-{/* AREA DI COPERTURA */}
+        {/* AREA DI COPERTURA */}
         <div className="bg-white rounded-2xl p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold text-gray-800 flex items-center gap-2">
               <span>📍</span> Area di copertura
             </h2>
+            {messaggio && (
+              <span className={`text-xs font-medium ${messaggio.startsWith('✅') ? 'text-green-600' : 'text-red-600'}`}>
+                {messaggio}
+              </span>
+            )}
           </div>
           <MappaComuni
-            onSalva={async (nuoviComuni) => {
-              for (const c of nuoviComuni) {
-                await supabase.from('demolitori_comuni').insert({
-                  demolitore_id: id,
-                  comune: c.comune,
-                  provincia: c.provincia,
-                  fee_comune: c.fee_comune || null,
-                  distanza_km: c.distanza_km || null,
-                })
-              }
-              const { data } = await supabase.from('demolitori_comuni').select('*').eq('demolitore_id', id)
-              if (data) setComuni(data)
-            }}
-            comuniSalvati={comuni.map(c => c.comune)}
+            coperturaIniziale={copertura}
+            onSalva={salvaCopertura}
           />
-</div>
+        </div>
       </div>
     </main>
   )

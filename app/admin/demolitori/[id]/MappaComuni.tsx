@@ -4,9 +4,23 @@
 
 import { useEffect, useRef, useState } from 'react'
 
+// Tipologia dei record salvati nel database per la copertura del demolitore.
+// Distingue tra unità intere selezionate e singoli comuni/province inclusi/esclusi.
+export type TipoCopertura = 'regione' | 'provincia' | 'provincia_esclusa' | 'comune_incluso' | 'comune_escluso'
+
+export interface CoperturaRecord {
+  comune: string       // nome dell'unità (regione/provincia/comune)
+  provincia: string    // sigla o nome provincia di riferimento (può essere '' per regioni)
+  tipo: TipoCopertura
+  fee_comune?: number | null
+  distanza_km?: number | null
+}
+
 interface Props {
-  onSalva: (comuni: { comune: string; provincia: string; fee_comune?: number; distanza_km?: number }[]) => void
-  comuniSalvati: string[]
+  // Lista dei record letti dal DB (per ripristinare lo stato all'apertura).
+  coperturaIniziale?: CoperturaRecord[]
+  // Salvataggio: riceve TUTTI i record (regioni + province + inclusi + esclusi)
+  onSalva: (records: CoperturaRecord[]) => void | Promise<void>
 }
 
 // ============================================================
@@ -106,7 +120,7 @@ const PROVINCE_REGIONI: Record<string, string> = {
 
 type Layer = 'regioni' | 'province' | 'comuni'
 
-export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
+export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
   // --- Refs DOM e mappa ---
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
@@ -114,10 +128,11 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   const [loading, setLoading] = useState(true)
 
   // --- Stato selezione (visibile in pannello laterale) ---
-  // Cosa l'utente ha cliccato direttamente: regioni, province, comuni inclusi singolarmente.
-  // Le esclusioni sono i "buchi" puntuali nella copertura.
+  // Cosa l'admin ha cliccato direttamente: regioni, province, comuni inclusi singolarmente.
+  // Le esclusioni sono i "buchi" puntuali nella copertura (province o comuni rimossi).
   const [regioniSelezionate, setRegioniSelezionate] = useState<Set<string>>(new Set())
   const [provinceSelezionate, setProvinceSelezionate] = useState<Set<string>>(new Set())
+  const [provinceEscluse, setProvinceEscluse] = useState<Set<string>>(new Set())
   const [comuniInclusi, setComuniInclusi] = useState<Set<string>>(new Set())
   const [comuniEsclusi, setComuniEsclusi] = useState<Set<string>>(new Set())
   const [layerCorrente, setLayerCorrente] = useState<Layer>('regioni')
@@ -128,12 +143,42 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   // --- Ref-mirror dello stato (per usarlo dentro i listener di Google Maps) ---
   const regioniSelRef = useRef<Set<string>>(new Set())
   const provinceSelRef = useRef<Set<string>>(new Set())
+  const provinceEsclRef = useRef<Set<string>>(new Set())
   const comuniInclRef = useRef<Set<string>>(new Set())
   const comuniEsclRef = useRef<Set<string>>(new Set())
   useEffect(() => { regioniSelRef.current = regioniSelezionate }, [regioniSelezionate])
   useEffect(() => { provinceSelRef.current = provinceSelezionate }, [provinceSelezionate])
+  useEffect(() => { provinceEsclRef.current = provinceEscluse }, [provinceEscluse])
   useEffect(() => { comuniInclRef.current = comuniInclusi }, [comuniInclusi])
   useEffect(() => { comuniEsclRef.current = comuniEsclusi }, [comuniEsclusi])
+
+  // Ripristina lo stato dalla copertura iniziale (passata dal genitore quando
+  // l'admin riapre la pagina di un demolitore già configurato).
+  // Eseguito una sola volta quando arriva il valore dal genitore.
+  const coperturaIniziProcessata = useRef(false)
+  useEffect(() => {
+    if (!coperturaIniziale || coperturaIniziProcessata.current) return
+    if (coperturaIniziale.length === 0) return
+    coperturaIniziProcessata.current = true
+
+    const regs = new Set<string>()
+    const provs = new Set<string>()
+    const provsEsc = new Set<string>()
+    const incl = new Set<string>()
+    const escl = new Set<string>()
+    for (const rec of coperturaIniziale) {
+      if (rec.tipo === 'regione') regs.add(rec.comune)
+      else if (rec.tipo === 'provincia') provs.add(rec.comune)
+      else if (rec.tipo === 'provincia_esclusa') provsEsc.add(rec.comune)
+      else if (rec.tipo === 'comune_incluso') incl.add(rec.comune)
+      else if (rec.tipo === 'comune_escluso') escl.add(rec.comune)
+    }
+    setRegioniSelezionate(regs)
+    setProvinceSelezionate(provs)
+    setProvinceEscluse(provsEsc)
+    setComuniInclusi(incl)
+    setComuniEsclusi(escl)
+  }, [coperturaIniziale])
 
   // --- Poligoni Google Maps creati ---
   const poligoniRegioni = useRef<Map<string, google.maps.Polygon[]>>(new Map())
@@ -158,6 +203,7 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   }
 
   function provinciaCoperta(nomeProv: string): boolean {
+    if (provinceEsclRef.current.has(nomeProv)) return false // esclusa esplicitamente
     if (provinceSelRef.current.has(nomeProv)) return true
     const reg = provinciaToRegione.current.get(nomeProv)
     if (reg && regioniSelRef.current.has(reg)) return true
@@ -179,38 +225,111 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   function stilizzaRegione(nomeReg: string) {
     const polys = poligoniRegioni.current.get(nomeReg)
     if (!polys) return
-    const coperta = regioneCoperta(nomeReg)
+    // 3 casi:
+    // 1. Regione selezionata SENZA esclusioni interne → blu pieno
+    // 2. Regione selezionata CON esclusioni → trasparente (vedrai le province coperte
+    //    come "macchie" blu sopra la regione)
+    // 3. Regione non selezionata → trasparente
+    const selezionata = regioneCoperta(nomeReg)
+    const haEsclusioni = selezionata && regioneHaEsclusioniInterne(nomeReg)
+    const totalmenteCoperta = selezionata && !haEsclusioni
+
     polys.forEach(p => p.setOptions({
       fillColor: COLOR_SELECTED_FILL,
-      fillOpacity: coperta ? 0.4 : 0,
-      strokeColor: coperta ? COLOR_SELECTED_STROKE : COLOR_BORDER,
+      fillOpacity: totalmenteCoperta ? 0.4 : 0,
+      strokeColor: totalmenteCoperta ? COLOR_SELECTED_STROKE : COLOR_BORDER,
       strokeWeight: 1.5,
     }))
+  }
+
+  // Controlla se una regione (selezionata interamente) ha esclusioni interne:
+  // province escluse esplicitamente o comuni esclusi che le appartengono.
+  function regioneHaEsclusioniInterne(nomeReg: string): boolean {
+    // Province escluse di questa regione
+    let trovato = false
+    provinceEsclRef.current.forEach(nomeProv => {
+      if (trovato) return
+      if (provinciaToRegione.current.get(nomeProv) === nomeReg) trovato = true
+    })
+    if (trovato) return true
+    // Comuni esclusi di questa regione
+    comuniEsclRef.current.forEach(nomeCom => {
+      if (trovato) return
+      const prov = comuneToProvincia.current.get(nomeCom)
+      if (!prov) return
+      const reg = provinciaToRegione.current.get(prov)
+      if (reg === nomeReg) trovato = true
+    })
+    return trovato
   }
 
   function stilizzaProvincia(nomeProv: string) {
     const polys = poligoniProvince.current.get(nomeProv)
     if (!polys) return
+    // 3 casi simili alle regioni:
+    // 1. Provincia coperta SENZA comuni esclusi al suo interno → blu pieno
+    // 2. Provincia coperta CON comuni esclusi → trasparente (i suoi comuni coperti
+    //    appaiono come "macchie" blu, gli esclusi come "buchi")
+    // 3. Provincia non coperta → trasparente
     const coperta = provinciaCoperta(nomeProv)
+    const haEsclusioniInterne = coperta && provinciaHaComuniEsclusi(nomeProv)
+    const totalmenteCoperta = coperta && !haEsclusioniInterne
+
     polys.forEach(p => p.setOptions({
       fillColor: COLOR_SELECTED_FILL,
-      fillOpacity: coperta ? 0.35 : 0,
-      strokeColor: coperta ? COLOR_SELECTED_STROKE : COLOR_BORDER,
+      fillOpacity: totalmenteCoperta ? 0.35 : 0,
+      strokeColor: totalmenteCoperta ? COLOR_SELECTED_STROKE : COLOR_BORDER,
       strokeWeight: 1.2,
     }))
+  }
+
+  // Controlla se una provincia coperta ha comuni esclusi al suo interno.
+  function provinciaHaComuniEsclusi(nomeProv: string): boolean {
+    let trovato = false
+    comuniEsclRef.current.forEach(nomeCom => {
+      if (trovato) return
+      if (comuneToProvincia.current.get(nomeCom) === nomeProv) trovato = true
+    })
+    return trovato
   }
 
   function stilizzaComune(nomeCom: string) {
     const polys = poligoniComuni.current.get(nomeCom)
     if (!polys) return
     const escluso = comuniEsclRef.current.has(nomeCom)
+    const inclusoSingolarmente = comuniInclRef.current.has(nomeCom)
+    // Coperto = c'è copertura attiva su questo comune
     const coperto = comuneCoperto(nomeCom)
-    polys.forEach(p => p.setOptions({
-      fillColor: escluso ? COLOR_EXCLUDED_FILL : COLOR_SELECTED_FILL,
-      fillOpacity: escluso ? 0.55 : (coperto ? 0.3 : 0),
-      strokeColor: escluso ? COLOR_EXCLUDED_STROKE : COLOR_BORDER,
-      strokeWeight: 0.8,
-    }))
+
+    // Logica visiva pulita:
+    // - Coperto (per qualunque motivo) → blu
+    // - Non coperto → trasparente, con confine grigio molto leggero
+    // I comuni esclusi NON sono più rossi: il rosso esiste solo come anteprima al hover.
+    // Manteniamo i comuni "esclusi" e "inclusi singolari" comunque visibili in ogni
+    // layer come riferimento di dove l'admin ha messo modifiche.
+    if (coperto) {
+      polys.forEach(p => p.setOptions({
+        fillColor: COLOR_SELECTED_FILL,
+        fillOpacity: 0.3,
+        strokeColor: COLOR_SELECTED_STROKE,
+        strokeWeight: 0.8,
+      }))
+    } else if (escluso || inclusoSingolarmente) {
+      // Trasparente ma con un bordo visibile per far capire che è un comune "modificato"
+      polys.forEach(p => p.setOptions({
+        fillColor: COLOR_SELECTED_FILL,
+        fillOpacity: 0,
+        strokeColor: COLOR_BORDER,
+        strokeWeight: 0.8,
+      }))
+    } else {
+      polys.forEach(p => p.setOptions({
+        fillColor: COLOR_SELECTED_FILL,
+        fillOpacity: 0,
+        strokeColor: COLOR_BORDER,
+        strokeWeight: 0.8,
+      }))
+    }
   }
 
   // Aggiorna il tooltip in base alla posizione del mouse (in coordinate
@@ -239,31 +358,64 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
 
     setLayerCorrente(layer)
 
-    // REGIONI: visibili solo nel layer regioni. Le esclusioni puntuali no
-    // (le regioni non si "escludono" puntualmente, sono il livello più alto).
+    // REGIONI: visibili solo nel layer regioni
     poligoniRegioni.current.forEach((polys, nomeReg) => {
       const visible = layer === 'regioni'
       polys.forEach(p => p.setOptions({ visible, clickable: visible }))
       if (visible) stilizzaRegione(nomeReg)
     })
 
-    // PROVINCE: visibili solo nel layer province
+    // PROVINCE: visibili nel layer province, MA anche nel layer regioni se:
+    // - selezionate direttamente (province singole fuori da una regione coperta)
+    // - appartenenti a una regione coperta CHE HA ESCLUSIONI interne (così l'admin
+    //   vede a colpo d'occhio "dentro questa regione la copertura è parziale")
     poligoniProvince.current.forEach((polys, nomeProv) => {
-      const visible = layer === 'province'
-      polys.forEach(p => p.setOptions({ visible, clickable: visible }))
+      const coperta = provinciaCoperta(nomeProv)
+      let mostraInLayerRegioni = false
+      if (coperta && layer === 'regioni') {
+        const selezionataDirettamente = provinceSelRef.current.has(nomeProv)
+        if (selezionataDirettamente) {
+          mostraInLayerRegioni = true
+        } else {
+          // È coperta perché la regione è selezionata: la mostro solo se la regione
+          // ha esclusioni interne (altrimenti la regione stessa è già blu pieno)
+          const reg = provinciaToRegione.current.get(nomeProv)
+          if (reg && regioneHaEsclusioniInterne(reg)) {
+            mostraInLayerRegioni = true
+          }
+        }
+      }
+      const visible = layer === 'province' || mostraInLayerRegioni
+      const clickable = layer === 'province'
+      polys.forEach(p => p.setOptions({ visible, clickable }))
       if (visible) stilizzaProvincia(nomeProv)
     })
 
-    // COMUNI: visibili in 2 casi
-    // - siamo nel layer comuni → tutti i comuni della zona inquadrata visibili
-    // - in QUALSIASI layer, se il comune è ESCLUSO (rosso) o INCLUSO SINGOLARMENTE
-    //   deve essere sempre visibile come riferimento, indipendentemente dallo zoom
+    // COMUNI: visibili nel layer comuni, MA anche negli altri layer se:
+    // - inclusi singolarmente (isolotti blu)
+    // - esclusi (buchi nella copertura)
+    // - coperti E la loro provincia/regione ha esclusioni interne (così l'admin
+    //   vede a colpo d'occhio quali parti della provincia/regione sono coperte
+    //   anche tornando a zoom basso)
     poligoniComuni.current.forEach((polys, nomeCom) => {
       const escluso = comuniEsclRef.current.has(nomeCom)
       const inclusoSingolarmente = comuniInclRef.current.has(nomeCom)
-      const visible = layer === 'comuni' || escluso || inclusoSingolarmente
-      // Cliccabili solo nel layer comuni (altrimenti si rischia di cliccarli
-      // per sbaglio mentre si sta navigando regioni/province)
+      const coperto = comuneCoperto(nomeCom)
+
+      let visibilePerCoperturaParziale = false
+      if (coperto && !escluso) {
+        const prov = comuneToProvincia.current.get(nomeCom)
+        if (prov) {
+          const provHaEsclusi = provinciaHaComuniEsclusi(prov)
+          // Se la sua provincia ha esclusioni, mostralo come "macchia" blu
+          // dentro la provincia trasparente (visibile in layer province e regioni).
+          if (provHaEsclusi && (layer === 'province' || layer === 'regioni')) {
+            visibilePerCoperturaParziale = true
+          }
+        }
+      }
+
+      const visible = layer === 'comuni' || escluso || inclusoSingolarmente || visibilePerCoperturaParziale
       const clickable = layer === 'comuni'
       polys.forEach(p => p.setOptions({ visible, clickable }))
       if (visible) stilizzaComune(nomeCom)
@@ -337,9 +489,14 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
 
           polygon.addListener('mouseover', () => {
             if (layerCorrenteRef.current !== 'comuni') return
-            // Non cambiare hover se il comune è già escluso (rosso) o coperto
-            if (comuniEsclRef.current.has(nomeCom)) return
-            polygon.setOptions({ fillOpacity: 0.3, fillColor: COLOR_SELECTED_FILL, strokeColor: COLOR_SELECTED_STROKE })
+            const coperto = comuneCoperto(nomeCom)
+            if (coperto) {
+              // Anteprima discreta di rimozione: opacità si abbassa
+              polygon.setOptions({ fillOpacity: 0.1, fillColor: COLOR_SELECTED_FILL, strokeColor: COLOR_SELECTED_STROKE })
+            } else {
+              // Anteprima di aggiunta: blu pieno
+              polygon.setOptions({ fillOpacity: 0.35, fillColor: COLOR_SELECTED_FILL, strokeColor: COLOR_SELECTED_STROKE })
+            }
           })
           polygon.addListener('mousemove', (e: google.maps.MapMouseEvent & { domEvent?: MouseEvent }) => {
             if (layerCorrenteRef.current !== 'comuni') return
@@ -437,7 +594,7 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
       aggiornaVisibilitaLayer(mapInstanceRef.current.getZoom() || 6)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regioniSelezionate, provinceSelezionate, comuniInclusi, comuniEsclusi])
+  }, [regioniSelezionate, provinceSelezionate, provinceEscluse, comuniInclusi, comuniEsclusi])
 
   async function initMappa() {
     if (!mapRef.current) return
@@ -545,43 +702,92 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
           })
 
           polygon.addListener('click', () => {
-            setProvinceSelezionate(prev => {
-              const next = new Set(prev)
-              if (next.has(nomeProv)) {
-                // Deseleziono la provincia: pulisco anche le esclusioni di comuni
-                // appartenenti a questa provincia (reset locale)
+            const reg = provinciaToRegione.current.get(nomeProv)
+            const copertaDallaRegione = reg ? regioniSelRef.current.has(reg) : false
+            const inEsclusioni = provinceEsclRef.current.has(nomeProv)
+            const inSelezioniDirette = provinceSelRef.current.has(nomeProv)
+
+            if (inEsclusioni) {
+              // Era stata esclusa da una regione coperta → reincludo (tolgo dalle esclusioni)
+              setProvinceEscluse(prev => {
+                const next = new Set(prev)
                 next.delete(nomeProv)
-                setComuniEsclusi(prevEx => {
-                  const nextEx = new Set(prevEx)
-                  nextEx.forEach(c => {
-                    if (comuneToProvincia.current.get(c) === nomeProv) nextEx.delete(c)
-                  })
-                  return nextEx
+                return next
+              })
+            } else if (inSelezioniDirette) {
+              // Selezionata direttamente → tolgo la selezione e pulisco esclusioni/inclusi dei suoi comuni
+              setProvinceSelezionate(prev => {
+                const next = new Set(prev)
+                next.delete(nomeProv)
+                return next
+              })
+              setComuniEsclusi(prevEx => {
+                const nextEx = new Set(prevEx)
+                nextEx.forEach(c => {
+                  if (comuneToProvincia.current.get(c) === nomeProv) nextEx.delete(c)
                 })
-              } else {
+                return nextEx
+              })
+              setComuniInclusi(prevIn => {
+                const nextIn = new Set(prevIn)
+                nextIn.forEach(c => {
+                  if (comuneToProvincia.current.get(c) === nomeProv) nextIn.delete(c)
+                })
+                return nextIn
+              })
+            } else if (copertaDallaRegione) {
+              // Coperta perché la regione è selezionata → escludo la provincia
+              setProvinceEscluse(prev => {
+                const next = new Set(prev)
                 next.add(nomeProv)
-                // Quando si seleziona una provincia, puliamo le esclusioni di
-                // suoi comuni (rendere "tutta" la provincia coperta da zero)
-                setComuniEsclusi(prevEx => {
-                  const nextEx = new Set(prevEx)
-                  nextEx.forEach(c => {
-                    if (comuneToProvincia.current.get(c) === nomeProv) nextEx.delete(c)
-                  })
-                  return nextEx
+                return next
+              })
+              // Pulisco anche eventuali inclusi/esclusi di comuni di questa provincia
+              setComuniEsclusi(prevEx => {
+                const nextEx = new Set(prevEx)
+                nextEx.forEach(c => {
+                  if (comuneToProvincia.current.get(c) === nomeProv) nextEx.delete(c)
                 })
-                // Pre-carica comuni della regione di questa provincia, così
-                // se l'utente zooma sono già pronti
-                const slug = PROVINCE_REGIONI[nomeProv]
-                if (slug) caricaComuniRegione(slug, map)
-              }
-              return next
-            })
+                return nextEx
+              })
+              setComuniInclusi(prevIn => {
+                const nextIn = new Set(prevIn)
+                nextIn.forEach(c => {
+                  if (comuneToProvincia.current.get(c) === nomeProv) nextIn.delete(c)
+                })
+                return nextIn
+              })
+            } else {
+              // Vuota → aggiungo come selezione diretta
+              setProvinceSelezionate(prev => {
+                const next = new Set(prev)
+                next.add(nomeProv)
+                return next
+              })
+              // Pulisco eventuali esclusioni di comuni di questa provincia
+              setComuniEsclusi(prevEx => {
+                const nextEx = new Set(prevEx)
+                nextEx.forEach(c => {
+                  if (comuneToProvincia.current.get(c) === nomeProv) nextEx.delete(c)
+                })
+                return nextEx
+              })
+              // Pre-carica comuni della regione di questa provincia
+              const slug = PROVINCE_REGIONI[nomeProv]
+              if (slug) caricaComuniRegione(slug, map)
+            }
           })
 
           polygon.addListener('mouseover', () => {
             if (layerCorrenteRef.current !== 'province') return
-            if (provinciaCoperta(nomeProv)) return
-            polygon.setOptions({ fillOpacity: 0.35, fillColor: COLOR_SELECTED_FILL, strokeColor: COLOR_SELECTED_STROKE })
+            const coperta = provinciaCoperta(nomeProv)
+            if (coperta) {
+              // Anteprima discreta di rimozione: opacità si abbassa (resta blu più chiaro)
+              polygon.setOptions({ fillOpacity: 0.1, fillColor: COLOR_SELECTED_FILL, strokeColor: COLOR_SELECTED_STROKE })
+            } else {
+              // Anteprima di aggiunta: blu pieno
+              polygon.setOptions({ fillOpacity: 0.35, fillColor: COLOR_SELECTED_FILL, strokeColor: COLOR_SELECTED_STROKE })
+            }
           })
           polygon.addListener('mousemove', (e: google.maps.MapMouseEvent & { domEvent?: MouseEvent }) => {
             if (layerCorrenteRef.current !== 'province') return
@@ -621,6 +827,35 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
 
     // Applica la visibilità iniziale
     aggiornaVisibilitaLayer(map.getZoom() || 6)
+
+    // Pre-carico i file dei comuni delle regioni necessarie per visualizzare
+    // i comuni inclusi/esclusi che arrivano dalla copertura iniziale (DB).
+    // Per ogni comune, dobbiamo conoscere la sua provincia, ma sappiamo solo
+    // la regione dalla mappa PROVINCE_REGIONI inversa. Più semplice: per ogni
+    // provincia presente in coperturaIniziale, troviamo lo slug della regione
+    // e carichiamo quel file. Per i comuni inclusi/esclusi NON sappiamo la
+    // provincia a priori, quindi carichiamo tutte le regioni di tutte le
+    // province citate, e per i comuni sciolti carichiamo TUTTE le regioni
+    // se non riusciamo a determinarle (caso raro: in genere il DB ha la
+    // provincia salvata anche per i comuni).
+    if (coperturaIniziale && coperturaIniziale.length > 0) {
+      const slugsDaCaricare = new Set<string>()
+      for (const rec of coperturaIniziale) {
+        if (rec.tipo === 'provincia' || rec.tipo === 'comune_incluso' || rec.tipo === 'comune_escluso') {
+          // Usa la colonna provincia se valorizzata, altrimenti salta (slug ignoto)
+          const slug = PROVINCE_REGIONI[rec.provincia]
+          if (slug) slugsDaCaricare.add(slug)
+        }
+      }
+      // Carica in sequenza per non sovraccaricare la rete
+      ;(async () => {
+        for (const slug of slugsDaCaricare) {
+          await caricaComuniRegione(slug, map)
+        }
+        // Dopo il caricamento, ridisegna tutto
+        aggiornaVisibilitaLayer(map.getZoom() || 6)
+      })()
+    }
   }
 
   // ============================================================
@@ -628,19 +863,28 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
   // ============================================================
 
   function handleSalva() {
-    // Costruisce la lista di "unità coperte" da inviare al backend.
-    // Mandiamo: regioni, province e comuni inclusi singolarmente.
-    // Le esclusioni dovrebbero essere gestite a parte (struttura backend più avanti).
-    const tuttiNomi = new Set<string>([
-      ...regioniSelezionate,
-      ...provinceSelezionate,
-      ...comuniInclusi,
-    ])
-    const result = Array.from(tuttiNomi).map(p => ({
-      comune: p,
-      provincia: p.substring(0, 2).toUpperCase(),
-    }))
-    onSalva(result)
+    // Costruisce la lista completa di record da salvare nel database.
+    const records: CoperturaRecord[] = []
+
+    regioniSelezionate.forEach(nome => {
+      records.push({ comune: nome, provincia: '', tipo: 'regione' })
+    })
+    provinceSelezionate.forEach(nome => {
+      records.push({ comune: nome, provincia: nome, tipo: 'provincia' })
+    })
+    provinceEscluse.forEach(nome => {
+      records.push({ comune: nome, provincia: nome, tipo: 'provincia_esclusa' })
+    })
+    comuniInclusi.forEach(nome => {
+      const prov = comuneToProvincia.current.get(nome) || ''
+      records.push({ comune: nome, provincia: prov, tipo: 'comune_incluso' })
+    })
+    comuniEsclusi.forEach(nome => {
+      const prov = comuneToProvincia.current.get(nome) || ''
+      records.push({ comune: nome, provincia: prov, tipo: 'comune_escluso' })
+    })
+
+    onSalva(records)
   }
 
   // ============================================================
@@ -698,26 +942,25 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
                   ))}
                 </>
               )}
-              {comuniEsclusi.size > 0 && (
-                <>
-                  <p className="text-[10px] font-semibold text-red-400 uppercase tracking-wide mt-1">Comuni esclusi</p>
-                  {Array.from(comuniEsclusi).sort().map(c => (
-                    <div key={c} className="flex items-center gap-2 bg-red-50 border border-red-100 rounded-lg px-2 py-1.5">
-                      <div className="w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-                      <span className="text-xs font-medium text-red-700 flex-1">{c}</span>
-                    </div>
-                  ))}
-                </>
-              )}
             </div>
           )}
         </div>
 
         <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-          <p className="text-xs text-blue-600 font-medium mb-1">Come usare:</p>
-          <p className="text-xs text-blue-500 leading-relaxed">Zoom basso: clicca le regioni</p>
-          <p className="text-xs text-blue-500 leading-relaxed">Zoom medio: clicca le province</p>
-          <p className="text-xs text-blue-500 leading-relaxed">Zoom alto: clicca i comuni per includerli/escluderli</p>
+          <p className="text-xs text-blue-700 font-semibold mb-2">Come usare la mappa</p>
+          <p className="text-[11px] text-blue-600 leading-relaxed mb-2">
+            <strong>3 livelli di zoom</strong> mostrano regioni, province o comuni.
+            Clicca per <strong>aggiungere</strong> (blu) o <strong>togliere</strong> (trasparente).
+          </p>
+          <p className="text-[11px] text-blue-600 leading-relaxed mb-1">
+            <strong>Esempio &quot;tutta la Toscana tranne Pisa&quot;:</strong>
+          </p>
+          <p className="text-[11px] text-blue-500 leading-relaxed mb-0.5">1. Vista regioni: clicca Toscana → blu</p>
+          <p className="text-[11px] text-blue-500 leading-relaxed mb-0.5">2. Vista province: clicca Pisa → trasparente</p>
+          <p className="text-[11px] text-blue-500 leading-relaxed mb-2">3. Da zoom basso vedrai la Toscana &quot;a chiazze&quot;: solo le aree coperte sono blu.</p>
+          <p className="text-[11px] text-blue-600 leading-relaxed">
+            Per <strong>singoli comuni fuori</strong> da regioni/province: zoom alto, clicca i comuni.
+          </p>
         </div>
 
         {(regioniSelezionate.size > 0 || provinceSelezionate.size > 0 || comuniInclusi.size > 0 || comuniEsclusi.size > 0) && (
@@ -725,6 +968,7 @@ export default function MappaComuni({ onSalva, comuniSalvati }: Props) {
             onClick={() => {
               setRegioniSelezionate(new Set())
               setProvinceSelezionate(new Set())
+              setProvinceEscluse(new Set())
               setComuniInclusi(new Set())
               setComuniEsclusi(new Set())
             }}
