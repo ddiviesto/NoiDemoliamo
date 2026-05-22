@@ -1,55 +1,209 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import TabDocumenti from './TabDocumenti'
+import TabStato from './TabStato'
+import TabChat from './TabChat'
 
-interface Pratica {
+export interface Pratica {
   id: string
+  user_id: string | null
   targa: string | null
   tipo_mezzo: string | null
   marca: string | null
   modello: string | null
   anno: number | null
   km: number | null
-  incidentato: boolean
-  marciante: boolean
-  va_in_moto: boolean
-  parti_mancanti: boolean
+  incidentato: boolean | null
+  marciante: boolean | null
+  va_in_moto: boolean | null
+  parti_mancanti: boolean | null
   note_veicolo: string | null
   indirizzo_ritiro: string | null
+  comune_ritiro: string | null
+  provincia_ritiro: string | null
   codice_fiscale: string | null
   nome_richiedente: string | null
   telefono: string | null
   ruolo_richiedente: string | null
   libretto: string | null
   certificato_proprieta: string | null
-  stato: string
-  creato_il: string
+  eredita: string | null
   demolitore_id: string | null
   data_ritiro_prevista: string | null
+  data_certificato_rottamazione: string | null
+  data_certificato_pra: string | null
+  stato: string
+  creato_il: string
 }
 
-const TIMELINE = [
-  { key: 'in_attesa_documenti', label: 'Pratica aperta' },
-  { key: 'in_attesa_assegnazione', label: 'Documenti verificati' },
-  { key: 'assegnata', label: 'Demolitore assegnato' },
-  { key: 'ritirata', label: 'Veicolo ritirato' },
-  { key: 'completata', label: 'Pratica completata' },
-]
+type Tab = 'documenti' | 'stato' | 'chat'
 
-const STATI_ORDINE = ['in_attesa_documenti', 'in_attesa_assegnazione', 'assegnata', 'ritirata', 'certificato_rottamazione_caricato', 'completata']
+function chatDemolitoreVisibile(stato: string): boolean {
+  const statiVisibili = [
+    'assegnata',
+    'in_attesa_conferma_cliente',
+    'ritiro_confermato',
+    'ritirata',
+    'in_attesa_cert_rottamazione',
+    'in_attesa_cert_radiazione_pra',
+  ]
+  return statiVisibili.includes(stato)
+}
 
-export default function DettaglioPratica() {
+function bannerInfo(p: Pratica): { emoji: string; titolo: string; sottotitolo: string; bg: string } {
+  switch (p.stato) {
+    case 'in_attesa_documenti':
+      return {
+        emoji: '📋',
+        titolo: 'Carica i tuoi documenti',
+        sottotitolo: 'Procedi al caricamento dei documenti per l\'assegnazione al demolitore',
+        bg: 'from-blue-600 to-blue-800',
+      }
+    case 'in_attesa_approvazione_admin':
+      return {
+        emoji: '⏳',
+        titolo: 'Stiamo verificando i tuoi documenti',
+        sottotitolo: 'Ti avviseremo entro 3 ore — non serve fare nulla',
+        bg: 'from-blue-600 to-blue-800',
+      }
+    case 'documenti_parzialmente_approvati':
+      return {
+        emoji: '⚠️',
+        titolo: 'Alcuni documenti vanno rifatti',
+        sottotitolo: 'Controlla il tab Documenti per i dettagli',
+        bg: 'from-red-500 to-red-700',
+      }
+    case 'da_assegnare':
+      return {
+        emoji: '✅',
+        titolo: 'Documenti approvati!',
+        sottotitolo: 'Stiamo assegnando un demolitore alla tua pratica',
+        bg: 'from-green-600 to-green-800',
+      }
+    case 'assegnata':
+    case 'in_attesa_conferma_cliente':
+      return {
+        emoji: '🔧',
+        titolo: 'Demolitore assegnato',
+        sottotitolo: 'Ti contatterà a breve per fissare il ritiro',
+        bg: 'from-blue-600 to-blue-800',
+      }
+    case 'ritiro_confermato':
+      return {
+        emoji: '📅',
+        titolo: 'Ritiro confermato',
+        sottotitolo: p.data_ritiro_prevista
+          ? `Il demolitore arriverà il ${new Date(p.data_ritiro_prevista).toLocaleDateString('it-IT', { day: '2-digit', month: 'long' })}`
+          : 'Data ritiro confermata',
+        bg: 'from-indigo-600 to-indigo-800',
+      }
+    case 'ritirata':
+    case 'in_attesa_cert_rottamazione':
+      return {
+        emoji: '🚚',
+        titolo: 'Veicolo ritirato',
+        sottotitolo: 'Stiamo preparando il certificato di rottamazione',
+        bg: 'from-purple-600 to-purple-800',
+      }
+    case 'in_attesa_cert_radiazione_pra':
+      return {
+        emoji: '📄',
+        titolo: 'In attesa radiazione PRA',
+        sottotitolo: 'Disponibile entro 15 giorni dal ritiro',
+        bg: 'from-teal-600 to-teal-800',
+      }
+    case 'completata':
+      return {
+        emoji: '🎉',
+        titolo: 'Pratica completata',
+        sottotitolo: 'Scarica i certificati dal tab Documenti',
+        bg: 'from-green-600 to-green-800',
+      }
+    case 'annullata':
+      return {
+        emoji: '❌',
+        titolo: 'Pratica annullata',
+        sottotitolo: 'Questa pratica non è più attiva',
+        bg: 'from-gray-500 to-gray-700',
+      }
+    default:
+      return {
+        emoji: '📋',
+        titolo: 'La tua pratica',
+        sottotitolo: 'Tutto sotto controllo',
+        bg: 'from-blue-600 to-blue-800',
+      }
+  }
+}
+
+function statoBadge(stato: string): { label: string; bg: string; text: string } {
+  switch (stato) {
+    case 'in_attesa_documenti': return { label: 'In attesa documenti', bg: 'bg-yellow-500/15 border border-yellow-400/40', text: 'text-yellow-200' }
+    case 'in_attesa_approvazione_admin': return { label: 'In verifica', bg: 'bg-blue-500/15 border border-blue-400/40', text: 'text-blue-200' }
+    case 'documenti_parzialmente_approvati': return { label: 'Documenti da rifare', bg: 'bg-red-500/15 border border-red-400/40', text: 'text-red-200' }
+    case 'da_assegnare': return { label: 'Approvata', bg: 'bg-green-500/15 border border-green-400/40', text: 'text-green-200' }
+    case 'assegnata':
+    case 'in_attesa_conferma_cliente':
+    case 'ritiro_confermato': return { label: 'Assegnata', bg: 'bg-blue-500/15 border border-blue-400/40', text: 'text-blue-200' }
+    case 'ritirata':
+    case 'in_attesa_cert_rottamazione':
+    case 'in_attesa_cert_radiazione_pra': return { label: 'In lavorazione', bg: 'bg-purple-500/15 border border-purple-400/40', text: 'text-purple-200' }
+    case 'completata': return { label: 'Completata', bg: 'bg-green-500/20 border border-green-400/50', text: 'text-green-200' }
+    case 'annullata': return { label: 'Annullata', bg: 'bg-gray-500/15 border border-gray-400/40', text: 'text-gray-300' }
+    default: return { label: stato, bg: 'bg-gray-500/15 border border-gray-400/40', text: 'text-gray-300' }
+  }
+}
+
+// ICONE SVG PROFESSIONALI
+function IconaDocumenti({ attivo }: { attivo: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={attivo ? 'text-white' : 'text-gray-400'}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="13" y2="17"/>
+    </svg>
+  )
+}
+
+function IconaStato({ attivo }: { attivo: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={attivo ? 'text-white' : 'text-gray-400'}>
+      <circle cx="5" cy="6" r="2"/>
+      <path d="M5 8 Q 5 12, 12 12 T 19 16"/>
+      <circle cx="12" cy="12" r="2"/>
+      <circle cx="19" cy="18" r="2"/>
+    </svg>
+  )
+}
+
+function IconaChat({ attivo }: { attivo: boolean }) {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={attivo ? 'text-white' : 'text-gray-400'}>
+      <rect x="3" y="5" width="18" height="14" rx="2"/>
+      <polyline points="3 7 12 13 21 7"/>
+    </svg>
+  )
+}
+
+export default function DettaglioPraticaCliente() {
   const router = useRouter()
   const params = useParams()
   const id = params.id as string
 
   const [pratica, setPratica] = useState<Pratica | null>(null)
   const [loading, setLoading] = useState(true)
-  const [activeChat, setActiveChat] = useState<'operatore' | 'demolitore'>('operatore')
-  const [messaggi, setMessaggi] = useState<{ testo: string; mittente: boolean; ora: string }[]>([])
-  const [nuovoMessaggio, setNuovoMessaggio] = useState('')
+  const [tab, setTab] = useState<Tab>('documenti')
+  // NEW: contiamo SOLO i documenti rifiutati
+  const [docRifiutati, setDocRifiutati] = useState(0)
+  const [chatNonLetti, setChatNonLetti] = useState(0)
+
+  const handleDocRifiutatiCambiati = useCallback((numero: number) => {
+    setDocRifiutati(prev => prev === numero ? prev : numero)
+  }, [])
 
   useEffect(() => {
     async function carica() {
@@ -62,7 +216,6 @@ export default function DettaglioPratica() {
         .eq('id', id)
         .eq('user_id', session.user.id)
         .single()
-
       if (error || !data) { router.push('/dashboard'); return }
       setPratica(data)
       setLoading(false)
@@ -70,17 +223,20 @@ export default function DettaglioPratica() {
     if (id) carica()
   }, [id, router])
 
-  function statoIndex() {
-    if (!pratica) return 0
-    return STATI_ORDINE.indexOf(pratica.stato)
-  }
-
-  function inviaMessaggio() {
-    if (!nuovoMessaggio.trim()) return
-    const ora = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-    setMessaggi(prev => [...prev, { testo: nuovoMessaggio, mittente: true, ora }])
-    setNuovoMessaggio('')
-  }
+  useEffect(() => {
+    async function contaNonLetti() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session || !pratica) return
+      const { count } = await supabase
+        .from('messaggi_chat')
+        .select('id', { count: 'exact', head: true })
+        .eq('pratica_id', pratica.id)
+        .eq('letto', false)
+        .neq('mittente_id', session.user.id)
+      setChatNonLetti(count || 0)
+    }
+    if (pratica) contaNonLetti()
+  }, [pratica, tab])
 
   if (loading) {
     return (
@@ -89,213 +245,116 @@ export default function DettaglioPratica() {
       </main>
     )
   }
-
   if (!pratica) return null
 
-  const statoIdx = statoIndex()
+  const banner = bannerInfo(pratica)
+  const badge = statoBadge(pratica.stato)
 
   return (
     <main className="min-h-screen bg-[#f0f4f8]">
-      <div className="bg-[#0d2144] px-6 py-4 flex items-center gap-4">
-        <button onClick={() => router.push('/dashboard')} className="text-blue-300 hover:text-white transition-colors text-sm flex items-center gap-1.5">
-          ← Indietro
+      {/* TOPBAR */}
+      <div className="bg-[#0d2144] px-4 py-3 flex items-center gap-3 sticky top-0 z-30">
+        <button onClick={() => router.push('/dashboard')} className="text-blue-300 hover:text-white text-lg leading-none p-1 -ml-1">
+          ←
         </button>
-        <span className="text-white font-medium text-sm">
-          Pratica {pratica.targa || '—'}
+        <div className="flex-1 min-w-0">
+          <div className="text-white text-sm font-semibold truncate">
+            {pratica.targa || 'Senza targa'}
+          </div>
+          {(pratica.marca || pratica.modello) && (
+            <div className="text-blue-300 text-[11px] truncate">
+              {[pratica.marca, pratica.modello].filter(Boolean).join(' ')}
+            </div>
+          )}
+        </div>
+        <span className={`flex-shrink-0 text-[10px] font-medium px-2.5 py-1 rounded-md ${badge.bg} ${badge.text}`}>
+          {badge.label}
         </span>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-6 flex flex-col gap-4">
+      <div className="max-w-2xl mx-auto px-3 py-3 flex flex-col gap-3">
 
-        {/* DATI VEICOLO */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
-            <span className="text-base">🚗</span>
-            <span className="font-semibold text-gray-800 text-sm">Dati veicolo</span>
-          </div>
-          <div className="p-5 grid grid-cols-2 gap-3">
-            {[
-              { label: 'Tipo mezzo', val: pratica.tipo_mezzo },
-              { label: 'Targa', val: pratica.targa },
-              { label: 'Anno', val: pratica.anno?.toString() },
-              { label: 'Chilometri', val: pratica.km ? `${pratica.km.toLocaleString('it-IT')} km` : null },
-              { label: 'Marca', val: pratica.marca },
-              { label: 'Modello', val: pratica.modello },
-              { label: 'Incidentato', val: pratica.incidentato ? 'Sì' : 'No' },
-              { label: 'Marciante', val: pratica.marciante ? 'Sì' : 'No' },
-            ].map((item, i) => (
-              <div key={i} className="bg-gray-50 rounded-xl p-3">
-                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">{item.label}</div>
-                <div className="text-sm font-medium text-gray-800">{item.val || '—'}</div>
-              </div>
-            ))}
-            {pratica.note_veicolo && (
-              <div className="col-span-2 bg-gray-50 rounded-xl p-3">
-                <div className="text-xs text-gray-400 uppercase tracking-wide mb-1">Annotazioni</div>
-                <div className="text-sm text-gray-800">{pratica.note_veicolo}</div>
-              </div>
-            )}
+        {/* BANNER STATO DINAMICO */}
+        <div className={`bg-gradient-to-br ${banner.bg} text-white rounded-2xl p-4 flex items-center gap-3 shadow-md`}>
+          <div className="text-3xl flex-shrink-0">{banner.emoji}</div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-bold leading-tight">{banner.titolo}</div>
+            <div className="text-xs opacity-90 mt-1 leading-snug">{banner.sottotitolo}</div>
           </div>
         </div>
 
-        {/* TIMELINE STATO */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
-            <span className="text-base">📍</span>
-            <span className="font-semibold text-gray-800 text-sm">Stato pratica</span>
-          </div>
-          <div className="p-5">
-            {TIMELINE.map((step, i) => {
-              const done = i < statoIdx
-              const current = i === statoIdx
-              const waiting = i > statoIdx
-              return (
-                <div key={step.key} className="flex gap-3 pb-4 last:pb-0">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${done ? 'bg-green-500 text-white' : current ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}>
-                      {done ? '✓' : current ? '●' : i + 1}
-                    </div>
-                    {i < TIMELINE.length - 1 && (
-                      <div className={`w-0.5 flex-1 mt-1 ${done ? 'bg-green-200' : 'bg-gray-100'}`} style={{ minHeight: 16 }} />
-                    )}
-                  </div>
-                  <div className="pt-0.5">
-                    <div className={`text-sm font-medium ${waiting ? 'text-gray-300' : 'text-gray-800'}`}>{step.label}</div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+        {/* TAB BAR */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-1 flex gap-1">
+          <TabButton
+            attivo={tab === 'documenti'}
+            onClick={() => setTab('documenti')}
+            Icona={IconaDocumenti}
+            label="Documenti"
+            badge={docRifiutati > 0 ? docRifiutati : 0}
+            badgeRosso
+          />
+          <TabButton
+            attivo={tab === 'stato'}
+            onClick={() => setTab('stato')}
+            Icona={IconaStato}
+            label="Stato"
+          />
+          <TabButton
+            attivo={tab === 'chat'}
+            onClick={() => setTab('chat')}
+            Icona={IconaChat}
+            label="Chat"
+            badge={chatNonLetti}
+            badgeRosso
+          />
         </div>
 
-        {/* DATI MANCANTI */}
-        {(!pratica.targa || !pratica.codice_fiscale) && (
-          <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
-              <span className="text-base">⚠️</span>
-              <span className="font-semibold text-gray-800 text-sm">Dati da completare</span>
-            </div>
-            <div className="p-5 flex flex-col gap-2">
-              {!pratica.targa && (
-                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-xl">
-                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-500 text-xs flex-shrink-0">✗</div>
-                  <span className="text-sm font-medium text-gray-800 flex-1">Targa veicolo</span>
-                  <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg cursor-pointer">Aggiungi</span>
-                </div>
-              )}
-              {!pratica.codice_fiscale && (
-                <div className="flex items-center gap-3 p-3 bg-red-50 rounded-xl">
-                  <div className="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-500 text-xs flex-shrink-0">✗</div>
-                  <span className="text-sm font-medium text-gray-800 flex-1">Codice fiscale</span>
-                  <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg cursor-pointer">Aggiungi</span>
-                </div>
-              )}
-            </div>
-          </div>
+        {/* CONTENUTO TAB */}
+        {tab === 'documenti' && (
+          <TabDocumenti
+            pratica={pratica}
+            onDocRifiutatiCambiati={handleDocRifiutatiCambiati}
+          />
         )}
-
-        {/* DOCUMENTI */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
-            <span className="text-base">📁</span>
-            <span className="font-semibold text-gray-800 text-sm">Documenti da consegnare al ritiro</span>
-          </div>
-          <div className="p-5 flex flex-col gap-2">
-            {[
-              { label: 'Carta d\'identità — fronte e retro', ok: false },
-              { label: 'Tessera sanitaria — fronte e retro', ok: false },
-              { label: pratica.libretto === 'si' ? 'Libretto di circolazione originale' : 'Denuncia smarrimento libretto', ok: false },
-              { label: pratica.certificato_proprieta === 'digitale' ? 'Certificato proprietà digitale ✓' : 'Certificato di proprietà', ok: pratica.certificato_proprieta === 'digitale' },
-            ].map((doc, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${doc.ok ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-500'}`}>
-                  {doc.ok ? '✓' : '✗'}
-                </div>
-                <span className="text-sm font-medium text-gray-800 flex-1">{doc.label}</span>
-                {!doc.ok && (
-                  <div className="flex gap-1">
-                    <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg cursor-pointer">📷</span>
-                    <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-1 rounded-lg cursor-pointer">Carica</span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CERTIFICATI */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
-            <span className="text-base">📄</span>
-            <span className="font-semibold text-gray-800 text-sm">Certificati</span>
-          </div>
-          <div className="p-5 flex flex-col gap-3">
-            {[
-              { label: 'Certificato di rottamazione', sub: 'Disponibile dopo il ritiro', ok: pratica.stato === 'completata' },
-              { label: 'Radiazione PRA', sub: 'Disponibile dopo 15 giorni dal ritiro', ok: false },
-            ].map((cert, i) => (
-              <div key={i} className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <span className="text-lg">📜</span>
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium text-gray-800">{cert.label}</div>
-                  <div className="text-xs text-gray-400 mt-0.5">{cert.sub}</div>
-                </div>
-                <div className={`text-xs font-medium px-3 py-1.5 rounded-lg ${cert.ok ? 'bg-blue-600 text-white cursor-pointer' : 'bg-gray-100 text-gray-400'}`}>
-                  {cert.ok ? '⬇ Scarica' : 'In attesa'}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CHAT */}
-        <div className="bg-white rounded-2xl overflow-hidden shadow-sm">
-          <div className="px-5 py-4 border-b border-gray-50 flex items-center gap-2">
-            <span className="text-base">💬</span>
-            <span className="font-semibold text-gray-800 text-sm">Messaggi</span>
-          </div>
-          <div className="flex border-b border-gray-50">
-            <button onClick={() => setActiveChat('operatore')} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeChat === 'operatore' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}>
-              Operatore NoiDemoliamo
-            </button>
-            <button onClick={() => setActiveChat('demolitore')} className={`flex-1 py-3 text-sm font-medium transition-colors ${activeChat === 'demolitore' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-400'}`}>
-              Demolitore
-            </button>
-          </div>
-          <div className="p-4 min-h-32 flex flex-col gap-2">
-            {messaggi.length === 0 ? (
-              <div className="flex-1 flex items-center justify-center text-sm text-gray-300 py-6">
-                Nessun messaggio ancora
-              </div>
-            ) : (
-              messaggi.map((m, i) => (
-                <div key={i} className={`flex ${m.mittente ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-xs px-3 py-2 rounded-xl text-sm ${m.mittente ? 'bg-blue-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-800 rounded-bl-sm'}`}>
-                    {m.testo}
-                    <div className={`text-xs mt-1 ${m.mittente ? 'text-blue-200' : 'text-gray-400'}`}>{m.ora}</div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-          <div className="flex gap-2 p-4 border-t border-gray-50">
-            <input
-              type="text"
-              value={nuovoMessaggio}
-              onChange={e => setNuovoMessaggio(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && inviaMessaggio()}
-              placeholder="Scrivi un messaggio..."
-              className="flex-1 border border-gray-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 bg-gray-50"
-            />
-            <button onClick={inviaMessaggio} className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white flex-shrink-0 hover:bg-blue-700 transition-colors">
-              →
-            </button>
-          </div>
-        </div>
+        {tab === 'stato' && <TabStato pratica={pratica} />}
+        {tab === 'chat' && (
+          <TabChat
+            pratica={pratica}
+            chatDemolitoreVisibile={chatDemolitoreVisibile(pratica.stato)}
+            praticaCompletata={pratica.stato === 'completata'}
+            onMessaggiLetti={() => setChatNonLetti(0)}
+          />
+        )}
 
       </div>
     </main>
+  )
+}
+
+function TabButton(props: {
+  attivo: boolean
+  onClick: () => void
+  Icona: React.ComponentType<{ attivo: boolean }>
+  label: string
+  badge?: number
+  badgeRosso?: boolean
+}) {
+  const { Icona } = props
+  const mostraBadge = (props.badge ?? 0) > 0
+  return (
+    <button
+      onClick={props.onClick}
+      className={`flex-1 rounded-xl py-3 px-2 flex flex-col items-center gap-1 transition-all relative min-h-[60px] ${
+        props.attivo ? 'bg-[#0d2144] text-white' : 'bg-transparent text-gray-500 hover:bg-gray-50'
+      }`}
+    >
+      <Icona attivo={props.attivo} />
+      <span className="text-xs font-medium">{props.label}</span>
+      {mostraBadge && (
+        <span className={`absolute top-2 right-3 min-w-[18px] h-[18px] text-[10px] font-bold px-1 rounded-full leading-none flex items-center justify-center bg-red-500 text-white`}>
+          {props.badge}
+        </span>
+      )}
+    </button>
   )
 }

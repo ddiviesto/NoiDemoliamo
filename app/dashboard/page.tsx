@@ -15,51 +15,58 @@ interface Pratica {
   creato_il: string
 }
 
-const STATO_LABEL: Record<string, { label: string; color: string }> = {
-  in_attesa_documenti: { label: 'In attesa documenti', color: 'bg-yellow-100 text-yellow-800' },
-  in_attesa_assegnazione: { label: 'In attesa assegnazione', color: 'bg-blue-100 text-blue-800' },
-  assegnata: { label: 'Demolitore assegnato', color: 'bg-indigo-100 text-indigo-800' },
-  ritirata: { label: 'Ritirata', color: 'bg-green-100 text-green-800' },
-  certificato_rottamazione_caricato: { label: 'Certificato caricato', color: 'bg-teal-100 text-teal-800' },
-  completata: { label: 'Completata', color: 'bg-green-100 text-green-800' },
-  annullata: { label: 'Annullata', color: 'bg-red-100 text-red-800' },
+// Mappa stato → etichetta + colore + emoji
+const STATO_INFO: Record<string, { label: string; bg: string; text: string; emoji: string }> = {
+  in_attesa_documenti: { label: 'In attesa documenti', bg: 'bg-yellow-100', text: 'text-yellow-800', emoji: '📄' },
+  in_attesa_approvazione_admin: { label: 'In verifica', bg: 'bg-blue-100', text: 'text-blue-800', emoji: '🔍' },
+  documenti_parzialmente_approvati: { label: 'Documenti da rifare', bg: 'bg-red-100', text: 'text-red-800', emoji: '⚠️' },
+  da_assegnare: { label: 'In attesa assegnazione', bg: 'bg-orange-100', text: 'text-orange-800', emoji: '⏳' },
+  assegnata: { label: 'Demolitore assegnato', bg: 'bg-blue-100', text: 'text-blue-800', emoji: '🔧' },
+  ritiro_confermato: { label: 'Ritiro confermato', bg: 'bg-indigo-100', text: 'text-indigo-800', emoji: '📅' },
+  ritirata: { label: 'Veicolo ritirato', bg: 'bg-purple-100', text: 'text-purple-800', emoji: '🚚' },
+  in_attesa_cert_rottamazione: { label: 'In attesa certificato', bg: 'bg-teal-100', text: 'text-teal-800', emoji: '⏳' },
+  in_attesa_cert_radiazione_pra: { label: 'In attesa PRA', bg: 'bg-teal-100', text: 'text-teal-800', emoji: '⏳' },
+  completata: { label: 'Completata', bg: 'bg-green-100', text: 'text-green-800', emoji: '✅' },
+  annullata: { label: 'Annullata', bg: 'bg-gray-200', text: 'text-gray-600', emoji: '❌' },
 }
 
-export default function Dashboard() {
+function infoStato(stato: string) {
+  return STATO_INFO[stato] || { label: stato, bg: 'bg-gray-100', text: 'text-gray-600', emoji: '•' }
+}
+
+export default function DashboardCliente() {
   const router = useRouter()
   const [pratiche, setPratiche] = useState<Pratica[]>([])
   const [loading, setLoading] = useState(true)
-  const [utente, setUtente] = useState<{ nome: string; email: string } | null>(null)
+  const [nomeUtente, setNomeUtente] = useState<string>('')
 
   useEffect(() => {
     async function carica() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
 
-      const userId = session.user.id
-
-      // Carica dati utente
-      const { data: utenteData } = await supabase
+      // Recupera dati utente
+      const { data: utente } = await supabase
         .from('utenti')
-        .select('nome, email')
-        .eq('id', userId)
+        .select('nome')
+        .eq('id', session.user.id)
         .single()
-      if (utenteData) setUtente(utenteData)
+      if (utente?.nome) setNomeUtente(utente.nome.split(' ')[0])
 
-      // Carica pratiche
-      const { data: praticheData } = await supabase
+      // Recupera pratiche dell'utente
+      const { data, error } = await supabase
         .from('pratiche')
         .select('id, targa, tipo_mezzo, marca, modello, indirizzo_ritiro, stato, creato_il')
-        .eq('user_id', userId)
+        .eq('user_id', session.user.id)
         .order('creato_il', { ascending: false })
-      if (praticheData) setPratiche(praticheData)
 
+      if (!error && data) setPratiche(data)
       setLoading(false)
     }
     carica()
   }, [router])
 
-  async function handleLogout() {
+  async function logout() {
     await supabase.auth.signOut()
     router.push('/')
   }
@@ -74,82 +81,84 @@ export default function Dashboard() {
 
   return (
     <main className="min-h-screen bg-[#f0f4f8]">
-      {/* TOP BAR */}
-      <div className="bg-[#0d2144] px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      {/* TOPBAR */}
+      <div className="bg-[#0d2144] px-4 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
           <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">N</div>
           <span className="text-white font-medium text-sm">NoiDemoliamo</span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="text-blue-200 text-sm">Ciao, {utente?.nome || utente?.email || 'Utente'}</span>
-          <button onClick={handleLogout} className="text-blue-300 hover:text-white text-sm transition-colors">Esci</button>
+        <div className="flex items-center gap-3">
+          {nomeUtente && <span className="text-blue-200 text-sm">Ciao, {nomeUtente}</span>}
+          <button onClick={logout} className="text-blue-300 hover:text-white text-sm transition-colors">Esci</button>
         </div>
       </div>
 
-      <div className="max-w-2xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-6">
 
-        {/* INTESTAZIONE */}
-        <div className="flex items-center justify-between mb-6">
+        {/* TITOLO */}
+        <div className="flex items-center justify-between mb-5">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Le tue pratiche</h1>
-            <p className="text-sm text-gray-500 mt-0.5">
-              {pratiche.length === 0 ? 'Nessuna pratica ancora' : `${pratiche.length} pratica${pratiche.length > 1 ? 'he' : 'a'} attiva${pratiche.length > 1 ? 'e' : ''}`}
-            </p>
+            <p className="text-xs text-gray-500 mt-0.5">{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
           </div>
           <button
             onClick={() => router.push('/inizia')}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all flex items-center gap-2"
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors"
           >
-            + Nuova pratica
+            <span className="text-lg leading-none">+</span> Nuova
           </button>
         </div>
 
         {/* LISTA PRATICHE */}
         {pratiche.length === 0 ? (
           <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-            <div className="text-4xl mb-3">🚗</div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">Nessuna pratica</h2>
-            <p className="text-sm text-gray-500 mb-4">Hai un veicolo da demolire? Inizia subito, è gratuito!</p>
+            <div className="text-4xl mb-3">📭</div>
+            <h2 className="text-base font-semibold text-gray-800 mb-1">Nessuna pratica</h2>
+            <p className="text-sm text-gray-500 mb-5">Inizia ora la tua prima richiesta di demolizione gratuita.</p>
             <button
               onClick={() => router.push('/inizia')}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-blue-700 transition-all"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-3 rounded-xl"
             >
-              Inizia ora 🚀
+              Richiedi demolizione
             </button>
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {pratiche.map(p => {
-              const stato = STATO_LABEL[p.stato] || { label: p.stato, color: 'bg-gray-100 text-gray-600' }
+              const s = infoStato(p.stato)
               return (
-                <div
+                <button
                   key={p.id}
                   onClick={() => router.push(`/dashboard/${p.id}`)}
-                  className="bg-white rounded-2xl p-5 shadow-sm cursor-pointer hover:shadow-md transition-all border border-transparent hover:border-blue-200"
+                  className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-blue-200 text-left"
                 >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <span className="text-lg font-bold text-gray-900 tracking-wide">
-                        {p.targa || '— Targa da inserire'}
-                      </span>
-                      <p className="text-sm text-gray-500 mt-0.5">
-                        {p.tipo_mezzo ? p.tipo_mezzo.charAt(0).toUpperCase() + p.tipo_mezzo.slice(1) : ''}
-                        {p.marca && p.modello ? ` · ${p.marca} ${p.modello}` : ''}
-                      </p>
+                  <div className="flex items-start justify-between gap-3 mb-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="text-base font-bold text-gray-900 truncate">
+                        {p.targa || '— Targa mancante'}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-0.5 truncate">
+                        {p.tipo_mezzo && <span className="capitalize">{p.tipo_mezzo}</span>}
+                        {p.marca && p.modello && <span> · {p.marca} {p.modello}</span>}
+                      </div>
                     </div>
-                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${stato.color}`}>
-                      {stato.label}
+                    <span className={`flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full ${s.bg} ${s.text} flex items-center gap-1`}>
+                      <span>{s.emoji}</span>
+                      <span className="hidden sm:inline">{s.label}</span>
                     </span>
                   </div>
+
                   {p.indirizzo_ritiro && (
-                    <p className="text-sm text-gray-400 flex items-center gap-1.5">
-                      <span>📍</span> {p.indirizzo_ritiro}
-                    </p>
+                    <div className="text-xs text-gray-500 flex items-center gap-1.5 mb-1.5">
+                      <span>📍</span>
+                      <span className="truncate">{p.indirizzo_ritiro}</span>
+                    </div>
                   )}
-                  <p className="text-xs text-gray-300 mt-2">
-                    Aperta il {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+
+                  <p className="text-[11px] text-gray-400 mt-2">
+                    {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
                   </p>
-                </div>
+                </button>
               )
             })}
           </div>
