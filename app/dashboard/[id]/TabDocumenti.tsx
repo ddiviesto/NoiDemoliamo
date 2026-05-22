@@ -14,6 +14,7 @@ interface Documento {
   caricato_il: string
   stato_approvazione?: 'approvato' | 'rifiutato' | 'in_attesa'
   nota_admin?: string | null
+  signed_url?: string | null
 }
 
 interface FotoPratica {
@@ -29,6 +30,56 @@ interface Props {
   pratica: Pratica
   /** Notifica al parent quanti documenti/foto sono stati rifiutati e richiedono attenzione */
   onDocRifiutatiCambiati?: (numero: number) => void
+}
+
+// ============================================================
+// STATI in cui il cliente PUO' ancora modificare/eliminare
+// ============================================================
+const STATI_MODIFICABILI_DA_CLIENTE = [
+  'in_attesa_documenti',
+  'in_attesa_approvazione_admin',
+  'documenti_parzialmente_approvati',
+  'da_assegnare',
+  'in_attesa_assegnazione',
+  'in_assegnazione_manuale',
+]
+
+function clientePuoEliminare(stato: string | null | undefined): boolean {
+  if (!stato) return true
+  return STATI_MODIFICABILI_DA_CLIENTE.includes(stato)
+}
+
+function isPdfUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  return /\.pdf($|\?)/i.test(url)
+}
+
+function isImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false
+  return /\.(jpg|jpeg|png|webp|gif)($|\?)/i.test(url)
+}
+
+function troncaNomeFile(nome: string | null, max = 14): string {
+  if (!nome) return 'File'
+  if (nome.length <= max) return nome
+  // Conserva l'estensione
+  const punto = nome.lastIndexOf('.')
+  if (punto > 0 && punto > nome.length - 6) {
+    const ext = nome.substring(punto)
+    const base = nome.substring(0, max - ext.length - 1)
+    return `${base}…${ext}`
+  }
+  return nome.substring(0, max - 1) + '…'
+}
+
+/** Estrae il path interno al bucket da una URL Supabase (pubblica o firmata) */
+function estraiPathBucket(url: string, bucket: string): string | null {
+  // Pubblica: .../object/public/<bucket>/<path>
+  // Firmata:  .../object/sign/<bucket>/<path>?token=...
+  const marker = `/${bucket}/`
+  const idx = url.indexOf(marker)
+  if (idx === -1) return null
+  return url.substring(idx + marker.length).split('?')[0]
 }
 
 function documentiRichiesti(p: Pratica): {
@@ -144,11 +195,39 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
   const [caricandoTipo, setCaricandoTipo] = useState<string | null>(null)
   const [caricamentoFoto, setCaricamentoFoto] = useState<{ fatte: number; totale: number } | null>(null)
+  const [confermaEliminaFoto, setConfermaEliminaFoto] = useState<FotoPratica | null>(null)
+  const [confermaEliminaDoc, setConfermaEliminaDoc] = useState<Documento | null>(null)
+  const [eliminazioneInCorso, setEliminazioneInCorso] = useState(false)
+
+  const puoEliminare = clientePuoEliminare(pratica.stato)
 
   useEffect(() => {
     carica()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pratica.id])
+
+  /** Genera URL firmate (1h) per ogni documento nel bucket privato */
+  async function aggiungiSignedUrls(docs: Documento[]): Promise<Documento[]> {
+    const risultati: Documento[] = []
+    for (const d of docs) {
+      const path = estraiPathBucket(d.url, 'documenti-pratiche')
+      if (!path) {
+        risultati.push({ ...d, signed_url: null })
+        continue
+      }
+      const { data, error } = await supabase
+        .storage
+        .from('documenti-pratiche')
+        .createSignedUrl(path, 3600)
+      if (error) {
+        console.error('Errore signed URL per', path, error)
+        risultati.push({ ...d, signed_url: null })
+      } else {
+        risultati.push({ ...d, signed_url: data?.signedUrl ?? null })
+      }
+    }
+    return risultati
+  }
 
   async function carica() {
     setLoading(true)
@@ -174,7 +253,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       mappaApprov.set(a.tipo_documento, { stato: a.stato, nota: a.nota_admin })
     }
 
-    const docsArricchiti: Documento[] = (docs || []).map(d => {
+    const docsBase: Documento[] = (docs || []).map(d => {
       const appr = mappaApprov.get(d.tipo)
       return {
         ...d,
@@ -182,6 +261,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         nota_admin: appr?.nota ?? null,
       }
     })
+
+    // Genera signed URLs per tutti i documenti
+    const docsArricchiti = await aggiungiSignedUrls(docsBase)
 
     const fotoArricchite: FotoPratica[] = (fotos || []).map(f => {
       const appr = mappaApprov.get(`foto:${f.id}`)
@@ -200,7 +282,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   // Notifica il parent: SOLO i documenti/foto rifiutati che richiedono attenzione
   useEffect(() => {
     if (!onDocRifiutatiCambiati) return
-    // Conta i TIPI di documento con almeno una riga rifiutata
     const richiesti = documentiRichiesti(pratica)
     const tipiRifiutati = richiesti.filter(r => {
       const righe = documenti.filter(d => d.tipo === r.tipo)
@@ -247,10 +328,47 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     setCaricandoTipo(null)
   }
 
-  async function eliminaDocumento(id: string) {
-    if (!confirm('Vuoi eliminare questo file?')) return
-    await supabase.from('documenti').delete().eq('id', id)
-    await carica()
+  async function eliminaDocumentoConfermato() {
+    if (!confermaEliminaDoc) return
+    setEliminazioneInCorso(true)
+    try {
+      // 1. Cancella file da Storage (estrai path dall'URL salvata)
+      const path = estraiPathBucket(confermaEliminaDoc.url, 'documenti-pratiche')
+      if (path) {
+        const { error: storageError } = await supabase.storage
+          .from('documenti-pratiche')
+          .remove([path])
+        if (storageError) {
+          console.error('Errore storage:', storageError)
+        }
+      }
+
+      // 2. Cancella riga da DB
+      const { error: delError } = await supabase
+        .from('documenti')
+        .delete()
+        .eq('id', confermaEliminaDoc.id)
+
+      if (delError) {
+        alert('Errore nell\'eliminazione: ' + delError.message)
+        setEliminazioneInCorso(false)
+        return
+      }
+
+      // 3. Reset approvazione del tipo
+      await supabase
+        .from('documenti_approvazione')
+        .delete()
+        .eq('pratica_id', pratica.id)
+        .eq('tipo_documento', confermaEliminaDoc.tipo)
+
+      await carica()
+    } catch (err) {
+      console.error('Errore eliminazione documento:', err)
+      alert('Errore nell\'eliminazione. Riprova.')
+    }
+    setEliminazioneInCorso(false)
+    setConfermaEliminaDoc(null)
   }
 
   async function uploadFotoExtra(files: File[]) {
@@ -277,6 +395,41 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     }
     setCaricamentoFoto(null)
     await carica()
+  }
+
+  async function eliminaFotoConfermata() {
+    if (!confermaEliminaFoto) return
+    setEliminazioneInCorso(true)
+    try {
+      const { error: delError } = await supabase
+        .from('foto_pratiche')
+        .delete()
+        .eq('id', confermaEliminaFoto.id)
+
+      if (delError) {
+        alert('Errore nell\'eliminazione: ' + delError.message)
+        setEliminazioneInCorso(false)
+        return
+      }
+
+      await supabase
+        .from('documenti_approvazione')
+        .delete()
+        .eq('pratica_id', pratica.id)
+        .eq('tipo_documento', `foto:${confermaEliminaFoto.id}`)
+
+      const path = estraiPathBucket(confermaEliminaFoto.url, 'foto-pratiche')
+      if (path) {
+        await supabase.storage.from('foto-pratiche').remove([path])
+      }
+
+      await carica()
+    } catch (err) {
+      console.error('Errore eliminazione foto:', err)
+      alert('Errore nell\'eliminazione. Riprova.')
+    }
+    setEliminazioneInCorso(false)
+    setConfermaEliminaFoto(null)
   }
 
   if (loading) {
@@ -323,9 +476,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
                 icona={r.icona}
                 multiplo={r.multiplo}
                 caricamentoInCorso={caricandoTipo === r.tipo}
+                eliminabile={puoEliminare}
                 onCaricaFile={(files) => uploadDocumento(files, r.tipo)}
                 onApri={(url, titolo) => setAnteprima({ url, titolo })}
-                onElimina={(id) => eliminaDocumento(id)}
+                onChiediElimina={(doc) => setConfermaEliminaDoc(doc)}
               />
             )
           })}
@@ -345,7 +499,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
                 key={f.id}
                 foto={f}
                 index={idx}
+                eliminabile={puoEliminare}
                 onApri={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })}
+                onChiediElimina={() => setConfermaEliminaFoto(f)}
               />
             ))}
           </div>
@@ -373,26 +529,167 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         )}
       </div>
 
+      {/* Modale anteprima foto/documento (immagini E PDF) */}
       {anteprima && (
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={() => setAnteprima(null)}
         >
-          <div className="bg-white rounded-2xl p-3 max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-3 px-2">
-              <p className="font-semibold text-gray-800 text-sm">{anteprima.titolo}</p>
-              <button onClick={() => setAnteprima(null)} className="text-gray-400 hover:text-gray-700 text-2xl leading-none">×</button>
+          <div
+            className="bg-white rounded-2xl p-3 max-w-4xl w-full h-[90vh] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-3 px-2 flex-shrink-0">
+              <p className="font-semibold text-gray-800 text-sm truncate">{anteprima.titolo}</p>
+              <div className="flex items-center gap-3 flex-shrink-0">
+                <a
+                  href={anteprima.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Apri in nuova scheda
+                </a>
+                <button
+                  onClick={() => setAnteprima(null)}
+                  className="text-gray-400 hover:text-gray-700 text-2xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
             </div>
             <div className="flex-1 overflow-auto">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={anteprima.url} alt={anteprima.titolo} className="w-full h-auto object-contain rounded-xl" />
+              {isPdfUrl(anteprima.url) ? (
+                <iframe
+                  src={anteprima.url}
+                  title={anteprima.titolo}
+                  className="w-full h-full rounded-xl border border-gray-200"
+                />
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={anteprima.url}
+                  alt={anteprima.titolo}
+                  className="w-full h-auto object-contain rounded-xl"
+                />
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* Modale conferma eliminazione foto veicolo */}
+      {confermaEliminaFoto && (
+        <ModaleConferma
+          titolo="Eliminare questa foto?"
+          sottotitolo="L'azione non può essere annullata."
+          urlAnteprima={confermaEliminaFoto.url}
+          inCorso={eliminazioneInCorso}
+          onAnnulla={() => setConfermaEliminaFoto(null)}
+          onConferma={eliminaFotoConfermata}
+        />
+      )}
+
+      {/* Modale conferma eliminazione documento */}
+      {confermaEliminaDoc && (
+        <ModaleConferma
+          titolo="Eliminare questo file?"
+          sottotitolo="L'azione non può essere annullata."
+          urlAnteprima={confermaEliminaDoc.signed_url || confermaEliminaDoc.url}
+          inCorso={eliminazioneInCorso}
+          onAnnulla={() => setConfermaEliminaDoc(null)}
+          onConferma={eliminaDocumentoConfermato}
+        />
+      )}
     </div>
   )
 }
+
+// ============================================================
+// MODALE DI CONFERMA (riusabile per foto e documenti)
+// ============================================================
+
+function ModaleConferma(props: {
+  titolo: string
+  sottotitolo: string
+  urlAnteprima: string
+  inCorso: boolean
+  onAnnulla: () => void
+  onConferma: () => void
+}) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+      onClick={() => !props.inCorso && props.onAnnulla()}
+    >
+      <div
+        className="bg-white rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/>
+              <path d="M10 11v6"/>
+              <path d="M14 11v6"/>
+              <path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900 text-sm">{props.titolo}</p>
+            <p className="text-xs text-gray-500 mt-0.5">{props.sottotitolo}</p>
+          </div>
+        </div>
+
+        <div className="w-full h-40 rounded-xl border border-gray-200 overflow-hidden bg-gray-50">
+          {isPdfUrl(props.urlAnteprima) ? (
+            <iframe
+              src={props.urlAnteprima}
+              title="Anteprima"
+              className="w-full h-full"
+            />
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img
+              src={props.urlAnteprima}
+              alt="Da eliminare"
+              className="w-full h-full object-cover"
+            />
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={props.onAnnulla}
+            disabled={props.inCorso}
+            className="bg-white border-2 border-gray-200 text-gray-700 hover:bg-gray-50 py-2.5 rounded-lg font-semibold text-xs disabled:opacity-50"
+          >
+            Annulla
+          </button>
+          <button
+            onClick={props.onConferma}
+            disabled={props.inCorso}
+            className="bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50"
+          >
+            {props.inCorso ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Elimino...
+              </>
+            ) : (
+              'Sì, elimina'
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// CARD DOCUMENTO RICHIESTO
+// ============================================================
 
 function DocumentoCard(props: {
   righe: Documento[]
@@ -401,9 +698,10 @@ function DocumentoCard(props: {
   icona: React.ReactNode
   multiplo?: boolean
   caricamentoInCorso: boolean
+  eliminabile: boolean
   onCaricaFile: (files: File[]) => void
   onApri: (url: string, titolo: string) => void
-  onElimina: (id: string) => void
+  onChiediElimina: (doc: Documento) => void
 }) {
   const inputCameraRef = useRef<HTMLInputElement>(null)
   const inputFileRef = useRef<HTMLInputElement>(null)
@@ -437,6 +735,9 @@ function DocumentoCard(props: {
     statusLabel = { text: '⏳ In verifica', color: 'text-yellow-700' }
   }
 
+  // X visibile solo se: cliente abilitato + non tutti approvati
+  const mostraX = props.eliminabile && !tuttiApprovati
+
   return (
     <div className={`${bg} border ${border} rounded-xl p-3`}>
       <div className="flex items-center gap-3 mb-2.5">
@@ -454,15 +755,16 @@ function DocumentoCard(props: {
       </div>
 
       {props.righe.length > 0 && (
-        <div className="flex gap-2 mb-2.5 flex-wrap">
+        <div className="flex gap-3 mb-2.5 flex-wrap">
           {props.righe.map((r, idx) => (
-            <FilePill
+            <FileMiniatura
               key={r.id}
               riga={r}
               numero={props.multiplo ? idx + 1 : null}
-              onApri={() => props.onApri(r.url, `${props.label} ${props.multiplo ? `(${idx + 1})` : ''}`)}
-              onElimina={() => props.onElimina(r.id)}
-              eliminabile={!tuttiApprovati && !inAttesa}
+              labelDoc={props.label}
+              eliminabile={mostraX}
+              onApri={() => props.onApri(r.signed_url || r.url, `${props.label}${props.multiplo ? ` (${idx + 1})` : ''}`)}
+              onChiediElimina={() => props.onChiediElimina(r)}
             />
           ))}
         </div>
@@ -505,44 +807,96 @@ function DocumentoCard(props: {
   )
 }
 
-function FilePill(props: {
+// ============================================================
+// MINIATURA SINGOLO FILE CARICATO (80x80) + nome file sotto
+// ============================================================
+
+function FileMiniatura(props: {
   riga: Documento
   numero: number | null
-  onApri: () => void
-  onElimina: () => void
+  labelDoc: string
   eliminabile: boolean
+  onApri: () => void
+  onChiediElimina: () => void
 }) {
-  const isImg = props.riga.url.match(/\.(jpg|jpeg|png|webp|gif)$/i)
+  const urlVisuale = props.riga.signed_url || props.riga.url
+  const urlPerTipo = props.riga.nome_file || props.riga.url
+  const isImg = isImageUrl(urlPerTipo) || isImageUrl(props.riga.url)
+  const isPdf = isPdfUrl(urlPerTipo) || isPdfUrl(props.riga.url)
+  const nomeMostrato = troncaNomeFile(props.riga.nome_file, 14)
+
   return (
-    <div className="relative group">
-      <button
-        onClick={props.onApri}
-        className="bg-white border border-gray-300 rounded-lg overflow-hidden flex items-center gap-2 px-2 py-1.5 hover:border-blue-400 transition-colors"
-      >
-        {isImg ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img src={props.riga.url} alt="" className="w-8 h-8 object-cover rounded" />
-        ) : (
-          <div className="w-8 h-8 bg-gray-100 rounded flex items-center justify-center text-[10px] text-gray-500 font-bold">
-            PDF
-          </div>
-        )}
-        <span className="text-xs text-gray-700 font-medium">
-          {props.numero ? `File ${props.numero}` : 'File'}
-        </span>
-      </button>
-      {props.eliminabile && (
+    <div className="flex flex-col items-center gap-1 w-20">
+      <div className="relative w-20 h-20">
         <button
-          onClick={props.onElimina}
-          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 hover:bg-red-600 text-white rounded-full text-[10px] flex items-center justify-center shadow-md"
-          title="Elimina"
+          onClick={props.onApri}
+          className="w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200 bg-white hover:border-blue-400 transition-colors relative block"
+          title={props.riga.nome_file || 'File'}
         >
-          ×
+          {isImg && urlVisuale && (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={urlVisuale} alt="" className="w-full h-full object-cover" />
+          )}
+          {isPdf && urlVisuale && (
+            <object
+              data={`${urlVisuale}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+              type="application/pdf"
+              className="w-full h-full pointer-events-none"
+              aria-label="Anteprima PDF"
+            >
+              <div className="w-full h-full bg-red-50 flex flex-col items-center justify-center">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                <span className="text-[9px] font-bold text-red-600 mt-1">PDF</span>
+              </div>
+            </object>
+          )}
+          {!isImg && !isPdf && (
+            <div className="w-full h-full bg-gray-100 flex flex-col items-center justify-center">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span className="text-[9px] font-bold text-gray-500 mt-1">FILE</span>
+            </div>
+          )}
+
+          {/* Numero in basso a sinistra (se documento multiplo) */}
+          {props.numero && (
+            <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] font-semibold rounded px-1.5 py-0.5 leading-none">
+              {props.numero}
+            </span>
+          )}
         </button>
-      )}
+
+        {props.eliminabile && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              props.onChiediElimina()
+            }}
+            className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm flex items-center justify-center shadow-md font-bold leading-none z-10"
+            title="Elimina file"
+            aria-label="Elimina file"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
+      {/* Nome file sotto la miniatura */}
+      <p className="text-[10px] text-gray-600 text-center leading-tight w-full break-words" title={props.riga.nome_file || ''}>
+        {nomeMostrato}
+      </p>
     </div>
   )
 }
+
+// ============================================================
+// UPLOAD FOTO VEICOLO EXTRA
+// ============================================================
 
 function UploadFotoExtra({ onUpload, disabilitato }: { onUpload: (files: File[]) => void; disabilitato: boolean }) {
   const inputCameraRef = useRef<HTMLInputElement>(null)
@@ -580,7 +934,17 @@ function UploadFotoExtra({ onUpload, disabilitato }: { onUpload: (files: File[])
   )
 }
 
-function FotoCard(props: { foto: FotoPratica; index: number; onApri: () => void }) {
+// ============================================================
+// FOTO DEL VEICOLO
+// ============================================================
+
+function FotoCard(props: {
+  foto: FotoPratica
+  index: number
+  eliminabile: boolean
+  onApri: () => void
+  onChiediElimina: () => void
+}) {
   const isApprovato = props.foto.stato_approvazione === 'approvato'
   const isRifiutato = props.foto.stato_approvazione === 'rifiutato'
 
@@ -589,15 +953,31 @@ function FotoCard(props: { foto: FotoPratica; index: number; onApri: () => void 
   const badgeIcon = isApprovato ? '✓' : isRifiutato ? '✗' : '•'
 
   return (
-    <button
-      onClick={props.onApri}
-      className={`aspect-square rounded-xl overflow-hidden border-2 ${bordo} relative bg-gray-100`}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={props.foto.url} alt={`Foto ${props.index + 1}`} className="w-full h-full object-cover" />
-      <span className={`absolute bottom-1.5 left-1.5 w-5 h-5 ${badgeBg} text-white text-[11px] font-bold rounded-full flex items-center justify-center leading-none shadow-sm`}>
-        {badgeIcon}
-      </span>
-    </button>
+    <div className="relative">
+      <button
+        onClick={props.onApri}
+        className={`w-full aspect-square rounded-xl overflow-hidden border-2 ${bordo} relative bg-gray-100`}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={props.foto.url} alt={`Foto ${props.index + 1}`} className="w-full h-full object-cover" />
+        <span className={`absolute bottom-1.5 left-1.5 w-5 h-5 ${badgeBg} text-white text-[11px] font-bold rounded-full flex items-center justify-center leading-none shadow-sm`}>
+          {badgeIcon}
+        </span>
+      </button>
+
+      {props.eliminabile && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            props.onChiediElimina()
+          }}
+          className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm flex items-center justify-center shadow-md font-bold leading-none z-10"
+          title="Elimina foto"
+          aria-label="Elimina foto"
+        >
+          ×
+        </button>
+      )}
+    </div>
   )
 }
