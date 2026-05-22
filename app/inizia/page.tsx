@@ -65,6 +65,8 @@ export default function IniziaPage() {
   const [error, setError] = useState('')
   const [indirizzoConfermato, setIndirizzoConfermato] = useState(false)
   const [foto, setFoto] = useState<File[]>([])
+  // Messaggio mostrato durante l'invio finale (così il cliente sa cosa sta succedendo)
+  const [loadingMessage, setLoadingMessage] = useState<string>('')
   const indirizzoRef = useRef<HTMLInputElement>(null)
   const fotoCameraRef = useRef<HTMLInputElement>(null)
   const fotoGalleriaRef = useRef<HTMLInputElement>(null)
@@ -105,10 +107,40 @@ export default function IniziaPage() {
     setFoto(prev => prev.filter((_, i) => i !== idx))
   }
 
+  // Carica una singola foto su Supabase Storage e ritorna l'URL pubblico.
+  // Path: <praticaId>/<timestamp>-<random>.<ext>
+  async function uploadFotoSuStorage(praticaId: string, file: File, index: number): Promise<string | null> {
+    try {
+      const ext = file.name.split('.').pop() || 'jpg'
+      const safeName = `${Date.now()}-${index}-${Math.random().toString(36).slice(2, 8)}.${ext}`
+      const path = `${praticaId}/${safeName}`
+      const { error: errUpload } = await supabase.storage
+        .from('foto-pratiche')
+        .upload(path, file, {
+          contentType: file.type || 'image/jpeg',
+          upsert: false,
+        })
+      if (errUpload) {
+        console.error('Errore upload foto:', errUpload)
+        return null
+      }
+      // Bucket pubblico → ottengo URL pubblico
+      const { data: publicData } = supabase.storage
+        .from('foto-pratiche')
+        .getPublicUrl(path)
+      return publicData?.publicUrl ?? null
+    } catch (err) {
+      console.error('Errore generico upload foto:', err)
+      return null
+    }
+  }
+
   async function handleSubmit() {
     setLoading(true)
     setError('')
+    setLoadingMessage('Creo il tuo account...')
     try {
+      // STEP 1 — Crea l'account su Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: dati.email,
         password: dati.password,
@@ -116,44 +148,78 @@ export default function IniziaPage() {
       if (authError) throw authError
       const userId = authData.user?.id
       if (!userId) throw new Error('Utente non creato')
-      const { error: dbError } = await supabase.from('pratiche').insert({
-        user_id: userId,
-        indirizzo_ritiro: dati.indirizzoSkipped ? null : dati.indirizzo,
-        targa: dati.targaSkipped ? null : dati.targa,
-        codice_fiscale: dati.cfSkipped ? null : dati.cf,
-        tipo_mezzo: dati.veicolo.tipo,
-        tipo_mezzo_altro: dati.veicolo.tipoAltro || null,
-        anno: dati.veicolo.anno ? parseInt(dati.veicolo.anno) : null,
-        km: dati.veicolo.km ? parseInt(dati.veicolo.km) : null,
-        marca: dati.veicolo.marca,
-        modello: dati.veicolo.modello,
-        incidentato: dati.veicolo.incidentato === 'si',
-        marciante: dati.veicolo.marciante === 'si',
-        va_in_moto: dati.veicolo.vaInMoto === 'si',
-        parti_mancanti: dati.veicolo.partiMancanti === 'si',
-        note_veicolo: dati.veicolo.note || null,
-        ruolo_richiedente: dati.ruolo,
-        eredita: dati.eredita,
-        libretto: dati.libretto,
-        certificato_proprieta: dati.cdc,
-        nome_richiedente: dati.nome,
-        telefono: dati.telefono,
-        stato: 'in_attesa_documenti',
-      })
+
+      // STEP 2 — Crea la pratica nel database
+      setLoadingMessage('Salvo la richiesta di demolizione...')
+      const { data: praticaCreata, error: dbError } = await supabase
+        .from('pratiche')
+        .insert({
+          user_id: userId,
+          indirizzo_ritiro: dati.indirizzoSkipped ? null : dati.indirizzo,
+          targa: dati.targaSkipped ? null : dati.targa,
+          codice_fiscale: dati.cfSkipped ? null : dati.cf,
+          tipo_mezzo: dati.veicolo.tipo,
+          tipo_mezzo_altro: dati.veicolo.tipoAltro || null,
+          anno: dati.veicolo.anno ? parseInt(dati.veicolo.anno) : null,
+          km: dati.veicolo.km ? parseInt(dati.veicolo.km) : null,
+          marca: dati.veicolo.marca,
+          modello: dati.veicolo.modello,
+          incidentato: dati.veicolo.incidentato === 'si',
+          marciante: dati.veicolo.marciante === 'si',
+          va_in_moto: dati.veicolo.vaInMoto === 'si',
+          parti_mancanti: dati.veicolo.partiMancanti === 'si',
+          note_veicolo: dati.veicolo.note || null,
+          ruolo_richiedente: dati.ruolo,
+          eredita: dati.eredita,
+          libretto: dati.libretto,
+          certificato_proprieta: dati.cdc,
+          nome_richiedente: dati.nome,
+          telefono: dati.telefono,
+          stato: 'in_attesa_documenti',
+        })
+        .select('id')
+        .single()
       if (dbError) throw dbError
+      if (!praticaCreata) throw new Error('Pratica non creata')
+      const praticaId = praticaCreata.id
+
+      // STEP 3 — Carica le foto (se ce ne sono) su Storage e salvale nel DB
+      if (foto.length > 0) {
+        setLoadingMessage(`Carico le tue foto (0/${foto.length})...`)
+        const urlSalvate: string[] = []
+        for (let i = 0; i < foto.length; i++) {
+          setLoadingMessage(`Carico le tue foto (${i + 1}/${foto.length})...`)
+          const url = await uploadFotoSuStorage(praticaId, foto[i], i)
+          if (url) urlSalvate.push(url)
+        }
+        // Salvataggio nel DB delle URL caricate (una riga per ogni foto)
+        if (urlSalvate.length > 0) {
+          const righe = urlSalvate.map(url => ({
+            pratica_id: praticaId,
+            url,
+          }))
+          const { error: errFoto } = await supabase.from('foto_pratiche').insert(righe)
+          if (errFoto) console.error('Errore salvataggio righe foto_pratiche:', errFoto)
+        }
+      }
+
+      // STEP 4 — Crea utente in tabella `utenti`
+      setLoadingMessage('Finalizzo la registrazione...')
       await supabase.from('utenti').insert({
-  id: userId,
-  nome: dati.nome,
-  email: dati.email,
-  telefono: dati.telefono,
-  tipo: 'cliente',
-  stato: 'attivo',
-})
+        id: userId,
+        nome: dati.nome,
+        email: dati.email,
+        telefono: dati.telefono,
+        tipo: 'cliente',
+        stato: 'attivo',
+      })
+
       router.push('/dashboard')
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Errore imprevisto. Riprova.')
     } finally {
       setLoading(false)
+      setLoadingMessage('')
     }
   }
 
@@ -161,7 +227,7 @@ export default function IniziaPage() {
     <main className="min-h-screen bg-[#f0f4f8] flex items-start justify-center p-4 pt-8">
       <div className="bg-white rounded-3xl w-full max-w-md shadow-sm p-7">
 
-        {curIdx > 0 && (
+        {curIdx > 0 && !loading && (
           <button onClick={back} className="inline-flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50 transition-all mb-5">
             ← Indietro
           </button>
@@ -280,6 +346,7 @@ export default function IniziaPage() {
                   <div className="grid grid-cols-3 gap-2">
                     {foto.map((f, i) => (
                       <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={URL.createObjectURL(f)} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
                         <button onClick={() => rimuoviFoto(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">✕</button>
                       </div>
@@ -384,7 +451,7 @@ export default function IniziaPage() {
                 <input type="password" defaultValue={dati.password} onChange={e => update({ password: e.target.value })} placeholder="••••••••" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all" />
               </div>
               <button onClick={handleSubmit} disabled={!dati.email || !dati.password || loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.email && dati.password && !loading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                {loading ? 'Invio in corso...' : 'Invia richiesta 🚀'}
+                {loading ? (loadingMessage || 'Invio in corso...') : 'Invia richiesta 🚀'}
               </button>
             </div>
           </>

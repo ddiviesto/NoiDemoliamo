@@ -194,6 +194,7 @@ export default function AdminDashboard() {
             { label: 'Gestione demolitori', icon: '🏭', path: '/admin/demolitori' },
             { label: 'Gestione collaboratori', icon: '🤝', path: '/admin/collaboratori' },
             { label: 'Gestione utenti', icon: '👥', path: '/admin/utenti' },
+            { label: 'Mappa copertura', icon: '🗺️', path: '/admin/copertura' },
             { label: 'Impostazioni', icon: '⚙️', path: '/admin/impostazioni' },
           ].map((item, i) => (
             <button
