@@ -1,6 +1,6 @@
 export type TipoMezzo =
   | 'autovettura'
-  | 'motociclo'
+  | 'motoveicolo'
   | 'ciclomotore'
   | 'minicar'
   | 'imbarcazione'

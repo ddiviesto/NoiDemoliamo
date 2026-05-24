@@ -2,18 +2,389 @@
 
 import { useRef, useState } from 'react'
 import Image from 'next/image'
-import { DatiPratica, datiPraticaIniziali } from '../../types/pratica'
+import { DatiPratica, datiPraticaIniziali, TipoMezzo } from '../../types/pratica'
 import { Step3Veicolo } from './steps/Step3Veicolo'
+import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-function SkipButton({ onClick, label }: { onClick: () => void; label: string }) {
+// ============================================================
+// ICONE SVG GENERALI
+// ============================================================
+
+function IconaOrologio({ size = 16, color = '#9ca3af' }: { size?: number; color?: string }) {
   return (
-    <button onClick={onClick} className="w-full border border-dashed border-gray-300 rounded-xl py-3 text-sm text-gray-400 hover:border-blue-300 hover:text-blue-500 hover:bg-blue-50 transition-all">
-      🕐 {label}
-    </button>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <polyline points="12 7 12 12 15 14"/>
+    </svg>
   )
 }
+
+function IconaPin() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  )
+}
+
+function IconaCF() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2"/>
+      <circle cx="9" cy="11" r="2"/>
+      <path d="M6 16c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5"/>
+      <line x1="14" y1="10" x2="18" y2="10"/>
+      <line x1="14" y1="13" x2="18" y2="13"/>
+      <line x1="14" y1="16" x2="17" y2="16"/>
+    </svg>
+  )
+}
+
+function IconaFoto() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+      <circle cx="12" cy="13" r="4"/>
+    </svg>
+  )
+}
+
+function IconaRuolo() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  )
+}
+
+function IconaEredita() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="9" y1="13" x2="15" y2="13"/>
+      <line x1="9" y1="17" x2="15" y2="17"/>
+    </svg>
+  )
+}
+
+function IconaLibretto() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+    </svg>
+  )
+}
+
+function IconaCDC() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <circle cx="12" cy="15" r="2"/>
+      <path d="M12 12v-1"/>
+    </svg>
+  )
+}
+
+function IconaAnagrafica() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+    </svg>
+  )
+}
+
+function IconaAccount() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  )
+}
+
+// ============================================================
+// ICONE VEICOLI (per banner dinamico)
+// ============================================================
+
+function IconaVAutovettura() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+        <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/>
+        <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6"/>
+      </g>
+    </svg>
+  )
+}
+
+function IconaVMotociclo() {
+  return (
+    <svg width="22" height="20" viewBox="0 0 640 512">
+      <path fill="currentColor" d="M280 32c-13.3 0-24 10.7-24 24s10.7 24 24 24h57.7l16.4 30.3L256 192l-45.3-45.3c-12-12-28.3-18.7-45.3-18.7H64c-17.7 0-32 14.3-32 32v32h96c88.4 0 160 71.6 160 160c0 11-1.1 21.7-3.2 32h70.4c-2.1-10.3-3.2-21-3.2-32c0-52.2 25-98.6 63.7-127.8l15.4 28.6C402.4 276.3 384 312 384 352c0 70.7 57.3 128 128 128s128-57.3 128-128s-57.3-128-128-128c-13.5 0-26.5 2.1-38.7 6l-55.1-102H480c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32h-20.4c-7.5 0-14.7 2.6-20.5 7.4l-47.4 39.5l-14-26c-7-12.9-20.5-21-35.2-21zm182.7 279.2l28.2 52.2c6.3 11.7 20.9 16 32.5 9.7s16-20.9 9.7-32.5l-28.2-52.2c2.3-.3 4.7-.4 7.1-.4c35.3 0 64 28.7 64 64s-28.7 64-64 64s-64-28.7-64-64c0-15.5 5.5-29.7 14.7-40.8M187.3 376c-9.5 23.5-32.5 40-59.3 40c-35.3 0-64-28.7-64-64s28.7-64 64-64c26.9 0 49.9 16.5 59.3 40h66.4c-11.2-59.2-63.2-104-125.7-104C57.3 224 0 281.3 0 352s57.3 128 128 128c62.5 0 114.5-44.8 125.8-104h-66.4zm-59.3 8a32 32 0 1 0 0-64a32 32 0 1 0 0 64"/>
+    </svg>
+  )
+}
+
+function IconaVCiclomotore() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5a3 3 0 1 0-6 0m6 0h3m-3 0c0 .903-.399 1.713-1.03 2.263M9 5H6m3 0c0 .903.399 1.713 1.03 2.263M14 20h2a2 2 0 0 0 2-2v-5c0-1.692-.859-4.816-4.03-5.737M14 20a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v0m4 0v-5a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v5m0 0H8a2 2 0 0 1-2-2v-5c0-1.692.859-4.816 4.03-5.737m3.94 0A3 3 0 0 1 12 8a3 3 0 0 1-1.97-.737"/>
+    </svg>
+  )
+}
+
+function IconaVMinicar() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M18.5 11H17v-1c0-3.31-2.69-6-6-6s-6 2.69-6 6v1.05c-.75.11-1.44.43-1.98.97A3.52 3.52 0 0 0 2 14.5c0 1.42.83 2.63 2.04 3.18c-.01.11-.04.21-.04.32c0 1.65 1.35 3 3 3s3-1.35 3-3h4c0 1.65 1.35 3 3 3s3-1.35 3-3c0-.11-.03-.21-.04-.32c.38-.17.72-.41 1.02-.71A3.52 3.52 0 0 0 22 14.49c0-1.93-1.57-3.5-3.5-3.5ZM12 6.14c1.72.45 3 2 3 3.86v1h-3zM7 10c0-1.86 1.28-3.41 3-3.86V11H7zm0 9c-.55 0-1-.45-1-1c0-.15.04-.31.11-.45c.01-.02.02-.03.03-.05c.28-.47.91-.59 1.35-.35c.15.08.28.2.37.36c.09.15.13.32.13.49c0 .55-.45 1-1 1Zm10 0a1.003 1.003 0 0 1-.87-1.5c.36-.63 1.35-.64 1.73 0c.01.02.02.04.03.05c.07.14.11.29.11.45c0 .55-.45 1-1 1m2.56-3.44c-.13.13-.29.24-.45.31l-.03-.03c-.04-.04-.08-.06-.12-.1c-.14-.12-.28-.23-.43-.32c-.06-.04-.13-.07-.19-.1q-.225-.105-.45-.18l-.2-.06c-.22-.05-.45-.09-.69-.09s-.49.04-.72.09c-.07.02-.14.05-.21.07c-.16.05-.31.11-.45.19c-.07.04-.15.08-.22.13c-.14.09-.26.18-.38.29c-.06.05-.12.1-.18.16c-.02.03-.05.04-.08.07H9.23s-.05-.05-.08-.07c-.05-.06-.11-.1-.17-.16q-.18-.165-.39-.3c-.07-.04-.14-.09-.21-.12c-.15-.08-.3-.14-.46-.19c-.07-.02-.14-.05-.21-.07q-.345-.09-.72-.09c-.375 0-.47.04-.69.09l-.2.06q-.24.075-.45.18c-.07.03-.13.07-.19.1c-.15.09-.3.2-.43.32c-.04.03-.08.06-.11.09l-.03.03c-.53-.23-.89-.76-.89-1.37c0-.4.16-.79.44-1.06c.28-.28.67-.44 1.06-.44h13c.83 0 1.5.67 1.5 1.5c0 .4-.16.79-.44 1.06Z"/>
+    </svg>
+  )
+}
+
+function IconaVImbarcazione() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 36 36">
+      <path fill="currentColor" d="M29.1 27.1c-1.1-.1-2.2.3-3.1 1.1c-1.1 1.1-2.9 1.1-4.1 0c-1-.7-2.1-1.1-3.3-1.1c-1.2-.1-2.4.3-3.3 1.1c-.6.5-1.3.8-2.1.8s-1.5-.3-2.1-.8c-1-.8-2.2-1.2-3.4-1.2s-2.4.4-3.4 1.2c-.6.5-1.5.8-2.3.8v2c1.3.1 2.6-.3 3.6-1.2c.6-.5 1.5-.8 2.3-.8c.7 0 1.5.3 2.1.8c1.8 1.6 4.6 1.6 6.5 0c.6-.5 1.3-.8 2.1-.8c.7 0 1.4.3 2 .8c1.9 1.6 4.6 1.6 6.5 0c.5-.5 1.3-.8 2-.8s1.4.3 1.9.8q1.35 1.05 3 1.2v-2c-1 0-1.2-.4-1.7-.8c-.9-.7-2-1.1-3.2-1.1"/>
+      <path fill="currentColor" d="M6 23c0-.6.5-1 1.1-1H32l-3.5 3.1h.2c.8 0 1.6.2 2.2.5l2.5-2.2l.2-.2c.7-.8.6-2.1-.2-2.8c-.4-.2-.8-.4-1.3-.4h-25c-1.7 0-3 1.3-3 3v3.2c.5-.5 1.2-.8 1.9-1.1z"/>
+      <path fill="currentColor" d="M8.9 19H15v-7.8c0-.6-.3-1.2-.8-1.6c-.9-.7-2.2-.5-2.8.4l-4.1 5.9c-.4.6-.4 1.4-.1 2.1c.3.6 1 1 1.7 1m4.2-7.8L13 17H8.9z"/>
+      <path fill="currentColor" d="M26 18c.4-.6.4-1.4 0-2L19.7 5.6c-.4-.6-1-1-1.7-1c-1.1 0-2 .9-2 2V19h8.3c.7 0 1.4-.4 1.7-1M17.9 6.6l6.4 10.5h-6.4z"/>
+    </svg>
+  )
+}
+
+function IconaVPullman() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path fill="currentColor" fillRule="evenodd" d="M12 2C8.229 2 6.343 2 5.172 3.172C4.108 4.235 4.01 5.886 4 9H3a1 1 0 0 0-1 1v1a1 1 0 0 0 .4.8L4 13c.01 3.114.108 4.765 1.172 5.828c.242.243.514.435.828.587V21a1 1 0 0 0 1 1h1.5a1 1 0 0 0 1-1v-1.018C10.227 20 11.054 20 12 20s1.773 0 2.5-.018V21a1 1 0 0 0 1 1H17a1 1 0 0 0 1-1v-1.585a3 3 0 0 0 .828-.587C19.892 17.765 19.991 16.114 20 13l1.6-1.2a1 1 0 0 0 .4-.8v-1a1 1 0 0 0-1-1h-1c-.01-3.114-.108-4.765-1.172-5.828C17.657 2 15.771 2 12 2M5.5 9.5c0 1.414 0 2.121.44 2.56c.439.44 1.146.44 2.56.44h7c1.414 0 2.121 0 2.56-.44c.44-.439.44-1.146.44-2.56V7c0-1.414 0-2.121-.44-2.56C17.622 4 16.915 4 15.5 4h-7c-1.414 0-2.121 0-2.56.44C5.5 4.878 5.5 5.585 5.5 7zm.75 6.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H7a.75.75 0 0 1-.75-.75m11.5 0a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0 0 1.5H17a.75.75 0 0 0 .75-.75" clipRule="evenodd"/>
+    </svg>
+  )
+}
+
+function IconaVCamion() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path fill="currentColor" d="M1 12.5v5a1 1 0 0 0 1 1h1a3 3 0 0 0 6 0h6a3 3 0 0 0 6 0h1a1 1 0 0 0 1-1v-12a3 3 0 0 0-3-3h-9a3 3 0 0 0-3 3v2H6a3 3 0 0 0-2.4 1.2l-2.4 3.2a.6.6 0 0 0-.07.14l-.06.11a1 1 0 0 0-.07.35m16 6a1 1 0 1 1 1 1a1 1 0 0 1-1-1m-7-13a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v11h-.78a3 3 0 0 0-4.44 0H10Zm-2 6H4l1.2-1.6a1 1 0 0 1 .8-.4h2Zm-3 7a1 1 0 1 1 1 1a1 1 0 0 1-1-1m-2-5h5v2.78a3 3 0 0 0-4.22.22H3Z"/>
+    </svg>
+  )
+}
+
+function IconaVVelivolo() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <g fill="none">
+        <path fill="currentColor" fillOpacity=".16" d="M10.292 7.043c0-3.478.424-5.043 1.698-5.043c1.273 0 1.708 1.565 1.708 5.043V8.74l6.238 3.957c.425.304.57.804.552 1.304v2l-6.532-2.62a.4.4 0 0 0-.548.345l-.304 4.753l2.376 1.348c.212.13.34.391.34.652L15.507 22l-3.517-1.174L8.483 22l-.313-1.522c0-.26.127-.522.34-.652l2.376-1.348l-.304-4.753a.4.4 0 0 0-.548-.345L3.502 16v-2c-.019-.5.127-1 .551-1.304l6.239-3.957z"/>
+        <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="10" strokeWidth="1.5" d="M10.292 7.043c0-3.478.424-5.043 1.698-5.043c1.273 0 1.708 1.565 1.708 5.043V8.74l6.238 3.957c.425.304.57.804.552 1.304v2l-6.532-2.62a.4.4 0 0 0-.548.345l-.304 4.753l2.376 1.348c.212.13.34.391.34.652L15.507 22l-3.517-1.174L8.483 22l-.313-1.522c0-.26.127-.522.34-.652l2.376-1.348l-.304-4.753a.4.4 0 0 0-.548-.345L3.502 16v-2c-.019-.5.127-1 .551-1.304l6.239-3.957z"/>
+      </g>
+    </svg>
+  )
+}
+
+function IconaVAltro() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <line x1="6" y1="12" x2="18" y2="12"/>
+      <line x1="12" y1="6" x2="12" y2="18"/>
+    </svg>
+  )
+}
+
+const ICONE_VEICOLO: Record<TipoMezzo, () => React.ReactNode> = {
+  autovettura: IconaVAutovettura,
+  motoveicolo: IconaVMotociclo,
+  ciclomotore: IconaVCiclomotore,
+  minicar: IconaVMinicar,
+  imbarcazione: IconaVImbarcazione,
+  pullman: IconaVPullman,
+  camion: IconaVCamion,
+  velivolo: IconaVVelivolo,
+  altro: IconaVAltro,
+}
+
+// ============================================================
+// FRASI DINAMICHE basate sul tipo veicolo selezionato
+// ============================================================
+
+function articolo(tipo: TipoMezzo | null): string {
+  if (!tipo) return 'il veicolo'
+  const map: Record<TipoMezzo, string> = {
+    autovettura: "l'autovettura",
+    motoveicolo: 'il motoveicolo',
+    ciclomotore: 'il ciclomotore',
+    minicar: 'la minicar',
+    imbarcazione: "l'imbarcazione",
+    pullman: 'il pullman',
+    camion: 'il camion',
+    velivolo: 'il velivolo',
+    altro: 'il mezzo',
+  }
+  return map[tipo]
+}
+
+function articoloDel(tipo: TipoMezzo | null): string {
+  if (!tipo) return 'del veicolo'
+  const map: Record<TipoMezzo, string> = {
+    autovettura: "dell'autovettura",
+    motoveicolo: 'del motoveicolo',
+    ciclomotore: 'del ciclomotore',
+    minicar: 'della minicar',
+    imbarcazione: "dell'imbarcazione",
+    pullman: 'del pullman',
+    camion: 'del camion',
+    velivolo: 'del velivolo',
+    altro: 'del mezzo',
+  }
+  return map[tipo]
+}
+
+function pronomeTuo(tipo: TipoMezzo | null): string {
+  if (!tipo) return 'tuo veicolo'
+  const map: Record<TipoMezzo, string> = {
+    autovettura: 'tua autovettura',
+    motoveicolo: 'tuo motoveicolo',
+    ciclomotore: 'tuo ciclomotore',
+    minicar: 'tua minicar',
+    imbarcazione: 'tua imbarcazione',
+    pullman: 'tuo pullman',
+    camion: 'tuo camion',
+    velivolo: 'tuo velivolo',
+    altro: 'tuo mezzo',
+  }
+  return map[tipo]
+}
+
+// Nome capitalizzato del veicolo per i banner (sempre Maiuscolo: "Autovettura", "Motoveicolo")
+function nomeVeicolo(tipo: TipoMezzo | null): string {
+  if (!tipo) return 'Veicolo'
+  const map: Record<TipoMezzo, string> = {
+    autovettura: 'Autovettura',
+    motoveicolo: 'Motoveicolo',
+    ciclomotore: 'Ciclomotore',
+    minicar: 'Minicar',
+    imbarcazione: 'Imbarcazione',
+    pullman: 'Pullman',
+    camion: 'Camion',
+    velivolo: 'Velivolo',
+    altro: 'Altro mezzo',
+  }
+  return map[tipo]
+}
+
+// ============================================================
+// META STEP (icona + titolo banner)
+// ============================================================
+
+interface StepMeta {
+  icona: () => React.ReactNode
+  titoloBanner: string
+  titoloPagina: string
+  sottoPagina?: string
+}
+
+function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
+  // VEICOLO: usa icona+titolo dinamici se tipo già scelto
+  if (stepKey === 'veicolo') {
+    const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
+    return {
+      icona: Icona,
+      titoloBanner: tipo ? `Dati: ${nomeVeicolo(tipo)}` : 'Tipo di veicolo',
+      titoloPagina: tipo ? `Dettagli ${articoloDel(tipo)}` : 'Che tipo di veicolo è?',
+      sottoPagina: tipo
+        ? 'Compila tutte le informazioni sul mezzo.'
+        : 'Seleziona il tipo di mezzo per iniziare. Tutti gli step successivi saranno personalizzati.',
+    }
+  }
+
+  const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaPin
+
+  switch (stepKey) {
+    case 'indirizzo':
+      return {
+        icona: Icona,
+        titoloBanner: `Indirizzo: ${nomeVeicolo(tipo)}`,
+        titoloPagina: `Dove si trova ${articolo(tipo)}?`,
+        sottoPagina: `Inserisci l'indirizzo esatto dove si trova fisicamente ${articolo(tipo)}: il demolitore verrà lì a ritirarlo.`,
+      }
+    case 'targa':
+      return {
+        icona: Icona,
+        titoloBanner: `Targa: ${nomeVeicolo(tipo)}`,
+        titoloPagina: `Qual è la targa ${articoloDel(tipo)}?`,
+        sottoPagina: 'Ci serve per verificare eventuali fermi amministrativi.',
+      }
+    case 'cf':
+      return {
+        icona: IconaCF,
+        titoloBanner: 'Codice fiscale',
+        titoloPagina: "Codice fiscale dell'intestatario",
+        sottoPagina: 'Deve essere il CF di chi risulta proprietario al PRA.',
+      }
+    case 'foto':
+      return {
+        icona: IconaFoto,
+        titoloBanner: `Foto: ${nomeVeicolo(tipo)}`,
+        titoloPagina: `Foto ${articoloDel(tipo)}`,
+        sottoPagina: `Le foto ci aiutano a capire le condizioni ${articoloDel(tipo)} e a scegliere il mezzo di trasporto più adatto per il ritiro.`,
+      }
+    case 'ruolo':
+      return {
+        icona: IconaRuolo,
+        titoloBanner: 'La tua posizione',
+        titoloPagina: `Qual è la tua posizione rispetto ${articoloDel(tipo)}?`,
+        sottoPagina: 'Seleziona la situazione corretta per determinare i documenti necessari.',
+      }
+    case 'eredita':
+      return {
+        icona: IconaEredita,
+        titoloBanner: 'Eredità',
+        titoloPagina: "Gli eredi accettano o rinunciano all'eredità?",
+        sottoPagina: 'Questo determina quale modulo notarile va allegato alla pratica.',
+      }
+    case 'libretto':
+      return {
+        icona: IconaLibretto,
+        titoloBanner: `Libretto: ${nomeVeicolo(tipo)}`,
+        titoloPagina: `Hai il libretto di circolazione ${articoloDel(tipo)}?`,
+        sottoPagina: 'Il libretto originale va consegnato al demolitore al momento del ritiro. Così riceverai il primo documento per bloccare o spostare l\'assicurazione.',
+      }
+    case 'cdc':
+      return {
+        icona: IconaCDC,
+        titoloBanner: 'Certificato di proprietà',
+        titoloPagina: 'Certificato di proprietà',
+        sottoPagina: 'Il certificato è necessario per la radiazione al PRA.',
+      }
+    case 'anagrafica':
+      return {
+        icona: IconaAnagrafica,
+        titoloBanner: 'I tuoi contatti',
+        titoloPagina: 'I tuoi dati di contatto',
+        sottoPagina: 'Ci servono per aggiornare sulla pratica e fissare il ritiro.',
+      }
+    case 'account':
+      return {
+        icona: IconaAccount,
+        titoloBanner: 'Crea il tuo account',
+        titoloPagina: 'Crea il tuo account',
+        sottoPagina: `Potrai seguire la pratica, caricare i documenti e scaricare il certificato di rottamazione direttamente dall'app.`,
+      }
+    default:
+      return {
+        icona: IconaPin,
+        titoloBanner: '',
+        titoloPagina: '',
+      }
+  }
+}
+
+// ============================================================
 
 function OptionButton({ icon, label, sub, selected, onClick }: { icon: string; label: string; sub: string; selected: boolean; onClick: () => void }) {
   return (
@@ -49,13 +420,43 @@ function InfoBadge({ children }: { children: React.ReactNode }) {
 }
 
 function getSteps(dati: DatiPratica) {
-  const base = ['indirizzo', 'targa', 'cf', 'veicolo', 'foto', 'ruolo', 'libretto', 'cdc', 'anagrafica', 'account']
+  const base = ['veicolo', 'indirizzo', 'targa', 'cf', 'foto', 'ruolo', 'libretto', 'cdc', 'anagrafica', 'account']
   if (dati.ruolo === 'deceduto') {
     const idx = base.indexOf('libretto')
     base.splice(idx, 0, 'eredita')
   }
   return base
 }
+
+// ============================================================
+function BannerStep({ stepKey, curIdx, total, tipo, onBack }: { stepKey: string; curIdx: number; total: number; tipo: TipoMezzo | null; onBack: () => void }) {
+  const meta = getStepMeta(stepKey, tipo)
+  const Icona = meta.icona
+
+  return (
+    <div className="-mx-7 -mt-7 mb-5 px-4 py-3 bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] rounded-t-3xl flex items-center gap-3 text-white">
+      <button
+        onClick={onBack}
+        className="bg-white/85 hover:bg-white text-blue-700 rounded-lg px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0 shadow-sm transition-all"
+      >
+        ← Indietro
+      </button>
+      <div className="flex-1 flex items-center justify-center gap-3 min-w-0">
+        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
+          <Icona />
+        </div>
+        <div className="flex flex-col min-w-0">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">
+            Passo {curIdx + 1} di {total}
+          </div>
+          <div className="text-sm font-semibold leading-tight truncate">{meta.titoloBanner}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 
 export default function IniziaPage() {
   const router = useRouter()
@@ -64,10 +465,9 @@ export default function IniziaPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [indirizzoConfermato, setIndirizzoConfermato] = useState(false)
+  const [datiIndirizzoExtra, setDatiIndirizzoExtra] = useState<DatiIndirizzo | null>(null)
   const [foto, setFoto] = useState<File[]>([])
-  // Messaggio mostrato durante l'invio finale (così il cliente sa cosa sta succedendo)
   const [loadingMessage, setLoadingMessage] = useState<string>('')
-  const indirizzoRef = useRef<HTMLInputElement>(null)
   const fotoCameraRef = useRef<HTMLInputElement>(null)
   const fotoGalleriaRef = useRef<HTMLInputElement>(null)
 
@@ -75,6 +475,8 @@ export default function IniziaPage() {
   const curStep = steps[curIdx]
   const total = steps.length
   const pct = Math.round((curIdx / (total - 1)) * 100)
+  const tipo = dati.veicolo.tipo
+  const meta = getStepMeta(curStep, tipo)
 
   function update(partial: Partial<DatiPratica>) {
     setDati(prev => ({ ...prev, ...partial }))
@@ -89,10 +491,9 @@ export default function IniziaPage() {
     if (curIdx > 0) setCurIdx(i => i - 1)
   }
 
-  function confermaIndirizzo() {
-    const val = indirizzoRef.current?.value || ''
-    if (!val.trim()) return
-    update({ indirizzo: val, indirizzoSkipped: false })
+  function onSelezioneIndirizzo(d: DatiIndirizzo) {
+    setDatiIndirizzoExtra(d)
+    update({ indirizzo: d.indirizzo, indirizzoSkipped: false })
     setIndirizzoConfermato(true)
   }
 
@@ -107,8 +508,6 @@ export default function IniziaPage() {
     setFoto(prev => prev.filter((_, i) => i !== idx))
   }
 
-  // Carica una singola foto su Supabase Storage e ritorna l'URL pubblico.
-  // Path: <praticaId>/<timestamp>-<random>.<ext>
   async function uploadFotoSuStorage(praticaId: string, file: File, index: number): Promise<string | null> {
     try {
       const ext = file.name.split('.').pop() || 'jpg'
@@ -124,7 +523,6 @@ export default function IniziaPage() {
         console.error('Errore upload foto:', errUpload)
         return null
       }
-      // Bucket pubblico → ottengo URL pubblico
       const { data: publicData } = supabase.storage
         .from('foto-pratiche')
         .getPublicUrl(path)
@@ -140,7 +538,6 @@ export default function IniziaPage() {
     setError('')
     setLoadingMessage('Creo il tuo account...')
     try {
-      // STEP 1 — Crea l'account su Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: dati.email,
         password: dati.password,
@@ -149,13 +546,17 @@ export default function IniziaPage() {
       const userId = authData.user?.id
       if (!userId) throw new Error('Utente non creato')
 
-      // STEP 2 — Crea la pratica nel database
       setLoadingMessage('Salvo la richiesta di demolizione...')
       const { data: praticaCreata, error: dbError } = await supabase
         .from('pratiche')
         .insert({
           user_id: userId,
           indirizzo_ritiro: dati.indirizzoSkipped ? null : dati.indirizzo,
+          comune_ritiro: datiIndirizzoExtra?.comune || null,
+          provincia_ritiro: datiIndirizzoExtra?.provincia || null,
+          cap_ritiro: datiIndirizzoExtra?.cap || null,
+          lat: datiIndirizzoExtra?.lat || null,
+          lng: datiIndirizzoExtra?.lng || null,
           targa: dati.targaSkipped ? null : dati.targa,
           codice_fiscale: dati.cfSkipped ? null : dati.cf,
           tipo_mezzo: dati.veicolo.tipo,
@@ -183,7 +584,6 @@ export default function IniziaPage() {
       if (!praticaCreata) throw new Error('Pratica non creata')
       const praticaId = praticaCreata.id
 
-      // STEP 3 — Carica le foto (se ce ne sono) su Storage e salvale nel DB
       if (foto.length > 0) {
         setLoadingMessage(`Carico le tue foto (0/${foto.length})...`)
         const urlSalvate: string[] = []
@@ -192,7 +592,6 @@ export default function IniziaPage() {
           const url = await uploadFotoSuStorage(praticaId, foto[i], i)
           if (url) urlSalvate.push(url)
         }
-        // Salvataggio nel DB delle URL caricate (una riga per ogni foto)
         if (urlSalvate.length > 0) {
           const righe = urlSalvate.map(url => ({
             pratica_id: praticaId,
@@ -203,7 +602,6 @@ export default function IniziaPage() {
         }
       }
 
-      // STEP 4 — Crea utente in tabella `utenti`
       setLoadingMessage('Finalizzo la registrazione...')
       await supabase.from('utenti').insert({
         id: userId,
@@ -224,16 +622,19 @@ export default function IniziaPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f0f4f8] flex items-start justify-center p-4 pt-8">
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-sm p-7">
+    <main className="min-h-screen flex items-start justify-center p-4 pt-8" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-lg p-7">
 
-        {curIdx > 0 && !loading && (
-          <button onClick={back} className="inline-flex items-center gap-1.5 border border-gray-200 rounded-lg px-3 py-1.5 text-sm text-gray-500 hover:text-gray-800 hover:border-gray-300 hover:bg-gray-50 transition-all mb-5">
-            ← Indietro
-          </button>
-        )}
+        {/* Banner colorato in cima con bottone Indietro a sinistra */}
+        <BannerStep
+          stepKey={curStep}
+          curIdx={curIdx}
+          total={total}
+          tipo={tipo}
+          onBack={curIdx > 0 ? back : () => router.push('/')}
+        />
 
-        <div className="flex items-center gap-2.5 mb-5">
+        <div className="flex items-center gap-2.5 mb-4">
           <div className="w-9 h-9 bg-[#0d2144] rounded-xl flex items-center justify-center overflow-hidden">
             <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={36} height={36} className="rounded-xl" />
           </div>
@@ -244,74 +645,10 @@ export default function IniziaPage() {
           <div className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
         </div>
 
-        <div className="text-xs text-gray-400 uppercase tracking-widest mb-3">
-          Passo {curIdx + 1} di {total}
-        </div>
-
-        {curStep === 'indirizzo' && (
-          <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Dove si trova il veicolo?</h1>
-            <p className="text-sm text-gray-500 mb-4">Inserisci l&apos;indirizzo esatto dove si trova fisicamente il veicolo.</p>
-            <WarnBadge><strong>Attenzione:</strong> inserisci dove si trova il veicolo, non la tua residenza. Il demolitore verrà lì a ritirarlo.</WarnBadge>
-            <div className="mt-4 flex flex-col gap-3">
-              {indirizzoConfermato ? (
-                <>
-                  <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">✓</div>
-                    <div className="flex-1 text-sm font-medium text-green-800">{dati.indirizzo}</div>
-                    <button onClick={() => { update({ indirizzo: '' }); setIndirizzoConfermato(false) }} className="text-xs text-green-600 underline">Cambia</button>
-                  </div>
-                  <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-all">Continua →</button>
-                </>
-              ) : (
-                <>
-                  <input ref={indirizzoRef} type="text" placeholder="Es. Via Garibaldi 8, Roma" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all" onKeyDown={e => e.key === 'Enter' && confermaIndirizzo()} />
-                  <button onClick={confermaIndirizzo} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-all">Verifica copertura →</button>
-                  <SkipButton onClick={() => { update({ indirizzo: '', indirizzoSkipped: true }); next() }} label="Al momento non ricordo — lo inserisco dopo" />
-                </>
-              )}
-            </div>
-          </>
-        )}
-
-        {curStep === 'targa' && (
-          <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Qual è la targa del veicolo?</h1>
-            <p className="text-sm text-gray-500 mb-4">Ci serve per verificare eventuali fermi amministrativi.</p>
-            <div className="flex flex-col gap-3">
-              {dati.targaSkipped && (
-                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
-                  <span>🕐</span><span>Hai saltato questo campo — puoi completarlo dalla tua area personale.</span>
-                </div>
-              )}
-              <input type="text" defaultValue={dati.targa} onChange={e => update({ targa: e.target.value.toUpperCase(), targaSkipped: false })} placeholder="Es. AB 123 CD" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all uppercase" />
-              <button onClick={next} disabled={!dati.targa && !dati.targaSkipped} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.targa || dati.targaSkipped ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
-              {!dati.targaSkipped && <SkipButton onClick={() => { update({ targa: '', targaSkipped: true }); next() }} label="Non ricordo, la inserisco dopo" />}
-            </div>
-          </>
-        )}
-
-        {curStep === 'cf' && (
-          <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Codice fiscale dell&apos;intestatario</h1>
-            <p className="text-sm text-gray-500 mb-4">Deve essere il CF di chi risulta proprietario al PRA.</p>
-            <div className="flex flex-col gap-3">
-              {dati.cfSkipped && (
-                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
-                  <span>🕐</span><span>Hai saltato questo campo — puoi completarlo dalla tua area personale.</span>
-                </div>
-              )}
-              <input type="text" defaultValue={dati.cf} onChange={e => update({ cf: e.target.value.toUpperCase(), cfSkipped: false })} placeholder="Es. RSSMRA80A01H501Z" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all uppercase tracking-wider" maxLength={16} />
-              <button onClick={next} disabled={!dati.cf && !dati.cfSkipped} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.cf || dati.cfSkipped ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
-              {!dati.cfSkipped && <SkipButton onClick={() => { update({ cf: '', cfSkipped: true }); next() }} label="Non ricordo, lo inserisco dopo" />}
-            </div>
-          </>
-        )}
-
         {curStep === 'veicolo' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Dati del veicolo</h1>
-            <p className="text-sm text-gray-500 mb-4">Seleziona il tipo di mezzo e compila le informazioni.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
             <Step3Veicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -320,10 +657,95 @@ export default function IniziaPage() {
           </>
         )}
 
+        {curStep === 'indirizzo' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <div className="flex flex-col gap-3">
+              {indirizzoConfermato ? (
+                <>
+                  <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
+                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1 text-sm font-medium text-green-800">{dati.indirizzo}</div>
+                    <button
+                      onClick={() => { update({ indirizzo: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null) }}
+                      className="bg-white border border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
+                    >
+                      Cambia
+                    </button>
+                  </div>
+                  <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-all">Continua →</button>
+                </>
+              ) : (
+                <>
+                  <AutocompleteIndirizzo
+                    valoreIniziale={dati.indirizzo}
+                    onSelezione={onSelezioneIndirizzo}
+                  />
+                  <p className="text-[11px] text-gray-400 -mt-1 px-1">
+                    Inizia a digitare e seleziona un suggerimento per confermare.
+                  </p>
+                </>
+              )}
+            </div>
+          </>
+        )}
+
+        {curStep === 'targa' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                defaultValue={dati.targa}
+                onChange={e => update({ targa: e.target.value.toUpperCase(), targaSkipped: false })}
+                placeholder="Es. AB 123 CD"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all uppercase"
+              />
+              <button
+                onClick={next}
+                disabled={!dati.targa}
+                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.targa ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+              >
+                Continua →
+              </button>
+            </div>
+          </>
+        )}
+
+        {curStep === 'cf' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                defaultValue={dati.cf}
+                onChange={e => update({ cf: e.target.value.toUpperCase(), cfSkipped: false })}
+                placeholder="Es. RSSMRA80A01H501Z"
+                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all uppercase tracking-wider"
+                maxLength={16}
+              />
+              <button
+                onClick={next}
+                disabled={!dati.cf}
+                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.cf ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+              >
+                Continua →
+              </button>
+            </div>
+          </>
+        )}
+
         {curStep === 'foto' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Foto del veicolo</h1>
-            <p className="text-sm text-gray-500 mb-3">Le foto ci aiutano a capire le condizioni del veicolo e a scegliere il mezzo di trasporto più adatto per il ritiro. Più foto carichi, più veloce sarà il processo.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-3">{meta.sottoPagina} Più foto carichi, più veloce sarà il processo.</p>
             <InfoBadge>Scatta foto da diverse angolazioni: frontale, posteriore, laterali e abitacolo. Non serve che siano perfette!</InfoBadge>
             <div className="mt-4 flex flex-col gap-3">
               <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFoto} className="hidden" />
@@ -363,11 +785,11 @@ export default function IniziaPage() {
 
         {curStep === 'ruolo' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Qual è la tua posizione rispetto al veicolo?</h1>
-            <p className="text-sm text-gray-500 mb-4">Seleziona la situazione corretta per determinare i documenti necessari.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             {dati.ruolo === 'delegato' && <InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge>}
             <div className="flex flex-col gap-2 mt-2">
-              <OptionButton icon="👤" label="Sono il proprietario" sub="Il veicolo è intestato a me" selected={dati.ruolo === 'proprietario'} onClick={() => update({ ruolo: 'proprietario' })} />
+              <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo).charAt(0).toUpperCase() + pronomeTuo(tipo).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => update({ ruolo: 'proprietario' })} />
               <OptionButton icon="📋" label="Sono un delegato" sub="Il proprietario mi ha autorizzato per iscritto" selected={dati.ruolo === 'delegato'} onClick={() => update({ ruolo: 'delegato' })} />
               <OptionButton icon="⚰️" label="Il proprietario è deceduto" sub="Gestisco la pratica come erede o avente diritto" selected={dati.ruolo === 'deceduto'} onClick={() => update({ ruolo: 'deceduto' })} />
             </div>
@@ -377,8 +799,8 @@ export default function IniziaPage() {
 
         {curStep === 'eredita' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Gli eredi accettano o rinunciano all&apos;eredità?</h1>
-            <p className="text-sm text-gray-500 mb-4">Questo determina quale modulo notarile va allegato alla pratica.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <WarnBadge>In base alla scelta verrà generato il modulo notarile corretto da scaricare nell&apos;area personale.</WarnBadge>
             <div className="flex flex-col gap-2 mt-3">
               <OptionButton icon="✅" label="Gli eredi accettano l'eredità" sub="Serve atto notarile di accettazione firmato" selected={dati.eredita === 'accetta'} onClick={() => update({ eredita: 'accetta' })} />
@@ -390,8 +812,8 @@ export default function IniziaPage() {
 
         {curStep === 'libretto' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Hai il libretto di circolazione?</h1>
-            <p className="text-sm text-gray-500 mb-4">Il libretto originale va consegnato al demolitore al momento del ritiro. Così riceverai il primo documento per bloccare o spostare l&apos;assicurazione.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-2">
               <OptionButton icon="📗" label="Sì, ho il libretto originale" sub="Documento disponibile e integro" selected={dati.libretto === 'si'} onClick={() => update({ libretto: 'si' })} />
               <OptionButton icon="🔍" label="Ho la denuncia di smarrimento" sub="Emessa da autorità pubblica" selected={dati.libretto === 'denuncia'} onClick={() => update({ libretto: 'denuncia' })} />
@@ -403,8 +825,8 @@ export default function IniziaPage() {
 
         {curStep === 'cdc' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Certificato di proprietà</h1>
-            <p className="text-sm text-gray-500 mb-4">Il certificato è necessario per la radiazione al PRA.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-2">
               <OptionButton icon="💻" label="Digitale — nel fascicolo elettronico" sub="Non serve consegnarlo fisicamente" selected={dati.cdc === 'digitale'} onClick={() => update({ cdc: 'digitale' })} />
               <OptionButton icon="📄" label="Cartaceo — ce l'ho" sub="Lo consegno al demolitore" selected={dati.cdc === 'cartaceo'} onClick={() => update({ cdc: 'cartaceo' })} />
@@ -416,8 +838,8 @@ export default function IniziaPage() {
 
         {curStep === 'anagrafica' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">I tuoi dati di contatto</h1>
-            <p className="text-sm text-gray-500 mb-3">Ci servono per aggiornare sulla pratica e fissare il ritiro.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-3">{meta.sottoPagina}</p>
             <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800 mb-4">
               <span className="flex-shrink-0">🎁</span>
               <span><strong>Ritiro completamente gratuito</strong> — nessun costo nascosto, nessuna sorpresa.</span>
@@ -438,8 +860,8 @@ export default function IniziaPage() {
 
         {curStep === 'account' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Crea il tuo account</h1>
-            <p className="text-sm text-gray-500 mb-4">Potrai seguire la pratica, caricare i documenti e scaricare il certificato di rottamazione direttamente dall&apos;app.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3">⚠️ {error}</div>}
             <div className="flex flex-col gap-3">
               <div>
