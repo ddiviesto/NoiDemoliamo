@@ -80,16 +80,6 @@ function IconaVelivolo() {
   )
 }
 
-function IconaAltro() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9" />
-      <line x1="6" y1="12" x2="18" y2="12" />
-      <line x1="12" y1="6" x2="12" y2="18" />
-    </svg>
-  )
-}
-
 // ============================================================
 // CONFIGURAZIONE
 // ============================================================
@@ -112,71 +102,32 @@ const TIPI_MEZZO_BASE: { value: TipoMezzo; icon: () => React.ReactNode; label: s
 const TIPI_MEZZO_ALTRO: { value: TipoMezzo; icon: () => React.ReactNode; label: string }[] = [
   { value: 'imbarcazione', icon: IconaImbarcazione, label: 'Imbarcazione' },
   { value: 'velivolo', icon: IconaVelivolo, label: 'Velivolo' },
-  { value: 'altro', icon: IconaAltro, label: 'Altro mezzo' },
+  { value: 'altro', icon: () => (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9" />
+      <line x1="6" y1="12" x2="18" y2="12" />
+      <line x1="12" y1="6" x2="12" y2="18" />
+    </svg>
+  ), label: 'Altro mezzo' },
 ]
 
 const TIPI_DENTRO_ALTRO: TipoMezzo[] = ['imbarcazione', 'velivolo', 'altro']
 
-type ToggleValue = 'si' | 'no' | null
-
-interface Errors {
-  tipo?: string
-  tipoAltro?: string
-  anno?: string
-  km?: string
-  marca?: string
-  modello?: string
-  incidentato?: string
-  marciante?: string
-  vaInMoto?: string
-  partiMancanti?: string
-}
-
-function nomeCapitalizzato(tipo: TipoMezzo | null): string {
-  if (!tipo) return 'veicolo'
-  const map: Record<TipoMezzo, string> = {
-    autovettura: 'Autovettura', motoveicolo: 'Motoveicolo', ciclomotore: 'Ciclomotore',
-    minicar: 'Minicar', imbarcazione: 'Imbarcazione', pullman: 'Pullman',
-    camion: 'Camion', velivolo: 'Velivolo', altro: 'Mezzo',
-  }
-  return map[tipo]
-}
-
-// Genere del mezzo per accordo aggettivo (incidentato/incidentata)
-function isFemminile(tipo: TipoMezzo | null): boolean {
-  if (!tipo) return false
-  return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'imbarcazione'
-}
-
-function labelVaInMoto(): string {
-  return 'Va in moto?'
-}
-
 // ============================================================
-// COMPONENTE PRINCIPALE
+// COMPONENTE
 // ============================================================
 
-export function Step3Veicolo({ dati, onUpdate, onNext }: Props) {
-  const [errors, setErrors] = useState<Errors>({})
-  const [showBanner, setShowBanner] = useState(false)
+export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
+  const [errore, setErrore] = useState(false)
+  const [erroreAltro, setErroreAltro] = useState(false)
   const [altroAperto, setAltroAperto] = useState<boolean>(
     dati.tipo !== null && TIPI_DENTRO_ALTRO.includes(dati.tipo)
   )
 
-  function update(field: keyof DatiVeicolo, value: string | TipoMezzo | null) {
-    onUpdate({ [field]: value })
-    setErrors(prev => ({ ...prev, [field]: undefined }))
-    setShowBanner(false)
-  }
-
-  function togUpdate(field: 'incidentato' | 'marciante' | 'vaInMoto' | 'partiMancanti', val: ToggleValue) {
-    onUpdate({ [field]: val })
-    setErrors(prev => ({ ...prev, [field]: undefined }))
-    setShowBanner(false)
-  }
-
   function selezionaTipo(tipo: TipoMezzo) {
-    update('tipo', tipo)
+    onUpdate({ tipo })
+    setErrore(false)
+    setErroreAltro(false)
     if (!TIPI_DENTRO_ALTRO.includes(tipo)) {
       setAltroAperto(false)
     }
@@ -184,60 +135,38 @@ export function Step3Veicolo({ dati, onUpdate, onNext }: Props) {
 
   function toggleAltro() {
     setAltroAperto(prev => !prev)
-  }
-
-  function validate(): Errors {
-    const e: Errors = {}
-    if (!dati.tipo) e.tipo = 'Seleziona il tipo di mezzo'
-    if (dati.tipo === 'altro' && !dati.tipoAltro.trim()) e.tipoAltro = 'Specifica il tipo di mezzo'
-    if (!dati.anno.trim()) e.anno = "Inserisci l'anno di immatricolazione"
-    if (!dati.km.trim()) e.km = 'Inserisci i chilometri'
-    if (!dati.marca.trim()) e.marca = 'Inserisci la marca'
-    if (!dati.modello.trim()) e.modello = 'Inserisci il modello'
-    if (!dati.incidentato) e.incidentato = 'Seleziona una risposta'
-    if (!dati.marciante) e.marciante = 'Seleziona una risposta'
-    if (!dati.vaInMoto) e.vaInMoto = 'Seleziona una risposta'
-    if (!dati.partiMancanti) e.partiMancanti = 'Seleziona una risposta'
-    return e
+    setErrore(false)
   }
 
   function handleContinua() {
-    const e = validate()
-    if (Object.keys(e).length > 0) {
-      setErrors(e)
-      setShowBanner(true)
-      const firstKey = Object.keys(e)[0]
-      const el = document.getElementById(`field-${firstKey}`)
-      el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    if (!dati.tipo) {
+      setErrore(true)
+      return
+    }
+    if (dati.tipo === 'altro' && !dati.tipoAltro.trim()) {
+      setErroreAltro(true)
       return
     }
     onNext()
   }
 
-  const errCount = Object.keys(validate()).length
-  const n = nomeCapitalizzato(dati.tipo)
-  const fem = isFemminile(dati.tipo)
-
   const isAltroSelezionato = dati.tipo !== null && TIPI_DENTRO_ALTRO.includes(dati.tipo)
+  const continueDisabled = !dati.tipo || (dati.tipo === 'altro' && !dati.tipoAltro.trim())
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
 
-      {/* Banner errori */}
-      {showBanner && (
+      {/* Errore */}
+      {errore && (
         <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
           <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
-          <span>
-            {errCount === 1
-              ? 'Completa il campo mancante per continuare.'
-              : `Completa ${errCount} campi mancanti per continuare.`}
-          </span>
+          <span>Seleziona un tipo di veicolo per continuare.</span>
         </div>
       )}
 
-      {/* TIPO MEZZO — griglia principale 4+3 */}
-      <div id="field-tipo">
-        <div className={`grid grid-cols-4 gap-2 ${errors.tipo ? 'p-1 rounded-xl ring-1 ring-red-300 bg-red-50/30' : ''}`}>
+      {/* TIPO MEZZO — griglia 4+3 */}
+      <div>
+        <div className={`grid grid-cols-4 gap-2 ${errore ? 'p-1 rounded-xl ring-1 ring-red-300 bg-red-50/30' : ''}`}>
           {TIPI_MEZZO_BASE.map(t => {
             const Icona = t.icon
             const isSelected = dati.tipo === t.value
@@ -254,7 +183,7 @@ export function Step3Veicolo({ dati, onUpdate, onNext }: Props) {
                 {isSelected && (
                   <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-blue-600 flex items-center justify-center">
                     <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12"/>
+                      <polyline points="20 6 9 17 4 12" />
                     </svg>
                   </div>
                 )}
@@ -266,7 +195,7 @@ export function Step3Veicolo({ dati, onUpdate, onNext }: Props) {
             )
           })}
 
-          {/* Bottone "Altro" che apre l'espansione */}
+          {/* Bottone "Altro" */}
           <button
             onClick={toggleAltro}
             className={`relative aspect-square flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-[1.5px] text-center transition-all
@@ -280,28 +209,27 @@ export function Step3Veicolo({ dati, onUpdate, onNext }: Props) {
             {isAltroSelezionato && (
               <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-blue-600 flex items-center justify-center">
                 <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
+                  <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
             )}
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform duration-300 ${altroAperto ? 'rotate-45' : ''}`}>
-              <circle cx="12" cy="12" r="9"/>
-              <line x1="6" y1="12" x2="18" y2="12"/>
-              <line x1="12" y1="6" x2="12" y2="18"/>
+              <circle cx="12" cy="12" r="9" />
+              <line x1="6" y1="12" x2="18" y2="12" />
+              <line x1="12" y1="6" x2="12" y2="18" />
             </svg>
             <span className={`text-[10px] font-medium leading-tight ${isAltroSelezionato || altroAperto ? 'font-semibold' : ''}`}>
               Altro
             </span>
           </button>
         </div>
-        {errors.tipo && <p className="text-xs text-red-600 mt-1 ml-1">{errors.tipo}</p>}
       </div>
 
       {/* ESPANSIONE "Altro" — animata */}
       <div
         className={`overflow-hidden transition-all duration-300 ease-out ${altroAperto ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
       >
-        <div className="bg-blue-50/40 border border-blue-100 rounded-xl p-3 mt-1">
+        <div className="bg-blue-50/40 border border-blue-100 rounded-xl p-3">
           <p className="text-[11px] font-medium text-blue-700 mb-2 px-1">Altri tipi di mezzo:</p>
           <div className="grid grid-cols-3 gap-2">
             {TIPI_MEZZO_ALTRO.map(t => {
@@ -320,7 +248,7 @@ export function Step3Veicolo({ dati, onUpdate, onNext }: Props) {
                   {isSelected && (
                     <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-blue-600 flex items-center justify-center">
                       <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
+                        <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </div>
                   )}
@@ -335,202 +263,34 @@ export function Step3Veicolo({ dati, onUpdate, onNext }: Props) {
         </div>
       </div>
 
-      {/* Campo altro (solo se selezionato 'altro') */}
+      {/* Campo input "Altro mezzo" */}
       {dati.tipo === 'altro' && (
-        <div id="field-tipoAltro">
+        <div>
           <label className="block text-xs font-medium text-gray-500 mb-1">Specifica il tipo di mezzo</label>
           <input
             type="text"
             value={dati.tipoAltro}
-            onChange={e => update('tipoAltro', e.target.value)}
+            onChange={e => { onUpdate({ tipoAltro: e.target.value }); setErroreAltro(false) }}
             placeholder="Es. Trattore, quad, elicottero, rimorchio..."
             className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none transition-all
               focus:border-blue-500 focus:bg-white
-              ${errors.tipoAltro ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+              ${erroreAltro ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
           />
-          {errors.tipoAltro && <p className="text-xs text-red-600 mt-1">{errors.tipoAltro}</p>}
+          {erroreAltro && <p className="text-xs text-red-600 mt-1">Specifica il tipo di mezzo</p>}
         </div>
       )}
 
-      <div className="h-px bg-gray-100" />
-
-      {/* Anno + KM */}
-      <div className="grid grid-cols-2 gap-3">
-        <div id="field-anno">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Anno di immatricolazione</label>
-          <input
-            type="number"
-            value={dati.anno}
-            onChange={e => update('anno', e.target.value)}
-            placeholder="Es. 2008"
-            min={1950} max={2026}
-            className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none transition-all
-              focus:border-blue-500 focus:bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
-              ${errors.anno ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-          />
-          {errors.anno && <p className="text-xs text-red-600 mt-1">{errors.anno}</p>}
-        </div>
-        <div id="field-km">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Chilometri percorsi</label>
-          <input
-            type="number"
-            value={dati.km}
-            onChange={e => update('km', e.target.value)}
-            placeholder="Es. 85000"
-            className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none transition-all
-              focus:border-blue-500 focus:bg-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
-              ${errors.km ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-          />
-          {errors.km && <p className="text-xs text-red-600 mt-1">{errors.km}</p>}
-        </div>
-      </div>
-
-      {/* Marca + Modello */}
-      <div className="grid grid-cols-2 gap-3">
-        <div id="field-marca">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Marca</label>
-          <input
-            type="text"
-            value={dati.marca}
-            onChange={e => update('marca', e.target.value)}
-            placeholder="Es. Fiat"
-            className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none transition-all
-              focus:border-blue-500 focus:bg-white
-              ${errors.marca ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-          />
-          {errors.marca && <p className="text-xs text-red-600 mt-1">{errors.marca}</p>}
-        </div>
-        <div id="field-modello">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Modello</label>
-          <input
-            type="text"
-            value={dati.modello}
-            onChange={e => update('modello', e.target.value)}
-            placeholder="Es. Panda"
-            className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none transition-all
-              focus:border-blue-500 focus:bg-white
-              ${errors.modello ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-          />
-          {errors.modello && <p className="text-xs text-red-600 mt-1">{errors.modello}</p>}
-        </div>
-      </div>
-
-      <div className="h-px bg-gray-100" />
-
-      {/* Toggle compatti in fila */}
-      <ToggleRow
-        id="field-incidentato"
-        label={`${n} ${fem ? 'incidentata' : 'incidentato'}?`}
-        value={dati.incidentato}
-        siGood={false}
-        error={errors.incidentato}
-        onChange={v => togUpdate('incidentato', v)}
-      />
-      <ToggleRow
-        id="field-marciante"
-        label={`${n} marciante?`}
-        value={dati.marciante}
-        siGood={true}
-        error={errors.marciante}
-        onChange={v => togUpdate('marciante', v)}
-      />
-      <ToggleRow
-        id="field-vaInMoto"
-        label={labelVaInMoto()}
-        value={dati.vaInMoto}
-        siGood={true}
-        error={errors.vaInMoto}
-        onChange={v => togUpdate('vaInMoto', v)}
-      />
-      <ToggleRow
-        id="field-partiMancanti"
-        label="Parti mancanti?"
-        value={dati.partiMancanti}
-        siGood={false}
-        error={errors.partiMancanti}
-        onChange={v => togUpdate('partiMancanti', v)}
-      />
-
-      <div className="h-px bg-gray-100" />
-
-      {/* Annotazioni */}
-      <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Annotazioni (opzionale)</label>
-        <textarea
-          value={dati.note}
-          onChange={e => onUpdate({ note: e.target.value })}
-          placeholder="Descrivi eventuali annotazioni..."
-          rows={3}
-          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none"
-        />
-      </div>
-
       <button
         onClick={handleContinua}
-        className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
+        disabled={continueDisabled}
+        className={`w-full py-4 rounded-xl font-semibold text-base transition-all
+          ${continueDisabled
+            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'
+          }`}
       >
         Continua →
       </button>
-    </div>
-  )
-}
-
-// ============================================================
-// COMPONENTE TOGGLE COMPATTO
-// ============================================================
-
-interface ToggleRowProps {
-  id: string
-  label: string
-  value: string | null
-  siGood: boolean
-  error?: string
-  onChange: (v: ToggleValue) => void
-}
-
-function ToggleRow({ id, label, value, siGood, error, onChange }: ToggleRowProps) {
-  const siSelectedClasses = siGood
-    ? 'bg-green-100 border-green-300 text-green-800'
-    : 'bg-red-100 border-red-300 text-red-800'
-  const noSelectedClasses = siGood
-    ? 'bg-red-100 border-red-300 text-red-800'
-    : 'bg-green-100 border-green-300 text-green-800'
-
-  const offClasses = error
-    ? 'bg-white border-red-200 text-gray-400'
-    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-
-  const pillBase = 'flex items-center justify-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold border-[1.5px] transition-all min-w-[52px]'
-
-  return (
-    <div id={id} className="flex items-center justify-between gap-3 py-1">
-      <span className="text-sm font-medium text-gray-700 flex-1">{label}</span>
-      <div className="flex gap-1.5 flex-shrink-0">
-        <button
-          type="button"
-          onClick={() => onChange('si')}
-          className={`${pillBase} ${value === 'si' ? siSelectedClasses : offClasses}`}
-        >
-          {value === 'si' && (
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          )}
-          Sì
-        </button>
-        <button
-          type="button"
-          onClick={() => onChange('no')}
-          className={`${pillBase} ${value === 'no' ? noSelectedClasses : offClasses}`}
-        >
-          {value === 'no' && (
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="20 6 9 17 4 12"/>
-            </svg>
-          )}
-          No
-        </button>
-      </div>
     </div>
   )
 }

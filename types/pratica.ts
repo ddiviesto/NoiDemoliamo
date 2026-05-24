@@ -13,6 +13,8 @@ export type RuoloRichiedente = 'proprietario' | 'delegato' | 'deceduto'
 export type EreditaScelta = 'accetta' | 'rinuncia'
 export type LibrettoStato = 'si' | 'denuncia' | 'no'
 export type CdcStato = 'digitale' | 'cartaceo' | 'smarrito'
+export type TipoCambio = 'manuale' | 'automatico' | 'non_so'
+export type SpazioCarroAttrezzi = 'libero' | 'stretto' | 'no'
 
 export interface DatiVeicolo {
   tipo: TipoMezzo | null
@@ -21,6 +23,7 @@ export interface DatiVeicolo {
   km: string
   marca: string
   modello: string
+  tipoCambio: TipoCambio | null
   incidentato: 'si' | 'no' | null
   marciante: 'si' | 'no' | null
   vaInMoto: 'si' | 'no' | null
@@ -32,6 +35,9 @@ export interface DatiPratica {
   // Step 1
   indirizzo: string
   indirizzoSkipped: boolean
+  // Spazio carro attrezzi (legato all'indirizzo)
+  spazioCarroAttrezzi: SpazioCarroAttrezzi | null
+  spazioCarroAttrezziNote: string
   // Step 2
   targa: string
   targaSkipped: boolean
@@ -59,6 +65,8 @@ export interface DatiPratica {
 export const datiPraticaIniziali: DatiPratica = {
   indirizzo: '',
   indirizzoSkipped: false,
+  spazioCarroAttrezzi: null,
+  spazioCarroAttrezziNote: '',
   targa: '',
   targaSkipped: false,
   veicolo: {
@@ -68,6 +76,7 @@ export const datiPraticaIniziali: DatiPratica = {
     km: '',
     marca: '',
     modello: '',
+    tipoCambio: null,
     incidentato: null,
     marciante: null,
     vaInMoto: null,

@@ -2,8 +2,11 @@
 
 import { useRef, useState } from 'react'
 import Image from 'next/image'
-import { DatiPratica, datiPraticaIniziali, TipoMezzo } from '../../types/pratica'
-import { Step3Veicolo } from './steps/Step3Veicolo'
+import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi } from '../../types/pratica'
+import { StepTipoVeicolo } from './steps/StepTipoVeicolo'
+import { StepIdentificaVeicolo } from './steps/StepIdentificaVeicolo'
+import { StepCambioVeicolo } from './steps/StepCambioVeicolo'
+import { StepCondizioniVeicolo } from './steps/StepCondizioniVeicolo'
 import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -11,15 +14,6 @@ import { useRouter } from 'next/navigation'
 // ============================================================
 // ICONE SVG GENERALI
 // ============================================================
-
-function IconaOrologio({ size = 16, color = '#9ca3af' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9"/>
-      <polyline points="12 7 12 12 15 14"/>
-    </svg>
-  )
-}
 
 function IconaPin() {
   return (
@@ -105,6 +99,27 @@ function IconaAccount() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="11" width="18" height="11" rx="2"/>
       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  )
+}
+
+function IconaCambio() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="6" r="2"/>
+      <path d="M12 8v8"/>
+      <circle cx="8" cy="16" r="1"/>
+      <circle cx="16" cy="16" r="1"/>
+      <path d="M8 16h8"/>
+    </svg>
+  )
+}
+
+function IconaCondizioni() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 11l3 3L22 4"/>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
     </svg>
   )
 }
@@ -209,21 +224,15 @@ const ICONE_VEICOLO: Record<TipoMezzo, () => React.ReactNode> = {
 }
 
 // ============================================================
-// FRASI DINAMICHE basate sul tipo veicolo selezionato
+// FRASI DINAMICHE
 // ============================================================
 
 function articolo(tipo: TipoMezzo | null): string {
   if (!tipo) return 'il veicolo'
   const map: Record<TipoMezzo, string> = {
-    autovettura: "l'autovettura",
-    motoveicolo: 'il motoveicolo',
-    ciclomotore: 'il ciclomotore',
-    minicar: 'la minicar',
-    imbarcazione: "l'imbarcazione",
-    pullman: 'il pullman',
-    camion: 'il camion',
-    velivolo: 'il velivolo',
-    altro: 'il mezzo',
+    autovettura: "l'autovettura", motoveicolo: 'il motoveicolo', ciclomotore: 'il ciclomotore',
+    minicar: 'la minicar', imbarcazione: "l'imbarcazione", pullman: 'il pullman',
+    camion: 'il camion', velivolo: 'il velivolo', altro: 'il mezzo',
   }
   return map[tipo]
 }
@@ -231,15 +240,9 @@ function articolo(tipo: TipoMezzo | null): string {
 function articoloDel(tipo: TipoMezzo | null): string {
   if (!tipo) return 'del veicolo'
   const map: Record<TipoMezzo, string> = {
-    autovettura: "dell'autovettura",
-    motoveicolo: 'del motoveicolo',
-    ciclomotore: 'del ciclomotore',
-    minicar: 'della minicar',
-    imbarcazione: "dell'imbarcazione",
-    pullman: 'del pullman',
-    camion: 'del camion',
-    velivolo: 'del velivolo',
-    altro: 'del mezzo',
+    autovettura: "dell'autovettura", motoveicolo: 'del motoveicolo', ciclomotore: 'del ciclomotore',
+    minicar: 'della minicar', imbarcazione: "dell'imbarcazione", pullman: 'del pullman',
+    camion: 'del camion', velivolo: 'del velivolo', altro: 'del mezzo',
   }
   return map[tipo]
 }
@@ -247,38 +250,31 @@ function articoloDel(tipo: TipoMezzo | null): string {
 function pronomeTuo(tipo: TipoMezzo | null): string {
   if (!tipo) return 'tuo veicolo'
   const map: Record<TipoMezzo, string> = {
-    autovettura: 'tua autovettura',
-    motoveicolo: 'tuo motoveicolo',
-    ciclomotore: 'tuo ciclomotore',
-    minicar: 'tua minicar',
-    imbarcazione: 'tua imbarcazione',
-    pullman: 'tuo pullman',
-    camion: 'tuo camion',
-    velivolo: 'tuo velivolo',
-    altro: 'tuo mezzo',
+    autovettura: 'tua autovettura', motoveicolo: 'tuo motoveicolo', ciclomotore: 'tuo ciclomotore',
+    minicar: 'tua minicar', imbarcazione: 'tua imbarcazione', pullman: 'tuo pullman',
+    camion: 'tuo camion', velivolo: 'tuo velivolo', altro: 'tuo mezzo',
   }
   return map[tipo]
 }
 
-// Nome capitalizzato del veicolo per i banner (sempre Maiuscolo: "Autovettura", "Motoveicolo")
 function nomeVeicolo(tipo: TipoMezzo | null): string {
   if (!tipo) return 'Veicolo'
   const map: Record<TipoMezzo, string> = {
-    autovettura: 'Autovettura',
-    motoveicolo: 'Motoveicolo',
-    ciclomotore: 'Ciclomotore',
-    minicar: 'Minicar',
-    imbarcazione: 'Imbarcazione',
-    pullman: 'Pullman',
-    camion: 'Camion',
-    velivolo: 'Velivolo',
-    altro: 'Altro mezzo',
+    autovettura: 'Autovettura', motoveicolo: 'Motoveicolo', ciclomotore: 'Ciclomotore',
+    minicar: 'Minicar', imbarcazione: 'Imbarcazione', pullman: 'Pullman',
+    camion: 'Camion', velivolo: 'Velivolo', altro: 'Altro mezzo',
   }
   return map[tipo]
 }
 
+// Veicoli con cambio tradizionale (auto, minicar, pullman, camion, altro)
+function veicoloHaCambio(tipo: TipoMezzo | null): boolean {
+  if (!tipo) return true
+  return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'pullman' || tipo === 'camion' || tipo === 'altro'
+}
+
 // ============================================================
-// META STEP (icona + titolo banner)
+// META STEP
 // ============================================================
 
 interface StepMeta {
@@ -289,16 +285,38 @@ interface StepMeta {
 }
 
 function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
-  // VEICOLO: usa icona+titolo dinamici se tipo già scelto
-  if (stepKey === 'veicolo') {
+  if (stepKey === 'tipo-veicolo') {
     const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
     return {
       icona: Icona,
-      titoloBanner: tipo ? `Dati: ${nomeVeicolo(tipo)}` : 'Tipo di veicolo',
-      titoloPagina: tipo ? `Dettagli ${articoloDel(tipo)}` : 'Che tipo di veicolo è?',
-      sottoPagina: tipo
-        ? 'Compila tutte le informazioni sul mezzo.'
-        : 'Seleziona il tipo di mezzo per iniziare. Tutti gli step successivi saranno personalizzati.',
+      titoloBanner: tipo ? `Veicolo: ${nomeVeicolo(tipo)}` : 'Tipo di veicolo',
+      titoloPagina: 'Che tipo di veicolo è?',
+      sottoPagina: 'Seleziona il tipo di mezzo per iniziare.',
+    }
+  }
+  if (stepKey === 'identifica-veicolo') {
+    const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
+    return {
+      icona: Icona,
+      titoloBanner: `Identifica: ${nomeVeicolo(tipo)}`,
+      titoloPagina: `Identifica ${articolo(tipo)}`,
+      sottoPagina: 'Anno, km, marca e modello.',
+    }
+  }
+  if (stepKey === 'cambio-veicolo') {
+    return {
+      icona: IconaCambio,
+      titoloBanner: `Cambio: ${nomeVeicolo(tipo)}`,
+      titoloPagina: `Che tipo di cambio ha ${articolo(tipo)}?`,
+      sottoPagina: 'Questa info aiuta il demolitore a scegliere il carro attrezzi giusto.',
+    }
+  }
+  if (stepKey === 'condizioni-veicolo') {
+    return {
+      icona: IconaCondizioni,
+      titoloBanner: `Condizioni: ${nomeVeicolo(tipo)}`,
+      titoloPagina: `In che condizioni è ${articolo(tipo)}?`,
+      sottoPagina: 'Rispondi alle 4 domande, ti bastano pochi secondi.',
     }
   }
 
@@ -376,11 +394,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
         sottoPagina: `Potrai seguire la pratica, caricare i documenti e scaricare il certificato di rottamazione direttamente dall'app.`,
       }
     default:
-      return {
-        icona: IconaPin,
-        titoloBanner: '',
-        titoloPagina: '',
-      }
+      return { icona: IconaPin, titoloBanner: '', titoloPagina: '' }
   }
 }
 
@@ -420,7 +434,12 @@ function InfoBadge({ children }: { children: React.ReactNode }) {
 }
 
 function getSteps(dati: DatiPratica) {
-  const base = ['veicolo', 'indirizzo', 'targa', 'cf', 'foto', 'ruolo', 'libretto', 'cdc', 'anagrafica', 'account']
+  // Nuovo flusso: tipo + identifica + (cambio opzionale) + condizioni + ...
+  const base = ['tipo-veicolo', 'identifica-veicolo']
+  if (veicoloHaCambio(dati.veicolo.tipo)) {
+    base.push('cambio-veicolo')
+  }
+  base.push('condizioni-veicolo', 'indirizzo', 'targa', 'cf', 'foto', 'ruolo', 'libretto', 'cdc', 'anagrafica', 'account')
   if (dati.ruolo === 'deceduto') {
     const idx = base.indexOf('libretto')
     base.splice(idx, 0, 'eredita')
@@ -453,6 +472,25 @@ function BannerStep({ stepKey, curIdx, total, tipo, onBack }: { stepKey: string;
         </div>
       </div>
     </div>
+  )
+}
+
+// ============================================================
+function SpazioPill({ label, color, selected, onClick, icon }: { label: string; color: 'green' | 'amber' | 'red'; selected: boolean; onClick: () => void; icon: React.ReactNode }) {
+  const colors = {
+    green: selected ? 'border-green-500 bg-green-50 text-green-700 shadow-[0_0_0_3px_rgba(34,197,94,0.15)]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300',
+    amber: selected ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-amber-300',
+    red: selected ? 'border-red-500 bg-red-50 text-red-700 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-red-300',
+  }
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-[1.5px] text-center transition-all ${colors[color]}`}
+    >
+      <div>{icon}</div>
+      <span className="text-[11px] font-medium leading-tight">{label}</span>
+    </button>
   )
 }
 
@@ -497,6 +535,10 @@ export default function IniziaPage() {
     setIndirizzoConfermato(true)
   }
 
+  function setSpazio(v: SpazioCarroAttrezzi) {
+    update({ spazioCarroAttrezzi: v })
+  }
+
   function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
     if (e.target.files) {
       const nuove = Array.from(e.target.files)
@@ -506,6 +548,13 @@ export default function IniziaPage() {
 
   function rimuoviFoto(idx: number) {
     setFoto(prev => prev.filter((_, i) => i !== idx))
+  }
+
+  // Scroll automatico input al focus
+  function handleInputFocus(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setTimeout(() => {
+      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }, 300)
   }
 
   async function uploadFotoSuStorage(praticaId: string, file: File, index: number): Promise<string | null> {
@@ -557,6 +606,8 @@ export default function IniziaPage() {
           cap_ritiro: datiIndirizzoExtra?.cap || null,
           lat: datiIndirizzoExtra?.lat || null,
           lng: datiIndirizzoExtra?.lng || null,
+          spazio_carro_attrezzi: dati.spazioCarroAttrezzi,
+          spazio_carro_attrezzi_note: dati.spazioCarroAttrezziNote || null,
           targa: dati.targaSkipped ? null : dati.targa,
           codice_fiscale: dati.cfSkipped ? null : dati.cf,
           tipo_mezzo: dati.veicolo.tipo,
@@ -565,6 +616,7 @@ export default function IniziaPage() {
           km: dati.veicolo.km ? parseInt(dati.veicolo.km) : null,
           marca: dati.veicolo.marca,
           modello: dati.veicolo.modello,
+          tipo_cambio: dati.veicolo.tipoCambio,
           incidentato: dati.veicolo.incidentato === 'si',
           marciante: dati.veicolo.marciante === 'si',
           va_in_moto: dati.veicolo.vaInMoto === 'si',
@@ -621,11 +673,15 @@ export default function IniziaPage() {
     }
   }
 
+  const puoiContinuareIndirizzo = indirizzoConfermato && dati.spazioCarroAttrezzi !== null
+
+  // Classe input standard: text-base = 16px (anti-zoom iOS)
+  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all"
+
   return (
     <main className="min-h-screen flex items-start justify-center p-4 pt-8" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-lg p-7">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-lg p-7 relative">
 
-        {/* Banner colorato in cima con bottone Indietro a sinistra */}
         <BannerStep
           stepKey={curStep}
           curIdx={curIdx}
@@ -645,11 +701,47 @@ export default function IniziaPage() {
           <div className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
         </div>
 
-        {curStep === 'veicolo' && (
+        {curStep === 'tipo-veicolo' && (
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
-            <Step3Veicolo
+            <StepTipoVeicolo
+              dati={dati.veicolo}
+              onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
+              onNext={next}
+            />
+          </>
+        )}
+
+        {curStep === 'identifica-veicolo' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
+            <StepIdentificaVeicolo
+              dati={dati.veicolo}
+              onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
+              onNext={next}
+            />
+          </>
+        )}
+
+        {curStep === 'cambio-veicolo' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
+            <StepCambioVeicolo
+              dati={dati.veicolo}
+              onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
+              onNext={next}
+            />
+          </>
+        )}
+
+        {curStep === 'condizioni-veicolo' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
+            <StepCondizioniVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
               onNext={next}
@@ -661,7 +753,7 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4 pb-24">
               {indirizzoConfermato ? (
                 <>
                   <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
@@ -672,13 +764,58 @@ export default function IniziaPage() {
                     </div>
                     <div className="flex-1 text-sm font-medium text-green-800">{dati.indirizzo}</div>
                     <button
-                      onClick={() => { update({ indirizzo: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null) }}
+                      onClick={() => { update({ indirizzo: '', spazioCarroAttrezzi: null, spazioCarroAttrezziNote: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null) }}
                       className="bg-white border border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
                     >
                       Cambia
                     </button>
                   </div>
-                  <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-all">Continua →</button>
+
+                  <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+                    <div className="flex items-start gap-2 mb-3">
+                      <svg width="22" height="22" viewBox="0 0 512 1024" className="text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor">
+                        <path d="M0 0h512v1024H0z" fill="none"/>
+                        <path d="M448 416H64c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h32c0 53 43 96 96 96s96-43 96-96h64c0 53 43 96 96 96s96-43 96-96h32c17.7 0 32-14.3 32-32V448c0-17.7-14.3-32-32-32m-256 256c-17.6 0-32-14.4-32-32s14.4-32 32-32s32 14.4 32 32s-14.4 32-32 32m256 0c-17.6 0-32-14.4-32-32s14.4-32 32-32s32 14.4 32 32s-14.4 32-32 32"/>
+                      </svg>
+                      <div>
+                        <div className="text-sm font-semibold text-gray-900">Spazio per carro attrezzi</div>
+                        <div className="text-xs text-gray-600 mt-0.5">Il demolitore può accedere col carro attrezzi?</div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <SpazioPill
+                        label="Accesso libero" color="green"
+                        selected={dati.spazioCarroAttrezzi === 'libero'}
+                        onClick={() => setSpazio('libero')}
+                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                      />
+                      <SpazioPill
+                        label="Spazio stretto" color="amber"
+                        selected={dati.spazioCarroAttrezzi === 'stretto'}
+                        onClick={() => setSpazio('stretto')}
+                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>}
+                      />
+                      <SpazioPill
+                        label="Non passa" color="red"
+                        selected={dati.spazioCarroAttrezzi === 'no'}
+                        onClick={() => setSpazio('no')}
+                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>}
+                      />
+                    </div>
+
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-500 mb-1">Note aggiuntive (opzionale)</label>
+                      <textarea
+                        value={dati.spazioCarroAttrezziNote}
+                        onChange={e => update({ spazioCarroAttrezziNote: e.target.value })}
+                        onFocus={handleInputFocus}
+                        placeholder="Es. Cancello largo 2,5 metri; cortile interno; salita ripida..."
+                        rows={2}
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base bg-white outline-none transition-all focus:border-blue-500 resize-none"
+                      />
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
@@ -686,12 +823,23 @@ export default function IniziaPage() {
                     valoreIniziale={dati.indirizzo}
                     onSelezione={onSelezioneIndirizzo}
                   />
-                  <p className="text-[11px] text-gray-400 -mt-1 px-1">
+                  <p className="text-[11px] text-gray-400 -mt-2 px-1">
                     Inizia a digitare e seleziona un suggerimento per confermare.
                   </p>
                 </>
               )}
             </div>
+            {indirizzoConfermato && (
+              <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+                <button
+                  onClick={next}
+                  disabled={!puoiContinuareIndirizzo}
+                  className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${puoiContinuareIndirizzo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                >
+                  Continua →
+                </button>
+              </div>
+            )}
           </>
         )}
 
@@ -699,18 +847,21 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 pb-24">
               <input
                 type="text"
                 defaultValue={dati.targa}
                 onChange={e => update({ targa: e.target.value.toUpperCase(), targaSkipped: false })}
+                onFocus={handleInputFocus}
                 placeholder="Es. AB 123 CD"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all uppercase"
+                className={`${inputClass} uppercase`}
               />
+            </div>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
               <button
                 onClick={next}
                 disabled={!dati.targa}
-                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.targa ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.targa ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
               >
                 Continua →
               </button>
@@ -722,19 +873,22 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 pb-24">
               <input
                 type="text"
                 defaultValue={dati.cf}
                 onChange={e => update({ cf: e.target.value.toUpperCase(), cfSkipped: false })}
+                onFocus={handleInputFocus}
                 placeholder="Es. RSSMRA80A01H501Z"
-                className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all uppercase tracking-wider"
+                className={`${inputClass} uppercase tracking-wider`}
                 maxLength={16}
               />
+            </div>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
               <button
                 onClick={next}
                 disabled={!dati.cf}
-                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.cf ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.cf ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
               >
                 Continua →
               </button>
@@ -747,7 +901,7 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-3">{meta.sottoPagina} Più foto carichi, più veloce sarà il processo.</p>
             <InfoBadge>Scatta foto da diverse angolazioni: frontale, posteriore, laterali e abitacolo. Non serve che siano perfette!</InfoBadge>
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="mt-4 flex flex-col gap-3 pb-24">
               <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFoto} className="hidden" />
               <input ref={fotoGalleriaRef} type="file" accept="image/*" multiple onChange={handleFoto} className="hidden" />
               <div className="grid grid-cols-2 gap-3">
@@ -776,7 +930,9 @@ export default function IniziaPage() {
                   </div>
                 </div>
               )}
-              <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-all">
+            </div>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+              <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
                 {foto.length > 0 ? `Continua con ${foto.length} foto →` : 'Al momento non le ho, aggiungo più tardi'}
               </button>
             </div>
@@ -788,12 +944,14 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             {dati.ruolo === 'delegato' && <InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge>}
-            <div className="flex flex-col gap-2 mt-2">
+            <div className="flex flex-col gap-2 mt-2 pb-24">
               <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo).charAt(0).toUpperCase() + pronomeTuo(tipo).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => update({ ruolo: 'proprietario' })} />
               <OptionButton icon="📋" label="Sono un delegato" sub="Il proprietario mi ha autorizzato per iscritto" selected={dati.ruolo === 'delegato'} onClick={() => update({ ruolo: 'delegato' })} />
               <OptionButton icon="⚰️" label="Il proprietario è deceduto" sub="Gestisco la pratica come erede o avente diritto" selected={dati.ruolo === 'deceduto'} onClick={() => update({ ruolo: 'deceduto' })} />
             </div>
-            <button onClick={next} disabled={!dati.ruolo} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.ruolo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+              <button onClick={next} disabled={!dati.ruolo} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.ruolo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            </div>
           </>
         )}
 
@@ -802,11 +960,13 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <WarnBadge>In base alla scelta verrà generato il modulo notarile corretto da scaricare nell&apos;area personale.</WarnBadge>
-            <div className="flex flex-col gap-2 mt-3">
+            <div className="flex flex-col gap-2 mt-3 pb-24">
               <OptionButton icon="✅" label="Gli eredi accettano l'eredità" sub="Serve atto notarile di accettazione firmato" selected={dati.eredita === 'accetta'} onClick={() => update({ eredita: 'accetta' })} />
               <OptionButton icon="❌" label="Gli eredi rinunciano all'eredità" sub="Serve documentazione di rinuncia" selected={dati.eredita === 'rinuncia'} onClick={() => update({ eredita: 'rinuncia' })} />
             </div>
-            <button onClick={next} disabled={!dati.eredita} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.eredita ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+              <button onClick={next} disabled={!dati.eredita} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.eredita ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            </div>
           </>
         )}
 
@@ -814,12 +974,14 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 pb-24">
               <OptionButton icon="📗" label="Sì, ho il libretto originale" sub="Documento disponibile e integro" selected={dati.libretto === 'si'} onClick={() => update({ libretto: 'si' })} />
               <OptionButton icon="🔍" label="Ho la denuncia di smarrimento" sub="Emessa da autorità pubblica" selected={dati.libretto === 'denuncia'} onClick={() => update({ libretto: 'denuncia' })} />
               <OptionButton icon="❓" label="Non ho nessuno dei due" sub="Ti spieghiamo come procedere" selected={dati.libretto === 'no'} onClick={() => update({ libretto: 'no' })} />
             </div>
-            <button onClick={next} disabled={!dati.libretto} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.libretto ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+              <button onClick={next} disabled={!dati.libretto} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.libretto ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            </div>
           </>
         )}
 
@@ -827,12 +989,14 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 pb-24">
               <OptionButton icon="💻" label="Digitale — nel fascicolo elettronico" sub="Non serve consegnarlo fisicamente" selected={dati.cdc === 'digitale'} onClick={() => update({ cdc: 'digitale' })} />
               <OptionButton icon="📄" label="Cartaceo — ce l'ho" sub="Lo consegno al demolitore" selected={dati.cdc === 'cartaceo'} onClick={() => update({ cdc: 'cartaceo' })} />
               <OptionButton icon="🔴" label="Smarrito" sub="Serve denuncia di smarrimento" selected={dati.cdc === 'smarrito'} onClick={() => update({ cdc: 'smarrito' })} />
             </div>
-            <button onClick={next} disabled={!dati.cdc} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.cdc ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+              <button onClick={next} disabled={!dati.cdc} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.cdc ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            </div>
           </>
         )}
 
@@ -844,16 +1008,18 @@ export default function IniziaPage() {
               <span className="flex-shrink-0">🎁</span>
               <span><strong>Ritiro completamente gratuito</strong> — nessun costo nascosto, nessuna sorpresa.</span>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 pb-24">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Nome e cognome</label>
-                <input type="text" defaultValue={dati.nome} onChange={e => update({ nome: e.target.value })} placeholder="Mario Rossi" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all" />
+                <input type="text" defaultValue={dati.nome} onChange={e => update({ nome: e.target.value })} onFocus={handleInputFocus} placeholder="Mario Rossi" className={inputClass} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Numero di telefono</label>
-                <input type="tel" defaultValue={dati.telefono} onChange={e => update({ telefono: e.target.value })} placeholder="+39 333 1234567" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all" />
+                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => update({ telefono: e.target.value })} onFocus={handleInputFocus} placeholder="+39 333 1234567" className={inputClass} />
               </div>
-              <button onClick={next} disabled={!dati.nome || !dati.telefono} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.nome && dati.telefono ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Quasi fatto →</button>
+            </div>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+              <button onClick={next} disabled={!dati.nome || !dati.telefono} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.nome && dati.telefono ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Quasi fatto →</button>
             </div>
           </>
         )}
@@ -863,16 +1029,18 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3">⚠️ {error}</div>}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3 pb-24">
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">La tua email</label>
-                <input type="email" defaultValue={dati.email} onChange={e => update({ email: e.target.value })} placeholder="mario@email.it" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all" />
+                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => update({ email: e.target.value })} onFocus={handleInputFocus} placeholder="mario@email.it" className={inputClass} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-1">Scegli una password</label>
-                <input type="password" defaultValue={dati.password} onChange={e => update({ password: e.target.value })} placeholder="••••••••" className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all" />
+                <input type="password" defaultValue={dati.password} onChange={e => update({ password: e.target.value })} onFocus={handleInputFocus} placeholder="••••••••" className={inputClass} />
               </div>
-              <button onClick={handleSubmit} disabled={!dati.email || !dati.password || loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.email && dati.password && !loading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+            </div>
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
+              <button onClick={handleSubmit} disabled={!dati.email || !dati.password || loading} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.email && dati.password && !loading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Invia richiesta 🚀'}
               </button>
             </div>
