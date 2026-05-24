@@ -304,7 +304,7 @@ export default function AutocompleteIndirizzo({
           value={query}
           onChange={e => setQuery(e.target.value)}
           placeholder={placeholder}
-          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all"
+          className="w-full border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
         />
         <p className="text-xs text-amber-700 mt-1.5">
           Suggerimenti non disponibili. Digita l&apos;indirizzo manualmente.
@@ -330,7 +330,7 @@ export default function AutocompleteIndirizzo({
           onKeyDown={onKeyDown}
           placeholder={ready ? placeholder : 'Caricamento autocomplete...'}
           disabled={!ready}
-          className="w-full border border-gray-200 rounded-xl pl-11 pr-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] transition-all disabled:opacity-60"
+          className="w-full border border-gray-200 rounded-xl pl-11 pr-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] transition-all disabled:opacity-60 placeholder:text-gray-400"
         />
         {loading && (
           <span className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400">
