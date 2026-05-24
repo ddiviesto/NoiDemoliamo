@@ -62,7 +62,6 @@ function isImageUrl(url: string | null | undefined): boolean {
 function troncaNomeFile(nome: string | null, max = 14): string {
   if (!nome) return 'File'
   if (nome.length <= max) return nome
-  // Conserva l'estensione
   const punto = nome.lastIndexOf('.')
   if (punto > 0 && punto > nome.length - 6) {
     const ext = nome.substring(punto)
@@ -74,8 +73,6 @@ function troncaNomeFile(nome: string | null, max = 14): string {
 
 /** Estrae il path interno al bucket da una URL Supabase (pubblica o firmata) */
 function estraiPathBucket(url: string, bucket: string): string | null {
-  // Pubblica: .../object/public/<bucket>/<path>
-  // Firmata:  .../object/sign/<bucket>/<path>?token=...
   const marker = `/${bucket}/`
   const idx = url.indexOf(marker)
   if (idx === -1) return null
@@ -116,7 +113,7 @@ function documentiRichiesti(p: Pratica): {
 }
 
 // ============================================================
-// ICONE SVG
+// ICONE SVG (documenti)
 // ============================================================
 
 function IconaCartaIdentita() {
@@ -140,7 +137,7 @@ function IconaTesseraSanitaria() {
       <line x1="7.2" y1="11" x2="8.8" y2="11" stroke="#0891b2" strokeWidth="1.5" strokeLinecap="round"/>
       <line x1="8" y1="10.2" x2="8" y2="11.8" stroke="#0891b2" strokeWidth="1.5" strokeLinecap="round"/>
       <line x1="12" y1="10" x2="18" y2="10" stroke="#0891b2" strokeWidth="1.5" strokeLinecap="round"/>
-      <line x1="12" y1="13" x2="16" y2="13" stroke="#0891b2" strokeWidth="1.5" strokeLinecap="round"/>
+      <line x1="12" y1="13" x2="18" y2="13" stroke="#0891b2" strokeWidth="1.5" strokeLinecap="round"/>
     </svg>
   )
 }
@@ -183,6 +180,62 @@ function IconaFile() {
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg>
+  )
+}
+
+// ============================================================
+// ICONE STATO (badge professionali)
+// ============================================================
+
+function IconaOrologio({ size = 12, color = '#1d4ed8' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <polyline points="12 7 12 12 15 14"/>
+    </svg>
+  )
+}
+
+function IconaSpunta({ size = 12, color = '#15803d' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  )
+}
+
+function IconaWarning({ size = 12, color = '#b91c1c' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <line x1="12" y1="8" x2="12" y2="13"/>
+      <line x1="12" y1="16.5" x2="12" y2="16.5"/>
+    </svg>
+  )
+}
+
+function BadgeStato({ stato }: { stato: 'approvato' | 'rifiutato' | 'in_attesa' }) {
+  if (stato === 'approvato') {
+    return (
+      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none">
+        <IconaSpunta size={11} color="#15803d" />
+        Approvato
+      </span>
+    )
+  }
+  if (stato === 'rifiutato') {
+    return (
+      <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none">
+        <IconaWarning size={11} color="#b91c1c" />
+        Da rifare
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none">
+      <IconaOrologio size={11} color="#1d4ed8" />
+      In verifica
+    </span>
   )
 }
 
@@ -262,7 +315,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       }
     })
 
-    // Genera signed URLs per tutti i documenti
     const docsArricchiti = await aggiungiSignedUrls(docsBase)
 
     const fotoArricchite: FotoPratica[] = (fotos || []).map(f => {
@@ -279,7 +331,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     setLoading(false)
   }
 
-  // Notifica il parent: SOLO i documenti/foto rifiutati che richiedono attenzione
   useEffect(() => {
     if (!onDocRifiutatiCambiati) return
     const richiesti = documentiRichiesti(pratica)
@@ -332,7 +383,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     if (!confermaEliminaDoc) return
     setEliminazioneInCorso(true)
     try {
-      // 1. Cancella file da Storage (estrai path dall'URL salvata)
       const path = estraiPathBucket(confermaEliminaDoc.url, 'documenti-pratiche')
       if (path) {
         const { error: storageError } = await supabase.storage
@@ -343,7 +393,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         }
       }
 
-      // 2. Cancella riga da DB
       const { error: delError } = await supabase
         .from('documenti')
         .delete()
@@ -355,7 +404,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         return
       }
 
-      // 3. Reset approvazione del tipo
       await supabase
         .from('documenti_approvazione')
         .delete()
@@ -489,7 +537,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       <div className="bg-white border border-gray-200 rounded-2xl p-4">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-semibold text-gray-800">Foto del veicolo</p>
-          <span className="text-xs text-gray-500">{foto.length} foto</span>
+          <span className="text-xs text-gray-500">{foto.length} {foto.length === 1 ? 'file' : 'file'}</span>
         </div>
 
         {foto.length > 0 && (
@@ -511,7 +559,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-3 flex items-center gap-2.5">
             <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
             <div className="text-xs text-blue-800 font-medium">
-              Caricamento foto {caricamentoFoto.fatte}/{caricamentoFoto.totale}...
+              Caricamento {caricamentoFoto.fatte}/{caricamentoFoto.totale}...
             </div>
           </div>
         )}
@@ -520,16 +568,16 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 
         {foto.some(f => f.stato_approvazione === 'rifiutato') && (
           <div className="bg-red-50 border border-red-200 rounded-xl p-3 mt-3 flex items-start gap-2">
-            <span className="text-base flex-shrink-0">⚠️</span>
+            <IconaWarning size={16} color="#b91c1c" />
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold text-red-800">Alcune foto vanno rifatte</div>
-              <div className="text-xs text-red-700 mt-0.5">Tocca le foto con ✗ per ricaricarle</div>
+              <div className="text-xs font-semibold text-red-800">Alcuni file vanno rifatti</div>
+              <div className="text-xs text-red-700 mt-0.5">Tocca quelli segnati per ricaricarli</div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Modale anteprima foto/documento (immagini E PDF) */}
+      {/* Modale anteprima foto/documento */}
       {anteprima && (
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
@@ -581,7 +629,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       {/* Modale conferma eliminazione foto veicolo */}
       {confermaEliminaFoto && (
         <ModaleConferma
-          titolo="Eliminare questa foto?"
+          titolo="Eliminare questo file?"
           sottotitolo="L'azione non può essere annullata."
           urlAnteprima={confermaEliminaFoto.url}
           inCorso={eliminazioneInCorso}
@@ -606,7 +654,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 }
 
 // ============================================================
-// MODALE DI CONFERMA (riusabile per foto e documenti)
+// MODALE DI CONFERMA
 // ============================================================
 
 function ModaleConferma(props: {
@@ -718,38 +766,39 @@ function DocumentoCard(props: {
   const inAttesa = !nessunFile && !tuttiApprovati && !qualcheRifiutato
   const notaRifiuto = props.righe.find(r => r.stato_approvazione === 'rifiutato')?.nota_admin
 
-  let bg = 'bg-gray-50'
+  // Sfondo card: sempre bianco. Bordo a colore secondo stato.
   let border = 'border-gray-200'
-  let statusLabel: { text: string; color: string } | null = null
+  let badgeStato: 'approvato' | 'rifiutato' | 'in_attesa' | null = null
   if (tuttiApprovati) {
-    bg = 'bg-green-50'
-    border = 'border-green-300'
-    statusLabel = { text: '✓ Approvato', color: 'text-green-700' }
+    border = 'border-green-200'
+    badgeStato = 'approvato'
   } else if (qualcheRifiutato) {
-    bg = 'bg-red-50'
-    border = 'border-red-300'
-    statusLabel = { text: '✗ Da rifare', color: 'text-red-700' }
+    border = 'border-red-200'
+    badgeStato = 'rifiutato'
   } else if (inAttesa) {
-    bg = 'bg-yellow-50'
-    border = 'border-yellow-200'
-    statusLabel = { text: '⏳ In verifica', color: 'text-yellow-700' }
+    border = 'border-blue-200'
+    badgeStato = 'in_attesa'
   }
 
-  // X visibile solo se: cliente abilitato + non tutti approvati
   const mostraX = props.eliminabile && !tuttiApprovati
 
   return (
-    <div className={`${bg} border ${border} rounded-xl p-3`}>
-      <div className="flex items-center gap-3 mb-2.5">
-        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+    <div className={`bg-white border ${border} rounded-xl p-3`}>
+      <div className="flex items-start gap-3 mb-2.5">
+        <div className="w-10 h-10 bg-gray-50 rounded-lg flex items-center justify-center flex-shrink-0">
           {props.icona}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-medium text-gray-800 leading-tight">{props.label}</div>
-          {statusLabel ? (
-            <div className={`text-[11px] mt-0.5 font-semibold ${statusLabel.color}`}>{statusLabel.text}</div>
-          ) : (
-            <div className="text-[11px] text-gray-500 mt-0.5">Non ancora caricato</div>
+          <div className="flex items-start justify-between gap-2">
+            <div className="text-sm font-medium text-gray-800 leading-tight">{props.label}</div>
+            {badgeStato && (
+              <div className="flex-shrink-0 mt-0.5">
+                <BadgeStato stato={badgeStato} />
+              </div>
+            )}
+          </div>
+          {!badgeStato && (
+            <div className="text-[11px] text-gray-500 mt-1">Non ancora caricato</div>
           )}
         </div>
       </div>
@@ -771,7 +820,7 @@ function DocumentoCard(props: {
       )}
 
       {notaRifiuto && (
-        <div className="bg-white rounded-lg p-2.5 mb-2.5 text-[11px] text-red-800 italic leading-relaxed">
+        <div className="bg-red-50 border border-red-100 rounded-lg p-2.5 mb-2.5 text-[11px] text-red-800 italic leading-relaxed">
           "{notaRifiuto}"
         </div>
       )}
@@ -808,7 +857,7 @@ function DocumentoCard(props: {
 }
 
 // ============================================================
-// MINIATURA SINGOLO FILE CARICATO (80x80) + nome file sotto
+// MINIATURA SINGOLO FILE (80x80) + nome file sotto
 // ============================================================
 
 function FileMiniatura(props: {
@@ -863,7 +912,6 @@ function FileMiniatura(props: {
             </div>
           )}
 
-          {/* Numero in basso a sinistra (se documento multiplo) */}
           {props.numero && (
             <span className="absolute bottom-1 left-1 bg-black/60 text-white text-[10px] font-semibold rounded px-1.5 py-0.5 leading-none">
               {props.numero}
@@ -886,7 +934,6 @@ function FileMiniatura(props: {
         )}
       </div>
 
-      {/* Nome file sotto la miniatura */}
       <p className="text-[10px] text-gray-600 text-center leading-tight w-full break-words" title={props.riga.nome_file || ''}>
         {nomeMostrato}
       </p>
@@ -895,7 +942,7 @@ function FileMiniatura(props: {
 }
 
 // ============================================================
-// UPLOAD FOTO VEICOLO EXTRA
+// UPLOAD FOTO VEICOLO (ora accetta anche PDF)
 // ============================================================
 
 function UploadFotoExtra({ onUpload, disabilitato }: { onUpload: (files: File[]) => void; disabilitato: boolean }) {
@@ -911,7 +958,7 @@ function UploadFotoExtra({ onUpload, disabilitato }: { onUpload: (files: File[])
   return (
     <>
       <input ref={inputCameraRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFiles} className="hidden" />
-      <input ref={inputFileRef} type="file" accept="image/*" multiple onChange={handleFiles} className="hidden" />
+      <input ref={inputFileRef} type="file" accept="image/*,application/pdf" multiple onChange={handleFiles} className="hidden" />
       <div className="grid grid-cols-2 gap-2">
         <button
           onClick={() => inputCameraRef.current?.click()}
@@ -935,7 +982,7 @@ function UploadFotoExtra({ onUpload, disabilitato }: { onUpload: (files: File[])
 }
 
 // ============================================================
-// FOTO DEL VEICOLO
+// FOTO DEL VEICOLO (mostra anche PDF se caricati)
 // ============================================================
 
 function FotoCard(props: {
@@ -947,10 +994,9 @@ function FotoCard(props: {
 }) {
   const isApprovato = props.foto.stato_approvazione === 'approvato'
   const isRifiutato = props.foto.stato_approvazione === 'rifiutato'
+  const isPdf = isPdfUrl(props.foto.url)
 
-  const bordo = isApprovato ? 'border-green-400' : isRifiutato ? 'border-red-400' : 'border-gray-200'
-  const badgeBg = isApprovato ? 'bg-green-500' : isRifiutato ? 'bg-red-500' : 'bg-gray-400'
-  const badgeIcon = isApprovato ? '✓' : isRifiutato ? '✗' : '•'
+  const bordo = isApprovato ? 'border-green-300' : isRifiutato ? 'border-red-300' : 'border-gray-200'
 
   return (
     <div className="relative">
@@ -958,11 +1004,37 @@ function FotoCard(props: {
         onClick={props.onApri}
         className={`w-full aspect-square rounded-xl overflow-hidden border-2 ${bordo} relative bg-gray-100`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={props.foto.url} alt={`Foto ${props.index + 1}`} className="w-full h-full object-cover" />
-        <span className={`absolute bottom-1.5 left-1.5 w-5 h-5 ${badgeBg} text-white text-[11px] font-bold rounded-full flex items-center justify-center leading-none shadow-sm`}>
-          {badgeIcon}
-        </span>
+        {isPdf ? (
+          <object
+            data={`${props.foto.url}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`}
+            type="application/pdf"
+            className="w-full h-full pointer-events-none"
+            aria-label="Anteprima PDF"
+          >
+            <div className="w-full h-full bg-red-50 flex flex-col items-center justify-center">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              <span className="text-[10px] font-bold text-red-600 mt-1">PDF</span>
+            </div>
+          </object>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={props.foto.url} alt={`Foto ${props.index + 1}`} className="w-full h-full object-cover" />
+        )}
+
+        {/* Badge stato in basso a sinistra */}
+        {isApprovato && (
+          <span className="absolute bottom-1.5 left-1.5 w-5 h-5 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm">
+            <IconaSpunta size={11} color="#ffffff" />
+          </span>
+        )}
+        {isRifiutato && (
+          <span className="absolute bottom-1.5 left-1.5 w-5 h-5 bg-red-500 text-white rounded-full flex items-center justify-center shadow-sm">
+            <IconaWarning size={11} color="#ffffff" />
+          </span>
+        )}
       </button>
 
       {props.eliminabile && (
@@ -972,8 +1044,8 @@ function FotoCard(props: {
             props.onChiediElimina()
           }}
           className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm flex items-center justify-center shadow-md font-bold leading-none z-10"
-          title="Elimina foto"
-          aria-label="Elimina foto"
+          title="Elimina file"
+          aria-label="Elimina file"
         >
           ×
         </button>

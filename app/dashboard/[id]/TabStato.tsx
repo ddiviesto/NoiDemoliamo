@@ -7,7 +7,70 @@ interface Props {
   pratica: Pratica
 }
 
-// Definizione dei 5 step della timeline
+// ============================================================
+// ICONE SVG
+// ============================================================
+
+function IconaPin() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  )
+}
+
+function IconaAuto() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M5 17h14"/>
+      <path d="M3 17v-4l2-5a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 8l2 5v4"/>
+      <circle cx="7" cy="17" r="2" fill="#1d4ed8" stroke="none"/>
+      <circle cx="17" cy="17" r="2" fill="#1d4ed8" stroke="none"/>
+    </svg>
+  )
+}
+
+function IconaSpuntaTimeline() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  )
+}
+
+function IconaXAnnullata() {
+  return (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="15" y1="9" x2="9" y2="15"/>
+      <line x1="9" y1="9" x2="15" y2="15"/>
+    </svg>
+  )
+}
+
+function IconaChevron({ aperto }: { aperto: boolean }) {
+  return (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={`text-gray-400 transition-transform ${aperto ? 'rotate-180' : ''}`}
+    >
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  )
+}
+
+// ============================================================
+// TIMELINE STEPS
+// ============================================================
+
 const TIMELINE_STEPS = [
   {
     key: 'richiesta_inviata',
@@ -41,7 +104,6 @@ const TIMELINE_STEPS = [
   },
 ]
 
-// Restituisce l'indice dello step attivo (-1 se annullata)
 function indiceStepAttuale(stato: string): number {
   if (stato === 'annullata') return -1
   for (let i = 0; i < TIMELINE_STEPS.length; i++) {
@@ -49,6 +111,8 @@ function indiceStepAttuale(stato: string): number {
   }
   return 0
 }
+
+// ============================================================
 
 export default function TabStato({ pratica }: Props) {
   const [datiAperti, setDatiAperti] = useState(false)
@@ -60,14 +124,19 @@ export default function TabStato({ pratica }: Props) {
 
       {/* TIMELINE */}
       <div className="bg-white border border-gray-200 rounded-2xl p-5">
-        <p className="text-sm font-bold text-gray-900 mb-1">📍 Il percorso della tua pratica</p>
+        <div className="flex items-center gap-2 mb-1">
+          <IconaPin />
+          <p className="text-sm font-bold text-gray-900">Il percorso della tua pratica</p>
+        </div>
         <p className="text-xs text-gray-500 mb-5">
           Aperta il {new Date(pratica.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
         </p>
 
         {isAnnullata ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
-            <div className="text-3xl mb-2">❌</div>
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col items-center text-center">
+            <div className="mb-2">
+              <IconaXAnnullata />
+            </div>
             <div className="text-sm font-semibold text-gray-700">Pratica annullata</div>
             <div className="text-xs text-gray-500 mt-1">Questa pratica non è più attiva</div>
           </div>
@@ -90,7 +159,13 @@ export default function TabStato({ pratica }: Props) {
                           ? 'bg-blue-600 text-white shadow-lg shadow-blue-300'
                           : 'bg-white border-2 border-gray-200 text-gray-400'
                     }`}>
-                      {completato ? '✓' : corrente ? '●' : i + 1}
+                      {completato ? (
+                        <IconaSpuntaTimeline />
+                      ) : corrente ? (
+                        <span className="w-2.5 h-2.5 bg-white rounded-full" />
+                      ) : (
+                        i + 1
+                      )}
                     </div>
                     {!ultimo && (
                       <div className={`w-0.5 flex-1 mt-1 mb-1 ${completato ? 'bg-green-300' : 'bg-gray-200'}`} style={{ minHeight: 36 }} />
@@ -128,10 +203,11 @@ export default function TabStato({ pratica }: Props) {
           onClick={() => setDatiAperti(!datiAperti)}
           className="w-full px-4 py-3.5 flex items-center justify-between"
         >
-          <span className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
-            🚗 Dati del veicolo
+          <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <IconaAuto />
+            Dati del veicolo
           </span>
-          <span className={`text-gray-400 transition-transform ${datiAperti ? 'rotate-180' : ''}`}>▼</span>
+          <IconaChevron aperto={datiAperti} />
         </button>
 
         {datiAperti && (

@@ -23,6 +23,49 @@ interface Props {
 
 type SubTab = 'admin' | 'demolitore'
 
+// ============================================================
+// ICONE SVG
+// ============================================================
+
+/** Icona demolitore: carro attrezzi con auto sul pianale */
+function IconaDemolitore({ size = 16, color = '#ffffff' }: { size?: number; color?: string }) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 512 512">
+      <path d="M80.08 82.66L60.24 102.5L192.9 242.7v58.6h78v-50.9zm-25.4 40.14v80.3l4.01 2.7c10.56 7 14.74 14.1 15.93 19.8c1.18 5.8-.43 10.8-3.85 14.9c-6.86 8.3-19.91 12.3-32.73-.6l-12.72 12.8c19.18 19.1 46.13 15.1 59.27-.6c6.58-7.9 9.97-18.9 7.65-30.1c-2.05-10-8.72-19.7-19.56-28v-52.2zm258.02 52.5v144h-185c22.6 5.8 40.6 23.5 46.7 46H337c7.5-27.6 32.8-48 62.7-48s55.2 20.4 62.7 48h24.3v-84.6l-60.2-105.4zm36 14h62.1l54.7 92H348.7v-83zm-321.49 130l11.5 46h10.25c6.12-22.5 24.09-40.2 46.74-46zm84.49 16c-26.08 0-47.02 20.9-47.02 47s20.94 47 47.02 47c26.1 0 47-20.9 47-47s-20.9-47-47-47m288 0c-26.1 0-47 20.9-47 47s20.9 47 47 47s47-20.9 47-47s-20.9-47-47-47" fill={color} />
+    </svg>
+  )
+}
+
+function IconaSpuntaCerchio({ size = 28, color = '#16a34a' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <polyline points="8 12 11 15 16 9"/>
+    </svg>
+  )
+}
+
+function IconaInfo({ size = 14, color = '#1d4ed8' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="11" x2="12" y2="17"/>
+      <line x1="12" y1="7.5" x2="12" y2="7.5"/>
+    </svg>
+  )
+}
+
+function IconaInvia({ size = 16, color = '#ffffff' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2" fill={color} stroke={color}/>
+    </svg>
+  )
+}
+
+// ============================================================
+
 // Stato della chat demolitore: prima, durante, dopo
 function statoChatDemolitore(stato: string): 'prima_assegnazione' | 'attiva' | 'archiviata' {
   const statiAttivi = [
@@ -42,7 +85,6 @@ function statoChatDemolitore(stato: string): 'prima_assegnazione' | 'attiva' | '
 }
 
 export default function TabChat({ pratica, onMessaggiLetti }: Props) {
-  // Sub-tab attivo: sempre 2 sub-tab visibili
   const [subTab, setSubTab] = useState<SubTab>('admin')
   const statoDem = statoChatDemolitore(pratica.stato)
 
@@ -70,7 +112,9 @@ export default function TabChat({ pratica, onMessaggiLetti }: Props) {
               : 'bg-gray-100 border-2 border-transparent text-gray-600'
           }`}
         >
-          <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center text-[12px]">🔧</div>
+          <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
+            <IconaDemolitore size={14} color="#ffffff" />
+          </div>
           Demolitore
         </button>
       </div>
@@ -104,15 +148,18 @@ export default function TabChat({ pratica, onMessaggiLetti }: Props) {
 function PlaceholderPrimaAssegnazione() {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col items-center text-center" style={{ minHeight: 320 }}>
-      <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center text-3xl mb-3">
-        🔧
+      <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-3">
+        <IconaDemolitore size={36} color="#f97316" />
       </div>
       <div className="text-sm font-semibold text-gray-800 mb-1">In attesa del demolitore</div>
       <p className="text-xs text-gray-500 max-w-xs leading-relaxed">
         Non appena assegneremo un demolitore alla tua pratica, potrai parlare con lui da qui per organizzare il ritiro.
       </p>
-      <div className="mt-4 bg-blue-50 rounded-xl px-3 py-2 text-[11px] text-blue-700 max-w-xs">
-        💡 Nel frattempo puoi parlare con noi nella chat <strong>NoiDemoliamo</strong>
+      <div className="mt-4 bg-blue-50 rounded-xl px-3 py-2 text-[11px] text-blue-700 max-w-xs flex items-start gap-1.5">
+        <span className="flex-shrink-0 mt-0.5">
+          <IconaInfo size={13} color="#1d4ed8" />
+        </span>
+        <span>Nel frattempo puoi parlare con noi nella chat <strong>NoiDemoliamo</strong></span>
       </div>
     </div>
   )
@@ -122,15 +169,18 @@ function PlaceholderPrimaAssegnazione() {
 function PlaceholderArchiviata() {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col items-center text-center" style={{ minHeight: 320 }}>
-      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-3xl mb-3">
-        ✅
+      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-3">
+        <IconaSpuntaCerchio size={32} color="#16a34a" />
       </div>
       <div className="text-sm font-semibold text-gray-800 mb-1">Chat archiviata</div>
       <p className="text-xs text-gray-500 max-w-xs leading-relaxed">
         Il demolitore ha completato il suo lavoro e caricato il certificato di rottamazione. La chat è stata archiviata.
       </p>
-      <div className="mt-4 bg-blue-50 rounded-xl px-3 py-2 text-[11px] text-blue-700 max-w-xs">
-        💡 Per qualsiasi domanda scrivi a <strong>NoiDemoliamo</strong>
+      <div className="mt-4 bg-blue-50 rounded-xl px-3 py-2 text-[11px] text-blue-700 max-w-xs flex items-start gap-1.5">
+        <span className="flex-shrink-0 mt-0.5">
+          <IconaInfo size={13} color="#1d4ed8" />
+        </span>
+        <span>Per qualsiasi domanda scrivi a <strong>NoiDemoliamo</strong></span>
       </div>
     </div>
   )
@@ -221,7 +271,6 @@ function Chat({
 
   const isAdmin = destinatarioTipo === 'admin'
   const headerColor = isAdmin ? '#0d2144' : '#f97316'
-  const headerLetter = isAdmin ? 'N' : '🔧'
   const headerNome = isAdmin ? 'NoiDemoliamo' : 'Demolitore'
   const headerSubtitle = isAdmin ? '● Risposta media: 2 ore' : '● Comunica per il ritiro'
 
@@ -233,7 +282,7 @@ function Chat({
           className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
           style={{ backgroundColor: headerColor }}
         >
-          {headerLetter}
+          {isAdmin ? 'N' : <IconaDemolitore size={20} color="#ffffff" />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-gray-900">{headerNome}</div>
@@ -287,8 +336,13 @@ function Chat({
           onClick={invia}
           disabled={inviando || !testo.trim()}
           className="bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-colors"
+          aria-label="Invia messaggio"
         >
-          {inviando ? '...' : '→'}
+          {inviando ? (
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <IconaInvia size={16} color="#ffffff" />
+          )}
         </button>
       </div>
     </div>
