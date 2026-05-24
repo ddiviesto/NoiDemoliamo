@@ -69,7 +69,7 @@ export function StepCambioVeicolo({ dati, onUpdate, onNext }: Props) {
   ]
 
   return (
-    <div className="flex flex-col gap-4 pb-24">
+    <div className="flex flex-col gap-4">
 
       {errore && (
         <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
@@ -115,14 +115,12 @@ export function StepCambioVeicolo({ dati, onUpdate, onNext }: Props) {
         })}
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-        <button
-          onClick={handleContinua}
-          className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all shadow-lg shadow-blue-200"
-        >
-          Continua →
-        </button>
-      </div>
+      <button
+        onClick={handleContinua}
+        className="w-full py-4 mt-2 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
+      >
+        Continua →
+      </button>
     </div>
   )
 }

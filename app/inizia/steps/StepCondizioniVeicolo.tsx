@@ -82,7 +82,7 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
   const fem = isFemminile(dati.tipo)
 
   return (
-    <div className="flex flex-col gap-3 pb-24">
+    <div className="flex flex-col gap-3">
 
       {showBanner && (
         <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
@@ -131,25 +131,23 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
       <div className="h-px bg-gray-100 my-1" />
 
       <div>
-        <label className="block text-xs font-medium text-gray-500 mb-1">Annotazioni (opzionale)</label>
+        <label className="block text-xs font-medium text-gray-600 mb-1">Annotazioni (opzionale)</label>
         <textarea
           value={dati.note}
           onChange={e => onUpdate({ note: e.target.value })}
           onFocus={handleTextareaFocus}
           placeholder="Descrivi eventuali annotazioni..."
           rows={3}
-          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none placeholder:text-gray-400"
         />
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-        <button
-          onClick={handleContinua}
-          className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all shadow-lg shadow-blue-200"
-        >
-          Continua →
-        </button>
-      </div>
+      <button
+        onClick={handleContinua}
+        className="w-full py-4 mt-2 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
+      >
+        Continua →
+      </button>
     </div>
   )
 }
@@ -176,8 +174,8 @@ function ToggleRow({ id, label, value, siGood, error, onChange }: ToggleRowProps
     : 'bg-green-100 border-green-300 text-green-800'
 
   const offClasses = error
-    ? 'bg-white border-red-200 text-gray-400'
-    : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
+    ? 'bg-white border-red-200 text-gray-500'
+    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
 
   const pillBase = 'flex items-center justify-center gap-1 px-4 py-2 rounded-full text-sm font-semibold border-[1.5px] transition-all min-w-[58px]'
 

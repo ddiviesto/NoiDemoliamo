@@ -267,7 +267,6 @@ function nomeVeicolo(tipo: TipoMezzo | null): string {
   return map[tipo]
 }
 
-// Veicoli con cambio tradizionale (auto, minicar, pullman, camion, altro)
 function veicoloHaCambio(tipo: TipoMezzo | null): boolean {
   if (!tipo) return true
   return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'pullman' || tipo === 'camion' || tipo === 'altro'
@@ -406,7 +405,7 @@ function OptionButton({ icon, label, sub, selected, onClick }: { icon: string; l
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${selected ? 'bg-blue-100' : 'bg-gray-100'}`}>{icon}</div>
       <div className="flex-1">
         <div className={`font-medium text-sm ${selected ? 'text-blue-700' : 'text-gray-800'}`}>{label}</div>
-        <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-400'}`}>{sub}</div>
+        <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-500'}`}>{sub}</div>
       </div>
       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
         {selected && <span className="text-white text-xs">✓</span>}
@@ -434,7 +433,6 @@ function InfoBadge({ children }: { children: React.ReactNode }) {
 }
 
 function getSteps(dati: DatiPratica) {
-  // Nuovo flusso: tipo + identifica + (cambio opzionale) + condizioni + ...
   const base = ['tipo-veicolo', 'identifica-veicolo']
   if (veicoloHaCambio(dati.veicolo.tipo)) {
     base.push('cambio-veicolo')
@@ -550,7 +548,6 @@ export default function IniziaPage() {
     setFoto(prev => prev.filter((_, i) => i !== idx))
   }
 
-  // Scroll automatico input al focus
   function handleInputFocus(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
     setTimeout(() => {
       e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
@@ -675,8 +672,7 @@ export default function IniziaPage() {
 
   const puoiContinuareIndirizzo = indirizzoConfermato && dati.spazioCarroAttrezzi !== null
 
-  // Classe input standard: text-base = 16px (anti-zoom iOS)
-  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all"
+  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
 
   return (
     <main className="min-h-screen flex items-start justify-center p-4 pt-8" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
@@ -753,7 +749,7 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-4 pb-24">
+            <div className="flex flex-col gap-4">
               {indirizzoConfermato ? (
                 <>
                   <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
@@ -805,17 +801,25 @@ export default function IniziaPage() {
                     </div>
 
                     <div className="mt-3">
-                      <label className="block text-xs font-medium text-gray-500 mb-1">Note aggiuntive (opzionale)</label>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Note aggiuntive (opzionale)</label>
                       <textarea
                         value={dati.spazioCarroAttrezziNote}
                         onChange={e => update({ spazioCarroAttrezziNote: e.target.value })}
                         onFocus={handleInputFocus}
                         placeholder="Es. Cancello largo 2,5 metri; cortile interno; salita ripida..."
                         rows={2}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base bg-white outline-none transition-all focus:border-blue-500 resize-none"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base bg-white outline-none transition-all focus:border-blue-500 resize-none placeholder:text-gray-400"
                       />
                     </div>
                   </div>
+
+                  <button
+                    onClick={next}
+                    disabled={!puoiContinuareIndirizzo}
+                    className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${puoiContinuareIndirizzo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                  >
+                    Continua →
+                  </button>
                 </>
               ) : (
                 <>
@@ -829,17 +833,6 @@ export default function IniziaPage() {
                 </>
               )}
             </div>
-            {indirizzoConfermato && (
-              <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-                <button
-                  onClick={next}
-                  disabled={!puoiContinuareIndirizzo}
-                  className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${puoiContinuareIndirizzo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
-                >
-                  Continua →
-                </button>
-              </div>
-            )}
           </>
         )}
 
@@ -847,7 +840,7 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-3 pb-24">
+            <div className="flex flex-col gap-3">
               <input
                 type="text"
                 defaultValue={dati.targa}
@@ -856,12 +849,10 @@ export default function IniziaPage() {
                 placeholder="Es. AB 123 CD"
                 className={`${inputClass} uppercase`}
               />
-            </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
               <button
                 onClick={next}
                 disabled={!dati.targa}
-                className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.targa ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.targa ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
               >
                 Continua →
               </button>
@@ -873,7 +864,7 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-3 pb-24">
+            <div className="flex flex-col gap-3">
               <input
                 type="text"
                 defaultValue={dati.cf}
@@ -883,12 +874,10 @@ export default function IniziaPage() {
                 className={`${inputClass} uppercase tracking-wider`}
                 maxLength={16}
               />
-            </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
               <button
                 onClick={next}
                 disabled={!dati.cf}
-                className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.cf ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.cf ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
               >
                 Continua →
               </button>
@@ -901,7 +890,7 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-3">{meta.sottoPagina} Più foto carichi, più veloce sarà il processo.</p>
             <InfoBadge>Scatta foto da diverse angolazioni: frontale, posteriore, laterali e abitacolo. Non serve che siano perfette!</InfoBadge>
-            <div className="mt-4 flex flex-col gap-3 pb-24">
+            <div className="mt-4 flex flex-col gap-3">
               <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFoto} className="hidden" />
               <input ref={fotoGalleriaRef} type="file" accept="image/*" multiple onChange={handleFoto} className="hidden" />
               <div className="grid grid-cols-2 gap-3">
@@ -913,12 +902,12 @@ export default function IniziaPage() {
                 <button onClick={() => fotoGalleriaRef.current?.click()} className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
                   <span className="text-3xl">🖼️</span>
                   <span className="text-sm font-medium">Carica foto</span>
-                  <span className="text-xs text-gray-400">Dal telefono o PC</span>
+                  <span className="text-xs text-gray-500">Dal telefono o PC</span>
                 </button>
               </div>
               {foto.length > 0 && (
                 <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2">{foto.length} foto caricate</p>
+                  <p className="text-xs font-medium text-gray-600 mb-2">{foto.length} foto caricate</p>
                   <div className="grid grid-cols-3 gap-2">
                     {foto.map((f, i) => (
                       <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
@@ -930,9 +919,7 @@ export default function IniziaPage() {
                   </div>
                 </div>
               )}
-            </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-              <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">
+              <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-all">
                 {foto.length > 0 ? `Continua con ${foto.length} foto →` : 'Al momento non le ho, aggiungo più tardi'}
               </button>
             </div>
@@ -944,14 +931,12 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             {dati.ruolo === 'delegato' && <InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge>}
-            <div className="flex flex-col gap-2 mt-2 pb-24">
+            <div className="flex flex-col gap-2 mt-2">
               <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo).charAt(0).toUpperCase() + pronomeTuo(tipo).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => update({ ruolo: 'proprietario' })} />
               <OptionButton icon="📋" label="Sono un delegato" sub="Il proprietario mi ha autorizzato per iscritto" selected={dati.ruolo === 'delegato'} onClick={() => update({ ruolo: 'delegato' })} />
               <OptionButton icon="⚰️" label="Il proprietario è deceduto" sub="Gestisco la pratica come erede o avente diritto" selected={dati.ruolo === 'deceduto'} onClick={() => update({ ruolo: 'deceduto' })} />
             </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-              <button onClick={next} disabled={!dati.ruolo} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.ruolo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
-            </div>
+            <button onClick={next} disabled={!dati.ruolo} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.ruolo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
           </>
         )}
 
@@ -960,13 +945,11 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <WarnBadge>In base alla scelta verrà generato il modulo notarile corretto da scaricare nell&apos;area personale.</WarnBadge>
-            <div className="flex flex-col gap-2 mt-3 pb-24">
+            <div className="flex flex-col gap-2 mt-3">
               <OptionButton icon="✅" label="Gli eredi accettano l'eredità" sub="Serve atto notarile di accettazione firmato" selected={dati.eredita === 'accetta'} onClick={() => update({ eredita: 'accetta' })} />
               <OptionButton icon="❌" label="Gli eredi rinunciano all'eredità" sub="Serve documentazione di rinuncia" selected={dati.eredita === 'rinuncia'} onClick={() => update({ eredita: 'rinuncia' })} />
             </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-              <button onClick={next} disabled={!dati.eredita} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.eredita ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
-            </div>
+            <button onClick={next} disabled={!dati.eredita} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.eredita ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
           </>
         )}
 
@@ -974,14 +957,12 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-2 pb-24">
+            <div className="flex flex-col gap-2">
               <OptionButton icon="📗" label="Sì, ho il libretto originale" sub="Documento disponibile e integro" selected={dati.libretto === 'si'} onClick={() => update({ libretto: 'si' })} />
               <OptionButton icon="🔍" label="Ho la denuncia di smarrimento" sub="Emessa da autorità pubblica" selected={dati.libretto === 'denuncia'} onClick={() => update({ libretto: 'denuncia' })} />
               <OptionButton icon="❓" label="Non ho nessuno dei due" sub="Ti spieghiamo come procedere" selected={dati.libretto === 'no'} onClick={() => update({ libretto: 'no' })} />
             </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-              <button onClick={next} disabled={!dati.libretto} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.libretto ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
-            </div>
+            <button onClick={next} disabled={!dati.libretto} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.libretto ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
           </>
         )}
 
@@ -989,14 +970,12 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            <div className="flex flex-col gap-2 pb-24">
+            <div className="flex flex-col gap-2">
               <OptionButton icon="💻" label="Digitale — nel fascicolo elettronico" sub="Non serve consegnarlo fisicamente" selected={dati.cdc === 'digitale'} onClick={() => update({ cdc: 'digitale' })} />
               <OptionButton icon="📄" label="Cartaceo — ce l'ho" sub="Lo consegno al demolitore" selected={dati.cdc === 'cartaceo'} onClick={() => update({ cdc: 'cartaceo' })} />
               <OptionButton icon="🔴" label="Smarrito" sub="Serve denuncia di smarrimento" selected={dati.cdc === 'smarrito'} onClick={() => update({ cdc: 'smarrito' })} />
             </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-              <button onClick={next} disabled={!dati.cdc} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.cdc ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
-            </div>
+            <button onClick={next} disabled={!dati.cdc} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.cdc ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
           </>
         )}
 
@@ -1008,18 +987,16 @@ export default function IniziaPage() {
               <span className="flex-shrink-0">🎁</span>
               <span><strong>Ritiro completamente gratuito</strong> — nessun costo nascosto, nessuna sorpresa.</span>
             </div>
-            <div className="flex flex-col gap-3 pb-24">
+            <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Nome e cognome</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome</label>
                 <input type="text" defaultValue={dati.nome} onChange={e => update({ nome: e.target.value })} onFocus={handleInputFocus} placeholder="Mario Rossi" className={inputClass} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Numero di telefono</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Numero di telefono</label>
                 <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => update({ telefono: e.target.value })} onFocus={handleInputFocus} placeholder="+39 333 1234567" className={inputClass} />
               </div>
-            </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-              <button onClick={next} disabled={!dati.nome || !dati.telefono} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.nome && dati.telefono ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Quasi fatto →</button>
+              <button onClick={next} disabled={!dati.nome || !dati.telefono} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.nome && dati.telefono ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Quasi fatto →</button>
             </div>
           </>
         )}
@@ -1029,18 +1006,16 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3">⚠️ {error}</div>}
-            <div className="flex flex-col gap-3 pb-24">
+            <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">La tua email</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
                 <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => update({ email: e.target.value })} onFocus={handleInputFocus} placeholder="mario@email.it" className={inputClass} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Scegli una password</label>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
                 <input type="password" defaultValue={dati.password} onChange={e => update({ password: e.target.value })} onFocus={handleInputFocus} placeholder="••••••••" className={inputClass} />
               </div>
-            </div>
-            <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-              <button onClick={handleSubmit} disabled={!dati.email || !dati.password || loading} className={`w-full py-4 rounded-xl font-semibold text-base shadow-lg shadow-blue-200 transition-all ${dati.email && dati.password && !loading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+              <button onClick={handleSubmit} disabled={!dati.email || !dati.password || loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.email && dati.password && !loading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Invia richiesta 🚀'}
               </button>
             </div>

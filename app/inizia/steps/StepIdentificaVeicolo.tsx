@@ -45,23 +45,22 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
     onNext()
   }
 
-  // Scroll input al centro dello schermo al focus (per non essere coperto da tastiera)
   function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
     setTimeout(() => {
       e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 300) // attesa che la tastiera si apra
+    }, 300)
   }
 
   const inputClass = (err?: string) =>
-    `w-full border rounded-xl px-4 py-3 text-base bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white ${
+    `w-full border rounded-xl px-4 py-3 text-base bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white placeholder:text-gray-400 ${
       err ? 'border-red-300 bg-red-50' : 'border-gray-200'
     }`
 
   return (
-    <div className="flex flex-col gap-4 pb-24">
+    <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3">
         <div id="field-anno">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Anno di immatricolazione</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Anno di immatricolazione</label>
           <input
             type="number"
             inputMode="numeric"
@@ -75,7 +74,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
           {errors.anno && <p className="text-xs text-red-600 mt-1">{errors.anno}</p>}
         </div>
         <div id="field-km">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Chilometri percorsi</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Chilometri percorsi</label>
           <input
             type="number"
             inputMode="numeric"
@@ -91,7 +90,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div id="field-marca">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Marca</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Marca</label>
           <input
             type="text"
             value={dati.marca}
@@ -103,7 +102,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
           {errors.marca && <p className="text-xs text-red-600 mt-1">{errors.marca}</p>}
         </div>
         <div id="field-modello">
-          <label className="block text-xs font-medium text-gray-500 mb-1">Modello</label>
+          <label className="block text-xs font-medium text-gray-600 mb-1">Modello</label>
           <input
             type="text"
             value={dati.modello}
@@ -116,15 +115,12 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
         </div>
       </div>
 
-      {/* Bottone sticky bottom - sempre visibile sopra la tastiera */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-white via-white to-transparent pt-6 z-10 max-w-md mx-auto">
-        <button
-          onClick={handleContinua}
-          className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all shadow-lg shadow-blue-200"
-        >
-          Continua →
-        </button>
-      </div>
+      <button
+        onClick={handleContinua}
+        className="w-full py-4 mt-2 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
+      >
+        Continua →
+      </button>
     </div>
   )
 }
