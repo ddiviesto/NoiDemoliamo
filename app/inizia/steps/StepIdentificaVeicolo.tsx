@@ -52,7 +52,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
   }
 
   const inputClass = (err?: string) =>
-    `w-full border rounded-xl px-4 py-3 text-base bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white placeholder:text-gray-400 ${
+    `w-full border rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white placeholder:text-gray-400 ${
       err ? 'border-red-300 bg-red-50' : 'border-gray-200'
     }`
 

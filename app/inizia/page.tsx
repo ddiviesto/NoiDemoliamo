@@ -672,7 +672,7 @@ export default function IniziaPage() {
 
   const puoiContinuareIndirizzo = indirizzoConfermato && dati.spazioCarroAttrezzi !== null
 
-  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-base bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
+  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
 
   return (
     <main className="min-h-screen flex items-start justify-center p-4 pt-8" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
@@ -808,7 +808,7 @@ export default function IniziaPage() {
                         onFocus={handleInputFocus}
                         placeholder="Es. Cancello largo 2,5 metri; cortile interno; salita ripida..."
                         rows={2}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base bg-white outline-none transition-all focus:border-blue-500 resize-none placeholder:text-gray-400"
+                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base text-gray-900 bg-white outline-none transition-all focus:border-blue-500 resize-none placeholder:text-gray-400"
                       />
                     </div>
                   </div>
