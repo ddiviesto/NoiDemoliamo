@@ -241,8 +241,9 @@ const ICONE_VEICOLO: Record<TipoMezzo, () => React.ReactNode> = {
 // FRASI DINAMICHE
 // ============================================================
 
-function articolo(tipo: TipoMezzo | null): string {
+function articolo(tipo: TipoMezzo | null, tipoAltro?: string): string {
   if (!tipo) return 'il veicolo'
+  if (tipo === 'altro' && tipoAltro?.trim()) return `il ${tipoAltro.trim().toLowerCase()}`
   const map: Record<TipoMezzo, string> = {
     autovettura: "l'autovettura", motoveicolo: 'il motoveicolo', ciclomotore: 'il ciclomotore',
     minicar: 'la minicar', furgone: 'il furgone', imbarcazione: "l'imbarcazione", pullman: 'il pullman',
@@ -251,8 +252,9 @@ function articolo(tipo: TipoMezzo | null): string {
   return map[tipo]
 }
 
-function articoloDel(tipo: TipoMezzo | null): string {
+function articoloDel(tipo: TipoMezzo | null, tipoAltro?: string): string {
   if (!tipo) return 'del veicolo'
+  if (tipo === 'altro' && tipoAltro?.trim()) return `del ${tipoAltro.trim().toLowerCase()}`
   const map: Record<TipoMezzo, string> = {
     autovettura: "dell'autovettura", motoveicolo: 'del motoveicolo', ciclomotore: 'del ciclomotore',
     minicar: 'della minicar', furgone: 'del furgone', imbarcazione: "dell'imbarcazione", pullman: 'del pullman',
@@ -261,8 +263,9 @@ function articoloDel(tipo: TipoMezzo | null): string {
   return map[tipo]
 }
 
-function pronomeTuo(tipo: TipoMezzo | null): string {
+function pronomeTuo(tipo: TipoMezzo | null, tipoAltro?: string): string {
   if (!tipo) return 'tuo veicolo'
+  if (tipo === 'altro' && tipoAltro?.trim()) return `tuo ${tipoAltro.trim().toLowerCase()}`
   const map: Record<TipoMezzo, string> = {
     autovettura: 'tua autovettura', motoveicolo: 'tuo motoveicolo', ciclomotore: 'tuo ciclomotore',
     minicar: 'tua minicar', furgone: 'tuo furgone', imbarcazione: 'tua imbarcazione', pullman: 'tuo pullman',
@@ -271,8 +274,12 @@ function pronomeTuo(tipo: TipoMezzo | null): string {
   return map[tipo]
 }
 
-function nomeVeicolo(tipo: TipoMezzo | null): string {
+function nomeVeicolo(tipo: TipoMezzo | null, tipoAltro?: string): string {
   if (!tipo) return 'Veicolo'
+  if (tipo === 'altro' && tipoAltro?.trim()) {
+    const t = tipoAltro.trim()
+    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
+  }
   const map: Record<TipoMezzo, string> = {
     autovettura: 'Autovettura', motoveicolo: 'Motoveicolo', ciclomotore: 'Ciclomotore',
     minicar: 'Minicar', furgone: 'Furgone', imbarcazione: 'Imbarcazione', pullman: 'Pullman',
@@ -297,12 +304,12 @@ interface StepMeta {
   sottoPagina?: string
 }
 
-function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
+function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string): StepMeta {
   if (stepKey === 'tipo-veicolo') {
     const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
     return {
       icona: Icona,
-      titoloBanner: tipo ? `Veicolo: ${nomeVeicolo(tipo)}` : 'Tipo di veicolo',
+      titoloBanner: tipo ? `Veicolo: ${nomeVeicolo(tipo, tipoAltro)}` : 'Tipo di veicolo',
       titoloPagina: 'Che tipo di veicolo è?',
       sottoPagina: 'Seleziona il tipo di mezzo per iniziare.',
     }
@@ -311,24 +318,24 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
     const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
     return {
       icona: Icona,
-      titoloBanner: `Identifica: ${nomeVeicolo(tipo)}`,
-      titoloPagina: `Identifica ${articolo(tipo)}`,
+      titoloBanner: `Identifica: ${nomeVeicolo(tipo, tipoAltro)}`,
+      titoloPagina: `Identifica ${articolo(tipo, tipoAltro)}`,
       sottoPagina: 'Anno, km, marca e modello.',
     }
   }
   if (stepKey === 'cambio-veicolo') {
     return {
       icona: IconaCambio,
-      titoloBanner: `Cambio: ${nomeVeicolo(tipo)}`,
-      titoloPagina: `Che tipo di cambio ha ${articolo(tipo)}?`,
+      titoloBanner: `Cambio: ${nomeVeicolo(tipo, tipoAltro)}`,
+      titoloPagina: `Che tipo di cambio ha ${articolo(tipo, tipoAltro)}?`,
       sottoPagina: 'Questa info aiuta il demolitore a scegliere il carro attrezzi giusto.',
     }
   }
   if (stepKey === 'condizioni-veicolo') {
     return {
       icona: IconaCondizioni,
-      titoloBanner: `Condizioni: ${nomeVeicolo(tipo)}`,
-      titoloPagina: `In che condizioni è ${articolo(tipo)}?`,
+      titoloBanner: `Condizioni: ${nomeVeicolo(tipo, tipoAltro)}`,
+      titoloPagina: `In che condizioni è ${articolo(tipo, tipoAltro)}?`,
       sottoPagina: 'Rispondi alle 4 domande, ti bastano pochi secondi.',
     }
   }
@@ -339,15 +346,15 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
     case 'indirizzo':
       return {
         icona: Icona,
-        titoloBanner: `Indirizzo: ${nomeVeicolo(tipo)}`,
-        titoloPagina: `Dove si trova ${articolo(tipo)}?`,
-        sottoPagina: `Inserisci l'indirizzo esatto dove si trova fisicamente ${articolo(tipo)}: il demolitore verrà lì a ritirarlo.`,
+        titoloBanner: `Indirizzo: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloPagina: `Dove si trova ${articolo(tipo, tipoAltro)}?`,
+        sottoPagina: `Inserisci l'indirizzo esatto dove si trova fisicamente ${articolo(tipo, tipoAltro)}: il demolitore verrà lì a ritirarlo.`,
       }
     case 'targa':
       return {
         icona: Icona,
-        titoloBanner: `Targa: ${nomeVeicolo(tipo)}`,
-        titoloPagina: `Qual è la targa ${articoloDel(tipo)}?`,
+        titoloBanner: `Targa: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloPagina: `Qual è la targa ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: 'Ci serve per verificare eventuali fermi amministrativi.',
       }
     case 'cf':
@@ -360,15 +367,15 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
     case 'foto':
       return {
         icona: IconaFoto,
-        titoloBanner: `Foto: ${nomeVeicolo(tipo)}`,
-        titoloPagina: `Foto ${articoloDel(tipo)}`,
-        sottoPagina: `Le foto ci aiutano a capire le condizioni ${articoloDel(tipo)} e a scegliere il mezzo di trasporto più adatto per il ritiro.`,
+        titoloBanner: `Foto: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloPagina: `Foto ${articoloDel(tipo, tipoAltro)}`,
+        sottoPagina: `Le foto ci aiutano a capire le condizioni ${articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto più adatto per il ritiro.`,
       }
     case 'ruolo':
       return {
         icona: IconaRuolo,
         titoloBanner: 'La tua posizione',
-        titoloPagina: `Qual è la tua posizione rispetto ${articoloDel(tipo)}?`,
+        titoloPagina: `Qual è la tua posizione rispetto ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: 'Seleziona la situazione corretta per determinare i documenti necessari.',
       }
     case 'eredita':
@@ -381,8 +388,8 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
     case 'libretto':
       return {
         icona: IconaLibretto,
-        titoloBanner: `Libretto: ${nomeVeicolo(tipo)}`,
-        titoloPagina: `Hai il libretto di circolazione ${articoloDel(tipo)}?`,
+        titoloBanner: `Libretto: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloPagina: `Hai il libretto di circolazione ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: 'Il libretto originale va consegnato al demolitore al momento del ritiro. Così riceverai il primo documento per bloccare o spostare l\'assicurazione.',
       }
     case 'cdc':
@@ -474,8 +481,8 @@ function getSteps(dati: DatiPratica) {
 }
 
 // ============================================================
-function BannerStep({ stepKey, curIdx, total, tipo, onBack }: { stepKey: string; curIdx: number; total: number; tipo: TipoMezzo | null; onBack: () => void }) {
-  const meta = getStepMeta(stepKey, tipo)
+function BannerStep({ stepKey, curIdx, total, tipo, tipoAltro, onBack }: { stepKey: string; curIdx: number; total: number; tipo: TipoMezzo | null; tipoAltro?: string; onBack: () => void }) {
+  const meta = getStepMeta(stepKey, tipo, tipoAltro)
   const Icona = meta.icona
 
   return (
@@ -553,7 +560,7 @@ export default function IniziaPage() {
   const total = steps.length
   const pct = Math.round((curIdx / (total - 1)) * 100)
   const tipo = dati.veicolo.tipo
-  const meta = getStepMeta(curStep, tipo)
+  const meta = getStepMeta(curStep, tipo, dati.veicolo.tipoAltro)
 
   function update(partial: Partial<DatiPratica>) {
     setDati(prev => ({ ...prev, ...partial }))
@@ -819,6 +826,7 @@ export default function IniziaPage() {
           curIdx={curIdx}
           total={total}
           tipo={tipo}
+          tipoAltro={dati.veicolo.tipoAltro}
           onBack={curIdx > 0 ? back : () => router.push('/')}
         />
 
@@ -1075,7 +1083,7 @@ export default function IniziaPage() {
         {curStep === 'foto' && (
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo)} e a scegliere il mezzo di trasporto corretto.</p>
+            <p className="text-sm text-gray-500 mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto corretto.</p>
             <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-sm text-blue-800 mb-4">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
                 <circle cx="12" cy="12" r="10"/>
@@ -1275,7 +1283,7 @@ export default function IniziaPage() {
             {erroreRuolo && <ErrorBadge>Seleziona la tua posizione per continuare.</ErrorBadge>}
             {dati.ruolo === 'delegato' && <InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge>}
             <div className="flex flex-col gap-2 mt-2">
-              <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo).charAt(0).toUpperCase() + pronomeTuo(tipo).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => { update({ ruolo: 'proprietario' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
+              <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo, tipoAltro).charAt(0).toUpperCase() + pronomeTuo(tipo, tipoAltro).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => { update({ ruolo: 'proprietario' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
               <OptionButton icon="📋" label="Sono un delegato" sub="Il proprietario mi ha autorizzato per iscritto" selected={dati.ruolo === 'delegato'} onClick={() => { update({ ruolo: 'delegato' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
               <OptionButton icon="⚰️" label="Il proprietario è deceduto" sub="Gestisco la pratica come erede o avente diritto" selected={dati.ruolo === 'deceduto'} onClick={() => { update({ ruolo: 'deceduto' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
             </div>
