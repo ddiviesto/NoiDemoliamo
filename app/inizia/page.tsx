@@ -167,10 +167,10 @@ function IconaVFurgone() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24">
       <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
-        <path d="M13 6v5a1 1 0 0 0 1 1h6.102a1 1 0 0 1 .712.298l.898.91a1 1 0 0 1 .288.702V17a1 1 0 0 1-1 1h-3" />
-        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.176 4.2M9 18h5" />
-        <circle cx="16" cy="18" r="2" />
-        <circle cx="7" cy="18" r="2" />
+        <path d="M13 6v5a1 1 0 0 0 1 1h6.102a1 1 0 0 1 .712.298l.898.91a1 1 0 0 1 .288.702V17a1 1 0 0 1-1 1h-3"/>
+        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.176 4.2M9 18h5"/>
+        <circle cx="16" cy="18" r="2"/>
+        <circle cx="7" cy="18" r="2"/>
       </g>
     </svg>
   )
@@ -560,7 +560,8 @@ export default function IniziaPage() {
   const total = steps.length
   const pct = Math.round((curIdx / (total - 1)) * 100)
   const tipo = dati.veicolo.tipo
-  const meta = getStepMeta(curStep, tipo, dati.veicolo.tipoAltro)
+  const tipoAltro = dati.veicolo.tipoAltro
+  const meta = getStepMeta(curStep, tipo, tipoAltro)
 
   function update(partial: Partial<DatiPratica>) {
     setDati(prev => ({ ...prev, ...partial }))
@@ -693,12 +694,6 @@ export default function IniziaPage() {
     setFoto(prev => prev.filter((_, i) => i !== idx))
   }
 
-  function handleInputFocus(e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) {
-    setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 300)
-  }
-
   async function uploadFotoSuStorage(praticaId: string, file: File, index: number): Promise<string | null> {
     try {
       const ext = file.name.split('.').pop() || 'jpg'
@@ -826,7 +821,7 @@ export default function IniziaPage() {
           curIdx={curIdx}
           total={total}
           tipo={tipo}
-          tipoAltro={dati.veicolo.tipoAltro}
+          tipoAltro={tipoAltro}
           onBack={curIdx > 0 ? back : () => router.push('/')}
         />
 
@@ -969,7 +964,6 @@ export default function IniziaPage() {
                       <textarea
                         value={dati.spazioCarroAttrezziNote}
                         onChange={e => update({ spazioCarroAttrezziNote: e.target.value })}
-                        
                         placeholder="Es. Cancello largo 2,5 metri; cortile interno; salita ripida..."
                         rows={2}
                         className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base text-gray-900 bg-white outline-none transition-all focus:border-blue-500 resize-none placeholder:text-gray-400"
@@ -1012,7 +1006,6 @@ export default function IniziaPage() {
                 type="text"
                 defaultValue={dati.targa}
                 onChange={e => { update({ targa: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), targaSkipped: false }); setErroreTarga(false) }}
-                
                 placeholder="Es. AB 123 CD"
                 className={`${inputClass(erroreTarga)} uppercase`}
               />
@@ -1037,7 +1030,6 @@ export default function IniziaPage() {
                   type="text"
                   value={dati.cf}
                   onChange={e => { update({ cf: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), cfSkipped: false }); setErroreCf(false) }}
-                  
                   placeholder="Es. RSSMRA80A01H501Z"
                   className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16))} uppercase tracking-wider`}
                   maxLength={16}
@@ -1349,11 +1341,11 @@ export default function IniziaPage() {
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome</label>
-                <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, nome: false })) }}  placeholder="Mario Rossi" className={inputClass(erroreAnagrafica.nome)} />
+                <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, nome: false })) }} placeholder="Mario Rossi" className={inputClass(erroreAnagrafica.nome)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Numero di telefono</label>
-                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, telefono: false })) }}  placeholder="+39 333 1234567" className={inputClass(erroreAnagrafica.telefono)} />
+                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, telefono: false })) }} placeholder="+39 333 1234567" className={inputClass(erroreAnagrafica.telefono)} />
               </div>
               <button onClick={handleContinuaAnagrafica} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Quasi fatto →</button>
             </div>
@@ -1373,11 +1365,11 @@ export default function IniziaPage() {
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
-                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }}  placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
+                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
-                <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }}  placeholder="••••••••" className={inputClass(erroreAccount.password)} />
+                <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }} placeholder="••••••••" className={inputClass(erroreAccount.password)} />
               </div>
               <button onClick={handleContinuaAccount} disabled={loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'}`}>
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Invia richiesta 🚀'}
