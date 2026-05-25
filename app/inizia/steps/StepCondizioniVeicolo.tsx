@@ -135,7 +135,7 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
         <textarea
           value={dati.note}
           onChange={e => onUpdate({ note: e.target.value })}
-          onFocus={handleTextareaFocus}
+          
           placeholder="Descrivi eventuali annotazioni..."
           rows={3}
           className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base text-gray-900 bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none placeholder:text-gray-400"
