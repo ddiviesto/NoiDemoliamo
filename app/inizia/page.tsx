@@ -588,7 +588,7 @@ export default function IniziaPage() {
   }
 
   function handleContinuaCf() {
-    if (!dati.cf) {
+    if (!dati.cf || dati.cf.length !== 16) {
       setErroreCf(true)
       return
     }
@@ -963,7 +963,7 @@ export default function IniziaPage() {
               <input
                 type="text"
                 defaultValue={dati.targa}
-                onChange={e => { update({ targa: e.target.value.toUpperCase(), targaSkipped: false }); setErroreTarga(false) }}
+                onChange={e => { update({ targa: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), targaSkipped: false }); setErroreTarga(false) }}
                 onFocus={handleInputFocus}
                 placeholder="Es. AB 123 CD"
                 className={`${inputClass(erroreTarga)} uppercase`}
@@ -983,16 +983,45 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-3">
-              {erroreCf && <ErrorBadge>Inserisci il codice fiscale per continuare.</ErrorBadge>}
-              <input
-                type="text"
-                defaultValue={dati.cf}
-                onChange={e => { update({ cf: e.target.value.toUpperCase(), cfSkipped: false }); setErroreCf(false) }}
-                onFocus={handleInputFocus}
-                placeholder="Es. RSSMRA80A01H501Z"
-                className={`${inputClass(erroreCf)} uppercase tracking-wider`}
-                maxLength={16}
-              />
+              {erroreCf && <ErrorBadge>Inserisci un codice fiscale valido di 16 caratteri.</ErrorBadge>}
+              <div>
+                <input
+                  type="text"
+                  value={dati.cf}
+                  onChange={e => { update({ cf: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), cfSkipped: false }); setErroreCf(false) }}
+                  onFocus={handleInputFocus}
+                  placeholder="Es. RSSMRA80A01H501Z"
+                  className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16))} uppercase tracking-wider`}
+                  maxLength={16}
+                />
+                <div className="flex items-center justify-between mt-1.5 px-1">
+                  <span className={`text-xs ${
+                    dati.cf.length === 16
+                      ? 'text-green-600 font-medium'
+                      : dati.cf.length > 0
+                        ? 'text-amber-600'
+                        : 'text-gray-400'
+                  }`}>
+                    {dati.cf.length === 16 ? (
+                      <span className="inline-flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Codice fiscale valido
+                      </span>
+                    ) : dati.cf.length > 0 ? (
+                      `Mancano ${16 - dati.cf.length} caratteri`
+                    ) : (
+                      'Il codice fiscale deve essere di 16 caratteri'
+                    )}
+                  </span>
+                  <span className={`text-xs font-mono ${
+                    dati.cf.length === 16 ? 'text-green-600 font-semibold' : 'text-gray-400'
+                  }`}>
+                    {dati.cf.length}/16
+                  </span>
+                </div>
+              </div>
               <button
                 onClick={handleContinuaCf}
                 className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
