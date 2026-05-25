@@ -821,6 +821,20 @@ export default function IniziaPage() {
 
         {curStep === 'tipo-veicolo' && (
           <>
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-3 mb-5 flex items-center gap-3">
+              <div className="w-11 h-11 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-200">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 12l2 2 4-4"/>
+                  <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.68.94 6.36 2.64"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-bold text-blue-900 leading-tight mb-0.5">Pensiamo a tutto noi</div>
+                <div className="text-xs text-blue-800 leading-snug">
+                  In base alle tue risposte ti diremo quali documenti preparare.
+                </div>
+              </div>
+            </div>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
             <StepTipoVeicolo
