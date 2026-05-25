@@ -254,7 +254,7 @@ export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
                 <button
                   key={t.value}
                   onClick={() => selezionaTipo(t.value)}
-                  className={`relative aspect-square flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-[1.5px] text-center transition-all
+                  className={`relative h-[78px] flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-[1.5px] text-center transition-all
                     ${isSelected
                       ? 'border-blue-600 bg-blue-50 shadow-[0_0_0_3px_rgba(37,99,235,0.15)] text-blue-700'
                       : 'border-gray-200 bg-white hover:border-blue-300 hover:bg-blue-50 text-gray-500'
