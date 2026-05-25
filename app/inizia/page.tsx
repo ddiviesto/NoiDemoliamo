@@ -1035,40 +1035,98 @@ export default function IniziaPage() {
         {curStep === 'foto' && (
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-3">{meta.sottoPagina} Più foto carichi, più veloce sarà il processo.</p>
-            <InfoBadge>Scatta foto da diverse angolazioni: frontale, posteriore, laterali e abitacolo. Non serve che siano perfette!</InfoBadge>
-            <div className="mt-4 flex flex-col gap-3">
+            <p className="text-sm text-gray-500 mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo)} e a scegliere il mezzo di trasporto corretto.</p>
+            <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-sm text-blue-800 mb-4">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span className="text-xs leading-relaxed">Frontale, posteriore, laterali e abitacolo. Non serve che siano perfette.</span>
+            </div>
+            <div className="flex flex-col gap-2">
               <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFoto} className="hidden" />
               <input ref={fotoGalleriaRef} type="file" accept="image/*" multiple onChange={handleFoto} className="hidden" />
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => fotoCameraRef.current?.click()} className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-blue-200 rounded-xl bg-blue-50 hover:bg-blue-100 transition-all text-blue-700">
-                  <span className="text-3xl">📷</span>
-                  <span className="text-sm font-medium">Scatta foto</span>
-                  <span className="text-xs text-blue-500">Apre la fotocamera</span>
-                </button>
-                <button onClick={() => fotoGalleriaRef.current?.click()} className="flex flex-col items-center gap-2 p-4 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50 hover:bg-gray-100 transition-all text-gray-600">
-                  <span className="text-3xl">🖼️</span>
-                  <span className="text-sm font-medium">Carica foto</span>
-                  <span className="text-xs text-gray-500">Dal telefono o PC</span>
-                </button>
-              </div>
+
+              <button
+                onClick={() => fotoCameraRef.current?.click()}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-sm text-gray-900">Scatta una foto</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Apre la fotocamera</div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 flex-shrink-0">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
+              <button
+                onClick={() => fotoGalleriaRef.current?.click()}
+                className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all"
+              >
+                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-sm text-gray-900">Carica dalla galleria</div>
+                  <div className="text-xs text-gray-500 mt-0.5">Da telefono o PC</div>
+                </div>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 flex-shrink-0">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+
               {foto.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-gray-600 mb-2">{foto.length} foto caricate</p>
+                <div className="mt-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-gray-700">
+                      {foto.length} {foto.length === 1 ? 'foto caricata' : 'foto caricate'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-xs text-green-700 font-medium">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Pronte
+                    </span>
+                  </div>
                   <div className="grid grid-cols-3 gap-2">
                     {foto.map((f, i) => (
-                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200">
+                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={URL.createObjectURL(f)} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
-                        <button onClick={() => rimuoviFoto(i)} className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">✕</button>
+                        <button
+                          onClick={() => rimuoviFoto(i)}
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                          aria-label="Rimuovi foto"
+                        >
+                          ✕
+                        </button>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
-              <button onClick={next} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 transition-all">
-                {foto.length > 0 ? `Continua con ${foto.length} foto →` : 'Al momento non le ho, aggiungo più tardi'}
-              </button>
+
+              {foto.length > 0 ? (
+                <button onClick={next} className="w-full py-4 mt-3 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">
+                  Continua con {foto.length} {foto.length === 1 ? 'foto' : 'foto'} →
+                </button>
+              ) : (
+                <button onClick={next} className="w-full py-3 mt-3 rounded-xl font-medium text-sm bg-white text-gray-600 border-[1.5px] border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
+                  Continua senza foto · le aggiungo dopo
+                </button>
+              )}
             </div>
           </>
         )}
