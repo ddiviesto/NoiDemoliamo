@@ -517,6 +517,7 @@ export default function IniziaPage() {
   const [indirizzoConfermato, setIndirizzoConfermato] = useState(false)
   const [datiIndirizzoExtra, setDatiIndirizzoExtra] = useState<DatiIndirizzo | null>(null)
   const [foto, setFoto] = useState<File[]>([])
+  const [mostraSheetFoto, setMostraSheetFoto] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState<string>('')
   const fotoCameraRef = useRef<HTMLInputElement>(null)
   const fotoGalleriaRef = useRef<HTMLInputElement>(null)
@@ -654,6 +655,17 @@ export default function IniziaPage() {
       const nuove = Array.from(e.target.files)
       setFoto(prev => [...prev, ...nuove])
     }
+    setMostraSheetFoto(false)
+  }
+
+  function apriCamera() {
+    setMostraSheetFoto(false)
+    setTimeout(() => fotoCameraRef.current?.click(), 100)
+  }
+
+  function apriGalleria() {
+    setMostraSheetFoto(false)
+    setTimeout(() => fotoGalleriaRef.current?.click(), 100)
   }
 
   function rimuoviFoto(idx: number) {
@@ -1114,6 +1126,16 @@ export default function IniziaPage() {
                         </button>
                       </div>
                     ))}
+                    <button
+                      onClick={() => setMostraSheetFoto(true)}
+                      className="aspect-square rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 hover:scale-[1.02] flex flex-col items-center justify-center gap-1 text-blue-600 transition-all"
+                      aria-label="Aggiungi altra foto"
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold leading-none">
+                        +
+                      </div>
+                      <span className="text-[10px] font-semibold leading-tight text-center">Aggiungi<br/>altra foto</span>
+                    </button>
                   </div>
                 </div>
               )}
@@ -1158,6 +1180,63 @@ export default function IniziaPage() {
                 </button>
               )}
             </div>
+
+            {/* Sheet popup scelta foto */}
+            {mostraSheetFoto && (
+              <div
+                className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+                onClick={() => setMostraSheetFoto(false)}
+              >
+                <div
+                  className="bg-white w-full max-w-md rounded-t-3xl p-5 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4" />
+                  <h3 className="text-base font-bold text-gray-900 text-center mb-1">Aggiungi una foto</h3>
+                  <p className="text-xs text-gray-500 text-center mb-5">Come vuoi procedere?</p>
+
+                  <button
+                    onClick={apriCamera}
+                    className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all mb-2"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-gray-900">Scatta una foto</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Apre la fotocamera</div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={apriGalleria}
+                    className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all mb-4"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-sm text-gray-900">Carica dalla galleria</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Da telefono o PC</div>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setMostraSheetFoto(false)}
+                    className="w-full py-3 rounded-xl font-medium text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+                  >
+                    Annulla
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
 
