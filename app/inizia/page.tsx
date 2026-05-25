@@ -1353,11 +1353,32 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            {erroreLibretto && <ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge>}
+            {erroreLibretto && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
-              <OptionButton icon="📗" label="Sì, ho il libretto originale" sub="Documento disponibile e integro" selected={dati.libretto === 'si'} onClick={() => { update({ libretto: 'si' }); setErroreLibretto(false) }} errorBorder={erroreLibretto} />
-              <OptionButton icon="🔍" label="Ho la denuncia di smarrimento" sub="Emessa da autorità pubblica" selected={dati.libretto === 'denuncia'} onClick={() => { update({ libretto: 'denuncia' }); setErroreLibretto(false) }} errorBorder={erroreLibretto} />
-              <OptionButton icon="❓" label="Non ho nessuno dei due" sub="Ti spieghiamo come procedere" selected={dati.libretto === 'no'} onClick={() => { update({ libretto: 'no' }); setErroreLibretto(false) }} errorBorder={erroreLibretto} />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><path d="m22 27.18l-2.59-2.59L18 26l4 4l8-8l-1.41-1.41zM9 17h7v2H9zm0-5h12v2H9zm0-5h12v2H9z"/><path d="M16 30H6c-1.103 0-2-.897-2-2V4c0-1.103.897-2 2-2h18c1.103 0 2 .897 2 2v15h-2V4H6v24h10z"/></svg>}
+                label="Sì, ho il libretto originale"
+                sub="Documento disponibile ed integro"
+                selected={dati.libretto === 'si'}
+                onClick={() => { update({ libretto: 'si' }); setErroreLibretto(false) }}
+                errorBorder={erroreLibretto}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 14v-4c0-3.771 0-5.657 1.172-6.828S7.229 2 11 2h2c3.771 0 5.657 0 6.828 1.172S21 6.229 21 10v4c0 3.771 0 5.657-1.172 6.828S16.771 22 13 22h-2c-3.771 0-5.657 0-6.828-1.172S3 17.771 3 14Z"/><path strokeLinecap="round" strokeLinejoin="round" d="M11.333 10.667c1.055 1.055 2.445 2.127 2.445 2.127l1.904-1.905s-1.072-1.39-2.126-2.445C12.5 7.39 11.11 6.317 11.11 6.317L9.206 8.222s1.072 1.39 2.127 2.445m0 0L8 14m8-3.429l-2.54 2.54M11.43 6L8.89 8.54"/><path strokeLinecap="round" d="M8 18h8"/></svg>}
+                label="Ho la denuncia di smarrimento in originale"
+                sub="Emessa da autorità pubblica"
+                selected={dati.libretto === 'denuncia'}
+                onClick={() => { update({ libretto: 'denuncia' }); setErroreLibretto(false) }}
+                errorBorder={erroreLibretto}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><circle cx="9" cy="28.5" r="1.5"/><path d="M10 25H8v-4h2a2 2 0 0 0 0-4H8a2 2 0 0 0-2 2v.5H4V19a4.005 4.005 0 0 1 4-4h2a4 4 0 0 1 0 8Z"/><path d="m27.7 9.3l-7-7A.9.9 0 0 0 20 2H10a2.006 2.006 0 0 0-2 2v8h2V4h8v6a2.006 2.006 0 0 0 2 2h6v16H14v2h12a2.006 2.006 0 0 0 2-2V10a.91.91 0 0 0-.3-.7M20 10V4.4l5.6 5.6Z"/></svg>}
+                label="Non ho nessuno dei due al momento"
+                sub="Ti spieghiamo come procedere"
+                selected={dati.libretto === 'no'}
+                onClick={() => { update({ libretto: 'no' }); setErroreLibretto(false) }}
+                errorBorder={erroreLibretto}
+              />
             </div>
             <button onClick={handleContinuaLibretto} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
