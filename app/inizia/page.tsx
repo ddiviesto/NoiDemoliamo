@@ -1118,13 +1118,43 @@ export default function IniziaPage() {
                 </div>
               )}
 
-              {foto.length > 0 ? (
-                <button onClick={next} className="w-full py-4 mt-3 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">
-                  Continua con {foto.length} {foto.length === 1 ? 'foto' : 'foto'} →
-                </button>
-              ) : (
+              {foto.length > 0 && foto.length < 4 && (
+                <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                    <path d="M12 9v4"/>
+                    <path d="M12 17h.01"/>
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                  <span>
+                    Ottimo inizio! Aggiungi <strong>almeno {4 - foto.length} {4 - foto.length === 1 ? 'altra foto' : 'altre foto'}</strong> (frontale, posteriore, laterali) per aiutare il demolitore a preventivare meglio.
+                  </span>
+                </div>
+              )}
+
+              {foto.length >= 4 && (
+                <div className="mt-3 flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>Perfetto! Hai caricato un buon numero di foto. Puoi continuare o aggiungerne ancora.</span>
+                </div>
+              )}
+
+              {foto.length === 0 && (
                 <button onClick={next} className="w-full py-3 mt-3 rounded-xl font-medium text-sm bg-white text-gray-600 border-[1.5px] border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
                   Continua senza foto · le aggiungo dopo
+                </button>
+              )}
+
+              {foto.length > 0 && foto.length < 4 && (
+                <button onClick={next} className="w-full py-3 mt-2 rounded-xl font-medium text-sm bg-white text-gray-500 border-[1.5px] border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
+                  Continua comunque con {foto.length} {foto.length === 1 ? 'foto' : 'foto'}
+                </button>
+              )}
+
+              {foto.length >= 4 && (
+                <button onClick={next} className="w-full py-4 mt-2 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">
+                  Continua con {foto.length} foto →
                 </button>
               )}
             </div>
