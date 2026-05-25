@@ -293,6 +293,11 @@ function veicoloHaCambio(tipo: TipoMezzo | null): boolean {
   return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'furgone' || tipo === 'pullman' || tipo === 'camion' || tipo === 'altro'
 }
 
+function isFemminile(tipo: TipoMezzo | null): boolean {
+  if (!tipo) return false
+  return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'imbarcazione'
+}
+
 // ============================================================
 // META STEP
 // ============================================================
@@ -435,6 +440,32 @@ function OptionButton({ icon, label, sub, selected, onClick, errorBorder }: { ic
       </div>
       <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
         {selected && <span className="text-white text-xs">✓</span>}
+      </div>
+    </button>
+  )
+}
+
+function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder }: { iconSvg: React.ReactNode; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean }) {
+  const baseBorder = selected
+    ? 'border-blue-600 bg-blue-50'
+    : errorBorder
+      ? 'border-red-300 bg-red-50/30 hover:border-red-400'
+      : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
+  return (
+    <button onClick={onClick} className={`w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] text-left transition-all ${baseBorder}`}>
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? 'bg-blue-200 text-blue-700' : 'bg-blue-100 text-blue-600'}`}>
+        {iconSvg}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className={`font-semibold text-sm ${selected ? 'text-blue-900' : 'text-gray-900'}`}>{label}</div>
+        <div className={`text-xs mt-0.5 ${selected ? 'text-blue-700' : 'text-gray-500'}`}>{sub}</div>
+      </div>
+      <div className={`w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
+        {selected && (
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        )}
       </div>
     </button>
   )
@@ -1272,12 +1303,33 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            {erroreRuolo && <ErrorBadge>Seleziona la tua posizione per continuare.</ErrorBadge>}
-            {dati.ruolo === 'delegato' && <InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge>}
-            <div className="flex flex-col gap-2 mt-2">
-              <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo, tipoAltro).charAt(0).toUpperCase() + pronomeTuo(tipo, tipoAltro).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => { update({ ruolo: 'proprietario' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
-              <OptionButton icon="📋" label="Sono un delegato" sub="Il proprietario mi ha autorizzato per iscritto" selected={dati.ruolo === 'delegato'} onClick={() => { update({ ruolo: 'delegato' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
-              <OptionButton icon="⚰️" label="Il proprietario è deceduto" sub="Gestisco la pratica come erede o avente diritto" selected={dati.ruolo === 'deceduto'} onClick={() => { update({ ruolo: 'deceduto' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
+            {erroreRuolo && <div className="mb-3"><ErrorBadge>Seleziona la tua posizione per continuare.</ErrorBadge></div>}
+            {dati.ruolo === 'delegato' && <div className="mb-3"><InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge></div>}
+            <div className="flex flex-col gap-2">
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+                label="Sono il proprietario"
+                sub={`${articolo(tipo, tipoAltro).charAt(0).toUpperCase() + articolo(tipo, tipoAltro).slice(1)} è intestat${isFemminile(tipo) ? 'a' : 'o'} a me`}
+                selected={dati.ruolo === 'proprietario'}
+                onClick={() => { update({ ruolo: 'proprietario' }); setErroreRuolo(false) }}
+                errorBorder={erroreRuolo}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>}
+                label="Sono un delegato"
+                sub="Il proprietario mi ha autorizzato"
+                selected={dati.ruolo === 'delegato'}
+                onClick={() => { update({ ruolo: 'delegato' }); setErroreRuolo(false) }}
+                errorBorder={erroreRuolo}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21s-7-4.5-7-10a5 5 0 0 1 9-3a5 5 0 0 1 9 3c0 5.5-7 10-7 10"/><line x1="8" y1="14" x2="16" y2="14"/></svg>}
+                label="Il proprietario è deceduto"
+                sub="Gestisco la pratica come erede"
+                selected={dati.ruolo === 'deceduto'}
+                onClick={() => { update({ ruolo: 'deceduto' }); setErroreRuolo(false) }}
+                errorBorder={erroreRuolo}
+              />
             </div>
             <button onClick={handleContinuaRuolo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
