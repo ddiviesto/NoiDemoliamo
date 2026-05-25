@@ -399,9 +399,14 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null): StepMeta {
 
 // ============================================================
 
-function OptionButton({ icon, label, sub, selected, onClick }: { icon: string; label: string; sub: string; selected: boolean; onClick: () => void }) {
+function OptionButton({ icon, label, sub, selected, onClick, errorBorder }: { icon: string; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean }) {
+  const baseBorder = selected
+    ? 'border-blue-600 bg-blue-50'
+    : errorBorder
+      ? 'border-red-300 bg-red-50/30 hover:border-red-400'
+      : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${selected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'}`}>
+    <button onClick={onClick} className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${baseBorder}`}>
       <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${selected ? 'bg-blue-100' : 'bg-gray-100'}`}>{icon}</div>
       <div className="flex-1">
         <div className={`font-medium text-sm ${selected ? 'text-blue-700' : 'text-gray-800'}`}>{label}</div>
@@ -427,6 +432,15 @@ function InfoBadge({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
       <span className="flex-shrink-0 mt-0.5">ℹ️</span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+function ErrorBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
+      <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
       <span>{children}</span>
     </div>
   )
@@ -507,6 +521,18 @@ export default function IniziaPage() {
   const fotoCameraRef = useRef<HTMLInputElement>(null)
   const fotoGalleriaRef = useRef<HTMLInputElement>(null)
 
+  // Stati di errore per ogni step (mostrati al click su Continua)
+  const [erroreIndirizzo, setErroreIndirizzo] = useState(false)
+  const [erroreSpazio, setErroreSpazio] = useState(false)
+  const [erroreTarga, setErroreTarga] = useState(false)
+  const [erroreCf, setErroreCf] = useState(false)
+  const [erroreRuolo, setErroreRuolo] = useState(false)
+  const [erroreEredita, setErroreEredita] = useState(false)
+  const [erroreLibretto, setErroreLibretto] = useState(false)
+  const [erroreCdc, setErroreCdc] = useState(false)
+  const [erroreAnagrafica, setErroreAnagrafica] = useState<{nome?: boolean; telefono?: boolean}>({})
+  const [erroreAccount, setErroreAccount] = useState<{email?: boolean; password?: boolean}>({})
+
   const steps = getSteps(dati)
   const curStep = steps[curIdx]
   const total = steps.length
@@ -531,10 +557,96 @@ export default function IniziaPage() {
     setDatiIndirizzoExtra(d)
     update({ indirizzo: d.indirizzo, indirizzoSkipped: false })
     setIndirizzoConfermato(true)
+    setErroreIndirizzo(false)
   }
 
   function setSpazio(v: SpazioCarroAttrezzi) {
     update({ spazioCarroAttrezzi: v })
+    setErroreSpazio(false)
+  }
+
+  // Handler "Continua" con validazione
+  function handleContinuaIndirizzo() {
+    if (!indirizzoConfermato) {
+      setErroreIndirizzo(true)
+      return
+    }
+    if (!dati.spazioCarroAttrezzi) {
+      setErroreSpazio(true)
+      document.getElementById('box-spazio')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
+    next()
+  }
+
+  function handleContinuaTarga() {
+    if (!dati.targa) {
+      setErroreTarga(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaCf() {
+    if (!dati.cf) {
+      setErroreCf(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaRuolo() {
+    if (!dati.ruolo) {
+      setErroreRuolo(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaEredita() {
+    if (!dati.eredita) {
+      setErroreEredita(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaLibretto() {
+    if (!dati.libretto) {
+      setErroreLibretto(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaCdc() {
+    if (!dati.cdc) {
+      setErroreCdc(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaAnagrafica() {
+    const e: {nome?: boolean; telefono?: boolean} = {}
+    if (!dati.nome) e.nome = true
+    if (!dati.telefono) e.telefono = true
+    if (e.nome || e.telefono) {
+      setErroreAnagrafica(e)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaAccount() {
+    const e: {email?: boolean; password?: boolean} = {}
+    if (!dati.email) e.email = true
+    if (!dati.password) e.password = true
+    if (e.email || e.password) {
+      setErroreAccount(e)
+      return
+    }
+    handleSubmit()
   }
 
   function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -670,9 +782,7 @@ export default function IniziaPage() {
     }
   }
 
-  const puoiContinuareIndirizzo = indirizzoConfermato && dati.spazioCarroAttrezzi !== null
-
-  const inputClass = "w-full border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
+  const inputClass = (err?: boolean) => `w-full border rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400 ${err ? 'border-red-300 bg-red-50' : 'border-gray-200'}`
 
   return (
     <main className="min-h-screen flex items-start justify-center p-4 pt-8" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
@@ -760,18 +870,24 @@ export default function IniziaPage() {
                     </div>
                     <div className="flex-1 text-sm font-medium text-green-800">{dati.indirizzo}</div>
                     <button
-                      onClick={() => { update({ indirizzo: '', spazioCarroAttrezzi: null, spazioCarroAttrezziNote: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null) }}
+                      onClick={() => { update({ indirizzo: '', spazioCarroAttrezzi: null, spazioCarroAttrezziNote: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null); setErroreSpazio(false) }}
                       className="bg-white border border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
                     >
                       Cambia
                     </button>
                   </div>
 
-                  <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-4">
+                  <div id="box-spazio" className={`border rounded-xl p-4 transition-all ${erroreSpazio ? 'border-red-300 bg-red-50/40 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'bg-blue-50/50 border-blue-100'}`}>
+                    {erroreSpazio && (
+                      <div className="flex items-start gap-2 bg-red-100 border border-red-200 rounded-lg p-2 mb-3 text-xs text-red-800">
+                        <span className="flex-shrink-0">⚠️</span>
+                        <span>Seleziona un&apos;opzione per lo spazio carro attrezzi.</span>
+                      </div>
+                    )}
                     <div className="flex items-start gap-2 mb-3">
-                      <svg width="22" height="22" viewBox="0 0 512 1024" className="text-blue-600 flex-shrink-0 mt-0.5" fill="currentColor">
-                        <path d="M0 0h512v1024H0z" fill="none"/>
-                        <path d="M448 416H64c-17.7 0-32 14.3-32 32v160c0 17.7 14.3 32 32 32h32c0 53 43 96 96 96s96-43 96-96h64c0 53 43 96 96 96s96-43 96-96h32c17.7 0 32-14.3 32-32V448c0-17.7-14.3-32-32-32m-256 256c-17.6 0-32-14.4-32-32s14.4-32 32-32s32 14.4 32 32s-14.4 32-32 32m256 0c-17.6 0-32-14.4-32-32s14.4-32 32-32s32 14.4 32 32s-14.4 32-32 32"/>
+                      <svg width="26" height="26" viewBox="0 0 18 15" className="text-blue-600 flex-shrink-0 mt-0.5">
+                        <path stroke="currentColor" strokeWidth="0.6" strokeLinecap="round" d="M0.5 1 L0.5 14 M17.5 1 L17.5 14" opacity="0.6"/>
+                        <path fill="currentColor" d="M5 10.1c.77 0 1.4.63 1.4 1.4s-.63 1.4-1.4 1.4s-1.4-.63-1.4-1.4s.63-1.4 1.4-1.4m8 0c.77 0 1.4.63 1.4 1.4s-.63 1.4-1.4 1.4s-1.4-.63-1.4-1.4s.63-1.4 1.4-1.4M15.14 4c.21 0 .41.14.47.34L16.5 7v4c0 .28-.22.5-.5.5h-.8c0-1.22-.98-2.2-2.2-2.2s-2.2.98-2.2 2.2H7.2c0-1.22-.98-2.2-2.2-2.2s-2.2.98-2.2 2.2H1.5v-3c0-.28.22-.5.5-.5H12.5V5c0-.55.45-1 1-1zm-.39 1H14v2h2z"/>
                       </svg>
                       <div>
                         <div className="text-sm font-semibold text-gray-900">Spazio per carro attrezzi</div>
@@ -814,15 +930,17 @@ export default function IniziaPage() {
                   </div>
 
                   <button
-                    onClick={next}
-                    disabled={!puoiContinuareIndirizzo}
-                    className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${puoiContinuareIndirizzo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                    onClick={handleContinuaIndirizzo}
+                    className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
                   >
                     Continua →
                   </button>
                 </>
               ) : (
                 <>
+                  {erroreIndirizzo && (
+                    <ErrorBadge>Inserisci un indirizzo per continuare.</ErrorBadge>
+                  )}
                   <AutocompleteIndirizzo
                     valoreIniziale={dati.indirizzo}
                     onSelezione={onSelezioneIndirizzo}
@@ -841,18 +959,18 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-3">
+              {erroreTarga && <ErrorBadge>Inserisci la targa per continuare.</ErrorBadge>}
               <input
                 type="text"
                 defaultValue={dati.targa}
-                onChange={e => update({ targa: e.target.value.toUpperCase(), targaSkipped: false })}
+                onChange={e => { update({ targa: e.target.value.toUpperCase(), targaSkipped: false }); setErroreTarga(false) }}
                 onFocus={handleInputFocus}
                 placeholder="Es. AB 123 CD"
-                className={`${inputClass} uppercase`}
+                className={`${inputClass(erroreTarga)} uppercase`}
               />
               <button
-                onClick={next}
-                disabled={!dati.targa}
-                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.targa ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                onClick={handleContinuaTarga}
+                className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
               >
                 Continua →
               </button>
@@ -865,19 +983,19 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-3">
+              {erroreCf && <ErrorBadge>Inserisci il codice fiscale per continuare.</ErrorBadge>}
               <input
                 type="text"
                 defaultValue={dati.cf}
-                onChange={e => update({ cf: e.target.value.toUpperCase(), cfSkipped: false })}
+                onChange={e => { update({ cf: e.target.value.toUpperCase(), cfSkipped: false }); setErroreCf(false) }}
                 onFocus={handleInputFocus}
                 placeholder="Es. RSSMRA80A01H501Z"
-                className={`${inputClass} uppercase tracking-wider`}
+                className={`${inputClass(erroreCf)} uppercase tracking-wider`}
                 maxLength={16}
               />
               <button
-                onClick={next}
-                disabled={!dati.cf}
-                className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.cf ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}
+                onClick={handleContinuaCf}
+                className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
               >
                 Continua →
               </button>
@@ -930,13 +1048,14 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            {erroreRuolo && <ErrorBadge>Seleziona la tua posizione per continuare.</ErrorBadge>}
             {dati.ruolo === 'delegato' && <InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge>}
             <div className="flex flex-col gap-2 mt-2">
-              <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo).charAt(0).toUpperCase() + pronomeTuo(tipo).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => update({ ruolo: 'proprietario' })} />
-              <OptionButton icon="📋" label="Sono un delegato" sub="Il proprietario mi ha autorizzato per iscritto" selected={dati.ruolo === 'delegato'} onClick={() => update({ ruolo: 'delegato' })} />
-              <OptionButton icon="⚰️" label="Il proprietario è deceduto" sub="Gestisco la pratica come erede o avente diritto" selected={dati.ruolo === 'deceduto'} onClick={() => update({ ruolo: 'deceduto' })} />
+              <OptionButton icon="👤" label="Sono il proprietario" sub={`${pronomeTuo(tipo).charAt(0).toUpperCase() + pronomeTuo(tipo).slice(1)} è intestato a me`} selected={dati.ruolo === 'proprietario'} onClick={() => { update({ ruolo: 'proprietario' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
+              <OptionButton icon="📋" label="Sono un delegato" sub="Il proprietario mi ha autorizzato per iscritto" selected={dati.ruolo === 'delegato'} onClick={() => { update({ ruolo: 'delegato' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
+              <OptionButton icon="⚰️" label="Il proprietario è deceduto" sub="Gestisco la pratica come erede o avente diritto" selected={dati.ruolo === 'deceduto'} onClick={() => { update({ ruolo: 'deceduto' }); setErroreRuolo(false) }} errorBorder={erroreRuolo} />
             </div>
-            <button onClick={next} disabled={!dati.ruolo} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.ruolo ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <button onClick={handleContinuaRuolo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
 
@@ -944,12 +1063,13 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            {erroreEredita && <ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge>}
             <WarnBadge>In base alla scelta verrà generato il modulo notarile corretto da scaricare nell&apos;area personale.</WarnBadge>
             <div className="flex flex-col gap-2 mt-3">
-              <OptionButton icon="✅" label="Gli eredi accettano l'eredità" sub="Serve atto notarile di accettazione firmato" selected={dati.eredita === 'accetta'} onClick={() => update({ eredita: 'accetta' })} />
-              <OptionButton icon="❌" label="Gli eredi rinunciano all'eredità" sub="Serve documentazione di rinuncia" selected={dati.eredita === 'rinuncia'} onClick={() => update({ eredita: 'rinuncia' })} />
+              <OptionButton icon="✅" label="Gli eredi accettano l'eredità" sub="Serve atto notarile di accettazione firmato" selected={dati.eredita === 'accetta'} onClick={() => { update({ eredita: 'accetta' }); setErroreEredita(false) }} errorBorder={erroreEredita} />
+              <OptionButton icon="❌" label="Gli eredi rinunciano all'eredità" sub="Serve documentazione di rinuncia" selected={dati.eredita === 'rinuncia'} onClick={() => { update({ eredita: 'rinuncia' }); setErroreEredita(false) }} errorBorder={erroreEredita} />
             </div>
-            <button onClick={next} disabled={!dati.eredita} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.eredita ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <button onClick={handleContinuaEredita} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
 
@@ -957,12 +1077,13 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            {erroreLibretto && <ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge>}
             <div className="flex flex-col gap-2">
-              <OptionButton icon="📗" label="Sì, ho il libretto originale" sub="Documento disponibile e integro" selected={dati.libretto === 'si'} onClick={() => update({ libretto: 'si' })} />
-              <OptionButton icon="🔍" label="Ho la denuncia di smarrimento" sub="Emessa da autorità pubblica" selected={dati.libretto === 'denuncia'} onClick={() => update({ libretto: 'denuncia' })} />
-              <OptionButton icon="❓" label="Non ho nessuno dei due" sub="Ti spieghiamo come procedere" selected={dati.libretto === 'no'} onClick={() => update({ libretto: 'no' })} />
+              <OptionButton icon="📗" label="Sì, ho il libretto originale" sub="Documento disponibile e integro" selected={dati.libretto === 'si'} onClick={() => { update({ libretto: 'si' }); setErroreLibretto(false) }} errorBorder={erroreLibretto} />
+              <OptionButton icon="🔍" label="Ho la denuncia di smarrimento" sub="Emessa da autorità pubblica" selected={dati.libretto === 'denuncia'} onClick={() => { update({ libretto: 'denuncia' }); setErroreLibretto(false) }} errorBorder={erroreLibretto} />
+              <OptionButton icon="❓" label="Non ho nessuno dei due" sub="Ti spieghiamo come procedere" selected={dati.libretto === 'no'} onClick={() => { update({ libretto: 'no' }); setErroreLibretto(false) }} errorBorder={erroreLibretto} />
             </div>
-            <button onClick={next} disabled={!dati.libretto} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.libretto ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <button onClick={handleContinuaLibretto} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
 
@@ -970,12 +1091,13 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            {erroreCdc && <ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge>}
             <div className="flex flex-col gap-2">
-              <OptionButton icon="💻" label="Digitale — nel fascicolo elettronico" sub="Non serve consegnarlo fisicamente" selected={dati.cdc === 'digitale'} onClick={() => update({ cdc: 'digitale' })} />
-              <OptionButton icon="📄" label="Cartaceo — ce l'ho" sub="Lo consegno al demolitore" selected={dati.cdc === 'cartaceo'} onClick={() => update({ cdc: 'cartaceo' })} />
-              <OptionButton icon="🔴" label="Smarrito" sub="Serve denuncia di smarrimento" selected={dati.cdc === 'smarrito'} onClick={() => update({ cdc: 'smarrito' })} />
+              <OptionButton icon="💻" label="Digitale — nel fascicolo elettronico" sub="Non serve consegnarlo fisicamente" selected={dati.cdc === 'digitale'} onClick={() => { update({ cdc: 'digitale' }); setErroreCdc(false) }} errorBorder={erroreCdc} />
+              <OptionButton icon="📄" label="Cartaceo — ce l'ho" sub="Lo consegno al demolitore" selected={dati.cdc === 'cartaceo'} onClick={() => { update({ cdc: 'cartaceo' }); setErroreCdc(false) }} errorBorder={erroreCdc} />
+              <OptionButton icon="🔴" label="Smarrito" sub="Serve denuncia di smarrimento" selected={dati.cdc === 'smarrito'} onClick={() => { update({ cdc: 'smarrito' }); setErroreCdc(false) }} errorBorder={erroreCdc} />
             </div>
-            <button onClick={next} disabled={!dati.cdc} className={`w-full py-4 rounded-xl font-semibold text-base mt-4 transition-all ${dati.cdc ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Continua →</button>
+            <button onClick={handleContinuaCdc} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
 
@@ -987,16 +1109,21 @@ export default function IniziaPage() {
               <span className="flex-shrink-0">🎁</span>
               <span><strong>Ritiro completamente gratuito</strong> — nessun costo nascosto, nessuna sorpresa.</span>
             </div>
+            {(erroreAnagrafica.nome || erroreAnagrafica.telefono) && (
+              <div className="mb-3">
+                <ErrorBadge>Compila tutti i campi richiesti per continuare.</ErrorBadge>
+              </div>
+            )}
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome</label>
-                <input type="text" defaultValue={dati.nome} onChange={e => update({ nome: e.target.value })} onFocus={handleInputFocus} placeholder="Mario Rossi" className={inputClass} />
+                <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, nome: false })) }} onFocus={handleInputFocus} placeholder="Mario Rossi" className={inputClass(erroreAnagrafica.nome)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Numero di telefono</label>
-                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => update({ telefono: e.target.value })} onFocus={handleInputFocus} placeholder="+39 333 1234567" className={inputClass} />
+                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, telefono: false })) }} onFocus={handleInputFocus} placeholder="+39 333 1234567" className={inputClass(erroreAnagrafica.telefono)} />
               </div>
-              <button onClick={next} disabled={!dati.nome || !dati.telefono} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.nome && dati.telefono ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>Quasi fatto →</button>
+              <button onClick={handleContinuaAnagrafica} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Quasi fatto →</button>
             </div>
           </>
         )}
@@ -1006,16 +1133,21 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3">⚠️ {error}</div>}
+            {(erroreAccount.email || erroreAccount.password) && (
+              <div className="mb-3">
+                <ErrorBadge>Compila tutti i campi richiesti per continuare.</ErrorBadge>
+              </div>
+            )}
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
-                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => update({ email: e.target.value })} onFocus={handleInputFocus} placeholder="mario@email.it" className={inputClass} />
+                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} onFocus={handleInputFocus} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
-                <input type="password" defaultValue={dati.password} onChange={e => update({ password: e.target.value })} onFocus={handleInputFocus} placeholder="••••••••" className={inputClass} />
+                <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }} onFocus={handleInputFocus} placeholder="••••••••" className={inputClass(erroreAccount.password)} />
               </div>
-              <button onClick={handleSubmit} disabled={!dati.email || !dati.password || loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${dati.email && dati.password && !loading ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
+              <button onClick={handleContinuaAccount} disabled={loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'}`}>
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Invia richiesta 🚀'}
               </button>
             </div>
