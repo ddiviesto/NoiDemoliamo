@@ -78,7 +78,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             inputMode="numeric"
             value={dati.anno}
             onChange={e => update('anno', e.target.value)}
-            onFocus={handleFocus}
+            
             placeholder="Es. 2008"
             min={1950} max={2026}
             className={`${inputClass(errors.anno)} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
@@ -92,7 +92,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             inputMode="numeric"
             value={formatKm(dati.km)}
             onChange={e => handleKmChange(e.target.value)}
-            onFocus={handleFocus}
+            
             placeholder="Es. 85.000"
             className={inputClass(errors.km)}
           />
@@ -107,7 +107,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             type="text"
             value={dati.marca}
             onChange={e => update('marca', e.target.value)}
-            onFocus={handleFocus}
+            
             placeholder="Es. Fiat"
             className={inputClass(errors.marca)}
           />
@@ -119,7 +119,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             type="text"
             value={dati.modello}
             onChange={e => update('modello', e.target.value)}
-            onFocus={handleFocus}
+            
             placeholder="Es. Panda"
             className={inputClass(errors.modello)}
           />

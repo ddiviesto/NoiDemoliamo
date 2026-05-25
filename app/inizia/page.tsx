@@ -933,7 +933,7 @@ export default function IniziaPage() {
                       <textarea
                         value={dati.spazioCarroAttrezziNote}
                         onChange={e => update({ spazioCarroAttrezziNote: e.target.value })}
-                        onFocus={handleInputFocus}
+                        
                         placeholder="Es. Cancello largo 2,5 metri; cortile interno; salita ripida..."
                         rows={2}
                         className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base text-gray-900 bg-white outline-none transition-all focus:border-blue-500 resize-none placeholder:text-gray-400"
@@ -976,7 +976,7 @@ export default function IniziaPage() {
                 type="text"
                 defaultValue={dati.targa}
                 onChange={e => { update({ targa: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), targaSkipped: false }); setErroreTarga(false) }}
-                onFocus={handleInputFocus}
+                
                 placeholder="Es. AB 123 CD"
                 className={`${inputClass(erroreTarga)} uppercase`}
               />
@@ -1001,7 +1001,7 @@ export default function IniziaPage() {
                   type="text"
                   value={dati.cf}
                   onChange={e => { update({ cf: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), cfSkipped: false }); setErroreCf(false) }}
-                  onFocus={handleInputFocus}
+                  
                   placeholder="Es. RSSMRA80A01H501Z"
                   className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16))} uppercase tracking-wider`}
                   maxLength={16}
@@ -1313,11 +1313,11 @@ export default function IniziaPage() {
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome</label>
-                <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, nome: false })) }} onFocus={handleInputFocus} placeholder="Mario Rossi" className={inputClass(erroreAnagrafica.nome)} />
+                <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, nome: false })) }}  placeholder="Mario Rossi" className={inputClass(erroreAnagrafica.nome)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Numero di telefono</label>
-                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, telefono: false })) }} onFocus={handleInputFocus} placeholder="+39 333 1234567" className={inputClass(erroreAnagrafica.telefono)} />
+                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, telefono: false })) }}  placeholder="+39 333 1234567" className={inputClass(erroreAnagrafica.telefono)} />
               </div>
               <button onClick={handleContinuaAnagrafica} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Quasi fatto →</button>
             </div>
@@ -1337,11 +1337,11 @@ export default function IniziaPage() {
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
-                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} onFocus={handleInputFocus} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
+                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }}  placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
-                <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }} onFocus={handleInputFocus} placeholder="••••••••" className={inputClass(erroreAccount.password)} />
+                <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }}  placeholder="••••••••" className={inputClass(erroreAccount.password)} />
               </div>
               <button onClick={handleContinuaAccount} disabled={loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'}`}>
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Invia richiesta 🚀'}
