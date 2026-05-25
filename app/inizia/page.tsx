@@ -1148,7 +1148,7 @@ export default function IniziaPage() {
                     <circle cx="12" cy="12" r="10"/>
                   </svg>
                   <span>
-                    Ottimo inizio! Aggiungi <strong>almeno {4 - foto.length} {4 - foto.length === 1 ? 'altra foto' : 'altre foto'}</strong> (frontale, posteriore, laterali) per aiutare il demolitore a preventivare meglio.
+                    Ottimo inizio! Aggiungi <strong>almeno {4 - foto.length} {4 - foto.length === 1 ? 'altra foto' : 'altre foto'}</strong> (frontale, posteriore, laterali, abitacolo) per aiutare il demolitore a preventivare meglio.
                   </span>
                 </div>
               )}
