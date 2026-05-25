@@ -24,6 +24,18 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
     setErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
+  // Formatta numero con separatore migliaia: 180000 → "180.000"
+  function formatKm(value: string): string {
+    const onlyDigits = value.replace(/\D/g, '')
+    if (!onlyDigits) return ''
+    return onlyDigits.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  }
+
+  function handleKmChange(value: string) {
+    const onlyDigits = value.replace(/\D/g, '')
+    update('km', onlyDigits)
+  }
+
   function validate(): Errors {
     const e: Errors = {}
     if (!dati.anno.trim()) e.anno = "Inserisci l'anno"
@@ -76,13 +88,13 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
         <div id="field-km">
           <label className="block text-xs font-medium text-gray-600 mb-1">Chilometri percorsi</label>
           <input
-            type="number"
+            type="text"
             inputMode="numeric"
-            value={dati.km}
-            onChange={e => update('km', e.target.value)}
+            value={formatKm(dati.km)}
+            onChange={e => handleKmChange(e.target.value)}
             onFocus={handleFocus}
-            placeholder="Es. 85000"
-            className={`${inputClass(errors.km)} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+            placeholder="Es. 85.000"
+            className={inputClass(errors.km)}
           />
           {errors.km && <p className="text-xs text-red-600 mt-1">{errors.km}</p>}
         </div>
