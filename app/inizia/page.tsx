@@ -163,6 +163,19 @@ function IconaVMinicar() {
   )
 }
 
+function IconaVFurgone() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+        <path d="M13 6v5a1 1 0 0 0 1 1h6.102a1 1 0 0 1 .712.298l.898.91a1 1 0 0 1 .288.702V17a1 1 0 0 1-1 1h-3" />
+        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.176 4.2M9 18h5" />
+        <circle cx="16" cy="18" r="2" />
+        <circle cx="7" cy="18" r="2" />
+      </g>
+    </svg>
+  )
+}
+
 function IconaVImbarcazione() {
   return (
     <svg width="22" height="22" viewBox="0 0 36 36">
@@ -216,6 +229,7 @@ const ICONE_VEICOLO: Record<TipoMezzo, () => React.ReactNode> = {
   motoveicolo: IconaVMotociclo,
   ciclomotore: IconaVCiclomotore,
   minicar: IconaVMinicar,
+  furgone: IconaVFurgone,
   imbarcazione: IconaVImbarcazione,
   pullman: IconaVPullman,
   camion: IconaVCamion,
@@ -231,7 +245,7 @@ function articolo(tipo: TipoMezzo | null): string {
   if (!tipo) return 'il veicolo'
   const map: Record<TipoMezzo, string> = {
     autovettura: "l'autovettura", motoveicolo: 'il motoveicolo', ciclomotore: 'il ciclomotore',
-    minicar: 'la minicar', imbarcazione: "l'imbarcazione", pullman: 'il pullman',
+    minicar: 'la minicar', furgone: 'il furgone', imbarcazione: "l'imbarcazione", pullman: 'il pullman',
     camion: 'il camion', velivolo: 'il velivolo', altro: 'il mezzo',
   }
   return map[tipo]
@@ -241,7 +255,7 @@ function articoloDel(tipo: TipoMezzo | null): string {
   if (!tipo) return 'del veicolo'
   const map: Record<TipoMezzo, string> = {
     autovettura: "dell'autovettura", motoveicolo: 'del motoveicolo', ciclomotore: 'del ciclomotore',
-    minicar: 'della minicar', imbarcazione: "dell'imbarcazione", pullman: 'del pullman',
+    minicar: 'della minicar', furgone: 'del furgone', imbarcazione: "dell'imbarcazione", pullman: 'del pullman',
     camion: 'del camion', velivolo: 'del velivolo', altro: 'del mezzo',
   }
   return map[tipo]
@@ -251,7 +265,7 @@ function pronomeTuo(tipo: TipoMezzo | null): string {
   if (!tipo) return 'tuo veicolo'
   const map: Record<TipoMezzo, string> = {
     autovettura: 'tua autovettura', motoveicolo: 'tuo motoveicolo', ciclomotore: 'tuo ciclomotore',
-    minicar: 'tua minicar', imbarcazione: 'tua imbarcazione', pullman: 'tuo pullman',
+    minicar: 'tua minicar', furgone: 'tuo furgone', imbarcazione: 'tua imbarcazione', pullman: 'tuo pullman',
     camion: 'tuo camion', velivolo: 'tuo velivolo', altro: 'tuo mezzo',
   }
   return map[tipo]
@@ -261,7 +275,7 @@ function nomeVeicolo(tipo: TipoMezzo | null): string {
   if (!tipo) return 'Veicolo'
   const map: Record<TipoMezzo, string> = {
     autovettura: 'Autovettura', motoveicolo: 'Motoveicolo', ciclomotore: 'Ciclomotore',
-    minicar: 'Minicar', imbarcazione: 'Imbarcazione', pullman: 'Pullman',
+    minicar: 'Minicar', furgone: 'Furgone', imbarcazione: 'Imbarcazione', pullman: 'Pullman',
     camion: 'Camion', velivolo: 'Velivolo', altro: 'Altro mezzo',
   }
   return map[tipo]
@@ -269,7 +283,7 @@ function nomeVeicolo(tipo: TipoMezzo | null): string {
 
 function veicoloHaCambio(tipo: TipoMezzo | null): boolean {
   if (!tipo) return true
-  return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'pullman' || tipo === 'camion' || tipo === 'altro'
+  return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'furgone' || tipo === 'pullman' || tipo === 'camion' || tipo === 'altro'
 }
 
 // ============================================================
