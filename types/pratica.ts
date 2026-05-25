@@ -3,6 +3,7 @@ export type TipoMezzo =
   | 'motoveicolo'
   | 'ciclomotore'
   | 'minicar'
+  | 'furgone'
   | 'imbarcazione'
   | 'pullman'
   | 'camion'
@@ -32,32 +33,21 @@ export interface DatiVeicolo {
 }
 
 export interface DatiPratica {
-  // Step 1
   indirizzo: string
   indirizzoSkipped: boolean
-  // Spazio carro attrezzi (legato all'indirizzo)
   spazioCarroAttrezzi: SpazioCarroAttrezzi | null
   spazioCarroAttrezziNote: string
-  // Step 2
   targa: string
   targaSkipped: boolean
-  // Step 3 — dati veicolo
   veicolo: DatiVeicolo
-  // Step 4
   cf: string
   cfSkipped: boolean
-  // Step 5
   ruolo: RuoloRichiedente | null
-  // Step 6 (solo se deceduto)
   eredita: EreditaScelta | null
-  // Step 7
   libretto: LibrettoStato | null
-  // Step 8
   cdc: CdcStato | null
-  // Step 9
   nome: string
   telefono: string
-  // Step 10
   email: string
   password: string
 }

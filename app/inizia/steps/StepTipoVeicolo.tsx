@@ -42,6 +42,19 @@ function IconaMinicar() {
   )
 }
 
+function IconaFurgone() {
+  return (
+    <svg width="30" height="30" viewBox="0 0 24 24">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+        <path d="M13 6v5a1 1 0 0 0 1 1h6.102a1 1 0 0 1 .712.298l.898.91a1 1 0 0 1 .288.702V17a1 1 0 0 1-1 1h-3" />
+        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.176 4.2M9 18h5" />
+        <circle cx="16" cy="18" r="2" />
+        <circle cx="7" cy="18" r="2" />
+      </g>
+    </svg>
+  )
+}
+
 function IconaImbarcazione() {
   return (
     <svg width="30" height="30" viewBox="0 0 36 36">
@@ -90,11 +103,13 @@ interface Props {
   onNext: () => void
 }
 
+// Griglia principale 4+4
 const TIPI_MEZZO_BASE: { value: TipoMezzo; icon: () => React.ReactNode; label: string }[] = [
   { value: 'autovettura', icon: IconaAutovettura, label: 'Autovettura' },
   { value: 'motoveicolo', icon: IconaMotociclo, label: 'Motoveicolo' },
   { value: 'ciclomotore', icon: IconaCiclomotore, label: 'Ciclomotore' },
   { value: 'minicar', icon: IconaMinicar, label: 'Minicar' },
+  { value: 'furgone', icon: IconaFurgone, label: 'Furgone' },
   { value: 'pullman', icon: IconaPullman, label: 'Pullman' },
   { value: 'camion', icon: IconaCamion, label: 'Camion' },
 ]
@@ -164,7 +179,7 @@ export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
         </div>
       )}
 
-      {/* TIPO MEZZO — griglia 4+3 */}
+      {/* TIPO MEZZO — griglia 4+4 (7 base + bottone Altro) */}
       <div>
         <div className={`grid grid-cols-4 gap-2 ${errore ? 'p-1 rounded-xl ring-1 ring-red-300 bg-red-50/30' : ''}`}>
           {TIPI_MEZZO_BASE.map(t => {
@@ -195,7 +210,7 @@ export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
             )
           })}
 
-          {/* Bottone "Altro" */}
+          {/* Bottone "Altro" — ottava cella della griglia 4+4 */}
           <button
             onClick={toggleAltro}
             className={`relative aspect-square flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-[1.5px] text-center transition-all
@@ -272,8 +287,8 @@ export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
             value={dati.tipoAltro}
             onChange={e => { onUpdate({ tipoAltro: e.target.value }); setErroreAltro(false) }}
             placeholder="Es. Trattore, quad, elicottero, rimorchio..."
-            className={`w-full border rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none transition-all
-              focus:border-blue-500 focus:bg-white
+            className={`w-full border rounded-xl px-3 py-2.5 text-base text-gray-900 bg-gray-50 outline-none transition-all
+              focus:border-blue-500 focus:bg-white placeholder:text-gray-400
               ${erroreAltro ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
           />
           {erroreAltro && <p className="text-xs text-red-600 mt-1">Specifica il tipo di mezzo</p>}
