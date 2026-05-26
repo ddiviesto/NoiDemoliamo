@@ -33,7 +33,7 @@ Tutto il sistema deve puntare alla **rapidità di risposta** verso il cliente.
 Se ci mettiamo troppo a rispondere, perdiamo la pratica.
 
 Tempi obiettivo:
-- **Approvazione documenti**: entro 3 ore dall'invio del cliente
+- **Approvazione documenti**: entro 1 ora dall'invio del cliente (comunicato nel flusso `/inizia`)
 - **Decisione del destino**: poche ore
 - **Conferma demolitore (dopo assegnazione)**: 8 ore lavorative per proporre data ritiro
 - **Certificato rottamazione**: 24 ore dal ritiro
@@ -159,7 +159,7 @@ Tabella centrale del progetto. Contiene tutte le pratiche di demolizione.
 - **Veicolo**: `targa`, `tipo_mezzo` (vedi valori sotto), `tipo_mezzo_altro` (text), `marca`, `modello`, `anno`, `km`, `incidentato` (bool), `marciante` (bool), `va_in_moto` (bool), `parti_mancanti` (bool), `note_veicolo`, **`tipo_cambio`** (text: manuale/automatico/non_so) 🆕
 - **Indirizzo**: `indirizzo_ritiro`, `comune_ritiro`, `provincia_ritiro`, `cap_ritiro`, `lat`, `lng` ✅ (salvati da Google Maps Autocomplete), **`spazio_carro_attrezzi`** (text: libero/stretto/no), **`spazio_carro_attrezzi_note`** (text libero) 🆕
 - **Cliente**: `codice_fiscale`, `nome_richiedente`, `telefono`, `ruolo_richiedente` (proprietario/delegato/deceduto)
-- **Documenti dichiarati**: `libretto` (si/denuncia/no), `certificato_proprieta` (cartaceo/digitale/smarrito), `eredita` (accetta/rinuncia/null)
+- **Documenti dichiarati**: `libretto` (si/denuncia/no), `certificato_proprieta` (cartaceo/digitale/documento_unico/smarrito/nessuno) 🆕 esteso, `eredita` (accetta/rinuncia/null)
 - **Workflow**: `demolitore_id`, `data_ritiro_prevista`, `data_certificato_rottamazione`, `data_certificato_pra`, `stato`
 - **Scadenze**: `urgente`, `scadenza_proposta_ritiro`, `scadenza_cert_rottamazione`, `scadenza_cert_pra`, `assegnazione_manuale`
 
@@ -169,6 +169,7 @@ autovettura
 motoveicolo      ← rinominato da 'motociclo' il 24/05/2026
 ciclomotore
 minicar
+furgone          ← aggiunto 25/05/2026
 imbarcazione
 pullman
 camion
@@ -176,10 +177,10 @@ velivolo
 altro            ← se selezionato, vedere campo tipo_mezzo_altro per dettaglio testuale
 ```
 
-### ⚠️ Vincoli CHECK confermati il 24/05/2026 (query pg_constraint):
+### ⚠️ Vincoli CHECK confermati il 25/05/2026 (query pg_constraint):
 
 Esistono CHECK solo su queste colonne:
-- `pratiche_certificato_proprieta_check` → ANY (ARRAY['digitale','cartaceo',...])
+- `pratiche_certificato_proprieta_check` → ANY (ARRAY['digitale','cartaceo','documento_unico','smarrito','nessuno']) 🆕 esteso 25/05
 - `pratiche_eredita_check` → ANY (ARRAY['accetta','rinuncia',...])
 - `pratiche_libretto_check` → ANY (ARRAY['si','denuncia','no',...])
 - `pratiche_ruolo_richiedente_check` → ANY (ARRAY['proprietario','delegato',...])
@@ -197,6 +198,16 @@ ALTER TABLE pratiche
   ADD COLUMN tipo_cambio TEXT,
   ADD COLUMN spazio_carro_attrezzi TEXT,
   ADD COLUMN spazio_carro_attrezzi_note TEXT;
+```
+
+### SQL eseguito il 25/05/2026 (notte)
+```sql
+ALTER TABLE pratiche
+  DROP CONSTRAINT IF EXISTS pratiche_certificato_proprieta_check;
+
+ALTER TABLE pratiche
+  ADD CONSTRAINT pratiche_certificato_proprieta_check
+  CHECK (certificato_proprieta IN ('digitale', 'cartaceo', 'documento_unico', 'smarrito', 'nessuno'));
 ```
 
 ## 3.3 Tabella `documenti`
@@ -289,6 +300,7 @@ tipo            text          'regione' | 'provincia' | 'provincia_esclusa' | 'c
 
 ## 3.11 Tabelle ANCORA DA CREARE
 
+- 🔥🆕 **`documenti_richiesti`** o **`pratica_documenti_checklist`** — Sistema casistiche documenti (vedi PARTE 8.2 STEP 1, dettagli da definire con Davide quando manda lista casistiche)
 - 🆕 `recensioni` (id, pratica_id, cliente_id, demolitore_id, tipo, stelle, commento, creata_il)
 - `aste` (id, riferimento_id, riferimento_tipo, tipo, prezzo_base, somma_per_cliente, date, stato, vincitore_id)
 - `offerte_asta` (id, asta_id, offerente_id, importo, timestamp)
@@ -590,9 +602,9 @@ NoiDemoliamo/
 │   ├── inizia/                               # Flusso cliente mini-step
 │   │   ├── page.tsx                          # Orchestratore (banner blu + 12-13 step)
 │   │   └── steps/
-│   │       ├── StepTipoVeicolo.tsx           # Step 1: griglia 4+3 tipo veicolo
+│   │       ├── StepTipoVeicolo.tsx           # Step 1: griglia 4+4 tipo veicolo (con Furgone)
 │   │       ├── StepIdentificaVeicolo.tsx     # Step 2: anno, km, marca, modello
-│   │       ├── StepCambioVeicolo.tsx         # Step 3: tipo cambio (solo per auto/minicar/camion)
+│   │       ├── StepCambioVeicolo.tsx         # Step 3: tipo cambio (solo per auto/minicar/camion/furgone)
 │   │       ├── StepCondizioniVeicolo.tsx     # Step 4: 4 toggle + annotazioni
 │   │       └── AutocompleteIndirizzo.tsx     # Google Maps autocomplete custom
 │   ├── dashboard/                            # AREA CLIENTE
@@ -620,7 +632,7 @@ NoiDemoliamo/
 │   ├── supabase.ts
 │   └── assegnazione.ts
 ├── types/
-│   └── pratica.ts                            # ⚠️ TipoMezzo: motoveicolo, +TipoCambio, +SpazioCarroAttrezzi
+│   └── pratica.ts                            # ⚠️ TipoMezzo: motoveicolo, +furgone, +TipoCambio, +SpazioCarroAttrezzi, +CdcStato esteso
 ├── public/
 │   ├── NoiDemoliamoLogo.png
 │   ├── province.geojson
@@ -637,9 +649,10 @@ NoiDemoliamo/
 ### Nuovo ordine 12-13 mini-step (mobile-first, una sola cosa per pagina)
 
 ```
-Step 1 — TIPO VEICOLO
-  • Griglia 4+3: Autovettura, Motoveicolo, Ciclomotore, Minicar | Pullman, Camion, Altro
-  • "Altro" espande con: Imbarcazione, Velivolo, Altro mezzo
+Step 1 — TIPO VEICOLO ⭐ con box "Pensiamo a tutto noi" sopra
+  • Griglia 4+4 (8 celle): Autovettura, Motoveicolo, Ciclomotore, Minicar | Furgone, Pullman, Camion, Altro
+  • "Altro" espande con: Imbarcazione, Velivolo, Altro mezzo (3 colonne basse, h-[78px])
+  • Quando "Altro mezzo" selezionato: campo testuale "Specifica" → ovunque appare quel testo (es. "trattore")
   • Bottone "Continua" appare solo dopo selezione
 
 Step 2 — IDENTIFICA VEICOLO
@@ -664,20 +677,29 @@ Step 5 — INDIRIZZO + SPAZIO CARRO ATTREZZI
 
 Step 6 — TARGA (normalizzata: solo A-Z e 0-9, no spazi/simboli)
 Step 7 — CODICE FISCALE (validazione live 0/16 caratteri + colore + check ✓)
-Step 8 — FOTO veicolo (camera + galleria + sheet popup +)
-Step 9 — RUOLO (proprietario / delegato / deceduto)
+Step 8 — FOTO veicolo (camera + galleria + sheet popup + + gamification 4 foto)
+Step 9 — RUOLO (proprietario / delegato / deceduto) ⭐ design pro con icone SVG
 Step 10 — EREDITÀ (solo se ruolo=deceduto, accetta/rinuncia)
-Step 11 — LIBRETTO (sì / denuncia smarrimento / no)
-Step 12 — CDC (digitale / cartaceo / smarrito)
-Step 13 — ANAGRAFICA (nome + telefono)
-Step 14 — ACCOUNT (email + password, auto-registrazione)
+Step 11 — LIBRETTO (sì / denuncia / no, 3 opzioni con icone SVG)
+Step 12 — CDC ⭐ 5 OPZIONI (digitale / cartaceo / documento_unico / smarrito / nessuno)
+Step 13 — ANAGRAFICA (nome + telefono, NO banner "ritiro gratuito")
+Step 14 — ACCOUNT ⭐⭐ design CALOROSO finale
+  • Titolo "Ultimo passo! 🎉"
+  • 3 trust badges (Area personale | Chat demolitore | Certificato di rottamazione)
+  • Email + Password
+  • Bottone "Conferma e invia richiesta"
+  • Box azzurro "Cosa succede dopo":
+    1. Email di conferma
+    2. Entro un'ora verifichiamo i documenti
+    3. Ti contattiamo per fissare il ritiro a domicilio
+  • Disclaimer terms + privacy
 ```
 
 **Documenti SEMPRE richiesti** (caricamento successivo in dashboard):
 - Carta d'identità (fronte e retro)
 - Tessera sanitaria (fronte e retro)
 
-**Documenti CONDIZIONALI** (in base alle risposte) — logica in `documentiRichiesti(p)` di `TabDocumenti.tsx`.
+**Documenti CONDIZIONALI** (in base alle risposte) — vedi PARTE 8.2 STEP 1 per sistema casistiche da costruire.
 
 ### ⭐ Personalizzazione dinamica per tipo veicolo
 
@@ -686,10 +708,11 @@ Quando il cliente sceglie il tipo al passo 1, **tutto il flusso si adatta**:
 - **Banner blu** dell'header: "Identifica: Motoveicolo", "Cambio: Camion", "Condizioni: Pullman", "Indirizzo: Imbarcazione", "Targa: Velivolo", ecc.
 - **Titoli pagina h1**: "Identifica l'autovettura", "Che tipo di cambio ha il motoveicolo?", "Dove si trova l'imbarcazione?", "Hai il libretto del camion?"
 - **Toggle veicolo**: "Autovettura **incidentata**?" (femminile) vs "Motoveicolo **incidentato**?" (maschile)
-- **Pronome possessivo**: "La **tua autovettura** è intestata a me"
+- **Pronome possessivo**: "La **tua autovettura** è intestata a me" / "L'autovettura è intestata a me"
+- **Se tipo='altro' con tipoAltro="trattore"**: ovunque appare "il trattore" / "del trattore" / "Trattore"
 - **Generi corretti** gestiti dalla funzione `isFemminile(tipo)`:
   - Femminile: autovettura, minicar, imbarcazione
-  - Maschile: motoveicolo, ciclomotore, pullman, camion, velivolo, altro
+  - Maschile: motoveicolo, ciclomotore, furgone, pullman, camion, velivolo, altro
 
 ### Layout banner blu
 
@@ -702,14 +725,14 @@ Al passo 1 (veicolo non ancora scelto), icona = autovettura generica + titolo "T
 ### Helper functions in `app/inizia/page.tsx`
 
 ```ts
-articolo(tipo)       → "il motoveicolo", "l'autovettura", "la minicar"
-articoloDel(tipo)    → "del motoveicolo", "dell'autovettura", "della minicar"
-pronomeTuo(tipo)     → "tuo motoveicolo", "tua autovettura"
-nomeVeicolo(tipo)    → "Motoveicolo", "Autovettura" (capitalizzato per banner)
-isFemminile(tipo)    → autovettura/minicar/imbarcazione = femminile
-veicoloHaCambio(tipo)→ true per auto/minicar/pullman/camion/altro
-ICONE_VEICOLO        → mappa tipo → componente SVG per banner
-getStepMeta(step, tipo) → restituisce { icona, titoloBanner, titoloPagina, sottoPagina }
+articolo(tipo, tipoAltro?)       → "il motoveicolo", "l'autovettura", "il trattore" (se altro)
+articoloDel(tipo, tipoAltro?)    → "del motoveicolo", "dell'autovettura", "del trattore"
+pronomeTuo(tipo, tipoAltro?)     → "tuo motoveicolo", "tua autovettura", "tuo trattore"
+nomeVeicolo(tipo, tipoAltro?)    → "Motoveicolo", "Autovettura", "Trattore"
+isFemminile(tipo)                → autovettura/minicar/imbarcazione = femminile
+veicoloHaCambio(tipo)            → true per auto/minicar/furgone/pullman/camion/altro
+ICONE_VEICOLO                    → mappa tipo → componente SVG per banner
+getStepMeta(step, tipo, tipoAltro?) → restituisce { icona, titoloBanner, titoloPagina, sottoPagina }
 ```
 
 ### 🆕 OTTIMIZZAZIONI MOBILE 25/05/2026 ⭐⭐⭐
@@ -725,8 +748,9 @@ Critiche per UX. Davide testa su iPhone reale.
 - `inputMode="tel"` (telefono) → tastiera telefonica
 - `inputMode="email"` (email) → tastiera con @
 
-**3. Scroll automatico al focus**
-- Quando l'utente clicca un input, dopo 300ms la pagina scrolla per centrare il campo (così non viene coperto dalla tastiera).
+**3. NO scrollIntoView automatico** (rimosso 25/05/2026)
+- Causava effetto **"sobbalzo doppio"** su iOS: prima Safari aggiustava, poi il nostro JS faceva un altro scroll.
+- I mini-step sono corti, Safari basta da solo.
 
 **4. Bottone "Continua" SEMPRE attivo**
 - Mai disabilitato/grigio (confonde l'utente).
@@ -761,20 +785,32 @@ Vecchio: emoji giganti 📷 🖼️ ℹ️, bottone "non le ho" grande blu (sbag
 
 Nuovo:
 - **Icone SVG eleganti** dentro bollini blu (coerente col design system)
-- **2 bottoni in riga** (uno sotto l'altro) con freccia → a destra (più tappabili su mobile)
+- **2 bottoni in riga** (uno sotto l'altro) con freccia → a destra (più tappabili)
 - **Info badge** compatto con barra blu a sinistra
-- **Sub-descrizione dinamica** per tipo veicolo
 - **Anteprime foto** con ✕ rosso per rimuovere
 - **Badge verde "✓ Pronte"** quando hai caricato foto
-- **🆕 Bottone "+" in griglia** per aggiungere altre foto (appare come ultima cella)
+- **🆕 Bottone "+"** in griglia per aggiungere altre foto (appare come ultima cella)
 - **🆕 Sheet popup stile iOS** che esce dal basso quando clicchi "+" → 2 opzioni grandi (Scatta/Galleria) + Annulla. Animazioni: fade-in sfondo scuro + slide-up sheet. Si chiude cliccando fuori.
 
-**🆕 Psicologia caricamento foto (gamification):**
+**🆕 Psicologia gamification foto:**
 - **0 foto**: bottone "Continua senza foto" bianco/grigio (secondario)
 - **1-3 foto**: banner GIALLO "Ottimo inizio! Aggiungi almeno X altre foto (frontale, posteriore, laterali, abitacolo)" + bottone "Continua comunque" piccolo/grigio
 - **4+ foto**: banner VERDE "Perfetto! Hai caricato un buon numero" + bottone "Continua" BLU GRANDE (premio)
 
 Risultato: l'utente è invogliato a caricare 4-5 foto invece di 1.
+
+### 🆕 STEP RUOLO/LIBRETTO/CDC REFACTORATI 25/05/2026 (notte)
+
+Stesso problema delle foto: emoji giganti, design vecchio. Riscritti con:
+- **Nuovo componente `RuoloButton`** con icona SVG dentro bollino blu, check ✓ blu prominente quando selezionato
+- **Step RUOLO**: 3 opzioni (proprietario / delegato / deceduto), grammatica corretta ("rispetto all'autovettura" + genere automatico), icona deceduto = cuore pieno (rispettoso)
+- **Step LIBRETTO**: 3 opzioni con icone SVG (libretto check / lente con stemma / documento ?)
+- **Step CDC**: ⭐ ESTESO a **5 opzioni**:
+  - Sì, Digitale (fascicolo elettronico)
+  - Sì, Cartaceo (stemma ACI)
+  - Sì, Documento Unico (libretto post-2020)
+  - No, ho la denuncia di smarrimento in originale
+  - No, non ho nessuno di questi al momento
 
 ### 🆕 GOOGLE MAPS AUTOCOMPLETE CUSTOM 25/05/2026
 
@@ -876,6 +912,7 @@ Form fields JSF analizzati:
 - **Giallo/Ambra** (in attesa, attenzione): `bg-amber-50`, `border-amber-200`, `text-amber-800`
 - **Rosso** (problema, errore, attenzione): `bg-red-50`, `border-red-300`, `text-red-700`
 - **Grigio** (neutro): `bg-gray-50`, `border-gray-200`, `text-gray-500`
+- **Azzurro chiaro sky** (info / "cosa succede dopo"): `bg-sky-50`, `border-sky-200`, `text-sky-800`
 
 ### Convenzione colori per toggle Sì/No nel flusso `/inizia`
 
@@ -916,6 +953,22 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 - Step counter: `text-[10px] font-semibold uppercase tracking-widest text-blue-100`
 - Titolo: `text-sm font-semibold` (es. "Identifica: Motoveicolo")
 
+### Box rassicurante "Pensiamo a tutto noi" (`/inizia` step 1) 🆕
+- `bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-3 mb-5 flex items-center gap-3`
+- Icona cerchio blu (w-11 h-11) con check bianco
+- Titolo "Pensiamo a tutto noi" + sottotitolo "In base alle tue risposte ti diremo quali documenti preparare"
+- Solo nello step 1, sparisce dagli step successivi
+
+### Trust badges (`/inizia` step account) 🆕
+- `grid grid-cols-3 gap-2 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-3 mb-4`
+- 3 colonne: bollino bianco con icona blu + testo "Segui la pratica" / "Chat demolitore" / "Certificato di rottamazione"
+- Comunica i benefit dell'account in modo visivo e immediato
+
+### Box "Cosa succede dopo" (`/inizia` step account) 🆕
+- `bg-sky-50 border border-sky-200 rounded-xl p-3 mt-1`
+- 3 step numerati con pallini sky (1, 2, 3): "Email di conferma" → "Entro un'ora verifichiamo i documenti" → "Ti contattiamo per fissare il ritiro a domicilio"
+- Comunica chiaramente cosa aspettarsi dopo l'invio della richiesta
+
 ### Card
 - `bg-white border border-gray-200 rounded-2xl p-4` (dashboard)
 - `bg-white rounded-3xl shadow-lg p-7` (flusso `/inizia`, più morbida)
@@ -936,6 +989,12 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 - Componente `ErrorBadge`: `bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800` con icona ⚠️ a sx
 - Box sezione errore: `border-red-300 bg-red-50/40 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]`
 
+### Componente RuoloButton (`/inizia` ruolo/libretto/cdc) 🆕
+- Usato in Step Ruolo, Libretto, CDC per uniformità
+- Layout: bollino blu con icona SVG (w-10 h-10) | label + sub | check rotondo a destra
+- Quando selezionato: bordo blu + sfondo blu chiaro + check blu pieno con ✓ bianco
+- Selezione VISIBILE e immediata (vs. vecchio pallino vuoto poco evidente)
+
 ### Toggle compatti `/inizia`
 - Riga orizzontale: etichetta sinistra + pillole Sì/No destra
 - Pill: `flex items-center justify-center gap-1 px-4 py-2 rounded-full text-sm font-semibold border-[1.5px] transition-all min-w-[58px]`
@@ -944,10 +1003,11 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 - Non selezionato: `bg-white border-gray-200 text-gray-600`
 
 ### Griglia tipo veicolo `/inizia`
-- `grid grid-cols-4 gap-2`
+- `grid grid-cols-4 gap-2` per i 7 base + Altro (4+4 totale)
 - Item: `aspect-square flex flex-col items-center justify-center gap-1 p-2 rounded-xl border-[1.5px]`
 - Selezionato: `border-blue-600 bg-blue-50 shadow-[0_0_0_3px_rgba(37,99,235,0.15)] text-blue-700`
 - Check pallino blu in alto a destra
+- Espansione "Altri tipi di mezzo": `grid grid-cols-3 gap-2` con item `h-[78px]` (non aspect-square, più bassi)
 
 ### Tab bar
 - Container: `bg-white border border-gray-200 rounded-2xl p-1 flex gap-1`
@@ -963,9 +1023,10 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 
 ### Icone
 - **SVG inline** preferito alle emoji
-- Emoji ok solo: banner stato, empty state, messaggi, OptionButton del flusso (ruolo, libretto, cdc)
-- Icone veicoli `/inizia`: 9 icone SVG specifiche (Iconify material-symbols, font-awesome) — fornite da Davide
+- Emoji ok solo: banner stato, empty state, messaggi, titoli celebrativi ("Ultimo passo! 🎉")
+- Icone veicoli `/inizia`: 10 icone SVG specifiche (Iconify material-symbols, font-awesome) — fornite da Davide
 - Icona carro attrezzi: SVG custom con linee verticali ai lati che indicano "passaggio"
+- Icona deceduto: cuore pieno (rispettoso, memoriale)
 
 ### Form input ⭐ AGGIORNATO 25/05/2026
 - `border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400`
@@ -988,7 +1049,7 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 ## 6.6 Regole d'oro
 
 1. **Mobile-first**: touch-friendly (min 44px altezza)
-2. **No emoji nell'interfaccia funzionale**: SVG colorati per icone
+2. **No emoji nell'interfaccia funzionale**: SVG colorati per icone (eccezione: titoli celebrativi come "Ultimo passo! 🎉")
 3. **Coerenza colori semantici**: verde=positivo, rosso=problema, blu=azione, giallo/ambra=attesa
 4. **Personalizzazione tipo veicolo OVUNQUE** (banner, titoli, articoli, generi)
 5. **Genere corretto** per aggettivi (incidentato/a)
@@ -999,6 +1060,9 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 10. ⭐ **Bottoni `/inizia` mai disabilitati**: sempre attivi, validazione al click con banner errore
 11. ⭐ **Una sola cosa per pagina** in `/inizia` (mini-step): meglio 13 step velocissimi di 10 lunghi
 12. ⭐ **Gamification dove possibile**: caricamento foto con banner colorati che incoraggiano
+13. ⭐ **NO scrollIntoView automatico** su input: i mini-step sono corti, Safari gestisce da solo (rimosso 25/05 per eliminare sobbalzo iOS)
+14. ⭐ **Trust badges e box "cosa succede dopo"** sulla pagina finale: cliente sa cosa aspettarsi, riduce ansia post-invio
+15. ⭐ **Niente trattini "—" nei titoli bottoni**: poco professionali, usare titoli puliti con sub-descrizioni sotto
 
 ---
 
@@ -1059,6 +1123,7 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 - **"U" verde**: nuovo non in git
 - **"M" arancione**: modificato salvato, da committare
 - **Numero rosso "PROBLEMS"** in basso: errori TypeScript
+- **Riquadri tratteggiati rossi/verdi nel codice**: anteprima diff modifiche non committate (Git inline diff). Si chiude con X o Esc.
 
 ## 7.6 Note operative
 
@@ -1071,7 +1136,7 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 
 ---
 
-# 📋 PARTE 8 — STATO ATTUALE (25/05/2026 — notte)
+# 📋 PARTE 8 — STATO ATTUALE (25/05/2026 — notte tardi)
 
 ## 8.1 ✅ FATTO
 
@@ -1082,23 +1147,25 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 - ✅ Login multi-ruolo base
 
 ### ⭐⭐ Refactoring completo `/inizia` (24-25/05/2026)
-- ✅ **Tipo veicolo come step 1**: griglia 4+3 + espansione "Altro" animata
+- ✅ **Tipo veicolo come step 1**: griglia 4+4 con FURGONE + espansione "Altro" animata (Imbarcazione, Velivolo, Altro mezzo)
 - ✅ **Spezzato dettagli veicolo in 3 mini-step**: Identifica, Cambio, Condizioni
 - ✅ **Mini-step principio**: una sola cosa per pagina (mobile-first)
 - ✅ **Personalizzazione dinamica per tipo veicolo**: banner, icone, titoli, articoli, generi
+- ✅ **TipoAltro mostrato ovunque**: se utente scrive "Trattore", in tutte le schede appare "il trattore" / "del trattore" / "Trattore"
+- ✅ **Box "Pensiamo a tutto noi"** nello step 1 (rassicurazione)
 - ✅ **Banner blu gradient** con bottone Indietro a sx + icona+titolo centrati
-- ✅ **9 icone SVG specifiche** per veicoli (Iconify)
+- ✅ **10 icone SVG specifiche** per veicoli (Iconify)
 - ✅ **Toggle con colori semantici** (verde=positivo, rosso=problema)
-- ✅ **Genere corretto** per "incidentato/a" (femminile per autovettura/minicar/imbarcazione)
+- ✅ **Genere corretto** per "incidentato/a"
 - ✅ **Sfondo gradiente blu/viola**
 - ✅ **Rimossi bottoni "Non ricordo"** su targa, CF, indirizzo (ora obbligatori)
-- ✅ **Motociclo rinominato Motoveicolo** ovunque (codice + DB)
-- ✅ **Google Maps Autocomplete custom** (UI NoiDemoliamo, salva indirizzo/comune/provincia/cap/lat/lng)
+- ✅ **Motociclo rinominato Motoveicolo** ovunque
+- ✅ **Google Maps Autocomplete custom** (UI NoiDemoliamo)
 
 ### ⭐⭐ Mobile-first ottimizzazioni 25/05/2026
 - ✅ **Anti-zoom iOS**: `text-base` (16px) su tutti gli input
 - ✅ **inputMode corretti**: numeric (anno/km), tel (telefono), email
-- ✅ **Scroll automatico** input al focus
+- ✅ **NO scrollIntoView** automatico (eliminato sobbalzo iOS)
 - ✅ **Viewport meta tag**: width=device-width, no scaling
 - ✅ **Theme color blu**: barra browser mobile blu (effetto app)
 - ✅ **Lang italiano**: html lang="it"
@@ -1130,6 +1197,18 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 - ✅ **Sheet popup stile iOS** con scelta Scatta/Galleria
 - ✅ **Psicologia gamification**: banner giallo se < 4 foto, verde se ≥ 4
 - ✅ **Bottone primario blu solo dopo 4+ foto**
+- ✅ **Testo "frontale, posteriore, laterali, abitacolo"** aggiunto nel banner giallo
+
+### ⭐⭐ Step Ruolo/Libretto/CDC refactorati 25/05/2026 (notte)
+- ✅ **Nuovo componente `RuoloButton`** uniforme: icona SVG in bollino blu + label + sub + check ✓ blu
+- ✅ **Step Ruolo**: grammatica corretta ("rispetto all'autovettura" + genere "intestata/o"), icona deceduto = cuore pieno
+- ✅ **Step Libretto**: 3 opzioni con icone SVG (libretto check / lente con stemma / documento ?)
+- ✅ **Step CDC**: ESTESO a 5 opzioni (digitale, cartaceo, **documento_unico** [nuovo], smarrito con denuncia, **nessuno** [nuovo]). CHECK DB aggiornato.
+- ✅ **Niente trattini "—" nei titoli bottoni** (puliti)
+
+### ⭐⭐ Step Anagrafica + Account refactorati 25/05/2026 (notte)
+- ✅ **Anagrafica**: rimosso banner ridondante "Ritiro completamente gratuito"
+- ✅ **Account caloroso**: titolo "Ultimo passo! 🎉" + 3 trust badges (Area personale, Chat demolitore, Certificato rottamazione) + box "Cosa succede dopo" (Email → Verifica entro 1h → Ritiro a domicilio) + disclaimer terms
 
 ### Area cliente — DASHBOARD (22/05/2026)
 - ✅ Dashboard lista pratiche
@@ -1165,70 +1244,116 @@ I toggle hanno **colore semantico** in base a cosa significa la risposta per il 
 - ✅ Google Maps Browser Key (`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY`) configurata
 - ✅ Schema `pratiche` esteso con lat/lng/cap_ritiro
 - ✅ Schema `pratiche` esteso 24/05: `tipo_cambio`, `spazio_carro_attrezzi`, `spazio_carro_attrezzi_note`
+- ✅ CHECK `certificato_proprieta` esteso 25/05: aggiunti `documento_unico` e `nessuno`
 - ✅ Verifica: nessun CHECK constraint su `tipo_mezzo` (24/05/2026)
 
 ## 8.2 ⏳ PENDING — In ordine di priorità
 
-### 🔥 STEP 1 — TESTARE STEP RIMANENTI `/inizia` SU iPHONE (in corso)
+### 🔥🔥🔥 STEP 1 — SISTEMA CASISTICHE DEMOLIZIONE + DOCUMENTI DINAMICI 🆕 (NUOVO PRIORITARIO 25/05/2026)
 
-Davide stava testando il flusso `/inizia` su iPhone reale. Mancano da testare e potenzialmente rifinire:
+**Davide sta preparando** una lista completa delle casistiche di demolizione con la documentazione richiesta per ogni casistica. Quando torna manderà tutto.
 
-1. **Step Ruolo** (proprietario / delegato / deceduto)
-2. **Step Eredità** (se ruolo=deceduto)
-3. **Step Libretto** (sì / denuncia / no)
-4. **Step CDC** (digitale / cartaceo / smarrito)
-5. **Step Anagrafica** (nome + telefono)
-6. **Step Account** (email + password)
+#### Cosa servirà fare insieme (in ordine):
 
-⚠️ Davide preferisce testare uno step alla volta e dare feedback specifico. Chiedere sempre prima di toccare codice.
+**1.1 Analisi casistiche da Davide**
+- Leggere la lista completa che Davide manda
+- Capire ogni casistica (es. "proprietario vivente con libretto e CDC cartaceo" / "proprietario deceduto con libretto + atto notarile accettazione eredità" / ecc.)
+- Per ogni casistica capire QUALI documenti il cliente deve preparare al ritiro
+- Capire QUALI documenti sono **da spuntare** (checklist semplice) e QUALI **da caricare** (upload PDF/foto)
+
+**1.2 Possibile modifica `/inizia`**
+- Forse alcune casistiche richiedono **nuove domande** nel flusso per essere identificate correttamente
+- Capire se servono nuovi step o nuovi campi nei step esistenti
+- Esempi possibili: "Hai delega notarile?", "Sei coniuge superstite?", "Esiste atto di accettazione eredità?", ecc.
+
+**1.3 Database — Sistema casistiche/documenti**
+
+Probabile struttura nuova:
+
+```sql
+-- Tabella che mappa casistica → documenti richiesti
+CREATE TABLE casistiche_documenti (
+  id uuid PRIMARY KEY,
+  codice_casistica text NOT NULL,    -- es. 'proprietario_vivente_libretto_cdc_cartaceo'
+  nome_documento text NOT NULL,       -- es. 'Carta d\'identità del proprietario'
+  descrizione text,                   -- es. 'Fronte e retro, leggibile'
+  tipo_azione text NOT NULL,          -- 'spunta' | 'upload'
+  obbligatorio boolean DEFAULT true,
+  ordine int DEFAULT 0
+);
+
+-- Tabella che tiene lo stato per ogni pratica
+CREATE TABLE pratica_documenti_checklist (
+  id uuid PRIMARY KEY,
+  pratica_id uuid REFERENCES pratiche(id),
+  casistica_documento_id uuid REFERENCES casistiche_documenti(id),
+  stato text DEFAULT 'da_fare',       -- 'da_fare' | 'spuntato' | 'caricato'
+  file_url text,                      -- se tipo_azione='upload'
+  spuntato_il timestamp,
+  caricato_il timestamp
+);
+
+-- O alternativa più semplice: tabella unica
+```
+
+**Davide e Claude decideranno insieme** la struttura definitiva quando torna.
+
+**1.4 Dashboard cliente — Pagina dedicata documenti per ritiro**
+- Vista clean con checklist documenti da preparare per il ritiro
+- Per ogni doc: ✓ "fatto" o pulsante upload
+- Barra progresso "X/Y documenti pronti"
+- Notifica quando tutto pronto: "Sei pronto per il ritiro!"
+
+**1.5 Integrazione con admin**
+- Admin deve poter vedere stato preparazione del cliente
+- Quando cliente carica nuovo PDF, admin viene notificato per verificare
+
+---
 
 ### 🔥 STEP 2 — FINIRE LA DASHBOARD CLIENTE
 
-Quando finito `/inizia`, tornare alla dashboard cliente per:
+Quando finito il sistema casistiche (STEP 1), tornare alla dashboard cliente per:
 
 1. **Testare visivamente la tab Stato** (timeline) con una pratica vera
 2. **Testare la tab Chat con il Demolitore** (3 stati: prima/durante/dopo)
 3. **Testare caricamento file vero** → verificare che arrivi in admin
 4. **"0 pratiche" → "Nessuna pratica"** nella lista (cosmetico)
-5. **Documenti richiesti dinamici** più raffinati in base a `/inizia`
-6. **Mostrare nuovi campi** (`tipo_cambio`, `spazio_carro_attrezzi`) nella dashboard
-
-⚠️ **Davide dirà altri aspetti specifici** della dashboard cliente da finire. Chiedergli sempre cosa manca prima di procedere.
+5. **Mostrare nuovi campi** (`tipo_cambio`, `spazio_carro_attrezzi`, `documento_unico`) nella dashboard
 
 ### 🔥 STEP 3 — PAGINA ADMIN DETTAGLIO PRATICA
 
-7. **Sistemare `/admin/pratiche/[id]`**:
+6. **Sistemare `/admin/pratiche/[id]`**:
    - Aggiungere box chat funzionante (usare `messaggi_chat`)
    - Admin vede SEMPRE tutte le chat
    - Sub-tab admin: cliente↔NoiDemoliamo, cliente↔demolitore
-   - **Mostrare nuovi campi**: tipo_cambio, spazio_carro_attrezzi, spazio_carro_attrezzi_note
+   - **Mostrare nuovi campi**: tipo_cambio, spazio_carro_attrezzi, spazio_carro_attrezzi_note, certificato_proprieta esteso
 
 ### 🔥 STEP 4 — REVISIONE ALGORITMO + ASSEGNAZIONE MANUALE
 
-8. **Rivedere insieme algoritmo** (vedi PARTE 4.7):
+7. **Rivedere insieme algoritmo** (vedi PARTE 4.7):
    - Fix velocità storica (`data_assegnazione` → `data_ritiro_effettuato`)
    - Aggiungere colonne mancanti in `pratiche` (data_assegnazione, data_ritiro_effettuato)
    - Verificare colonna `stato` in `demolitori`
    - Aggiungere media recensioni come fattore scoring (dopo sistema recensioni)
    - Discutere altri criteri
 
-9. **Costruire assegnazione MANUALE** (vedi PARTE 4.8)
-10. **Testare bottone "Demolizione standard"** con demolitore di test
-11. **Migrare GOOGLE_MAPS_SERVER_KEY su Vercel** (per Distance Matrix)
+8. **Costruire assegnazione MANUALE** (vedi PARTE 4.8)
+9. **Testare bottone "Demolizione standard"** con demolitore di test
+10. **Migrare GOOGLE_MAPS_SERVER_KEY su Vercel** (per Distance Matrix)
 
 ### 🔥 STEP 5 — SISTEMA RECENSIONI 🆕 (vedi PARTE 4.9)
 
-12. **Creare tabella `recensioni`** + RLS
-13. **Aggiungere stato `in_attesa_recensione_cliente`** al CHECK constraint
-14. **Pagina recensioni cliente** (banner bloccante prima certificato)
-15. **Integrare con notifiche** (in-app + SMS)
-16. **Media recensioni nella card demolitore** in mappa assegnazione manuale
-17. **Media recensioni come fattore algoritmo** automatico
-18. **Strategia push verso Google Maps** (Davide deciderà workflow)
+11. **Creare tabella `recensioni`** + RLS
+12. **Aggiungere stato `in_attesa_recensione_cliente`** al CHECK constraint
+13. **Pagina recensioni cliente** (banner bloccante prima certificato)
+14. **Integrare con notifiche** (in-app + SMS)
+15. **Media recensioni nella card demolitore** in mappa assegnazione manuale
+16. **Media recensioni come fattore algoritmo** automatico
+17. **Strategia push verso Google Maps** (Davide deciderà workflow)
 
 ### 🆕 STEP 6 — TEST CROSS-PLATFORM ANDROID
 
-19. **Verificare flusso su Android reale**: Davide non ha Android. Opzioni:
+18. **Verificare flusso su Android reale**: Davide non ha Android. Opzioni:
     - Chrome DevTools (Pixel 7 / Galaxy S20)
     - Amici/familiari con Android via WhatsApp link
     - BrowserStack (browser Android reale, gratis 30min/giorno)
@@ -1236,35 +1361,35 @@ Quando finito `/inizia`, tornare alla dashboard cliente per:
 
 ### 🔜 STEP SUCCESSIVI
 
-20. **Verifica PRA ACI** — riprendere con approccio bookmarklet/estensione Chrome (vedi 5.5)
-21. **Pagina dedicata "Polizia Locale veicoli abbandonati"** per casi targhe smarrite (futuro)
-22. **Sistema invito email demolitore + `/imposta-password`**
-23. **Login multi-ruolo completo** (demolitore + commerciante)
-24. **Dashboard demolitore** `/dashboard-demolitore`
-25. **Sistema notifiche in-app** (campanella, badge, popup, web push)
-26. **Sistema SMS** (Twilio)
-27. **Sistema messaggi preimpostati** admin
-28. 🆕 **PWA**: installazione app su home screen iPhone/Android (manifest.json + service worker)
+19. **Verifica PRA ACI** — riprendere con approccio bookmarklet/estensione Chrome (vedi 5.5)
+20. **Pagina dedicata "Polizia Locale veicoli abbandonati"** per casi targhe smarrite (futuro)
+21. **Sistema invito email demolitore + `/imposta-password`**
+22. **Login multi-ruolo completo** (demolitore + commerciante)
+23. **Dashboard demolitore** `/dashboard-demolitore`
+24. **Sistema notifiche in-app** (campanella, badge, popup, web push)
+25. **Sistema SMS** (Twilio)
+26. **Sistema messaggi preimpostati** admin
+27. 🆕 **PWA**: installazione app su home screen iPhone/Android (manifest.json + service worker)
     - Beneficio: il cliente apre l'app dall'icona, non vede più la barra browser, esperienza 100% nativa
-29. 🆕 **Push notifications native** (web push) per recensioni, messaggi, aggiornamenti pratica
+28. 🆕 **Push notifications native** (web push) per recensioni, messaggi, aggiornamenti pratica
 
 ### 🔮 PROSSIMI FLUSSI
 
-30. **Flusso B — Asta demolitori**
-31. **Flusso C — Proponi ai commercianti**
-32. **Flusso "Compra per NoiDemoliamo"**
-33. **Flusso D — Vendita auto** `/vendi-auto`
+29. **Flusso B — Asta demolitori**
+30. **Flusso C — Proponi ai commercianti**
+31. **Flusso "Compra per NoiDemoliamo"**
+32. **Flusso D — Vendita auto** `/vendi-auto`
 
 ### 🏪 AREA COMMERCIANTI
 
-34. **Dashboard commerciante** 6 sezioni
-35. **Mappa commercianti** `/admin/copertura-commercianti`
+33. **Dashboard commerciante** 6 sezioni
+34. **Mappa commercianti** `/admin/copertura-commercianti`
 
 ### 🛠️ ALTRI
 
-36. **Sistema fatturazione automatica**
-37. **Statistiche e report admin**
-38. **Dashboard collaboratori ed enti pubblici** (futuro lontano)
+35. **Sistema fatturazione automatica**
+36. **Statistiche e report admin**
+37. **Dashboard collaboratori ed enti pubblici** (futuro lontano)
 
 ## 8.3 ⚠️ Problemi noti / cosmetici
 
@@ -1279,38 +1404,46 @@ Quando finito `/inizia`, tornare alla dashboard cliente per:
 
 1. **Velocità** è il principio cardine sopra tutto
 2. **Approvazione documenti**: granulare, non in blocco
-3. **Documenti tutti uguali nell'UI**: tutti hanno ✓ e ✗
-4. **Pagamento commerciante → cliente**: diretto al ritiro
-5. **Commercianti vedono**: foto + città (no indirizzo, no dati cliente, no libretto/cert)
-6. **Strategia "Proponi ai commercianti"**: prima testo mercato, POI contatto cliente
-7. **Eventuale +100€ al cliente**: quando "mangia la foglia"
-8. **Slot documenti operativi commercianti**: contratto + delega + PDF
-9. **Chat in-app, niente telefono**
-10. **Admin vede SEMPRE tutte le chat**. Cliente non vede più demolitore dopo cert rottamazione
-11. **Chat persistente DB** (`messaggi_chat`). Real-time = miglioria futura
-12. **Mobile-first** sempre, iPhone è il device principale di test
-13. **Upload**: 2 opzioni "Scatta foto" + "Carica file". NO 3a
-14. **Documenti dinamici** in base a /inizia
-15. **Doc identità/libretto**: fronte + retro in 1 slot (anche PDF unico)
-16. **Assegnazione SEMPRE su scelta**: automatica o manuale da mappa
-17. **Velocità storica demolitore**: da `data_assegnazione` a `data_ritiro_effettuato`
-18. **Recensioni OBBLIGATORIE**: cliente lascia 2 recensioni (demolitore + NoiDemoliamo) dopo ritiro effettuato e PRIMA di ricevere certificato. Strategia: push positive verso Google Maps / altri canali
-19. **Recensioni come fattore algoritmo**: media recensioni demolitore influenza posizione
-20. **Personalizzazione dinamica per tipo veicolo** in `/inizia`: l'esperienza del cliente è interamente adattata al tipo di mezzo scelto (icone, titoli, articoli grammaticali, generi)
-21. **"Motoveicolo" anziché "Motociclo"**: terminologia più ampia che include moto, scooter. Mantiene anche "Ciclomotore" come categoria separata per chi vuole specificarlo
-22. **Tipo veicolo come PRIMO step**: il cliente sa subito che il flusso funziona anche per moto/imbarcazione/camion/ecc.
-23. **Targa, CF, indirizzo OBBLIGATORI**: rimossi bottoni "Non ricordo" — meglio sapere subito se cliente non ha i dati base
-24. **Verifica PRA ACI**: abbandonata per ora (reCAPTCHA). Riprendere con bookmarklet o Openapi.it
-25. 🆕 **Mini-step principio**: una sola cosa per pagina è meglio. 13 step velocissimi > 10 step lunghi
-26. 🆕 **Bottoni `/inizia` SEMPRE attivi**: mai disabilitati. Click senza compilare = banner errore rosso + scroll a sezione + bordo rosso. Più educativo del "click che non fa nulla"
-27. 🆕 **Normalizzazione input**: targa e CF salvati senza spazi/simboli (`DD454ED`, `RSSMRA80A01H501Z`). Critico per ricerca admin futura
-28. 🆕 **Formattazione km**: 180000 mostrato come 180.000 (leggibilità), salvato come numero puro
-29. 🆕 **Validazione live CF 16 caratteri**: contatore + colore + messaggio dinamico. Feedback istantaneo riduce errori
-30. 🆕 **Spazio carro attrezzi**: legato all'indirizzo, non al veicolo. Dato critico per il demolitore (camion entra nel cortile?)
-31. 🆕 **Tipo cambio**: solo per auto/minicar/pullman/camion/altro. Saltato per moto/imbarcazione/velivolo (non hanno cambio tradizionale). Importante per il demolitore (carro attrezzi giusto)
-32. 🆕 **Psicologia gamification foto**: banner colorati invogliano l'utente a caricare 4+ foto invece di 1. Tecnica del "premio" (bottone blu prominente solo a 4+)
-33. 🆕 **Sheet popup stile iOS**: pattern moderno (WhatsApp/Telegram/Instagram) per scelta multipla. Sembra app nativa
-34. 🆕 **Theme color blu** (`#2563eb`): la barra browser mobile diventa blu, dando effetto "app vera"
+3. **Tempistica comunicata al cliente**: "Entro un'ora" (in step finale Account, sezione "Cosa succede dopo")
+4. **Documenti tutti uguali nell'UI**: tutti hanno ✓ e ✗
+5. **Pagamento commerciante → cliente**: diretto al ritiro
+6. **Commercianti vedono**: foto + città (no indirizzo, no dati cliente, no libretto/cert)
+7. **Strategia "Proponi ai commercianti"**: prima testo mercato, POI contatto cliente
+8. **Eventuale +100€ al cliente**: quando "mangia la foglia"
+9. **Slot documenti operativi commercianti**: contratto + delega + PDF
+10. **Chat in-app, niente telefono**
+11. **Admin vede SEMPRE tutte le chat**. Cliente non vede più demolitore dopo cert rottamazione
+12. **Chat persistente DB** (`messaggi_chat`). Real-time = miglioria futura
+13. **Mobile-first** sempre, iPhone è il device principale di test
+14. **Upload**: 2 opzioni "Scatta foto" + "Carica file". NO 3a
+15. **Documenti dinamici** in base a /inizia + casistica (STEP 1 prossimo PENDING)
+16. **Doc identità/libretto**: fronte + retro in 1 slot (anche PDF unico)
+17. **Assegnazione SEMPRE su scelta**: automatica o manuale da mappa
+18. **Velocità storica demolitore**: da `data_assegnazione` a `data_ritiro_effettuato`
+19. **Recensioni OBBLIGATORIE**: cliente lascia 2 recensioni (demolitore + NoiDemoliamo) dopo ritiro effettuato e PRIMA di ricevere certificato. Strategia: push positive verso Google Maps / altri canali
+20. **Recensioni come fattore algoritmo**: media recensioni demolitore influenza posizione
+21. **Personalizzazione dinamica per tipo veicolo** in `/inizia`: l'esperienza del cliente è interamente adattata al tipo di mezzo scelto (icone, titoli, articoli grammaticali, generi)
+22. **"Motoveicolo" anziché "Motociclo"**: terminologia più ampia
+23. **Tipo veicolo come PRIMO step**: il cliente sa subito che il flusso funziona anche per moto/imbarcazione/camion/ecc.
+24. **Targa, CF, indirizzo OBBLIGATORI**: rimossi bottoni "Non ricordo" — meglio sapere subito se cliente non ha i dati base
+25. **Verifica PRA ACI**: abbandonata per ora (reCAPTCHA). Riprendere con bookmarklet o Openapi.it
+26. **Mini-step principio**: una sola cosa per pagina è meglio. 13 step velocissimi > 10 step lunghi
+27. **Bottoni `/inizia` SEMPRE attivi**: mai disabilitati. Click senza compilare = banner errore rosso + scroll a sezione + bordo rosso. Più educativo del "click che non fa nulla"
+28. **Normalizzazione input**: targa e CF salvati senza spazi/simboli (`DD454ED`, `RSSMRA80A01H501Z`). Critico per ricerca admin futura
+29. **Formattazione km**: 180000 mostrato come 180.000 (leggibilità), salvato come numero puro
+30. **Validazione live CF 16 caratteri**: contatore + colore + messaggio dinamico. Feedback istantaneo riduce errori
+31. **Spazio carro attrezzi**: legato all'indirizzo, non al veicolo. Dato critico per il demolitore (camion entra nel cortile?)
+32. **Tipo cambio**: solo per auto/minicar/furgone/pullman/camion/altro. Saltato per moto/imbarcazione/velivolo
+33. **Psicologia gamification foto**: banner colorati invogliano l'utente a caricare 4+ foto invece di 1. Tecnica del "premio"
+34. **Sheet popup stile iOS**: pattern moderno (WhatsApp/Telegram/Instagram) per scelta multipla
+35. **Theme color blu** (`#2563eb`): la barra browser mobile diventa blu, effetto "app vera"
+36. 🆕 **CDC 5 opzioni**: digitale, cartaceo, documento unico (post-2020), smarrito con denuncia, nessuno. Coprire TUTTI i casi reali
+37. 🆕 **Furgone aggiunto** come tipo veicolo separato (artigiani, traslocatori, attività chiuse hanno tanti furgoni vecchi da rottamare)
+38. 🆕 **TipoAltro mostrato ovunque**: se l'utente scrive "Trattore", tutto il flusso usa "il trattore" / "del trattore" / "Trattore" automaticamente. Coccola UX
+39. 🆕 **NO scrollIntoView** automatico sugli input mobile: causava sobbalzo iOS. Mini-step corti = Safari gestisce da solo
+40. 🆕 **Step Account "caloroso"**: trust badges + "Cosa succede dopo" + tempistica "Entro un'ora" + "ritiro a domicilio". Last impression conta
+41. 🆕 **No trattini "—" nei titoli bottoni**: poco professionali. Titolo pulito + sub-descrizione sotto
+42. 🆕🆕 **Sistema casistiche documenti** (PROSSIMO LAVORO): per ogni casistica di demolizione il cliente vede la lista documenti specifici da preparare, con checklist + upload. Vedi STEP 1 in PARTE 8.2
 
 ---
 
@@ -1319,10 +1452,10 @@ Quando finito `/inizia`, tornare alla dashboard cliente per:
 > Istruzioni per Claude nella nuova chat dopo aver letto questo file.
 
 1. **Leggi TUTTO questo file**, poi conferma a Davide di aver capito
-2. **Riprendi dal punto 8.2 PENDING** nell'ordine: STEP 1 (test step rimanenti `/inizia`) → STEP 2 (dashboard) → STEP 3 (admin chat) → STEP 4 (algoritmo/manuale) → STEP 5 (recensioni)
+2. **Riprendi dal punto 8.2 PENDING** nell'ordine: STEP 1 (sistema casistiche documenti) → STEP 2 (dashboard) → STEP 3 (admin chat) → STEP 4 (algoritmo/manuale) → STEP 5 (recensioni)
 3. **Chiedi sempre a Davide quali aspetti specifici** vuole finire prima
 4. **Rispetta il design system** della parte 6 in TUTTE le pagine nuove
-5. **Rispetta le regole MOBILE CRITICHE**: input `text-base` + `text-gray-900` + `placeholder:text-gray-400`, mai bottoni disabilitati nei flussi
+5. **Rispetta le regole MOBILE CRITICHE**: input `text-base` + `text-gray-900` + `placeholder:text-gray-400`, mai bottoni disabilitati nei flussi, mai scrollIntoView automatico
 6. **Stile comunicazione** della parte 7 (passo-passo, no preamboli, Ctrl+H per modifiche piccole, file completi per grandi)
 7. **Mostra anteprime visuali** prima di toccare codice quando si cambia design
 8. **Quando crei nuovi file**, aggiorna mentalmente questo doc (a fine sessione, chiedi a Davide di aggiornare)
@@ -1348,4 +1481,4 @@ Quando finito `/inizia`, tornare alla dashboard cliente per:
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 25 maggio 2026 (notte).**
+**Fine documento. Ultimo aggiornamento: 25 maggio 2026 (notte tardi).**
