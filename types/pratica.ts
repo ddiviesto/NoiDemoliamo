@@ -13,7 +13,7 @@ export type TipoMezzo =
 export type RuoloRichiedente = 'proprietario' | 'delegato' | 'deceduto'
 export type EreditaScelta = 'accetta' | 'rinuncia'
 export type LibrettoStato = 'si' | 'denuncia' | 'no'
-export type CdcStato = 'digitale' | 'cartaceo' | 'smarrito'
+export type CdcStato = 'digitale' | 'cartaceo' | 'documento_unico' | 'smarrito' | 'nessuno'
 export type TipoCambio = 'manuale' | 'automatico' | 'non_so'
 export type SpazioCarroAttrezzi = 'libero' | 'stretto' | 'no'
 
