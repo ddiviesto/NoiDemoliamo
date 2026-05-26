@@ -1439,10 +1439,6 @@ export default function IniziaPage() {
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-3">{meta.sottoPagina}</p>
-            <div className="flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800 mb-4">
-              <span className="flex-shrink-0">🎁</span>
-              <span><strong>Ritiro completamente gratuito</strong> — nessun costo nascosto, nessuna sorpresa.</span>
-            </div>
             {(erroreAnagrafica.nome || erroreAnagrafica.telefono) && (
               <div className="mb-3">
                 <ErrorBadge>Compila tutti i campi richiesti per continuare.</ErrorBadge>
