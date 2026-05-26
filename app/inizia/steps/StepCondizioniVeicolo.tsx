@@ -25,6 +25,7 @@ function nomeCapitalizzato(tipo: TipoMezzo | null): string {
     motoveicolo: 'Motoveicolo',
     ciclomotore: 'Ciclomotore',
     minicar: 'Minicar',
+    furgone: 'Furgone',
     imbarcazione: 'Imbarcazione',
     pullman: 'Pullman',
     camion: 'Camion',
