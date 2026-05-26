@@ -1460,14 +1460,48 @@ export default function IniziaPage() {
 
         {curStep === 'account' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">Ultimo passo! 🎉</h1>
+            <p className="text-sm text-gray-500 mb-4">Crea il tuo account per seguire la pratica fino al ritiro.</p>
+
+            {/* Trust badges con benefit */}
+            <div className="grid grid-cols-3 gap-2 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-3 mb-4">
+              <div className="flex flex-col items-center text-center gap-1.5">
+                <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="2"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                    <line x1="9" y1="14" x2="15" y2="14"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] font-semibold text-blue-900 leading-tight">Segui la pratica dall'area personale</span>
+              </div>
+              <div className="flex flex-col items-center text-center gap-1.5">
+                <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] font-semibold text-blue-900 leading-tight">Chat con il demolitore</span>
+              </div>
+              <div className="flex flex-col items-center text-center gap-1.5">
+                <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <polyline points="9 15 11 17 15 13"/>
+                  </svg>
+                </div>
+                <span className="text-[10px] font-semibold text-blue-900 leading-tight">Certificato di rottamazione</span>
+              </div>
+            </div>
+
             {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3">⚠️ {error}</div>}
             {(erroreAccount.email || erroreAccount.password) && (
               <div className="mb-3">
                 <ErrorBadge>Compila tutti i campi richiesti per continuare.</ErrorBadge>
               </div>
             )}
+
             <div className="flex flex-col gap-3">
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
@@ -1478,8 +1512,31 @@ export default function IniziaPage() {
                 <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }} placeholder="••••••••" className={inputClass(erroreAccount.password)} />
               </div>
               <button onClick={handleContinuaAccount} disabled={loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'}`}>
-                {loading ? (loadingMessage || 'Invio in corso...') : 'Invia richiesta 🚀'}
+                {loading ? (loadingMessage || 'Invio in corso...') : 'Conferma e invia richiesta'}
               </button>
+
+              {/* Cosa succede dopo */}
+              <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mt-1">
+                <div className="text-xs font-bold text-sky-900 mb-2">Cosa succede dopo:</div>
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex items-start gap-2 text-xs text-sky-800">
+                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
+                    <span>Riceverai una <strong>email di conferma</strong></span>
+                  </div>
+                  <div className="flex items-start gap-2 text-xs text-sky-800">
+                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
+                    <span><strong>Entro un&apos;ora</strong> verifichiamo i tuoi documenti</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-xs text-sky-800">
+                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
+                    <span>Ti contattiamo per <strong>fissare il ritiro a domicilio</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">
+                Continuando accetti termini di servizio e informativa privacy.
+              </p>
             </div>
           </>
         )}
