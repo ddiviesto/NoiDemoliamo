@@ -1398,6 +1398,14 @@ Quando finito il sistema casistiche (STEP 1), tornare alla dashboard cliente per
 - **`tree /F /A`** può essere lento su Windows con node_modules grande
 - **Test Android**: non testato realmente, solo su iPhone
 
+## 8.4 ⏰ PROMEMORIA SCADENZE FUTURE
+
+- 🗓️ **30 OTTOBRE 2026 — Supabase Data API change**: Dal 30/10/2026 Supabase applicherà una nuova regola di sicurezza ai progetti esistenti: le NUOVE tabelle nello schema "public" NON saranno più esposte automaticamente alla Data API (PostgREST/GraphQL/supabase-js). Servirà un `GRANT` esplicito.
+  - ⚠️ Le tabelle ATTUALI (`pratiche`, `documenti`, `foto_pratiche`, ecc.) continuano a funzionare, NON serve fare nulla per loro.
+  - ⚠️ Quando si creano tabelle NUOVE dopo il 30/10/2026 (es. `recensioni`, `casistiche_documenti`, `aste`), ricordarsi di aggiungere il GRANT esplicito dopo la CREATE TABLE.
+  - Esempio: `GRANT SELECT, INSERT, UPDATE, DELETE ON nome_tabella TO authenticated, anon;` (poi attivare RLS come sempre).
+  - Email ricevuta da Supabase il 27/05/2026. Riferimento: Security Advisor nella dashboard Supabase.
+
 ---
 
 # 💡 PARTE 9 — DECISIONI BUSINESS CHIAVE
