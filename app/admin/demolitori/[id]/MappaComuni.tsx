@@ -556,7 +556,7 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
   useEffect(() => { layerCorrenteRef.current = layerCorrente }, [layerCorrente])
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     if (!apiKey) return
     if (initStartedRef.current) return
     initStartedRef.current = true
