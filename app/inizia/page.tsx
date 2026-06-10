@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import Image from 'next/image'
-import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi } from '../../types/pratica'
+import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi, Intestazione, derivaCasistica, delegaAmmessa, fermoApplicabile } from '../../types/pratica'
 import { StepTipoVeicolo } from './steps/StepTipoVeicolo'
 import { StepIdentificaVeicolo } from './steps/StepIdentificaVeicolo'
 import { StepCambioVeicolo } from './steps/StepCambioVeicolo'
@@ -46,7 +46,7 @@ function IconaFoto() {
   )
 }
 
-function IconaRuolo() {
+function IconaIntestazione() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -55,13 +55,30 @@ function IconaRuolo() {
   )
 }
 
-function IconaEredita() {
+function IconaCuoreMini() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 21s-7-4.5-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.5-7 10-7 10z"/>
+    </svg>
+  )
+}
+
+function IconaFermo() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-      <polyline points="14 2 14 8 20 8"/>
-      <line x1="9" y1="13" x2="15" y2="13"/>
-      <line x1="9" y1="17" x2="15" y2="17"/>
+      <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+      <line x1="12" y1="9" x2="12" y2="13"/>
+      <line x1="12" y1="17" x2="12.01" y2="17"/>
+    </svg>
+  )
+}
+
+function IconaConsegna() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="8.5" cy="7" r="4"/>
+      <path d="M17 11l2 2 4-4"/>
     </svg>
   )
 }
@@ -367,7 +384,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         icona: IconaCF,
         titoloBanner: 'Codice fiscale',
         titoloPagina: "Codice fiscale dell'intestatario",
-        sottoPagina: 'Deve essere il CF di chi risulta proprietario al PRA.',
+        sottoPagina: 'Di chi risulta intestatario al PRA. Se il mezzo è intestato a una società va bene anche la partita IVA.',
       }
     case 'foto':
       return {
@@ -376,19 +393,40 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         titoloPagina: `Foto ${articoloDel(tipo, tipoAltro)}`,
         sottoPagina: `Le foto ci aiutano a capire le condizioni ${articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto più adatto per il ritiro.`,
       }
-    case 'ruolo':
+    case 'intestazione':
       return {
-        icona: IconaRuolo,
-        titoloBanner: 'La tua posizione',
-        titoloPagina: `Qual è la tua posizione rispetto ${articoloDel(tipo, tipoAltro)}?`,
-        sottoPagina: 'Seleziona la situazione corretta per determinare i documenti necessari.',
+        icona: IconaIntestazione,
+        titoloBanner: 'Intestazione',
+        titoloPagina: `A chi è intestat${isFemminile(tipo) ? 'a' : 'o'} ${articolo(tipo, tipoAltro)}?`,
+        sottoPagina: 'Ci serve per dirti esattamente quali documenti preparare.',
       }
-    case 'eredita':
+    case 'eredi':
       return {
-        icona: IconaEredita,
+        icona: IconaCuoreMini,
         titoloBanner: 'Eredità',
-        titoloPagina: "Gli eredi accettano o rinunciano all'eredità?",
-        sottoPagina: 'Questo determina quale modulo notarile va allegato alla pratica.',
+        titoloPagina: "Qualcuno degli eredi ha rinunciato all'eredità?",
+        sottoPagina: 'Parliamo di rinuncia formale, fatta da un Notaio o in Tribunale.',
+      }
+    case 'societa-fallita':
+      return {
+        icona: IconaIntestazione,
+        titoloBanner: 'Società',
+        titoloPagina: 'La società è fallita o in liquidazione giudiziale?',
+        sottoPagina: 'Ci serve per preparare i documenti corretti.',
+      }
+    case 'fermo':
+      return {
+        icona: IconaFermo,
+        titoloBanner: 'Fermo amministrativo',
+        titoloPagina: 'Ci sono fermi amministrativi sul mezzo?',
+        sottoPagina: 'Il fermo non blocca la demolizione: serve solo una dichiarazione in più che prepariamo noi.',
+      }
+    case 'consegna':
+      return {
+        icona: IconaConsegna,
+        titoloBanner: 'Consegna del mezzo',
+        titoloPagina: `Chi consegnerà ${articolo(tipo, tipoAltro)} al demolitore?`,
+        sottoPagina: 'La persona presente al ritiro che firma la consegna.',
       }
     case 'libretto':
       return {
@@ -425,26 +463,6 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
 
 // ============================================================
 
-function OptionButton({ icon, label, sub, selected, onClick, errorBorder }: { icon: string; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean }) {
-  const baseBorder = selected
-    ? 'border-blue-600 bg-blue-50'
-    : errorBorder
-      ? 'border-red-300 bg-red-50/30 hover:border-red-400'
-      : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
-  return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${baseBorder}`}>
-      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${selected ? 'bg-blue-100' : 'bg-gray-100'}`}>{icon}</div>
-      <div className="flex-1">
-        <div className={`font-medium text-sm ${selected ? 'text-blue-700' : 'text-gray-800'}`}>{label}</div>
-        <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-500'}`}>{sub}</div>
-      </div>
-      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
-        {selected && <span className="text-white text-xs">✓</span>}
-      </div>
-    </button>
-  )
-}
-
 function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder }: { iconSvg: React.ReactNode; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean }) {
   const baseBorder = selected
     ? 'border-blue-600 bg-blue-50'
@@ -471,15 +489,6 @@ function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder }: { 
   )
 }
 
-function WarnBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
-      <span className="flex-shrink-0 mt-0.5">⚠️</span>
-      <span>{children}</span>
-    </div>
-  )
-}
-
 function InfoBadge({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
@@ -503,11 +512,13 @@ function getSteps(dati: DatiPratica) {
   if (veicoloHaCambio(dati.veicolo.tipo)) {
     base.push('cambio-veicolo')
   }
-  base.push('condizioni-veicolo', 'indirizzo', 'targa', 'cf', 'foto', 'ruolo', 'libretto', 'cdc', 'anagrafica', 'account')
-  if (dati.ruolo === 'deceduto') {
-    const idx = base.indexOf('libretto')
-    base.splice(idx, 0, 'eredita')
-  }
+  base.push('condizioni-veicolo', 'indirizzo', 'targa', 'cf', 'foto', 'intestazione')
+  if (dati.intestazione === 'deceduto') base.push('eredi')
+  if (dati.intestazione === 'societa') base.push('societa-fallita')
+  const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
+  if (fermoApplicabile(cas)) base.push('fermo')
+  if (delegaAmmessa(cas)) base.push('consegna')
+  base.push('libretto', 'cdc', 'anagrafica', 'account')
   return base
 }
 
@@ -578,9 +589,15 @@ export default function IniziaPage() {
   const [erroreIndirizzo, setErroreIndirizzo] = useState(false)
   const [erroreSpazio, setErroreSpazio] = useState(false)
   const [erroreTarga, setErroreTarga] = useState(false)
+  const [erroreTarghePresenti, setErroreTarghePresenti] = useState(false)
   const [erroreCf, setErroreCf] = useState(false)
-  const [erroreRuolo, setErroreRuolo] = useState(false)
-  const [erroreEredita, setErroreEredita] = useState(false)
+  const [erroreIntestazione, setErroreIntestazione] = useState(false)
+  const [erroreEredi, setErroreEredi] = useState(false)
+  const [erroreNomiRinunciatari, setErroreNomiRinunciatari] = useState(false)
+  const [erroreSocietaFallita, setErroreSocietaFallita] = useState(false)
+  const [erroreFermo, setErroreFermo] = useState(false)
+  const [erroreConsegna, setErroreConsegna] = useState(false)
+  const [erroreDelegato, setErroreDelegato] = useState<{nome?: boolean; telefono?: boolean}>({})
   const [erroreLibretto, setErroreLibretto] = useState(false)
   const [erroreCdc, setErroreCdc] = useState(false)
   const [erroreAnagrafica, setErroreAnagrafica] = useState<{nome?: boolean; telefono?: boolean}>({})
@@ -619,6 +636,12 @@ export default function IniziaPage() {
     setErroreSpazio(false)
   }
 
+  function setIntestazione(v: Intestazione) {
+    // Reset dei rami quando si cambia tipo di intestazione
+    update({ intestazione: v, erediRinuncia: null, societaFallita: null, numeroEredi: 1, nomiRinunciatari: '' })
+    setErroreIntestazione(false)
+  }
+
   // Handler "Continua" con validazione
   function handleContinuaIndirizzo() {
     if (!indirizzoConfermato) {
@@ -638,29 +661,71 @@ export default function IniziaPage() {
       setErroreTarga(true)
       return
     }
+    if (!dati.targhePresenti) {
+      setErroreTarghePresenti(true)
+      document.getElementById('box-targhe')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      return
+    }
     next()
   }
 
   function handleContinuaCf() {
-    if (!dati.cf || dati.cf.length !== 16) {
+    if (!dati.cf || (dati.cf.length !== 16 && dati.cf.length !== 11)) {
       setErroreCf(true)
       return
     }
     next()
   }
 
-  function handleContinuaRuolo() {
-    if (!dati.ruolo) {
-      setErroreRuolo(true)
+  function handleContinuaIntestazione() {
+    if (!dati.intestazione) {
+      setErroreIntestazione(true)
       return
     }
     next()
   }
 
-  function handleContinuaEredita() {
-    if (!dati.eredita) {
-      setErroreEredita(true)
+  function handleContinuaEredi() {
+    if (!dati.erediRinuncia) {
+      setErroreEredi(true)
       return
+    }
+    if (dati.erediRinuncia === 'si' && !dati.nomiRinunciatari.trim()) {
+      setErroreNomiRinunciatari(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaSocietaFallita() {
+    if (!dati.societaFallita) {
+      setErroreSocietaFallita(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaFermo() {
+    if (!dati.fermo) {
+      setErroreFermo(true)
+      return
+    }
+    next()
+  }
+
+  function handleContinuaConsegna() {
+    if (!dati.consegna) {
+      setErroreConsegna(true)
+      return
+    }
+    if (dati.consegna === 'delegato') {
+      const e: {nome?: boolean; telefono?: boolean} = {}
+      if (!dati.delegatoNome.trim()) e.nome = true
+      if (!dati.delegatoTelefono.trim()) e.telefono = true
+      if (e.nome || e.telefono) {
+        setErroreDelegato(e)
+        return
+      }
     }
     next()
   }
@@ -763,6 +828,9 @@ export default function IniziaPage() {
       const userId = authData.user?.id
       if (!userId) throw new Error('Utente non creato')
 
+      const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
+      const isEredi = cas === 'eredi_accettato' || cas === 'eredi_rinuncia'
+
       setLoadingMessage('Salvo la richiesta di demolizione...')
       const { data: praticaCreata, error: dbError } = await supabase
         .from('pratiche')
@@ -777,6 +845,7 @@ export default function IniziaPage() {
           spazio_carro_attrezzi: dati.spazioCarroAttrezzi,
           spazio_carro_attrezzi_note: dati.spazioCarroAttrezziNote || null,
           targa: dati.targaSkipped ? null : dati.targa,
+          targhe_presenti: dati.targhePresenti === null ? null : dati.targhePresenti === 'si',
           codice_fiscale: dati.cfSkipped ? null : dati.cf,
           tipo_mezzo: dati.veicolo.tipo,
           tipo_mezzo_altro: dati.veicolo.tipoAltro || null,
@@ -790,8 +859,12 @@ export default function IniziaPage() {
           va_in_moto: dati.veicolo.vaInMoto === 'si',
           parti_mancanti: dati.veicolo.partiMancanti === 'si',
           note_veicolo: dati.veicolo.note || null,
-          ruolo_richiedente: dati.ruolo,
-          eredita: dati.eredita,
+          casistica: cas,
+          numero_eredi: isEredi ? dati.numeroEredi : null,
+          nomi_rinunciatari: cas === 'eredi_rinuncia' && dati.nomiRinunciatari.trim() ? dati.nomiRinunciatari.trim() : null,
+          fermo_amministrativo: dati.fermo,
+          delegato_nome: dati.consegna === 'delegato' ? dati.delegatoNome.trim() : null,
+          delegato_telefono: dati.consegna === 'delegato' ? dati.delegatoTelefono.trim() : null,
           libretto: dati.libretto,
           certificato_proprieta: dati.cdc,
           nome_richiedente: dati.nome,
@@ -1040,6 +1113,42 @@ export default function IniziaPage() {
                 placeholder="Es. AB 123 CD"
                 className={`${inputClass(erroreTarga)} uppercase`}
               />
+
+              <div id="box-targhe" className={`border rounded-xl p-4 transition-all ${erroreTarghePresenti ? 'border-red-300 bg-red-50/40 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'bg-blue-50/50 border-blue-100'}`}>
+                {erroreTarghePresenti && (
+                  <div className="flex items-start gap-2 bg-red-100 border border-red-200 rounded-lg p-2 mb-3 text-xs text-red-800">
+                    <span className="flex-shrink-0">⚠️</span>
+                    <span>Indica se le targhe sono presenti sul mezzo.</span>
+                  </div>
+                )}
+                <div className="text-sm font-semibold text-gray-900 mb-0.5">Le targhe sono fisicamente sul mezzo?</div>
+                <div className="text-xs text-gray-600 mb-3">Controlla che siano montate sul veicolo.</div>
+                <div className="grid grid-cols-2 gap-2">
+                  <SpazioPill
+                    label="Sì, presenti" color="green"
+                    selected={dati.targhePresenti === 'si'}
+                    onClick={() => { update({ targhePresenti: 'si' }); setErroreTarghePresenti(false) }}
+                    icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                  />
+                  <SpazioPill
+                    label="No, smarrite o rubate" color="red"
+                    selected={dati.targhePresenti === 'no'}
+                    onClick={() => { update({ targhePresenti: 'no' }); setErroreTarghePresenti(false) }}
+                    icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>}
+                  />
+                </div>
+                {dati.targhePresenti === 'no' && (
+                  <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-800">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                      <path d="M12 9v4"/>
+                      <path d="M12 17h.01"/>
+                      <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    <span>Servirà la <strong>denuncia di smarrimento in originale</strong> da consegnare al ritiro. Te lo ricorderemo nella tua area personale.</span>
+                  </div>
+                )}
+              </div>
+
               <button
                 onClick={handleContinuaTarga}
                 className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
@@ -1055,19 +1164,19 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-3">
-              {erroreCf && <ErrorBadge>Inserisci un codice fiscale valido di 16 caratteri.</ErrorBadge>}
+              {erroreCf && <ErrorBadge>Inserisci un codice fiscale valido (16 caratteri) o una partita IVA (11 cifre).</ErrorBadge>}
               <div>
                 <input
                   type="text"
                   value={dati.cf}
                   onChange={e => { update({ cf: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), cfSkipped: false }); setErroreCf(false) }}
                   placeholder="Es. RSSMRA80A01H501Z"
-                  className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16))} uppercase tracking-wider`}
+                  className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16 && dati.cf.length !== 11))} uppercase tracking-wider`}
                   maxLength={16}
                 />
                 <div className="flex items-center justify-between mt-1.5 px-1">
                   <span className={`text-xs ${
-                    dati.cf.length === 16
+                    dati.cf.length === 16 || dati.cf.length === 11
                       ? 'text-green-600 font-medium'
                       : dati.cf.length > 0
                         ? 'text-amber-600'
@@ -1080,14 +1189,21 @@ export default function IniziaPage() {
                         </svg>
                         Codice fiscale valido
                       </span>
+                    ) : dati.cf.length === 11 ? (
+                      <span className="inline-flex items-center gap-1">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        Partita IVA valida
+                      </span>
                     ) : dati.cf.length > 0 ? (
-                      `Mancano ${16 - dati.cf.length} caratteri`
+                      `CF: 16 caratteri · P.IVA: 11 cifre`
                     ) : (
-                      'Il codice fiscale deve essere di 16 caratteri'
+                      'Codice fiscale (16 caratteri) o partita IVA (11 cifre)'
                     )}
                   </span>
                   <span className={`text-xs font-mono ${
-                    dati.cf.length === 16 ? 'text-green-600 font-semibold' : 'text-gray-400'
+                    dati.cf.length === 16 || dati.cf.length === 11 ? 'text-green-600 font-semibold' : 'text-gray-400'
                   }`}>
                     {dati.cf.length}/16
                   </span>
@@ -1299,53 +1415,261 @@ export default function IniziaPage() {
           </>
         )}
 
-        {curStep === 'ruolo' && (
+        {curStep === 'intestazione' && (
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            {erroreRuolo && <div className="mb-3"><ErrorBadge>Seleziona la tua posizione per continuare.</ErrorBadge></div>}
-            {dati.ruolo === 'delegato' && <div className="mb-3"><InfoBadge>Nella tua area personale troverai la delega da scaricare, compilare e riconsegnare al demolitore.</InfoBadge></div>}
+            {erroreIntestazione && <div className="mb-3"><ErrorBadge>Seleziona a chi è intestato il mezzo per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-                label="Sono il proprietario"
-                sub={`${articolo(tipo, tipoAltro).charAt(0).toUpperCase() + articolo(tipo, tipoAltro).slice(1)} è intestat${isFemminile(tipo) ? 'a' : 'o'} a me`}
-                selected={dati.ruolo === 'proprietario'}
-                onClick={() => { update({ ruolo: 'proprietario' }); setErroreRuolo(false) }}
-                errorBorder={erroreRuolo}
-              />
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="6" y="3" width="12" height="18" rx="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="13" y2="15"/></svg>}
-                label="Sono un delegato"
-                sub="Il proprietario mi ha autorizzato"
-                selected={dati.ruolo === 'delegato'}
-                onClick={() => { update({ ruolo: 'delegato' }); setErroreRuolo(false) }}
-                errorBorder={erroreRuolo}
+                label="A me"
+                sub="Sono l'intestatario del mezzo"
+                selected={dati.intestazione === 'me'}
+                onClick={() => setIntestazione('me')}
+                errorBorder={erroreIntestazione}
               />
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 2048 2048" fill="currentColor"><path d="M1504 128q113 0 212 43t173 116t116 173t43 212q0 109-41 209t-118 176l-865 864l-865-864Q83 981 42 881T0 672q0-112 42-211t117-173t173-117t212-43q83 0 148 19t120 52t106 81t106 103q55-56 105-103t106-80t121-53t148-19m294 838q59-59 90-135t31-159q0-87-32-162t-88-131t-132-87t-163-32q-84 0-149 26t-120 70t-105 97t-106 111q-54-54-105-109t-106-99t-121-72t-148-28q-86 0-162 32t-132 89t-89 133t-33 162q0 83 31 159t91 135l774 774z"/></svg>}
-                label="Il proprietario è deceduto"
+                label="A una persona deceduta"
                 sub="Gestisco la pratica come erede"
-                selected={dati.ruolo === 'deceduto'}
-                onClick={() => { update({ ruolo: 'deceduto' }); setErroreRuolo(false) }}
-                errorBorder={erroreRuolo}
+                selected={dati.intestazione === 'deceduto'}
+                onClick={() => setIntestazione('deceduto')}
+                errorBorder={erroreIntestazione}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>}
+                label="A un'altra persona"
+                sub="Il passaggio di proprietà non è mai stato fatto"
+                selected={dati.intestazione === 'altra_persona'}
+                onClick={() => setIntestazione('altra_persona')}
+                errorBorder={erroreIntestazione}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="7" x2="10" y2="7"/><line x1="14" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="15" y2="11"/><path d="M9 22v-4h6v4"/></svg>}
+                label="A una società o azienda"
+                sub="Anche ditta individuale"
+                selected={dati.intestazione === 'societa'}
+                onClick={() => setIntestazione('societa')}
+                errorBorder={erroreIntestazione}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M19 15a4 4 0 0 1 3 4v2"/></svg>}
+                label="A un'associazione"
+                sub="Ente, onlus o associazione sportiva"
+                selected={dati.intestazione === 'associazione'}
+                onClick={() => setIntestazione('associazione')}
+                errorBorder={erroreIntestazione}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg>}
+                label="Il mezzo ha targhe straniere"
+                sub="Immatricolato in un altro Paese"
+                selected={dati.intestazione === 'targhe_straniere'}
+                onClick={() => setIntestazione('targhe_straniere')}
+                errorBorder={erroreIntestazione}
               />
             </div>
-            <button onClick={handleContinuaRuolo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaIntestazione} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
 
-        {curStep === 'eredita' && (
+        {curStep === 'eredi' && (
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
-            {erroreEredita && <ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge>}
-            <WarnBadge>In base alla scelta verrà generato il modulo notarile corretto da scaricare nell&apos;area personale.</WarnBadge>
-            <div className="flex flex-col gap-2 mt-3">
-              <OptionButton icon="✅" label="Gli eredi accettano l'eredità" sub="Serve atto notarile di accettazione firmato" selected={dati.eredita === 'accetta'} onClick={() => { update({ eredita: 'accetta' }); setErroreEredita(false) }} errorBorder={erroreEredita} />
-              <OptionButton icon="❌" label="Gli eredi rinunciano all'eredità" sub="Serve documentazione di rinuncia" selected={dati.eredita === 'rinuncia'} onClick={() => { update({ eredita: 'rinuncia' }); setErroreEredita(false) }} errorBorder={erroreEredita} />
+            {erroreEredi && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
+            <div className="flex flex-col gap-2">
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                label="No, tutti hanno accettato"
+                sub="Nessuna rinuncia formale"
+                selected={dati.erediRinuncia === 'no'}
+                onClick={() => { update({ erediRinuncia: 'no' }); setErroreEredi(false) }}
+                errorBorder={erroreEredi}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>}
+                label="Sì, qualcuno ha rinunciato"
+                sub="Almeno un erede deve aver accettato"
+                selected={dati.erediRinuncia === 'si'}
+                onClick={() => { update({ erediRinuncia: 'si' }); setErroreEredi(false) }}
+                errorBorder={erroreEredi}
+              />
             </div>
-            <button onClick={handleContinuaEredita} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+
+            {dati.erediRinuncia === 'si' && (
+              <div className="mt-3">
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 mb-3">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                    <path d="M12 9v4"/>
+                    <path d="M12 17h.01"/>
+                    <circle cx="12" cy="12" r="10"/>
+                  </svg>
+                  <span>Chi ha rinunciato <strong>non deve firmare nulla</strong> e non deve consegnare documenti, altrimenti rischia di annullare la rinuncia. La pratica viene gestita solo da chi ha accettato.</span>
+                </div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome di chi ha rinunciato</label>
+                <textarea
+                  value={dati.nomiRinunciatari}
+                  onChange={e => { update({ nomiRinunciatari: e.target.value }); setErroreNomiRinunciatari(false) }}
+                  placeholder="Es. Mario Rossi, Anna Rossi"
+                  rows={2}
+                  className={`w-full border rounded-xl px-3 py-2 text-base text-gray-900 bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none placeholder:text-gray-400 ${erroreNomiRinunciatari ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+                />
+                {erroreNomiRinunciatari && <p className="text-xs text-red-600 mt-1">Inserisci i nomi di chi ha rinunciato.</p>}
+              </div>
+            )}
+
+            <h2 className="text-base font-semibold text-gray-900 mt-5 mb-2">Quanti eredi hanno accettato?</h2>
+            <div className="flex items-center gap-3 bg-gray-50 border-[1.5px] border-gray-200 rounded-xl px-4 py-3">
+              <button
+                type="button"
+                onClick={() => update({ numeroEredi: Math.max(1, dati.numeroEredi - 1) })}
+                className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 text-xl font-bold flex items-center justify-center hover:bg-blue-200 active:scale-95 transition-all"
+                aria-label="Diminuisci"
+              >
+                −
+              </button>
+              <div className="flex-1 text-center text-2xl font-bold text-gray-900">{dati.numeroEredi}</div>
+              <button
+                type="button"
+                onClick={() => update({ numeroEredi: Math.min(10, dati.numeroEredi + 1) })}
+                className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 text-xl font-bold flex items-center justify-center hover:bg-blue-200 active:scale-95 transition-all"
+                aria-label="Aumenta"
+              >
+                +
+              </button>
+            </div>
+            <p className="text-xs text-gray-500 mt-2 px-1">Per ogni erede ti chiederemo carta d&apos;identità e codice fiscale nella tua area personale. Massimo 10.</p>
+
+            <button onClick={handleContinuaEredi} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+          </>
+        )}
+
+        {curStep === 'societa-fallita' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            {erroreSocietaFallita && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
+            <div className="flex flex-col gap-2">
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                label="No, è attiva"
+                sub="La società è regolarmente operativa"
+                selected={dati.societaFallita === 'no'}
+                onClick={() => { update({ societaFallita: 'no' }); setErroreSocietaFallita(false) }}
+                errorBorder={erroreSocietaFallita}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                label="Sì, c'è un curatore fallimentare"
+                sub="Servirà l'autorizzazione del Giudice Delegato"
+                selected={dati.societaFallita === 'si'}
+                onClick={() => { update({ societaFallita: 'si' }); setErroreSocietaFallita(false) }}
+                errorBorder={erroreSocietaFallita}
+              />
+            </div>
+            <button onClick={handleContinuaSocietaFallita} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+          </>
+        )}
+
+        {curStep === 'fermo' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            {erroreFermo && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
+            <div className="flex flex-col gap-2">
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                label="Sì"
+                sub="Prepareremo noi la dichiarazione da firmare"
+                selected={dati.fermo === 'si'}
+                onClick={() => { update({ fermo: 'si' }); setErroreFermo(false) }}
+                errorBorder={erroreFermo}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>}
+                label="No"
+                sub="Nessun fermo presente sul mezzo"
+                selected={dati.fermo === 'no'}
+                onClick={() => { update({ fermo: 'no' }); setErroreFermo(false) }}
+                errorBorder={erroreFermo}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                label="Non lo so"
+                sub="Verifichiamo noi gratuitamente al PRA"
+                selected={dati.fermo === 'non_so'}
+                onClick={() => { update({ fermo: 'non_so' }); setErroreFermo(false) }}
+                errorBorder={erroreFermo}
+              />
+            </div>
+            {dati.fermo === 'si' && (
+              <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                  <path d="M12 9v4"/>
+                  <path d="M12 17h.01"/>
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <span>La demolizione toglie il veicolo dalla circolazione, ma <strong>il debito che ha causato il fermo non si cancella</strong> e resta legato al codice fiscale del proprietario.</span>
+              </div>
+            )}
+            <button onClick={handleContinuaFermo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+          </>
+        )}
+
+        {curStep === 'consegna' && (
+          <>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
+            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            {erroreConsegna && <div className="mb-3"><ErrorBadge>Seleziona chi consegnerà il mezzo per continuare.</ErrorBadge></div>}
+            <div className="flex flex-col gap-2">
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+                label="Io stesso"
+                sub="Sarò presente al ritiro"
+                selected={dati.consegna === 'io'}
+                onClick={() => { update({ consegna: 'io' }); setErroreConsegna(false); setErroreDelegato({}) }}
+                errorBorder={erroreConsegna}
+              />
+              <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M17 11l2 2 4-4"/></svg>}
+                label="Una persona delegata"
+                sub="Ti prepariamo noi la delega da firmare"
+                selected={dati.consegna === 'delegato'}
+                onClick={() => { update({ consegna: 'delegato' }); setErroreConsegna(false) }}
+                errorBorder={erroreConsegna}
+              />
+            </div>
+
+            {dati.consegna === 'delegato' && (
+              <div className="mt-3 flex flex-col gap-3">
+                <InfoBadge>Nella tua area personale troverai la delega già compilata: basterà scaricarla, firmarla e consegnarla al ritiro insieme ai documenti del delegato.</InfoBadge>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome del delegato</label>
+                  <input
+                    type="text"
+                    defaultValue={dati.delegatoNome}
+                    onChange={e => { update({ delegatoNome: e.target.value }); setErroreDelegato(prev => ({ ...prev, nome: false })) }}
+                    placeholder="Mario Rossi"
+                    className={inputClass(erroreDelegato.nome)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Telefono del delegato</label>
+                  <input
+                    type="tel"
+                    inputMode="tel"
+                    defaultValue={dati.delegatoTelefono}
+                    onChange={e => { update({ delegatoTelefono: e.target.value }); setErroreDelegato(prev => ({ ...prev, telefono: false })) }}
+                    placeholder="+39 333 1234567"
+                    className={inputClass(erroreDelegato.telefono)}
+                  />
+                </div>
+              </div>
+            )}
+
+            <button onClick={handleContinuaConsegna} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
 
