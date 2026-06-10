@@ -1407,14 +1407,6 @@ export default function IniziaPage() {
                 errorBorder={erroreCdc}
               />
               <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"><path fillOpacity="0" d="M13.5 3l5.5 5.5v11.5c0 0.55 -0.45 1 -1 1h-12c-0.55 0 -1 -0.45 -1 -1v-16c0 -0.55 0.45 -1 1 -1Z"/><path d="M14 3.5l0 4.5l4.5 0Z"/><g fill="none"><path d="M9 13h6"/><path d="M9 17h3"/></g></svg>}
-                label="Sì, Documento Unico"
-                sub="Libretto di circolazione post-2020 (CDC inglobato nel libretto)"
-                selected={dati.cdc === 'documento_unico'}
-                onClick={() => { update({ cdc: 'documento_unico' }); setErroreCdc(false) }}
-                errorBorder={erroreCdc}
-              />
-              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><circle cx="9" cy="28.5" r="1.5"/><path d="M10 25H8v-4h2a2 2 0 0 0 0-4H8a2 2 0 0 0-2 2v.5H4V19a4.005 4.005 0 0 1 4-4h2a4 4 0 0 1 0 8Z"/><path d="m27.7 9.3l-7-7A.9.9 0 0 0 20 2H10a2.006 2.006 0 0 0-2 2v8h2V4h8v6a2.006 2.006 0 0 0 2 2h6v16H14v2h12a2.006 2.006 0 0 0 2-2V10a.91.91 0 0 0-.3-.7M20 10V4.4l5.6 5.6Z"/></svg>}
                 label="No, ho la denuncia di smarrimento in originale"
                 sub="Dovrà essere consegnata al momento del ritiro"
