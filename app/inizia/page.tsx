@@ -326,7 +326,7 @@ interface StepMeta {
   sottoPagina?: string
 }
 
-function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string): StepMeta {
+function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string, intestazione?: Intestazione | null): StepMeta {
   if (stepKey === 'tipo-veicolo') {
     const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
     return {
@@ -379,13 +379,46 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         titoloPagina: `Qual è la targa ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: 'Ci serve per verificare eventuali fermi amministrativi.',
       }
-    case 'cf':
+    case 'cf': {
+      if (intestazione === 'societa') {
+        return {
+          icona: IconaCF,
+          titoloBanner: 'Partita IVA',
+          titoloPagina: 'Partita IVA della società intestataria',
+          sottoPagina: 'La trovi sul libretto di circolazione o in visura camerale. Va bene anche il codice fiscale numerico della società.',
+        }
+      }
+      if (intestazione === 'associazione') {
+        return {
+          icona: IconaCF,
+          titoloBanner: 'Codice fiscale',
+          titoloPagina: "Codice fiscale dell'associazione",
+          sottoPagina: "Quello dell'ente intestatario del mezzo: lo trovi sul certificato di attribuzione del codice fiscale.",
+        }
+      }
+      if (intestazione === 'deceduto') {
+        return {
+          icona: IconaCF,
+          titoloBanner: 'Codice fiscale',
+          titoloPagina: "Codice fiscale dell'intestatario deceduto",
+          sottoPagina: 'Lo trovi sul libretto di circolazione o sui documenti del defunto.',
+        }
+      }
+      if (intestazione === 'altra_persona') {
+        return {
+          icona: IconaCF,
+          titoloBanner: 'Codice fiscale',
+          titoloPagina: 'Codice fiscale di chi risulta intestatario al PRA',
+          sottoPagina: 'Lo trovi sul libretto di circolazione o sul certificato di proprietà.',
+        }
+      }
       return {
         icona: IconaCF,
         titoloBanner: 'Codice fiscale',
-        titoloPagina: "Codice fiscale dell'intestatario",
-        sottoPagina: 'Di chi risulta intestatario al PRA. Se il mezzo è intestato a una società va bene anche la partita IVA.',
+        titoloPagina: 'Il tuo codice fiscale',
+        sottoPagina: 'Ci serve per verificare eventuali fermi amministrativi al PRA.',
       }
+    }
     case 'foto':
       return {
         icona: IconaFoto,
@@ -508,13 +541,14 @@ function ErrorBadge({ children }: { children: React.ReactNode }) {
 }
 
 function getSteps(dati: DatiPratica) {
-  const base = ['tipo-veicolo', 'identifica-veicolo']
+  const base = ['tipo-veicolo', 'intestazione']
+  if (dati.intestazione === 'deceduto') base.push('eredi')
+  if (dati.intestazione === 'societa') base.push('societa-fallita')
+  base.push('identifica-veicolo')
   if (veicoloHaCambio(dati.veicolo.tipo)) {
     base.push('cambio-veicolo')
   }
-  base.push('condizioni-veicolo', 'indirizzo', 'targa', 'cf', 'foto', 'intestazione')
-  if (dati.intestazione === 'deceduto') base.push('eredi')
-  if (dati.intestazione === 'societa') base.push('societa-fallita')
+  base.push('condizioni-veicolo', 'indirizzo', 'targa', 'cf', 'foto')
   const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
   if (fermoApplicabile(cas)) base.push('fermo')
   if (delegaAmmessa(cas)) base.push('consegna')
@@ -523,8 +557,8 @@ function getSteps(dati: DatiPratica) {
 }
 
 // ============================================================
-function BannerStep({ stepKey, curIdx, total, tipo, tipoAltro, onBack }: { stepKey: string; curIdx: number; total: number; tipo: TipoMezzo | null; tipoAltro?: string; onBack: () => void }) {
-  const meta = getStepMeta(stepKey, tipo, tipoAltro)
+function BannerStep({ stepKey, curIdx, total, tipo, tipoAltro, intestazione, onBack }: { stepKey: string; curIdx: number; total: number; tipo: TipoMezzo | null; tipoAltro?: string; intestazione?: Intestazione | null; onBack: () => void }) {
+  const meta = getStepMeta(stepKey, tipo, tipoAltro, intestazione)
   const Icona = meta.icona
 
   return (
@@ -609,7 +643,8 @@ export default function IniziaPage() {
   const pct = Math.round((curIdx / (total - 1)) * 100)
   const tipo = dati.veicolo.tipo
   const tipoAltro = dati.veicolo.tipoAltro
-  const meta = getStepMeta(curStep, tipo, tipoAltro)
+  const cfAccetta11 = dati.intestazione === 'societa' || dati.intestazione === 'associazione'
+  const meta = getStepMeta(curStep, tipo, tipoAltro, dati.intestazione)
 
   function update(partial: Partial<DatiPratica>) {
     setDati(prev => ({ ...prev, ...partial }))
@@ -670,7 +705,9 @@ export default function IniziaPage() {
   }
 
   function handleContinuaCf() {
-    if (!dati.cf || (dati.cf.length !== 16 && dati.cf.length !== 11)) {
+    const isOrg = dati.intestazione === 'societa' || dati.intestazione === 'associazione'
+    const valido = isOrg ? (dati.cf.length === 11 || dati.cf.length === 16) : dati.cf.length === 16
+    if (!dati.cf || !valido) {
       setErroreCf(true)
       return
     }
@@ -926,6 +963,7 @@ export default function IniziaPage() {
           total={total}
           tipo={tipo}
           tipoAltro={tipoAltro}
+          intestazione={dati.intestazione}
           onBack={curIdx > 0 ? back : () => router.push('/')}
         />
 
@@ -1164,19 +1202,19 @@ export default function IniziaPage() {
             <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
             <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-3">
-              {erroreCf && <ErrorBadge>Inserisci un codice fiscale valido (16 caratteri) o una partita IVA (11 cifre).</ErrorBadge>}
+              {erroreCf && <ErrorBadge>{cfAccetta11 ? 'Inserisci una partita IVA (11 cifre) o un codice fiscale valido (16 caratteri).' : 'Inserisci un codice fiscale valido di 16 caratteri.'}</ErrorBadge>}
               <div>
                 <input
                   type="text"
                   value={dati.cf}
                   onChange={e => { update({ cf: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), cfSkipped: false }); setErroreCf(false) }}
-                  placeholder="Es. RSSMRA80A01H501Z"
-                  className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16 && dati.cf.length !== 11))} uppercase tracking-wider`}
+                  placeholder={cfAccetta11 ? 'Es. 12345678901' : 'Es. RSSMRA80A01H501Z'}
+                  className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16 && !(cfAccetta11 && dati.cf.length === 11)))} uppercase tracking-wider`}
                   maxLength={16}
                 />
                 <div className="flex items-center justify-between mt-1.5 px-1">
                   <span className={`text-xs ${
-                    dati.cf.length === 16 || dati.cf.length === 11
+                    dati.cf.length === 16 || (cfAccetta11 && dati.cf.length === 11)
                       ? 'text-green-600 font-medium'
                       : dati.cf.length > 0
                         ? 'text-amber-600'
@@ -1189,7 +1227,7 @@ export default function IniziaPage() {
                         </svg>
                         Codice fiscale valido
                       </span>
-                    ) : dati.cf.length === 11 ? (
+                    ) : cfAccetta11 && dati.cf.length === 11 ? (
                       <span className="inline-flex items-center gap-1">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                           <polyline points="20 6 9 17 4 12"/>
@@ -1197,15 +1235,15 @@ export default function IniziaPage() {
                         Partita IVA valida
                       </span>
                     ) : dati.cf.length > 0 ? (
-                      `CF: 16 caratteri · P.IVA: 11 cifre`
+                      cfAccetta11 ? 'P.IVA: 11 cifre · CF: 16 caratteri' : `Mancano ${16 - dati.cf.length} caratteri`
                     ) : (
-                      'Codice fiscale (16 caratteri) o partita IVA (11 cifre)'
+                      cfAccetta11 ? 'Partita IVA (11 cifre) o codice fiscale (16 caratteri)' : 'Il codice fiscale deve essere di 16 caratteri'
                     )}
                   </span>
                   <span className={`text-xs font-mono ${
-                    dati.cf.length === 16 || dati.cf.length === 11 ? 'text-green-600 font-semibold' : 'text-gray-400'
+                    dati.cf.length === 16 || (cfAccetta11 && dati.cf.length === 11) ? 'text-green-600 font-semibold' : 'text-gray-400'
                   }`}>
-                    {dati.cf.length}/16
+                    {cfAccetta11 ? dati.cf.length : `${dati.cf.length}/16`}
                   </span>
                 </div>
               </div>
