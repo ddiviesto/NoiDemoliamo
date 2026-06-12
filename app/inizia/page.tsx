@@ -627,7 +627,6 @@ export default function IniziaPage() {
   const [erroreCf, setErroreCf] = useState(false)
   const [erroreIntestazione, setErroreIntestazione] = useState(false)
   const [erroreEredi, setErroreEredi] = useState(false)
-  const [erroreNomiRinunciatari, setErroreNomiRinunciatari] = useState(false)
   const [erroreSocietaFallita, setErroreSocietaFallita] = useState(false)
   const [erroreFermo, setErroreFermo] = useState(false)
   const [erroreConsegna, setErroreConsegna] = useState(false)
@@ -727,7 +726,6 @@ export default function IniziaPage() {
       setErroreEredi(true)
       return
     }
-
     next()
   }
 
@@ -1534,16 +1532,13 @@ export default function IniziaPage() {
             </div>
 
             {dati.erediRinuncia === 'si' && (
-              <div className="mt-3">
-                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 mb-3">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                    <path d="M12 9v4"/>
-                    <path d="M12 17h.01"/>
-                    <circle cx="12" cy="12" r="10"/>
-                  </svg>
-                  <span><strong>Quando usare questa opzione:</strong> seleziona questa casistica solo se il proprietario del veicolo è deceduto e tra i parenti aventi diritto (es. coniuge, figli, fratelli, nipoti, cugini o altri parenti legittimi) qualcuno ha rinunciato formalmente all&apos;eredità tramite Notaio o Tribunale, mentre almeno uno di questi stessi parenti ha accettato l&apos;eredità e si prende l&apos;incarico di demolire il mezzo.<br/><br/><strong>Attenzione:</strong> chi ha rinunciato all&apos;eredità <strong>NON deve firmare nulla</strong> e <strong>NON deve consegnare i propri documenti</strong>, altrimenti rischia di annullare la rinuncia. La pratica verrà firmata e gestita solo da chi ha accettato, che dichiarerà la rinuncia degli altri nell&apos;autocertificazione generata dall&apos;app.</span>
-                </div>
-                
+              <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                  <path d="M12 9v4"/>
+                  <path d="M12 17h.01"/>
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                <span><strong>Quando usare questa opzione:</strong> seleziona questa casistica solo se il proprietario del veicolo è deceduto e tra i parenti aventi diritto (es. coniuge, figli, fratelli, nipoti, cugini o altri parenti legittimi) qualcuno ha rinunciato formalmente all&apos;eredità tramite Notaio o Tribunale, mentre almeno uno di questi stessi parenti ha accettato l&apos;eredità e si prende l&apos;incarico di demolire il mezzo.<br/><br/><strong>Attenzione:</strong> chi ha rinunciato all&apos;eredità <strong>NON deve firmare nulla</strong> e <strong>NON deve consegnare i propri documenti</strong>, altrimenti rischia di annullare la rinuncia. La pratica verrà firmata e gestita solo da chi ha accettato, che dichiarerà la rinuncia degli altri nell&apos;autocertificazione generata dall&apos;app.</span>
               </div>
             )}
 
@@ -1738,37 +1733,41 @@ export default function IniziaPage() {
         {curStep === 'cdc' && (
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">Hai il Certificato di Proprietà?</h1>
-            <p className="text-sm text-gray-500 mb-4">Il certificato è necessario per la radiazione al PRA.</p>
+            <p className="text-sm text-gray-500 mb-3">È il documento che dimostra chi è il proprietario del mezzo. Attenzione: non è il libretto, è un documento separato.</p>
+            <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-blue-800 mb-4">
+              <span className="flex-shrink-0 mt-0.5">💡</span>
+              <span className="text-xs leading-relaxed"><strong>Come capire quale hai:</strong> se l&apos;ultimo passaggio di proprietà è stato fatto <strong>prima di ottobre 2015</strong> hai quello <strong>cartaceo</strong>, un foglio con lo stemma ACI in alto. Se è stato fatto <strong>dopo</strong>, il tuo è <strong>digitale</strong>: non esiste un foglio da conservare.</span>
+            </div>
             {erroreCdc && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"><path d="M14 21h2m-2 0a1.5 1.5 0 0 1-1.5-1.5V17H12m2 4h-4m0 0H8m2 0a1.5 1.5 0 0 0 1.5-1.5V17h.5m0 0v4m4-18H8c-2.828 0-4.243 0-5.121.879C2 4.757 2 6.172 2 9v2c0 2.828 0 4.243.879 5.121C3.757 17 5.172 17 8 17h8c2.828 0 4.243 0 5.121-.879C22 15.243 22 13.828 22 11V9c0-2.828 0-4.243-.879-5.121C20.243 3 18.828 3 16 3"/><path d="M12 10.5a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 0a3 3 0 0 0-3 3m3-3a3 3 0 0 1 3 3"/></svg>}
-                label="Sì, Digitale"
-                sub="Non servirà consegnarlo fisicamente al ritiro"
-                selected={dati.cdc === 'digitale'}
-                onClick={() => { update({ cdc: 'digitale' }); setErroreCdc(false) }}
-                errorBorder={erroreCdc}
-              />
-              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="-4 -2 24 24" fill="currentColor"><path d="M3 0h10a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V3a3 3 0 0 1 3-3m0 2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm2 1h6a1 1 0 0 1 0 2H5a1 1 0 1 1 0-2m0 12h2a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2m0-4h6a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2m0-4h6a1 1 0 0 1 0 2H5a1 1 0 1 1 0-2"/></svg>}
-                label="Sì, Cartaceo"
-                sub="Quello con lo stemma dell'ACI in alto. Dovrà essere consegnato al momento del ritiro"
+                label="Sì, ho quello cartaceo"
+                sub="Il foglio con lo stemma ACI in alto: va consegnato al momento del ritiro"
                 selected={dati.cdc === 'cartaceo'}
                 onClick={() => { update({ cdc: 'cartaceo' }); setErroreCdc(false) }}
                 errorBorder={erroreCdc}
               />
               <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"><path d="M14 21h2m-2 0a1.5 1.5 0 0 1-1.5-1.5V17H12m2 4h-4m0 0H8m2 0a1.5 1.5 0 0 0 1.5-1.5V17h.5m0 0v4m4-18H8c-2.828 0-4.243 0-5.121.879C2 4.757 2 6.172 2 9v2c0 2.828 0 4.243.879 5.121C3.757 17 5.172 17 8 17h8c2.828 0 4.243 0 5.121-.879C22 15.243 22 13.828 22 11V9c0-2.828 0-4.243-.879-5.121C20.243 3 18.828 3 16 3"/><path d="M12 10.5a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 0a3 3 0 0 0-3 3m3-3a3 3 0 0 1 3 3"/></svg>}
+                label="Il mio è digitale"
+                sub="Passaggio dopo ottobre 2015: il certificato è negli archivi digitali del PRA e non va consegnato al ritiro"
+                selected={dati.cdc === 'digitale'}
+                onClick={() => { update({ cdc: 'digitale' }); setErroreCdc(false) }}
+                errorBorder={erroreCdc}
+              />
+              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><circle cx="9" cy="28.5" r="1.5"/><path d="M10 25H8v-4h2a2 2 0 0 0 0-4H8a2 2 0 0 0-2 2v.5H4V19a4.005 4.005 0 0 1 4-4h2a4 4 0 0 1 0 8Z"/><path d="m27.7 9.3l-7-7A.9.9 0 0 0 20 2H10a2.006 2.006 0 0 0-2 2v8h2V4h8v6a2.006 2.006 0 0 0 2 2h6v16H14v2h12a2.006 2.006 0 0 0 2-2V10a.91.91 0 0 0-.3-.7M20 10V4.4l5.6 5.6Z"/></svg>}
-                label="No, ho la denuncia di smarrimento in originale"
-                sub="Dovrà essere consegnata al momento del ritiro"
+                label="L'ho smarrito, ho la denuncia"
+                sub="La denuncia in originale va consegnata al momento del ritiro"
                 selected={dati.cdc === 'smarrito'}
                 onClick={() => { update({ cdc: 'smarrito' }); setErroreCdc(false) }}
                 errorBorder={erroreCdc}
               />
               <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><circle cx="9" cy="28.5" r="1.5"/><path d="M10 25H8v-4h2a2 2 0 0 0 0-4H8a2 2 0 0 0-2 2v.5H4V19a4.005 4.005 0 0 1 4-4h2a4 4 0 0 1 0 8Z"/><path d="m27.7 9.3l-7-7A.9.9 0 0 0 20 2H10a2.006 2.006 0 0 0-2 2v8h2V4h8v6a2.006 2.006 0 0 0 2 2h6v16H14v2h12a2.006 2.006 0 0 0 2-2V10a.91.91 0 0 0-.3-.7M20 10V4.4l5.6 5.6Z"/></svg>}
-                label="No, non ho nessuno di questi al momento"
-                sub="Ti spieghiamo come procedere"
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>}
+                label="Non lo trovo o non so cosa sia"
+                sub="Nessun problema: lo verifichiamo noi gratuitamente e ti spieghiamo come procedere"
                 selected={dati.cdc === 'nessuno'}
                 onClick={() => { update({ cdc: 'nessuno' }); setErroreCdc(false) }}
                 errorBorder={erroreCdc}
