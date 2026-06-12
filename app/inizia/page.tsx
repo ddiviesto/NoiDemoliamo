@@ -377,7 +377,9 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         icona: Icona,
         titoloBanner: `Targa: ${nomeVeicolo(tipo, tipoAltro)}`,
         titoloPagina: `Qual è la targa ${articoloDel(tipo, tipoAltro)}?`,
-        sottoPagina: 'Ci serve per verificare eventuali fermi amministrativi.',
+        sottoPagina: intestazione === 'targhe_straniere'
+          ? 'Inserisci la targa estera così come appare sul mezzo.'
+          : 'Ci serve per verificare eventuali fermi amministrativi.',
       }
     case 'cf': {
       if (intestazione === 'societa') {
@@ -548,11 +550,15 @@ function getSteps(dati: DatiPratica) {
   if (veicoloHaCambio(dati.veicolo.tipo)) {
     base.push('cambio-veicolo')
   }
-  base.push('condizioni-veicolo', 'indirizzo', 'targa', 'cf', 'foto')
+  base.push('condizioni-veicolo', 'indirizzo', 'targa')
+  if (dati.intestazione !== 'targhe_straniere') base.push('cf')
+  base.push('foto')
   const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
   if (fermoApplicabile(cas)) base.push('fermo')
   if (delegaAmmessa(cas)) base.push('consegna')
-  base.push('libretto', 'cdc', 'anagrafica', 'account')
+  base.push('libretto')
+  if (dati.intestazione !== 'targhe_straniere') base.push('cdc')
+  base.push('anagrafica', 'account')
   return base
 }
 
@@ -695,7 +701,7 @@ export default function IniziaPage() {
       setErroreTarga(true)
       return
     }
-    if (!dati.targhePresenti) {
+    if (dati.intestazione !== 'targhe_straniere' && !dati.targhePresenti) {
       setErroreTarghePresenti(true)
       document.getElementById('box-targhe')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
       return
@@ -878,7 +884,7 @@ export default function IniziaPage() {
           spazio_carro_attrezzi_note: dati.spazioCarroAttrezziNote || null,
           targa: dati.targaSkipped ? null : dati.targa,
           targhe_presenti: dati.targhePresenti === null ? null : dati.targhePresenti === 'si',
-          codice_fiscale: dati.cfSkipped ? null : dati.cf,
+          codice_fiscale: dati.cfSkipped || !dati.cf ? null : dati.cf,
           tipo_mezzo: dati.veicolo.tipo,
           tipo_mezzo_altro: dati.veicolo.tipoAltro || null,
           anno: dati.veicolo.anno ? parseInt(dati.veicolo.anno) : null,
@@ -1147,6 +1153,7 @@ export default function IniziaPage() {
                 className={`${inputClass(erroreTarga)} uppercase`}
               />
 
+              {dati.intestazione !== 'targhe_straniere' && (
               <div id="box-targhe" className={`border rounded-xl p-4 transition-all ${erroreTarghePresenti ? 'border-red-300 bg-red-50/40 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'bg-blue-50/50 border-blue-100'}`}>
                 {erroreTarghePresenti && (
                   <div className="flex items-start gap-2 bg-red-100 border border-red-200 rounded-lg p-2 mb-3 text-xs text-red-800">
@@ -1181,6 +1188,7 @@ export default function IniziaPage() {
                   </div>
                 )}
               </div>
+              )}
 
               <button
                 onClick={handleContinuaTarga}
