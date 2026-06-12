@@ -31,7 +31,7 @@ export function StepCambioVeicolo({ dati, onUpdate, onNext }: Props) {
       label: 'Manuale',
       descr: 'Con frizione e leva del cambio',
       icon: (
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="6" r="2"/>
           <path d="M12 8v8"/>
           <circle cx="8" cy="16" r="1"/>
@@ -45,7 +45,7 @@ export function StepCambioVeicolo({ dati, onUpdate, onNext }: Props) {
       label: 'Automatico',
       descr: 'Senza frizione, cambio automatico',
       icon: (
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M12 2v20"/>
           <path d="M8 6h8"/>
           <path d="M8 10h8"/>
@@ -59,7 +59,7 @@ export function StepCambioVeicolo({ dati, onUpdate, onNext }: Props) {
       label: 'Non lo so',
       descr: 'Non sono sicuro',
       icon: (
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/>
           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
           <path d="M12 17h.01"/>
@@ -78,7 +78,7 @@ export function StepCambioVeicolo({ dati, onUpdate, onNext }: Props) {
         </div>
       )}
 
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-2">
         {opzioni.map(o => {
           const selected = dati.tipoCambio === o.value
           return (
@@ -86,26 +86,26 @@ export function StepCambioVeicolo({ dati, onUpdate, onNext }: Props) {
               key={o.value}
               type="button"
               onClick={() => setCambio(o.value)}
-              className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${
+              className={`w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] text-left transition-all ${
                 selected
-                  ? 'border-blue-600 bg-blue-50 shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
+                  ? 'border-blue-600 bg-blue-50'
                   : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
               }`}
             >
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                selected ? 'bg-blue-100 text-blue-700' : 'bg-white text-gray-500 border border-gray-200'
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                selected ? 'bg-blue-200 text-blue-700' : 'bg-blue-100 text-blue-600'
               }`}>
                 {o.icon}
               </div>
-              <div className="flex-1">
-                <div className={`font-semibold text-base ${selected ? 'text-blue-700' : 'text-gray-800'}`}>{o.label}</div>
-                <div className={`text-xs mt-0.5 ${selected ? 'text-blue-500' : 'text-gray-500'}`}>{o.descr}</div>
+              <div className="flex-1 min-w-0">
+                <div className={`font-semibold text-sm ${selected ? 'text-blue-900' : 'text-gray-900'}`}>{o.label}</div>
+                <div className={`text-xs mt-0.5 ${selected ? 'text-blue-700' : 'text-gray-500'}`}>{o.descr}</div>
               </div>
-              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+              <div className={`w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all ${
                 selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
               }`}>
                 {selected && (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
                     <polyline points="20 6 9 17 4 12"/>
                   </svg>
                 )}
