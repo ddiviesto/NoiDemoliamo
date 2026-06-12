@@ -1843,16 +1843,23 @@ export default function IniziaPage() {
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-start gap-2 text-xs text-sky-800">
                     <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
-                    <span>Riceverai una <strong>email di conferma</strong></span>
+                    <span>Ricevi l&apos;<strong>email di conferma</strong> ed entri nella tua <strong>area personale</strong></span>
                   </div>
                   <div className="flex items-start gap-2 text-xs text-sky-800">
                     <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
-                    <span><strong>Entro un&apos;ora</strong> verifichiamo i tuoi documenti</span>
+                    <span>Carichi i documenti richiesti: <strong>basta una foto fatta col telefono</strong> 📸</span>
                   </div>
                   <div className="flex items-start gap-2 text-xs text-sky-800">
                     <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
-                    <span>Ti contattiamo per <strong>fissare il ritiro a domicilio</strong></span>
+                    <span>I moduli da firmare? <strong>Te li prepariamo noi già compilati</strong>: li stampi, li firmi e basta</span>
                   </div>
+                  <div className="flex items-start gap-2 text-xs text-sky-800">
+                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">4</div>
+                    <span>Documenti ok → fissiamo insieme il <strong>ritiro gratuito a domicilio</strong> 🚚</span>
+                  </div>
+                </div>
+                <div className="text-[11px] text-sky-700 bg-sky-100 rounded-lg px-2.5 py-1.5 mt-2 text-center leading-snug">
+                  ⏱️ In media bastano <strong>5 minuti</strong>: ti guidiamo noi passo passo.
                 </div>
               </div>
 
