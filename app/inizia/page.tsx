@@ -103,14 +103,6 @@ function IconaCDC() {
   )
 }
 
-function IconaAnagrafica() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-    </svg>
-  )
-}
-
 function IconaAccount() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -477,13 +469,6 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         titoloPagina: 'Certificato di proprietà',
         sottoPagina: 'Il certificato è necessario per la radiazione al PRA.',
       }
-    case 'anagrafica':
-      return {
-        icona: IconaAnagrafica,
-        titoloBanner: 'I tuoi contatti',
-        titoloPagina: 'I tuoi dati di contatto',
-        sottoPagina: 'Ci servono per aggiornare sulla pratica e fissare il ritiro.',
-      }
     case 'account':
       return {
         icona: IconaAccount,
@@ -558,7 +543,7 @@ function getSteps(dati: DatiPratica) {
   if (delegaAmmessa(cas)) base.push('consegna')
   base.push('libretto')
   if (dati.intestazione !== 'targhe_straniere') base.push('cdc')
-  base.push('anagrafica', 'account')
+  base.push('account')
   return base
 }
 
@@ -639,8 +624,7 @@ export default function IniziaPage() {
   const [erroreDelegato, setErroreDelegato] = useState<{nome?: boolean; telefono?: boolean}>({})
   const [erroreLibretto, setErroreLibretto] = useState(false)
   const [erroreCdc, setErroreCdc] = useState(false)
-  const [erroreAnagrafica, setErroreAnagrafica] = useState<{nome?: boolean; telefono?: boolean}>({})
-  const [erroreAccount, setErroreAccount] = useState<{email?: boolean; password?: boolean}>({})
+  const [erroreAccount, setErroreAccount] = useState<{nome?: boolean; telefono?: boolean; email?: boolean; password?: boolean}>({})
 
   const steps = getSteps(dati)
   const curStep = steps[curIdx]
@@ -784,22 +768,13 @@ export default function IniziaPage() {
     next()
   }
 
-  function handleContinuaAnagrafica() {
-    const e: {nome?: boolean; telefono?: boolean} = {}
+  function handleContinuaAccount() {
+    const e: {nome?: boolean; telefono?: boolean; email?: boolean; password?: boolean} = {}
     if (!dati.nome) e.nome = true
     if (!dati.telefono) e.telefono = true
-    if (e.nome || e.telefono) {
-      setErroreAnagrafica(e)
-      return
-    }
-    next()
-  }
-
-  function handleContinuaAccount() {
-    const e: {email?: boolean; password?: boolean} = {}
     if (!dati.email) e.email = true
     if (!dati.password) e.password = true
-    if (e.email || e.password) {
+    if (e.nome || e.telefono || e.email || e.password) {
       setErroreAccount(e)
       return
     }
@@ -1695,6 +1670,12 @@ export default function IniziaPage() {
                     placeholder="+39 333 1234567"
                     className={inputClass(erroreDelegato.telefono)}
                   />
+                  <p className="flex items-start gap-1.5 text-[11px] text-gray-500 mt-1.5 px-1 leading-relaxed">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5 text-blue-500">
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                    </svg>
+                    <span>Lo useremo solo per avvisare il delegato e accordarci sul giorno del ritiro. Nessun altro utilizzo.</span>
+                  </p>
                 </div>
               </div>
             )}
@@ -1785,29 +1766,6 @@ export default function IniziaPage() {
           </>
         )}
 
-        {curStep === 'anagrafica' && (
-          <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-3">{meta.sottoPagina}</p>
-            {(erroreAnagrafica.nome || erroreAnagrafica.telefono) && (
-              <div className="mb-3">
-                <ErrorBadge>Compila tutti i campi richiesti per continuare.</ErrorBadge>
-              </div>
-            )}
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome</label>
-                <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, nome: false })) }} placeholder="Mario Rossi" className={inputClass(erroreAnagrafica.nome)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Numero di telefono</label>
-                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAnagrafica(prev => ({ ...prev, telefono: false })) }} placeholder="+39 333 1234567" className={inputClass(erroreAnagrafica.telefono)} />
-              </div>
-              <button onClick={handleContinuaAnagrafica} className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Quasi fatto →</button>
-            </div>
-          </>
-        )}
-
         {curStep === 'account' && (
           <>
             <h1 className="text-xl font-semibold text-gray-900 mb-1">Ultimo passo! 🎉</h1>
@@ -1846,13 +1804,27 @@ export default function IniziaPage() {
             </div>
 
             {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3">⚠️ {error}</div>}
-            {(erroreAccount.email || erroreAccount.password) && (
+            {(erroreAccount.nome || erroreAccount.telefono || erroreAccount.email || erroreAccount.password) && (
               <div className="mb-3">
                 <ErrorBadge>Compila tutti i campi richiesti per continuare.</ErrorBadge>
               </div>
             )}
 
             <div className="flex flex-col gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Il tuo nome e cognome</label>
+                <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAccount(prev => ({ ...prev, nome: false })) }} placeholder="Mario Rossi" className={inputClass(erroreAccount.nome)} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Il tuo numero di telefono</label>
+                <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAccount(prev => ({ ...prev, telefono: false })) }} placeholder="+39 333 1234567" className={inputClass(erroreAccount.telefono)} />
+                <p className="flex items-start gap-1.5 text-[11px] text-gray-500 mt-1.5 px-1 leading-relaxed">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5 text-blue-500">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                  <span>Lo usiamo solo per coordinare il ritiro e aggiornarti sulla tua pratica. Nessuna chiamata commerciale.</span>
+                </p>
+              </div>
               <div>
                 <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
                 <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
