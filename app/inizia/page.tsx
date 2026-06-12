@@ -727,10 +727,7 @@ export default function IniziaPage() {
       setErroreEredi(true)
       return
     }
-    if (dati.erediRinuncia === 'si' && !dati.nomiRinunciatari.trim()) {
-      setErroreNomiRinunciatari(true)
-      return
-    }
+
     next()
   }
 
@@ -1546,15 +1543,7 @@ export default function IniziaPage() {
                   </svg>
                   <span>Chi ha rinunciato <strong>non deve firmare nulla</strong> e non deve consegnare documenti, altrimenti rischia di annullare la rinuncia. La pratica viene gestita solo da chi ha accettato.</span>
                 </div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome di chi ha rinunciato</label>
-                <textarea
-                  value={dati.nomiRinunciatari}
-                  onChange={e => { update({ nomiRinunciatari: e.target.value }); setErroreNomiRinunciatari(false) }}
-                  placeholder="Es. Mario Rossi, Anna Rossi"
-                  rows={2}
-                  className={`w-full border rounded-xl px-3 py-2 text-base text-gray-900 bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none placeholder:text-gray-400 ${erroreNomiRinunciatari ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-                />
-                {erroreNomiRinunciatari && <p className="text-xs text-red-600 mt-1">Inserisci i nomi di chi ha rinunciato.</p>}
+                
               </div>
             )}
 
