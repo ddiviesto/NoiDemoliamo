@@ -18,23 +18,6 @@ interface Errors {
   partiMancanti?: string
 }
 
-function nomeCapitalizzato(tipo: TipoMezzo | null): string {
-  if (!tipo) return 'Veicolo'
-  const map: Record<TipoMezzo, string> = {
-    autovettura: 'Autovettura',
-    motoveicolo: 'Motoveicolo',
-    ciclomotore: 'Ciclomotore',
-    minicar: 'Minicar',
-    furgone: 'Furgone',
-    imbarcazione: 'Imbarcazione',
-    pullman: 'Pullman',
-    camion: 'Camion',
-    velivolo: 'Velivolo',
-    altro: 'Mezzo',
-  }
-  return map[tipo]
-}
-
 function isFemminile(tipo: TipoMezzo | null): boolean {
   if (!tipo) return false
   return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'imbarcazione'
@@ -72,14 +55,7 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
     onNext()
   }
 
-  function handleTextareaFocus(e: React.FocusEvent<HTMLTextAreaElement>) {
-    setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 300)
-  }
-
   const errCount = Object.keys(validate()).length
-  const n = nomeCapitalizzato(dati.tipo)
   const fem = isFemminile(dati.tipo)
 
   return (
@@ -98,7 +74,15 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
 
       <ToggleRow
         id="field-incidentato"
-        label={`${n} ${fem ? 'incidentata' : 'incidentato'}?`}
+        label={`È incidentat${fem ? 'a' : 'o'}?`}
+        sub="Ha subito un incidente"
+        icon={
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        }
         value={dati.incidentato}
         siGood={false}
         error={errors.incidentato}
@@ -106,7 +90,14 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
       />
       <ToggleRow
         id="field-marciante"
-        label={`${n} marciante?`}
+        label="Cammina?"
+        sub="Riesce a muoversi con le sue ruote e il suo motore"
+        icon={
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/>
+            <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9"/>
+          </svg>
+        }
         value={dati.marciante}
         siGood={true}
         error={errors.marciante}
@@ -115,6 +106,14 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
       <ToggleRow
         id="field-vaInMoto"
         label="Va in moto?"
+        sub="Il motore si avvia"
+        icon={
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="7.5" cy="15.5" r="5.5"/>
+            <path d="m21 2-9.6 9.6"/>
+            <path d="m15.5 7.5 3 3L22 7l-3-3"/>
+          </svg>
+        }
         value={dati.vaInMoto}
         siGood={true}
         error={errors.vaInMoto}
@@ -122,21 +121,25 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
       />
       <ToggleRow
         id="field-partiMancanti"
-        label="Parti mancanti?"
+        label="Mancano delle parti?"
+        sub="Es. motore, ruote, portiere, catalizzatore, batteria"
+        icon={
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 7h-3V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+            <path d="M10 7V5h4v2"/>
+          </svg>
+        }
         value={dati.partiMancanti}
         siGood={false}
         error={errors.partiMancanti}
         onChange={v => togUpdate('partiMancanti', v)}
       />
 
-      <div className="h-px bg-gray-100 my-1" />
-
       <div>
         <label className="block text-xs font-medium text-gray-600 mb-1">Annotazioni (opzionale)</label>
         <textarea
           value={dati.note}
           onChange={e => onUpdate({ note: e.target.value })}
-          
           placeholder="Descrivi eventuali annotazioni..."
           rows={3}
           className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base text-gray-900 bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none placeholder:text-gray-400"
@@ -154,19 +157,21 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
 }
 
 // ============================================================
-// TOGGLE COMPATTO
+// CARD-RIGA CON TOGGLE
 // ============================================================
 
 interface ToggleRowProps {
   id: string
   label: string
+  sub: string
+  icon: React.ReactNode
   value: string | null
   siGood: boolean
   error?: string
   onChange: (v: ToggleValue) => void
 }
 
-function ToggleRow({ id, label, value, siGood, error, onChange }: ToggleRowProps) {
+function ToggleRow({ id, label, sub, icon, value, siGood, error, onChange }: ToggleRowProps) {
   const siSelectedClasses = siGood
     ? 'bg-green-100 border-green-300 text-green-800'
     : 'bg-red-100 border-red-300 text-red-800'
@@ -174,15 +179,25 @@ function ToggleRow({ id, label, value, siGood, error, onChange }: ToggleRowProps
     ? 'bg-red-100 border-red-300 text-red-800'
     : 'bg-green-100 border-green-300 text-green-800'
 
-  const offClasses = error
-    ? 'bg-white border-red-200 text-gray-500'
-    : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+  const offClasses = 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
 
-  const pillBase = 'flex items-center justify-center gap-1 px-4 py-2 rounded-full text-sm font-semibold border-[1.5px] transition-all min-w-[58px]'
+  const pillBase = 'flex items-center justify-center gap-1 px-3 py-2 rounded-full text-sm font-semibold border-[1.5px] transition-all min-w-[52px]'
+
+  const cardClasses = error
+    ? 'border-red-300 bg-red-50/30'
+    : 'border-gray-200 bg-gray-50'
 
   return (
-    <div id={id} className="flex items-center justify-between gap-3 py-1.5">
-      <span className="text-sm font-medium text-gray-700 flex-1">{label}</span>
+    <div id={id} className={`flex items-center justify-between gap-3 p-3 rounded-xl border-[1.5px] transition-all ${cardClasses}`}>
+      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+        <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-gray-900">{label}</div>
+          <div className="text-xs text-gray-500 mt-0.5 leading-snug">{sub}</div>
+        </div>
+      </div>
       <div className="flex gap-1.5 flex-shrink-0">
         <button
           type="button"
