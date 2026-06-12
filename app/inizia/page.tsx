@@ -1541,7 +1541,7 @@ export default function IniziaPage() {
                     <path d="M12 17h.01"/>
                     <circle cx="12" cy="12" r="10"/>
                   </svg>
-                  <span>Chi ha rinunciato <strong>non deve firmare nulla</strong> e non deve consegnare documenti, altrimenti rischia di annullare la rinuncia. La pratica viene gestita solo da chi ha accettato.</span>
+                  <span><strong>Quando usare questa opzione:</strong> seleziona questa casistica solo se il proprietario del veicolo è deceduto e tra i parenti aventi diritto (es. coniuge, figli, fratelli, nipoti, cugini o altri parenti legittimi) qualcuno ha rinunciato formalmente all&apos;eredità tramite Notaio o Tribunale, mentre almeno uno di questi stessi parenti ha accettato l&apos;eredità e si prende l&apos;incarico di demolire il mezzo.<br/><br/><strong>Attenzione:</strong> chi ha rinunciato all&apos;eredità <strong>NON deve firmare nulla</strong> e <strong>NON deve consegnare i propri documenti</strong>, altrimenti rischia di annullare la rinuncia. La pratica verrà firmata e gestita solo da chi ha accettato, che dichiarerà la rinuncia degli altri nell&apos;autocertificazione generata dall&apos;app.</span>
                 </div>
                 
               </div>
