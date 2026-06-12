@@ -1768,38 +1768,50 @@ export default function IniziaPage() {
 
         {curStep === 'account' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Ultimo passo! 🎉</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">Ultimo passo!</h1>
             <p className="text-sm text-gray-500 mb-4">Crea il tuo account per seguire la pratica fino al ritiro.</p>
 
-            {/* Trust badges con benefit */}
-            <div className="grid grid-cols-3 gap-2 bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-3 mb-4">
-              <div className="flex flex-col items-center text-center gap-1.5">
-                <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="4" width="18" height="16" rx="2"/>
-                    <line x1="3" y1="10" x2="21" y2="10"/>
-                    <line x1="9" y1="14" x2="15" y2="14"/>
-                  </svg>
+            {/* Cosa succede dopo - timeline guida */}
+            <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-4">
+              <div className="text-xs font-bold text-sky-900 mb-2">Cosa succede dopo:</div>
+              <div className="flex flex-col gap-2">
+                <div className="flex items-start gap-2.5 text-xs text-sky-800">
+                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="2" y="4" width="20" height="16" rx="2"/>
+                      <path d="m2 7 10 6 10-6"/>
+                    </svg>
+                  </div>
+                  <span className="mt-0.5">Ricevi l&apos;<strong>email di conferma</strong> ed entri nella tua <strong>area personale</strong></span>
                 </div>
-                <span className="text-[10px] font-semibold text-blue-900 leading-tight">Segui la pratica dall'area personale</span>
-              </div>
-              <div className="flex flex-col items-center text-center gap-1.5">
-                <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                  </svg>
+                <div className="flex items-start gap-2.5 text-xs text-sky-800">
+                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </div>
+                  <span className="mt-0.5">Carichi i documenti richiesti: <strong>basta una foto fatta col telefono</strong></span>
                 </div>
-                <span className="text-[10px] font-semibold text-blue-900 leading-tight">Chat con il demolitore</span>
-              </div>
-              <div className="flex flex-col items-center text-center gap-1.5">
-                <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-sm">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <polyline points="9 15 11 17 15 13"/>
-                  </svg>
+                <div className="flex items-start gap-2.5 text-xs text-sky-800">
+                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+                    </svg>
+                  </div>
+                  <span className="mt-0.5">I moduli da firmare? <strong>Te li prepariamo noi già compilati</strong>: li stampi, li firmi e basta</span>
                 </div>
-                <span className="text-[10px] font-semibold text-blue-900 leading-tight">Certificato di rottamazione</span>
+                <div className="flex items-start gap-2.5 text-xs text-sky-800">
+                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 17h4V5H2v12h3"/>
+                      <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"/>
+                      <circle cx="7.5" cy="17.5" r="2.5"/>
+                      <circle cx="17.5" cy="17.5" r="2.5"/>
+                    </svg>
+                  </div>
+                  <span className="mt-0.5">Documenti ok → fissiamo insieme il <strong>ritiro gratuito a domicilio</strong></span>
+                </div>
               </div>
             </div>
 
@@ -1837,29 +1849,30 @@ export default function IniziaPage() {
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Conferma e invia richiesta'}
               </button>
 
-              {/* Cosa succede dopo */}
-              <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mt-1">
-                <div className="text-xs font-bold text-sky-900 mb-2">Cosa succede dopo:</div>
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex items-start gap-2 text-xs text-sky-800">
-                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">1</div>
-                    <span>Ricevi l&apos;<strong>email di conferma</strong> ed entri nella tua <strong>area personale</strong></span>
+              {/* Benefit account */}
+              <div className="mt-1">
+                <div className="text-[11px] font-bold text-blue-900 text-center mb-2">Col tuo account gratuito hai:</div>
+                <div className="flex items-center justify-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-blue-900">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 flex-shrink-0">
+                      <rect x="3" y="4" width="18" height="16" rx="2"/>
+                      <line x1="3" y1="10" x2="21" y2="10"/>
+                    </svg>
+                    Area personale
                   </div>
-                  <div className="flex items-start gap-2 text-xs text-sky-800">
-                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">2</div>
-                    <span>Carichi i documenti richiesti: <strong>basta una foto fatta col telefono</strong> 📸</span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-blue-900">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 flex-shrink-0">
+                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                    </svg>
+                    Chat col demolitore
                   </div>
-                  <div className="flex items-start gap-2 text-xs text-sky-800">
-                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">3</div>
-                    <span>I moduli da firmare? <strong>Te li prepariamo noi già compilati</strong>: li stampi, li firmi e basta</span>
+                  <div className="flex items-center gap-1.5 text-[10px] font-semibold text-blue-900">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-600 flex-shrink-0">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                      <polyline points="9 15 11 17 15 13"/>
+                    </svg>
+                    Certificato di Rottamazione
                   </div>
-                  <div className="flex items-start gap-2 text-xs text-sky-800">
-                    <div className="w-4 h-4 rounded-full bg-sky-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">4</div>
-                    <span>Documenti ok → fissiamo insieme il <strong>ritiro gratuito a domicilio</strong> 🚚</span>
-                  </div>
-                </div>
-                <div className="text-[11px] text-sky-700 bg-sky-100 rounded-lg px-2.5 py-1.5 mt-2 text-center leading-snug">
-                  ⏱️ In media bastano <strong>5 minuti</strong>: ti guidiamo noi passo passo.
                 </div>
               </div>
 
