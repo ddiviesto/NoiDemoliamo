@@ -425,7 +425,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         icona: IconaIntestazione,
         titoloBanner: 'Intestazione',
         titoloPagina: `A chi è intestat${isFemminile(tipo) ? 'a' : 'o'} ${articolo(tipo, tipoAltro)}?`,
-        sottoPagina: 'Ci serve per dirti esattamente quali documenti preparare.',
+        sottoPagina: 'Scegli in base a chi risulta proprietario sui documenti.',
       }
     case 'eredi':
       return {
@@ -1439,48 +1439,48 @@ export default function IniziaPage() {
             <div className="flex flex-col gap-2">
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-                label="A me"
-                sub="Sono l'intestatario del mezzo"
+                label="A un privato cittadino"
+                sub="Il proprietario è una persona, non un'azienda"
                 selected={dati.intestazione === 'me'}
                 onClick={() => setIntestazione('me')}
                 errorBorder={erroreIntestazione}
               />
               <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 2048 2048" fill="currentColor"><path d="M1504 128q113 0 212 43t173 116t116 173t43 212q0 109-41 209t-118 176l-865 864l-865-864Q83 981 42 881T0 672q0-112 42-211t117-173t173-117t212-43q83 0 148 19t120 52t106 81t106 103q55-56 105-103t106-80t121-53t148-19m294 838q59-59 90-135t31-159q0-87-32-162t-88-131t-132-87t-163-32q-84 0-149 26t-120 70t-105 97t-106 111q-54-54-105-109t-106-99t-121-72t-148-28q-86 0-162 32t-132 89t-89 133t-33 162q0 83 31 159t91 135l774 774z"/></svg>}
-                label="A una persona deceduta"
-                sub="Gestisco la pratica come erede"
-                selected={dati.intestazione === 'deceduto'}
-                onClick={() => setIntestazione('deceduto')}
-                errorBorder={erroreIntestazione}
-              />
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>}
-                label="A un'altra persona"
-                sub="Il passaggio di proprietà non è mai stato fatto"
-                selected={dati.intestazione === 'altra_persona'}
-                onClick={() => setIntestazione('altra_persona')}
-                errorBorder={erroreIntestazione}
-              />
-              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="7" x2="10" y2="7"/><line x1="14" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="15" y2="11"/><path d="M9 22v-4h6v4"/></svg>}
                 label="A una società o azienda"
-                sub="Anche ditta individuale"
+                sub="Mezzo intestato a una ditta con partita IVA"
                 selected={dati.intestazione === 'societa'}
                 onClick={() => setIntestazione('societa')}
                 errorBorder={erroreIntestazione}
               />
               <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 2048 2048" fill="currentColor"><path d="M1504 128q113 0 212 43t173 116t116 173t43 212q0 109-41 209t-118 176l-865 864l-865-864Q83 981 42 881T0 672q0-112 42-211t117-173t173-117t212-43q83 0 148 19t120 52t106 81t106 103q55-56 105-103t106-80t121-53t148-19m294 838q59-59 90-135t31-159q0-87-32-162t-88-131t-132-87t-163-32q-84 0-149 26t-120 70t-105 97t-106 111q-54-54-105-109t-106-99t-121-72t-148-28q-86 0-162 32t-132 89t-89 133t-33 162q0 83 31 159t91 135l774 774z"/></svg>}
+                label="A una persona deceduta"
+                sub="Il proprietario è venuto a mancare"
+                selected={dati.intestazione === 'deceduto'}
+                onClick={() => setIntestazione('deceduto')}
+                errorBorder={erroreIntestazione}
+              />
+              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M19 15a4 4 0 0 1 3 4v2"/></svg>}
                 label="A un'associazione"
-                sub="Ente, onlus o associazione sportiva"
+                sub="Mezzo intestato a un ente o associazione"
                 selected={dati.intestazione === 'associazione'}
                 onClick={() => setIntestazione('associazione')}
                 errorBorder={erroreIntestazione}
               />
               <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>}
+                label="Il passaggio di proprietà non è stato completato"
+                sub="Non risulto proprietario sui documenti"
+                selected={dati.intestazione === 'altra_persona'}
+                onClick={() => setIntestazione('altra_persona')}
+                errorBorder={erroreIntestazione}
+              />
+              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg>}
                 label="Il mezzo ha targhe straniere"
-                sub="Immatricolato in un altro Paese"
+                sub="Veicolo immatricolato all'estero"
                 selected={dati.intestazione === 'targhe_straniere'}
                 onClick={() => setIntestazione('targhe_straniere')}
                 errorBorder={erroreIntestazione}
