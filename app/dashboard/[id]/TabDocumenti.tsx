@@ -8,9 +8,7 @@ import { Pratica } from './page'
 // TIPI
 // ============================================================
 
-/** Una riga della checklist, già unita ai dati del catalogo */
 interface DocChecklist {
-  // dalla checklist
   id: string
   pratica_id: string
   documento_id: string
@@ -20,7 +18,6 @@ interface DocChecklist {
   scaricato_il: string | null
   caricato_il: string | null
   nota_admin: string | null
-  // dal catalogo
   codice: string
   nome: string
   descrizione: string | null
@@ -31,11 +28,9 @@ interface DocChecklist {
   ordine: number
 }
 
-/** Un singolo file caricato per un documento (più file = fronte+retro, pagine...) */
 interface FileCaricato {
   url: string
   nome: string
-  signed?: string | null
 }
 
 interface FotoPratica {
@@ -79,12 +74,6 @@ function isPdfUrl(url: string | null | undefined): boolean {
   return /\.pdf($|\?)/i.test(url)
 }
 
-function isImageUrl(url: string | null | undefined): boolean {
-  if (!url) return false
-  return /\.(jpg|jpeg|png|webp|gif|heic)($|\?)/i.test(url)
-}
-
-/** Legge il campo file_url (che contiene un JSON array) in modo sicuro */
 function leggiFile(fileUrl: string | null): FileCaricato[] {
   if (!fileUrl) return []
   try {
@@ -92,7 +81,6 @@ function leggiFile(fileUrl: string | null): FileCaricato[] {
     if (Array.isArray(parsed)) return parsed as FileCaricato[]
     return []
   } catch {
-    // Retrocompatibilità: se fosse un singolo URL semplice
     return [{ url: fileUrl, nome: 'File' }]
   }
 }
@@ -109,83 +97,113 @@ function estraiPathBucket(url: string, bucket: string): string | null {
   return url.substring(idx + marker.length).split('?')[0]
 }
 
-function troncaNomeFile(nome: string | null, max = 14): string {
-  if (!nome) return 'File'
-  if (nome.length <= max) return nome
-  const punto = nome.lastIndexOf('.')
-  if (punto > 0 && punto > nome.length - 6) {
-    const ext = nome.substring(punto)
-    const base = nome.substring(0, max - ext.length - 1)
-    return `${base}…${ext}`
-  }
-  return nome.substring(0, max - 1) + '…'
-}
-
 // ============================================================
-// ICONE
+// ICONE (vettoriali sottili)
 // ============================================================
 
-function IconaCamera() {
+function IcoCamera({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
       <circle cx="12" cy="13" r="4"/>
     </svg>
   )
 }
 
-function IconaFile() {
+function IcoFile({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg>
   )
 }
 
-function IconaDownload() {
+function IcoCheck({ size = 21, color = '#1D9E75' }: { size?: number; color?: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-      <polyline points="7 10 12 15 17 10"/>
-      <line x1="12" y1="15" x2="12" y2="3"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9.5"/>
+      <polyline points="8.5 12 11 14.5 15.5 9.5"/>
     </svg>
   )
 }
 
-function IconaSpunta({ size = 12, color = '#15803d' }: { size?: number; color?: string }) {
+function IcoClock({ size = 21, color = '#d99412' }: { size?: number; color?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9.5"/>
+      <polyline points="12 7 12 12 15.5 13.5"/>
     </svg>
   )
 }
 
-function IconaOrologio({ size = 12, color = '#854d0e' }: { size?: number; color?: string }) {
+function IcoAlert({ size = 14, color = '#c0392b' }: { size?: number; color?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9"/>
-      <polyline points="12 7 12 12 15 14"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9.5"/>
+      <line x1="12" y1="7.5" x2="12" y2="13"/>
+      <line x1="12" y1="16.3" x2="12" y2="16.3"/>
     </svg>
   )
 }
 
-function IconaWarning({ size = 12, color = '#b91c1c' }: { size?: number; color?: string }) {
+function IcoPackage({ size = 21, color = '#5dca9e' }: { size?: number; color?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9"/>
-      <line x1="12" y1="8" x2="12" y2="13"/>
-      <line x1="12" y1="16.5" x2="12" y2="16.5"/>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
     </svg>
   )
 }
 
-function IconaChevron({ aperto }: { aperto: boolean }) {
+function IcoChevronDown({ size = 19, color = '#5e7290' }: { size?: number; color?: string }) {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
-      style={{ transform: aperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="6 9 12 15 18 9"/>
     </svg>
+  )
+}
+
+function IcoPhoto({ size = 16, color = '#aab4c0' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2.5"/>
+      <circle cx="8.5" cy="8.5" r="1.5"/>
+      <polyline points="21 15 16 10 5 21"/>
+    </svg>
+  )
+}
+
+function IcoPlus({ size = 17, color = '#2563eb' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+    </svg>
+  )
+}
+
+// ============================================================
+// ANELLO DI PROGRESSO
+// ============================================================
+
+function AnelloProgresso({ pronti, totale }: { pronti: number; totale: number }) {
+  const r = 27
+  const circ = 2 * Math.PI * r
+  const perc = totale > 0 ? pronti / totale : 0
+  const offset = circ * (1 - perc)
+  return (
+    <div style={{ position: 'relative', width: 66, height: 66, flexShrink: 0 }}>
+      <svg width="66" height="66" viewBox="0 0 66 66">
+        <circle cx="33" cy="33" r={r} fill="none" stroke="#eaf0f7" strokeWidth="7" />
+        <circle cx="33" cy="33" r={r} fill="none" stroke="#2563eb" strokeWidth="7" strokeLinecap="round"
+          strokeDasharray={circ} strokeDashoffset={offset} transform="rotate(-90 33 33)"
+          style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <span style={{ fontSize: 17, fontWeight: 500, color: '#0d2144', lineHeight: 1 }}>{pronti}</span>
+        <span style={{ fontSize: 10, color: '#9aa7b5', lineHeight: 1.3 }}>su {totale}</span>
+      </div>
+    </div>
   )
 }
 
@@ -216,13 +234,11 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   async function carica() {
     setLoading(true)
 
-    // 1a. Leggi la checklist della pratica
     const { data: righe } = await supabase
       .from('pratica_documenti_checklist')
       .select('*')
       .eq('pratica_id', pratica.id)
 
-    // 1b. Leggi dal catalogo solo i documenti che servono
     const documentoIds = Array.from(new Set((righe || []).map((r: Record<string, unknown>) => r.documento_id as string)))
     const catalogo = new Map<string, Record<string, unknown>>()
     if (documentoIds.length > 0) {
@@ -235,7 +251,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       }
     }
 
-    // 1c. Unisci checklist + catalogo
     const lista: DocChecklist[] = (righe || []).map((r: Record<string, unknown>) => {
       const cat = catalogo.get(r.documento_id as string) || {}
       return {
@@ -260,7 +275,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     })
     lista.sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
 
-    // 2. Genera signed URL per tutti i file
     const sm: Record<string, string> = {}
     for (const d of lista) {
       for (const f of leggiFile(d.file_url)) {
@@ -272,7 +286,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     }
     setSignedMap(sm)
 
-    // 3. Foto veicolo
     const { data: fotos } = await supabase
       .from('foto_pratiche')
       .select('*')
@@ -289,9 +302,16 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       mappaApprov.set(a.tipo_documento, { stato: a.stato, nota: a.nota_admin })
     }
 
-    const fotoArricchite: FotoPratica[] = (fotos || []).map(f => {
-      const appr = mappaApprov.get(`foto:${f.id}`)
-      return { ...f, stato_approvazione: appr?.stato ?? 'in_attesa', nota_admin: appr?.nota ?? null }
+    const fotoArricchite: FotoPratica[] = (fotos || []).map((f: Record<string, unknown>) => {
+      const appr = mappaApprov.get(`foto:${f.id as string}`)
+      return {
+        id: f.id as string,
+        pratica_id: f.pratica_id as string,
+        url: f.url as string,
+        caricato_il: f.caricato_il as string,
+        stato_approvazione: appr?.stato ?? 'in_attesa',
+        nota_admin: appr?.nota ?? null,
+      }
     })
 
     setDocs(lista)
@@ -299,14 +319,12 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     setLoading(false)
   }
 
-  // Notifica al parent quanti documenti rifiutati
   useEffect(() => {
     if (!onDocRifiutatiCambiati) return
     const n = docs.filter(d => d.stato === 'rifiutato').length
     onDocRifiutatiCambiati(n)
   }, [docs, onDocRifiutatiCambiati])
 
-  // ---------- UPLOAD ----------
   async function caricaFile(doc: DocChecklist, files: File[]) {
     setCaricandoId(doc.id)
     try {
@@ -340,7 +358,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     setCaricandoId(null)
   }
 
-  // ---------- ELIMINA SINGOLO FILE ----------
   async function eliminaFileConfermato() {
     if (!confermaElimina) return
     setEliminazioneInCorso(true)
@@ -349,12 +366,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       const files = leggiFile(doc.file_url)
       const daRimuovere = files[fileIdx]
       const rimanenti = files.filter((_, i) => i !== fileIdx)
-
       if (daRimuovere) {
         const path = estraiPathBucket(daRimuovere.url, 'documenti-pratiche')
         if (path) await supabase.storage.from('documenti-pratiche').remove([path])
       }
-
       const nuovoStato = rimanenti.length === 0 ? 'da_fare' : 'caricato'
       await supabase
         .from('pratica_documenti_checklist')
@@ -373,7 +388,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     setConfermaElimina(null)
   }
 
-  // ---------- FOTO VEICOLO ----------
   async function uploadFotoExtra(files: File[]) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -403,120 +417,81 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     )
   }
 
-  // ---------- RAGGRUPPAMENTI ----------
   const sistemati = docs.filter(d => d.stato === 'caricato' || d.stato === 'approvato')
   const daFare = docs.filter(d => d.stato === 'da_fare' || d.stato === 'rifiutato')
-
-  // Dei "da fare", separo generali / moduli / per erede
   const daFareGenerali = daFare.filter(d => !d.per_erede && !d.template_pdf)
   const daFareModuli = daFare.filter(d => !d.per_erede && d.template_pdf)
   const daFareEredi = daFare.filter(d => d.per_erede)
-
-  // Indici eredi presenti tra i "da fare"
   const indiciEredi = Array.from(new Set(daFareEredi.map(d => d.indice_erede ?? 0))).sort((a, b) => a - b)
-
-  // Documenti da consegnare al ritiro (di tutta la pratica)
   const daConsegnare = docs.filter(d => d.richiede_consegna)
 
   const totale = docs.length
   const pronti = sistemati.length
-  const percentuale = totale > 0 ? Math.round((pronti / totale) * 100) : 0
   const tuttoApprovato = totale > 0 && docs.every(d => d.stato === 'approvato')
 
   return (
     <div className="flex flex-col gap-3">
 
-      {/* ====== CARD DI STATO ====== */}
+      {/* ====== STATO ====== */}
       {tuttoApprovato ? (
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-5 text-center">
-          <div className="mx-auto mb-3 bg-green-600 rounded-full flex items-center justify-center" style={{ width: 52, height: 52 }}>
-            <IconaSpunta size={30} color="#ffffff" />
+        <div style={{ background: '#eef7f1', border: '0.5px solid #c8e6d5', borderRadius: 18, padding: 20, textAlign: 'center' }}>
+          <div style={{ width: 54, height: 54, margin: '0 auto 12px', background: '#1D9E75', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <p className="font-semibold text-green-800 text-base">Sei pronto per il ritiro!</p>
-          <p className="text-xs text-green-700 mt-1 leading-relaxed">Tutti i documenti sono stati approvati. Ottimo lavoro.</p>
+          <p style={{ fontWeight: 500, fontSize: 16, color: '#0F6E56', margin: 0 }}>Sei pronto per il ritiro!</p>
+          <p style={{ fontSize: 12.5, color: '#3c7a60', marginTop: 4, lineHeight: 1.45 }}>Tutti i documenti sono stati approvati. Ottimo lavoro.</p>
         </div>
       ) : (
-        <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              </svg>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '6px 6px 2px' }}>
+          <AnelloProgresso pronti={pronti} totale={totale} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 500, fontSize: 16, color: '#0d2144' }}>
+              {pronti === 0 ? 'Iniziamo!' : 'Stai andando bene!'}
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-[#0d2144] text-[15px]">
-                {pronti === 0 ? 'Iniziamo!' : 'Stai andando bene!'}
-              </p>
-              <p className="text-xs text-blue-900/70 mt-0.5">
-                {daFare.length === 0 ? 'Documenti inviati, in attesa di verifica' : `Ti restano ${daFare.length} ${daFare.length === 1 ? 'documento' : 'documenti'} da preparare`}
-              </p>
+            <div style={{ fontSize: 12.5, color: '#7a8a9a', marginTop: 2, lineHeight: 1.4 }}>
+              {daFare.length === 0 ? 'Documenti inviati, in attesa di verifica.' : `Ti restano ${daFare.length} ${daFare.length === 1 ? 'documento' : 'documenti'} da preparare.`}
             </div>
-          </div>
-          <div className="bg-blue-100 h-2 rounded-full overflow-hidden mt-3">
-            <div className="bg-blue-600 h-full rounded-full transition-all" style={{ width: `${percentuale}%` }} />
           </div>
         </div>
       )}
 
-      {/* ====== DA PREPARARE: GENERALI ====== */}
+      {/* ====== DA PREPARARE: GENERALI + MODULI ====== */}
       {(daFareGenerali.length > 0 || daFareModuli.length > 0) && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4">
-          <p className="text-sm font-semibold text-gray-800 mb-1">Da preparare</p>
-          <p className="text-xs text-gray-500 mb-3">Puoi scattare una foto o caricare un file.</p>
+        <div>
+          <SezioneTitolo testo="Da preparare" />
           <div className="flex flex-col gap-2.5">
             {daFareGenerali.map(d => (
-              <DocCard
-                key={d.id}
-                doc={d}
-                signedMap={signedMap}
-                caricamento={caricandoId === d.id}
-                eliminabile={puoEliminare}
-                onCarica={(files) => caricaFile(d, files)}
-                onApri={(url, titolo) => setAnteprima({ url, titolo })}
-                onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })}
-              />
+              <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} eliminabile={puoEliminare}
+                onCarica={(files) => caricaFile(d, files)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
             ))}
-            {daFareModuli.map(d => (
-              <ModuloCard key={d.id} doc={d} />
-            ))}
+            {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
           </div>
         </div>
       )}
 
       {/* ====== DA PREPARARE: PER EREDE ====== */}
       {indiciEredi.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-4">
-          <p className="text-sm font-semibold text-gray-800 mb-3">Documenti per ogni erede</p>
+        <div>
+          <SezioneTitolo testo="Documenti per ogni erede" />
           <div className="flex flex-col gap-2.5">
             {indiciEredi.map(idx => {
               const docsErede = daFareEredi.filter(d => (d.indice_erede ?? 0) === idx)
               const aperto = erediAperti[idx] ?? (indiciEredi.length === 1)
               return (
-                <div key={idx} className="border border-blue-100 rounded-xl overflow-hidden">
-                  <button
-                    onClick={() => setErediAperti(s => ({ ...s, [idx]: !aperto }))}
-                    className="w-full flex items-center gap-3 p-3 bg-blue-50/60"
-                  >
-                    <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-semibold text-sm flex items-center justify-center flex-shrink-0">{idx}</div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <div className="font-medium text-sm text-[#0d2144]">{ordinaleErede(idx)} erede</div>
-                      <div className="text-[11px] text-blue-900/60 mt-0.5">{docsErede.length} {docsErede.length === 1 ? 'documento' : 'documenti'}</div>
+                <div key={idx} style={{ border: '0.5px solid #e8edf3', borderRadius: 14, overflow: 'hidden' }}>
+                  <button onClick={() => setErediAperti(s => ({ ...s, [idx]: !aperto }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 13, background: '#f7f9fc' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#e6f1fb', color: '#185FA5', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{idx}</div>
+                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                      <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{ordinaleErede(idx)} erede</div>
+                      <div style={{ fontSize: 11, color: '#8a98a8', marginTop: 1 }}>{docsErede.length} {docsErede.length === 1 ? 'documento' : 'documenti'}</div>
                     </div>
-                    <IconaChevron aperto={aperto} />
+                    <span style={{ transform: aperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><IcoChevronDown color="#8a98a8" /></span>
                   </button>
                   {aperto && (
-                    <div className="p-3 flex flex-col gap-2.5">
+                    <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {docsErede.map(d => (
-                        <DocCard
-                          key={d.id}
-                          doc={d}
-                          signedMap={signedMap}
-                          caricamento={caricandoId === d.id}
-                          eliminabile={puoEliminare}
-                          onCarica={(files) => caricaFile(d, files)}
-                          onApri={(url, titolo) => setAnteprima({ url, titolo })}
-                          onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })}
-                        />
+                        <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} eliminabile={puoEliminare}
+                          onCarica={(files) => caricaFile(d, files)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })} />
                       ))}
                     </div>
                   )}
@@ -527,40 +502,26 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
-      {/* ====== GIA' SISTEMATI (comprimibile) ====== */}
+      {/* ====== GIA' SISTEMATI ====== */}
       {sistemati.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <button
-            onClick={() => setSistematiAperti(a => !a)}
-            className="w-full flex items-center gap-3 p-4"
-          >
-            <div className="w-9 h-9 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
-              <IconaSpunta size={18} color="#16a34a" />
-            </div>
-            <div className="flex-1 min-w-0 text-left">
-              <div className="font-medium text-sm text-gray-800">
-                {sistemati.length} {sistemati.length === 1 ? 'documento sistemato' : 'documenti sistemati'}
+        <div>
+          <SezioneTitolo testo="Già sistemati" />
+          {!sistematiAperti ? (
+            <button onClick={() => setSistematiAperti(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #e8edf3', borderRadius: 14, background: '#fff' }}>
+              <IcoCheck size={21} color="#1D9E75" />
+              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{sistemati.length} {sistemati.length === 1 ? 'documento sistemato' : 'documenti sistemati'}</div>
+                <div style={{ fontSize: 11, color: '#8a98a8', marginTop: 1 }}>{contaPerStato(sistemati)}</div>
               </div>
-              <div className="text-[11px] text-gray-500 mt-0.5">
-                {contaPerStato(sistemati)}
-              </div>
-            </div>
-            <IconaChevron aperto={sistematiAperti} />
-          </button>
-          {sistematiAperti && (
-            <div className="px-4 pb-4 flex flex-col gap-2.5">
+              <IcoChevronDown color="#8a98a8" />
+            </button>
+          ) : (
+            <div className="flex flex-col gap-2.5">
               {sistemati.map(d => (
-                <DocCard
-                  key={d.id}
-                  doc={d}
-                  signedMap={signedMap}
-                  caricamento={caricandoId === d.id}
-                  eliminabile={puoEliminare}
-                  onCarica={(files) => caricaFile(d, files)}
-                  onApri={(url, titolo) => setAnteprima({ url, titolo })}
-                  onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })}
-                />
+                <CardSistemato key={d.id} doc={d} signedMap={signedMap} eliminabile={puoEliminare}
+                  onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
               ))}
+              <button onClick={() => setSistematiAperti(false)} style={{ alignSelf: 'center', fontSize: 12, color: '#8a98a8', fontWeight: 500, background: 'none', border: 'none', padding: '4px 8px' }}>Nascondi</button>
             </div>
           )}
         </div>
@@ -568,29 +529,22 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 
       {/* ====== DA PORTARE AL RITIRO ====== */}
       {daConsegnare.length > 0 && (
-        <div className="bg-[#0d2144] rounded-2xl p-4">
-          <button onClick={() => setRitiroAperto(a => !a)} className="w-full flex items-center gap-2.5">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
-            </svg>
-            <span className="text-white font-semibold text-sm flex-1 text-left">Da portare al ritiro</span>
-            <span style={{ transform: ritiroAperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9db4d4" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-            </span>
+        <div style={{ background: '#0d2144', borderRadius: 16, padding: 16 }}>
+          <button onClick={() => setRitiroAperto(a => !a)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none' }}>
+            <IcoPackage size={21} color="#5dca9e" />
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <div style={{ color: '#fff', fontWeight: 500, fontSize: 14 }}>Da portare al ritiro</div>
+              <div style={{ color: '#9db4d4', fontSize: 11.5, marginTop: 1 }}>{daConsegnare.length} originali da consegnare</div>
+            </div>
+            <span style={{ transform: ritiroAperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><IcoChevronDown color="#5e7290" /></span>
           </button>
-          {!ritiroAperto && (
-            <p className="text-[#acc3e0] text-xs mt-2 leading-relaxed">
-              {daConsegnare.length} originali da consegnare al demolitore. Tocca per la lista.
-            </p>
-          )}
           {ritiroAperto && (
-            <div className="mt-3">
-              <p className="text-[#acc3e0] text-xs mb-2 leading-relaxed">Il giorno del ritiro consegna questi originali al demolitore:</p>
-              <div className="text-[13px] text-white">
+            <div style={{ marginTop: 13 }}>
+              <p style={{ color: '#acc3e0', fontSize: 12, marginBottom: 6, lineHeight: 1.45 }}>Il giorno del ritiro consegna questi originali al demolitore:</p>
+              <div style={{ fontSize: 13, color: '#fff' }}>
                 {daConsegnare.map((d, i) => (
-                  <div key={d.id} className={`flex items-center gap-2.5 py-1.5 ${i < daConsegnare.length - 1 ? 'border-b border-[#25395a]' : ''}`}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5dca9e" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><circle cx="12" cy="12" r="9"/><polyline points="9 12 11.5 14.5 16 9.5"/></svg>
+                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 0', borderBottom: i < daConsegnare.length - 1 ? '0.5px solid #25395a' : 'none' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5dca9e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="9.5"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg>
                     <span>{nomeRitiro(d)}</span>
                   </div>
                 ))}
@@ -601,24 +555,20 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       )}
 
       {/* ====== FOTO DEL VEICOLO ====== */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-semibold text-gray-800">Foto del veicolo</p>
-          <span className="text-xs text-gray-500">{foto.length} file</span>
+      <div style={{ border: '0.5px solid #e8edf3', borderRadius: 16, padding: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: foto.length > 0 ? 12 : 10 }}>
+          <span style={{ fontSize: 14, fontWeight: 500, color: '#0d2144' }}>Foto del veicolo</span>
+          <span style={{ fontSize: 12, color: '#9aa7b5' }}>{foto.length} {foto.length === 1 ? 'foto' : 'foto'}</span>
         </div>
         {foto.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-3">
             {foto.map((f, idx) => (
-              <button
-                key={f.id}
-                onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })}
-                className="w-full aspect-square rounded-xl overflow-hidden border-2 border-gray-200 bg-gray-100"
-              >
+              <button key={f.id} onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })} style={{ width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', border: '0.5px solid #e8edf3', background: '#f3f5f8' }}>
                 {isPdfUrl(f.url) ? (
-                  <div className="w-full h-full bg-red-50 flex items-center justify-center text-[10px] font-bold text-red-600">PDF</div>
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
                 ) : (
                   /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={f.url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
+                  <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
               </button>
             ))}
@@ -679,7 +629,17 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 }
 
 // ============================================================
-// FUNZIONI DI SUPPORTO TESTUALE
+// TITOLO SEZIONE
+// ============================================================
+
+function SezioneTitolo({ testo }: { testo: string }) {
+  return (
+    <div style={{ fontSize: 11, fontWeight: 500, color: '#9aa7b5', letterSpacing: '0.04em', textTransform: 'uppercase', margin: '4px 2px 12px' }}>{testo}</div>
+  )
+}
+
+// ============================================================
+// FUNZIONI DI SUPPORTO TESTO
 // ============================================================
 
 function ordinaleErede(n: number): string {
@@ -696,14 +656,47 @@ function contaPerStato(docs: DocChecklist[]): string {
   return parti.join(' · ')
 }
 
-/** Nome del documento nella lista "da portare al ritiro", con eventuale numero erede */
 function nomeRitiro(d: DocChecklist): string {
   if (d.per_erede && d.indice_erede) return `${d.nome} (${ordinaleErede(d.indice_erede).toLowerCase()} erede)`
   return d.nome
 }
 
 // ============================================================
-// CARD DOCUMENTO (upload foto/file)
+// SHEET DI CARICAMENTO (scatta foto / scegli file)
+// ============================================================
+
+function SheetUpload({ onScatta, onScegliFile, onChiudi }: { onScatta: () => void; onScegliFile: () => void; onChiudi: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(13,33,68,0.45)' }} onClick={onChiudi}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', width: '100%', maxWidth: 440, borderRadius: '22px 22px 0 0', padding: '18px 18px 26px' }}>
+        <div style={{ width: 42, height: 5, background: '#d7dde6', borderRadius: 3, margin: '0 auto 16px' }} />
+        <div style={{ fontWeight: 500, fontSize: 15, textAlign: 'center', color: '#0d2144', marginBottom: 3 }}>Carica documento</div>
+        <div style={{ fontSize: 12.5, textAlign: 'center', color: '#8a98a8', marginBottom: 18 }}>Scatta una foto o scegli un file dal dispositivo</div>
+
+        <button onClick={() => { onScatta(); onChiudi() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, border: '0.5px solid #dbe2ea', borderRadius: 13, padding: 14, background: '#fff', marginBottom: 11 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#e6f1fb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoCamera size={21} color="#185FA5" /></div>
+          <div style={{ flex: 1, textAlign: 'left' }}>
+            <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>Scatta foto</div>
+            <div style={{ fontSize: 11.5, color: '#8a98a8', marginTop: 1 }}>Usa la fotocamera adesso</div>
+          </div>
+        </button>
+
+        <button onClick={() => { onScegliFile(); onChiudi() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, border: '0.5px solid #dbe2ea', borderRadius: 13, padding: 14, background: '#fff', marginBottom: 16 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#eef0f3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoFile size={21} color="#5F5E5A" /></div>
+          <div style={{ flex: 1, textAlign: 'left' }}>
+            <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>Scegli file</div>
+            <div style={{ fontSize: 11.5, color: '#8a98a8', marginTop: 1 }}>Foto dalla galleria o PDF</div>
+          </div>
+        </button>
+
+        <button onClick={onChiudi} style={{ width: '100%', background: '#f3f5f8', color: '#6b7785', border: 'none', borderRadius: 13, padding: 13, fontSize: 14, fontWeight: 500 }}>Annulla</button>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
+// CARD DOCUMENTO DA PREPARARE
 // ============================================================
 
 function DocCard(props: {
@@ -717,8 +710,10 @@ function DocCard(props: {
 }) {
   const inputCamera = useRef<HTMLInputElement>(null)
   const inputFile = useRef<HTMLInputElement>(null)
+  const [sheet, setSheet] = useState(false)
   const { doc } = props
   const files = leggiFile(doc.file_url)
+  const rifiutato = doc.stato === 'rifiutato'
 
   function handle(e: React.ChangeEvent<HTMLInputElement>) {
     if (!e.target.files || e.target.files.length === 0) return
@@ -726,44 +721,41 @@ function DocCard(props: {
     e.target.value = ''
   }
 
-  const approvato = doc.stato === 'approvato'
-  const rifiutato = doc.stato === 'rifiutato'
-  const inVerifica = doc.stato === 'caricato'
-
-  let bordo = 'border-gray-200'
-  if (approvato) bordo = 'border-green-200'
-  else if (rifiutato) bordo = 'border-red-200'
-
-  const sfondo = rifiutato ? 'bg-red-50/40' : 'bg-white'
-  const mostraPulsanti = !approvato && props.eliminabile
+  const bordo = rifiutato ? '#f0d4d4' : '#e8edf3'
 
   return (
-    <div className={`${sfondo} border ${bordo} rounded-xl p-3`}>
-      <div className="flex items-start justify-between gap-2 mb-1">
-        <div className="text-sm font-medium text-gray-800 leading-tight flex-1">{doc.nome}</div>
-        {approvato && <BadgeStato stato="approvato" />}
-        {inVerifica && <BadgeStato stato="in_attesa" />}
-        {rifiutato && <BadgeStato stato="rifiutato" />}
+    <div style={{ border: `0.5px solid ${bordo}`, borderRadius: 14, padding: 15 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ fontWeight: 500, fontSize: 15, color: '#0d2144', lineHeight: 1.3 }}>{doc.nome}</div>
+        {rifiutato && <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 500, color: '#c0392b', background: '#fbeaea', padding: '3px 10px', borderRadius: 20 }}>Da rifare</span>}
       </div>
-      {doc.descrizione && <div className="text-[11px] text-gray-500 leading-snug mb-2">{doc.descrizione}</div>}
 
-      {/* Miniature dei file caricati */}
+      {doc.descrizione && !rifiutato && (
+        <div style={{ fontSize: 12, color: '#7a8a9a', marginTop: 4, lineHeight: 1.45 }}>{doc.descrizione}</div>
+      )}
+
+      {rifiutato && doc.nota_admin && (
+        <div style={{ fontSize: 12, color: '#c0392b', marginTop: 9, lineHeight: 1.45, display: 'flex', gap: 6 }}>
+          <span style={{ flexShrink: 0, marginTop: 1 }}><IcoAlert size={14} color="#c0392b" /></span><span>{doc.nota_admin}</span>
+        </div>
+      )}
+
       {files.length > 0 && (
-        <div className="flex gap-2 flex-wrap mb-2.5">
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
           {files.map((f, idx) => {
             const url = props.signedMap[f.url] || f.url
             return (
-              <div key={idx} className="relative w-16 h-16">
-                <button onClick={() => props.onApri(url, doc.nome)} className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200 bg-white block">
+              <div key={idx} style={{ position: 'relative', width: 60, height: 60 }}>
+                <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 60, height: 60, borderRadius: 10, overflow: 'hidden', border: '0.5px solid #e2e8f0', background: '#fff', display: 'block' }}>
                   {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
-                    <div className="w-full h-full bg-red-50 flex items-center justify-center text-[9px] font-bold text-red-600">PDF</div>
+                    <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#c0392b' }}>PDF</div>
                   ) : (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={url} alt="" className="w-full h-full object-cover" />
+                    <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   )}
                 </button>
-                {mostraPulsanti && (
-                  <button onClick={() => props.onElimina(idx)} className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center shadow font-bold leading-none">×</button>
+                {props.eliminabile && (
+                  <button onClick={() => props.onElimina(idx)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 12, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                 )}
               </div>
             )
@@ -771,31 +763,28 @@ function DocCard(props: {
         </div>
       )}
 
-      {/* Nota del rifiuto */}
-      {rifiutato && doc.nota_admin && (
-        <div className="bg-red-50 border border-red-100 rounded-lg p-2.5 mb-2.5 text-[11px] text-red-800 leading-relaxed">
-          <IconaWarning size={12} color="#b91c1c" /> {doc.nota_admin}
-        </div>
-      )}
-
-      {/* Pulsanti caricamento */}
       {props.caricamento ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg py-2.5 flex items-center justify-center gap-2">
-          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-blue-800 font-medium">Caricamento...</span>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 13 }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
+          </div>
         </div>
-      ) : mostraPulsanti ? (
+      ) : props.eliminabile ? (
         <>
           <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
           <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
-          <div className="grid grid-cols-2 gap-2">
-            <button onClick={() => inputCamera.current?.click()} className={`${rifiutato ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'} text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5`}>
-              <IconaCamera />{files.length === 0 ? 'Scatta foto' : 'Aggiungi'}
-            </button>
-            <button onClick={() => inputFile.current?.click()} className={`bg-white border-2 ${rifiutato ? 'border-red-200 text-red-700 hover:bg-red-50' : 'border-blue-200 text-blue-700 hover:bg-blue-50'} py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5`}>
-              <IconaFile />Carica file
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 13 }}>
+            <button onClick={() => setSheet(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: rifiutato ? '#c0392b' : '#2563eb', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 17px', fontSize: 12.5, fontWeight: 500 }}>
+              <IcoCamera size={15} color="#fff" />{rifiutato ? 'Ricarica' : files.length > 0 ? 'Aggiungi' : 'Carica'}
             </button>
           </div>
+          {sheet && (
+            <SheetUpload
+              onScatta={() => inputCamera.current?.click()}
+              onScegliFile={() => inputFile.current?.click()}
+              onChiudi={() => setSheet(false)}
+            />
+          )}
         </>
       ) : null}
     </div>
@@ -803,50 +792,67 @@ function DocCard(props: {
 }
 
 // ============================================================
-// CARD MODULO PDF (in preparazione per ora)
+// RIGA DOCUMENTO GIA' SISTEMATO (compatta)
 // ============================================================
 
-function ModuloCard({ doc }: { doc: DocChecklist }) {
+function CardSistemato(props: {
+  doc: DocChecklist
+  signedMap: Record<string, string>
+  eliminabile: boolean
+  onApri: (url: string, titolo: string) => void
+  onElimina: (fileIdx: number) => void
+}) {
+  const { doc } = props
+  const files = leggiFile(doc.file_url)
+  const approvato = doc.stato === 'approvato'
+  const primo = files[0]
+  const url = primo ? (props.signedMap[primo.url] || primo.url) : null
+
   return (
-    <div className="bg-white border border-blue-100 rounded-xl p-3">
-      <div className="flex items-start gap-2 mb-1">
-        <div className="text-sm font-medium text-gray-800 leading-tight flex-1">{doc.nome}</div>
-        <span className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none flex-shrink-0">
-          Modulo
-        </span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '0.5px solid #e8edf3', borderRadius: 14 }}>
+      <span style={{ flexShrink: 0 }}>{approvato ? <IcoCheck size={21} color="#1D9E75" /> : <IcoClock size={21} color="#d99412" />}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{doc.nome}</div>
+        {!approvato && <div style={{ fontSize: 11, color: '#d99412', marginTop: 1 }}>La stiamo verificando</div>}
       </div>
-      {doc.descrizione && <div className="text-[11px] text-gray-500 leading-snug mb-2.5">{doc.descrizione}</div>}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 flex items-center gap-2">
-        <IconaOrologio size={14} color="#854d0e" />
-        <span className="text-[11px] text-amber-800 font-medium">Questo modulo sarà disponibile a breve. Ti avviseremo.</span>
-      </div>
+      {approvato ? (
+        <span style={{ fontSize: 11.5, color: '#1D9E75', fontWeight: 500, flexShrink: 0 }}>Approvato</span>
+      ) : url ? (
+        <div style={{ position: 'relative', width: 36, height: 36, flexShrink: 0 }}>
+          <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', border: '0.5px solid #e2e8f0', background: '#f3f5f8', display: 'block' }}>
+            {isPdfUrl(primo?.nome) || isPdfUrl(primo?.url) ? (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
+          </button>
+          {props.eliminabile && (
+            <button onClick={() => props.onElimina(0)} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          )}
+        </div>
+      ) : null}
     </div>
   )
 }
 
 // ============================================================
-// BADGE STATO
+// CARD MODULO PDF (in preparazione)
 // ============================================================
 
-function BadgeStato({ stato }: { stato: 'approvato' | 'rifiutato' | 'in_attesa' }) {
-  if (stato === 'approvato') {
-    return (
-      <span className="inline-flex items-center gap-1 bg-green-50 text-green-700 border border-green-200 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none flex-shrink-0">
-        <IconaSpunta size={11} color="#15803d" />Approvato
-      </span>
-    )
-  }
-  if (stato === 'rifiutato') {
-    return (
-      <span className="inline-flex items-center gap-1 bg-red-50 text-red-700 border border-red-200 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none flex-shrink-0">
-        <IconaWarning size={11} color="#b91c1c" />Da rifare
-      </span>
-    )
-  }
+function ModuloCard({ doc }: { doc: DocChecklist }) {
   return (
-    <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5 text-[10px] font-semibold leading-none flex-shrink-0">
-      <IconaOrologio size={11} color="#854d0e" />In verifica
-    </span>
+    <div style={{ border: '0.5px solid #e8edf3', borderRadius: 14, padding: 15 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ fontWeight: 500, fontSize: 15, color: '#0d2144', lineHeight: 1.3 }}>{doc.nome}</div>
+        <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 500, color: '#185FA5', background: '#e6f1fb', padding: '3px 10px', borderRadius: 20 }}>Modulo</span>
+      </div>
+      {doc.descrizione && <div style={{ fontSize: 12, color: '#7a8a9a', marginTop: 4, lineHeight: 1.45 }}>{doc.descrizione}</div>}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, background: '#fbf3e3', border: '0.5px solid #f2e2c0', borderRadius: 10, padding: '9px 11px' }}>
+        <span style={{ flexShrink: 0 }}><IcoClock size={15} color="#b5820f" /></span>
+        <span style={{ fontSize: 11.5, color: '#9a6c0c', fontWeight: 500 }}>Questo modulo sarà disponibile a breve. Ti avviseremo.</span>
+      </div>
+    </div>
   )
 }
 
@@ -857,6 +863,7 @@ function BadgeStato({ stato }: { stato: 'approvato' | 'rifiutato' | 'in_attesa' 
 function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
   const inputCamera = useRef<HTMLInputElement>(null)
   const inputFile = useRef<HTMLInputElement>(null)
+  const [sheet, setSheet] = useState(false)
   const [caricando, setCaricando] = useState(false)
 
   async function handle(e: React.ChangeEvent<HTMLInputElement>) {
@@ -872,19 +879,20 @@ function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
       <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
       <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
       {caricando ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl py-2.5 flex items-center justify-center gap-2">
-          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          <span className="text-xs text-blue-800 font-medium">Caricamento...</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => inputCamera.current?.click()} className="bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5">
-            <IconaCamera />Scatta foto
-          </button>
-          <button onClick={() => inputFile.current?.click()} className="bg-white border-2 border-blue-200 text-blue-700 hover:bg-blue-50 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5">
-            <IconaFile />Carica file
-          </button>
-        </div>
+        <button onClick={() => setSheet(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+          <IcoPlus size={17} color="#2563eb" />Aggiungi foto
+        </button>
+      )}
+      {sheet && (
+        <SheetUpload
+          onScatta={() => inputCamera.current?.click()}
+          onScegliFile={() => inputFile.current?.click()}
+          onChiudi={() => setSheet(false)}
+        />
       )}
     </>
   )
