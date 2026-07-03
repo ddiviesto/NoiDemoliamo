@@ -164,24 +164,6 @@ function IcoChevronDown({ size = 19, color = '#5e7290' }: { size?: number; color
   )
 }
 
-function IcoPhoto({ size = 16, color = '#aab4c0' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="3" width="18" height="18" rx="2.5"/>
-      <circle cx="8.5" cy="8.5" r="1.5"/>
-      <polyline points="21 15 16 10 5 21"/>
-    </svg>
-  )
-}
-
-function IcoPlus({ size = 17, color = '#2563eb' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-    </svg>
-  )
-}
-
 // ============================================================
 // ANELLO DI PROGRESSO
 // ============================================================
@@ -478,7 +460,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
               const docsErede = daFareEredi.filter(d => (d.indice_erede ?? 0) === idx)
               const aperto = erediAperti[idx] ?? (indiciEredi.length === 1)
               return (
-                <div key={idx} style={{ border: '0.5px solid #e8edf3', borderRadius: 14, overflow: 'hidden' }}>
+                <div key={idx} style={{ border: '0.5px solid #e8edf3', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
                   <button onClick={() => setErediAperti(s => ({ ...s, [idx]: !aperto }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 13, background: '#f7f9fc' }}>
                     <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#e6f1fb', color: '#185FA5', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{idx}</div>
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
@@ -507,7 +489,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         <div>
           <SezioneTitolo testo="Già sistemati" />
           {!sistematiAperti ? (
-            <button onClick={() => setSistematiAperti(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #e8edf3', borderRadius: 14, background: '#fff' }}>
+            <button onClick={() => setSistematiAperti(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #e8edf3', borderRadius: 14, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
               <IcoCheck size={21} color="#1D9E75" />
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
                 <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{sistemati.length} {sistemati.length === 1 ? 'documento sistemato' : 'documenti sistemati'}</div>
@@ -555,7 +537,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       )}
 
       {/* ====== FOTO DEL VEICOLO ====== */}
-      <div style={{ border: '0.5px solid #e8edf3', borderRadius: 16, padding: 16 }}>
+      <div style={{ border: '0.5px solid #e8edf3', borderRadius: 16, padding: 16, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: foto.length > 0 ? 12 : 10 }}>
           <span style={{ fontSize: 14, fontWeight: 500, color: '#0d2144' }}>Foto del veicolo</span>
           <span style={{ fontSize: 12, color: '#9aa7b5' }}>{foto.length} {foto.length === 1 ? 'foto' : 'foto'}</span>
@@ -662,41 +644,29 @@ function nomeRitiro(d: DocChecklist): string {
 }
 
 // ============================================================
-// SHEET DI CARICAMENTO (scatta foto / scegli file)
+// BOLLINO AZIONE (Scatta / File) — apre direttamente
+// fotocamera o selettore file, senza popup intermedi
 // ============================================================
 
-function SheetUpload({ onScatta, onScegliFile, onChiudi }: { onScatta: () => void; onScegliFile: () => void; onChiudi: () => void }) {
+function BollinoAzione({ etichetta, bg, colore, onClick, children }: {
+  etichetta: string
+  bg: string
+  colore: string
+  onClick: () => void
+  children: React.ReactNode
+}) {
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center" style={{ background: 'rgba(13,33,68,0.45)' }} onClick={onChiudi}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', width: '100%', maxWidth: 440, borderRadius: '22px 22px 0 0', padding: '18px 18px 26px' }}>
-        <div style={{ width: 42, height: 5, background: '#d7dde6', borderRadius: 3, margin: '0 auto 16px' }} />
-        <div style={{ fontWeight: 500, fontSize: 15, textAlign: 'center', color: '#0d2144', marginBottom: 3 }}>Carica documento</div>
-        <div style={{ fontSize: 12.5, textAlign: 'center', color: '#8a98a8', marginBottom: 18 }}>Scatta una foto o scegli un file dal dispositivo</div>
-
-        <button onClick={() => { onScatta(); onChiudi() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, border: '0.5px solid #dbe2ea', borderRadius: 13, padding: 14, background: '#fff', marginBottom: 11 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#e6f1fb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoCamera size={21} color="#185FA5" /></div>
-          <div style={{ flex: 1, textAlign: 'left' }}>
-            <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>Scatta foto</div>
-            <div style={{ fontSize: 11.5, color: '#8a98a8', marginTop: 1 }}>Usa la fotocamera adesso</div>
-          </div>
-        </button>
-
-        <button onClick={() => { onScegliFile(); onChiudi() }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, border: '0.5px solid #dbe2ea', borderRadius: 13, padding: 14, background: '#fff', marginBottom: 16 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#eef0f3', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><IcoFile size={21} color="#5F5E5A" /></div>
-          <div style={{ flex: 1, textAlign: 'left' }}>
-            <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>Scegli file</div>
-            <div style={{ fontSize: 11.5, color: '#8a98a8', marginTop: 1 }}>Foto dalla galleria o PDF</div>
-          </div>
-        </button>
-
-        <button onClick={onChiudi} style={{ width: '100%', background: '#f3f5f8', color: '#6b7785', border: 'none', borderRadius: 13, padding: 13, fontSize: 14, fontWeight: 500 }}>Annulla</button>
-      </div>
-    </div>
+    <button onClick={onClick} aria-label={etichetta} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 46, cursor: 'pointer' }}>
+      <span style={{ width: 40, height: 40, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {children}
+      </span>
+      <span style={{ fontSize: 10.5, fontWeight: 500, color: colore, lineHeight: 1 }}>{etichetta}</span>
+    </button>
   )
 }
 
 // ============================================================
-// CARD DOCUMENTO DA PREPARARE
+// CARD DOCUMENTO DA PREPARARE (riga compatta, opzioni visibili)
 // ============================================================
 
 function DocCard(props: {
@@ -710,7 +680,6 @@ function DocCard(props: {
 }) {
   const inputCamera = useRef<HTMLInputElement>(null)
   const inputFile = useRef<HTMLInputElement>(null)
-  const [sheet, setSheet] = useState(false)
   const { doc } = props
   const files = leggiFile(doc.file_url)
   const rifiutato = doc.stato === 'rifiutato'
@@ -722,17 +691,42 @@ function DocCard(props: {
   }
 
   const bordo = rifiutato ? '#f0d4d4' : '#e8edf3'
+  const bgBollino = rifiutato ? '#fbeaea' : '#e6f1fb'
+  const colBollino = rifiutato ? '#c0392b' : '#185FA5'
 
   return (
-    <div style={{ border: `0.5px solid ${bordo}`, borderRadius: 14, padding: 15 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-        <div style={{ fontWeight: 500, fontSize: 15, color: '#0d2144', lineHeight: 1.3 }}>{doc.nome}</div>
-        {rifiutato && <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 500, color: '#c0392b', background: '#fbeaea', padding: '3px 10px', borderRadius: 20 }}>Da rifare</span>}
-      </div>
+    <div style={{ background: '#fff', border: `0.5px solid ${bordo}`, borderRadius: 14, padding: '13px 14px', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
+      <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
+      <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
 
-      {doc.descrizione && !rifiutato && (
-        <div style={{ fontSize: 12, color: '#7a8a9a', marginTop: 4, lineHeight: 1.45 }}>{doc.descrizione}</div>
-      )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 500, fontSize: 15, color: '#0d2144', lineHeight: 1.3 }}>{doc.nome}</span>
+            {rifiutato && (
+              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 500, color: '#c0392b', background: '#fbeaea', padding: '3px 10px', borderRadius: 20 }}>Da rifare</span>
+            )}
+          </div>
+          {doc.descrizione && !rifiutato && (
+            <div style={{ fontSize: 12, color: '#7a8a9a', marginTop: 3, lineHeight: 1.45 }}>{doc.descrizione}</div>
+          )}
+        </div>
+
+        {props.caricamento ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#2563eb', fontSize: 12, fontWeight: 500, flexShrink: 0 }}>
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : props.eliminabile ? (
+          <div style={{ display: 'flex', gap: 10, flexShrink: 0, alignItems: 'flex-start' }}>
+            <BollinoAzione etichetta="Scatta" bg={bgBollino} colore={colBollino} onClick={() => inputCamera.current?.click()}>
+              <IcoCamera size={18} color={colBollino} />
+            </BollinoAzione>
+            <BollinoAzione etichetta="File" bg={bgBollino} colore={colBollino} onClick={() => inputFile.current?.click()}>
+              <IcoFile size={18} color={colBollino} />
+            </BollinoAzione>
+          </div>
+        ) : null}
+      </div>
 
       {rifiutato && doc.nota_admin && (
         <div style={{ fontSize: 12, color: '#c0392b', marginTop: 9, lineHeight: 1.45, display: 'flex', gap: 6 }}>
@@ -741,7 +735,7 @@ function DocCard(props: {
       )}
 
       {files.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 11 }}>
           {files.map((f, idx) => {
             const url = props.signedMap[f.url] || f.url
             return (
@@ -762,31 +756,6 @@ function DocCard(props: {
           })}
         </div>
       )}
-
-      {props.caricamento ? (
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 13 }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
-            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
-          </div>
-        </div>
-      ) : props.eliminabile ? (
-        <>
-          <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
-          <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 13 }}>
-            <button onClick={() => setSheet(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: rifiutato ? '#c0392b' : '#2563eb', color: '#fff', border: 'none', borderRadius: 10, padding: '8px 17px', fontSize: 12.5, fontWeight: 500 }}>
-              <IcoCamera size={15} color="#fff" />{rifiutato ? 'Ricarica' : files.length > 0 ? 'Aggiungi' : 'Carica'}
-            </button>
-          </div>
-          {sheet && (
-            <SheetUpload
-              onScatta={() => inputCamera.current?.click()}
-              onScegliFile={() => inputFile.current?.click()}
-              onChiudi={() => setSheet(false)}
-            />
-          )}
-        </>
-      ) : null}
     </div>
   )
 }
@@ -809,7 +778,7 @@ function CardSistemato(props: {
   const url = primo ? (props.signedMap[primo.url] || primo.url) : null
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '0.5px solid #e8edf3', borderRadius: 14 }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '0.5px solid #e8edf3', borderRadius: 14, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
       <span style={{ flexShrink: 0 }}>{approvato ? <IcoCheck size={21} color="#1D9E75" /> : <IcoClock size={21} color="#d99412" />}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{doc.nome}</div>
@@ -842,7 +811,7 @@ function CardSistemato(props: {
 
 function ModuloCard({ doc }: { doc: DocChecklist }) {
   return (
-    <div style={{ border: '0.5px solid #e8edf3', borderRadius: 14, padding: 15 }}>
+    <div style={{ border: '0.5px solid #e8edf3', borderRadius: 14, padding: 15, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
         <div style={{ fontWeight: 500, fontSize: 15, color: '#0d2144', lineHeight: 1.3 }}>{doc.nome}</div>
         <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 500, color: '#185FA5', background: '#e6f1fb', padding: '3px 10px', borderRadius: 20 }}>Modulo</span>
@@ -857,13 +826,12 @@ function ModuloCard({ doc }: { doc: DocChecklist }) {
 }
 
 // ============================================================
-// UPLOAD FOTO VEICOLO
+// UPLOAD FOTO VEICOLO (due opzioni visibili, senza popup)
 // ============================================================
 
 function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
   const inputCamera = useRef<HTMLInputElement>(null)
   const inputFile = useRef<HTMLInputElement>(null)
-  const [sheet, setSheet] = useState(false)
   const [caricando, setCaricando] = useState(false)
 
   async function handle(e: React.ChangeEvent<HTMLInputElement>) {
@@ -883,16 +851,14 @@ function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
           <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
         </div>
       ) : (
-        <button onClick={() => setSheet(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
-          <IcoPlus size={17} color="#2563eb" />Aggiungi foto
-        </button>
-      )}
-      {sheet && (
-        <SheetUpload
-          onScatta={() => inputCamera.current?.click()}
-          onScegliFile={() => inputFile.current?.click()}
-          onChiudi={() => setSheet(false)}
-        />
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => inputCamera.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+            <IcoCamera size={15} color="#2563eb" />Scatta foto
+          </button>
+          <button onClick={() => inputFile.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+            <IcoFile size={15} color="#2563eb" />Scegli file
+          </button>
+        </div>
       )}
     </>
   )
