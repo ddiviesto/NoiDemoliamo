@@ -176,18 +176,10 @@ export default function DashboardCliente() {
 
         <div className="p-4 flex flex-col gap-3">
 
-          {/* TITOLO + NUOVA */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-lg font-bold text-gray-900">Le tue pratiche</h1>
-              <p className="text-xs text-gray-500 mt-0.5">{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
-            </div>
-            <button
-              onClick={() => router.push('/inizia')}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors active:scale-[0.98]"
-            >
-              <span className="text-base leading-none">+</span> Nuova
-            </button>
+          {/* TITOLO */}
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">Le tue pratiche</h1>
+            <p className="text-xs text-gray-500 mt-0.5">{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
           </div>
 
           {/* LISTA PRATICHE */}
