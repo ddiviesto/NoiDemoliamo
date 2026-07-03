@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **12 giugno 2026**.
+> Documento di riferimento del progetto. Aggiornato al **3 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -60,20 +60,26 @@ Tempi obiettivo:
 ## 2.1 Stack
 
 - **Frontend**: Next.js 16.2.6 (Turbopack) + React + TypeScript
-- **Styling**: Tailwind CSS (no font custom — rimossi Geist Sans/Mono il 25/05/2026)
+- **Styling**: Tailwind CSS + style inline nei componenti più recenti (no font custom)
 - **Backend**: Supabase (database PostgreSQL + Auth + Storage)
 - **Hosting**: Vercel (produzione)
-- **Repository**: GitHub `ddiviesto/NoidemoliaMo`
+- **Repository**: GitHub `ddiviesto/NoiDemoliamo`
 - **Live**: https://noi-demoliamo.vercel.app
 
 ## 2.2 Cartella locale e ambiente sviluppo
 
-**Cartella progetto**: `C:\Users\Davide Di Viesto\Desktop\OneDrive\Noi_Demoliamo\Codex_Noi_Demoliamo\NoiDemoliamo`
+**Cartella progetto**: `C:\Progetto_NoiDemoliamo`
+
+⚠️⚠️ **STORIA IMPORTANTE (fine giugno/luglio 2026)**: il progetto stava in OneDrive e OneDrive **bloccava i file di git** (loop infiniti su `.git/objects`, permission denied). Dopo un incidente in cui la cartella `.git` è stata eliminata per errore (recuperato tutto ri-clonando da GitHub: il push era al sicuro), il progetto è stato **spostato definitivamente in `C:\Progetto_NoiDemoliamo`, FUORI da OneDrive**.
+- **MAI rimettere il progetto dentro cartelle sincronizzate** (OneDrive, Dropbox, Google Drive)
+- Il vecchio percorso `C:\Users\...\OneDrive\...` è OBSOLETO
+- Git ora funziona normalmente, `gc` automatico incluso (il cerotto `gc.auto 0` non serve più: il `.git` attuale è un clone fresco)
+- ⚠️ Se dopo uno spostamento/clone `npm run dev` va in panico Turbopack ("FATAL: An unexpected Turbopack error"): fermare il server, `Remove-Item -Recurse -Force .next`, riavviare — la cache `.next` conteneva percorsi vecchi
 
 **Strumenti che Davide usa**:
-- **VS Code** per editing (Ctrl+A → Ctrl+V → Ctrl+S, Ctrl+H per trova/sostituisci)
+- **Claude Code (estensione VS Code)** 🆕 — dal 3/07/2026 il metodo di lavoro principale: Claude legge e modifica i file direttamente, esegue git, sempre chiedendo conferma (vedi PARTE 7)
+- **VS Code** per editing
 - **PowerShell** come terminale Windows
-- **GitHub Desktop** OPPURE comandi PowerShell git che Claude gli prepara
 - **Supabase SQL Editor** per query e modifiche DB
 - **Browser Chrome** per testing (F12 → Ctrl+Shift+M per modalità mobile)
 - **iPhone** per testing reale (Davide è su iPhone, PC è HP)
@@ -82,9 +88,6 @@ Tempi obiettivo:
 ```powershell
 # Avviare il server di sviluppo
 npm run dev
-
-# Creare nuovo file
-New-Item -Path "app\percorso\file.tsx" -ItemType File
 
 # Push veloce all in one
 git add . ; git commit -m "messaggio" ; git push origin main
@@ -95,8 +98,6 @@ dir app\dashboard
 # Vedere struttura completa del progetto (salva in struttura.txt)
 tree /F /A | findstr /V "node_modules" > struttura.txt
 ```
-
-📁 **STRUTTURA COMPLETA DEL PROGETTO**: Davide ha il comando per generare l'albero completo con `tree /F /A`. Se la nuova chat ha bisogno della struttura esatta (con tutti i file), chiederla a Davide che genererà `struttura.txt` e potrà condividerla.
 
 ## 2.3 Variabili d'ambiente
 
@@ -110,6 +111,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 ```
 
 ⚠️ **Nota nomenclatura**: la variabile **DEVE** chiamarsi `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` (non `NEXT_PUBLIC_GOOGLE_MAPS_KEY`) perché il pattern Next.js standard la richiede così.
+⚠️ `.env.local` non è tracciato da git (è sopravvissuto intatto al re-clone). Claude Code non deve mai stamparne il contenuto.
 
 ### Su Vercel (produzione)
 - ✅ `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` configurata correttamente
@@ -125,6 +127,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 **Admin email hardcoded**: `ddiviesto@gmail.com`
 
 ⚠️ **Free tier**: il progetto va in pausa dopo ~7 giorni di inattività → aprire la dashboard Supabase ogni 5-6 giorni. Al lancio: passare a Supabase Pro (~25$/mese).
+(Caso reale di luglio: "Failed to fetch" alla creazione pratica quasi certamente causato dalla pausa del progetto — ora gli errori sono tradotti in italiano, vedi 5.2.)
 
 ### Buckets Storage attivi
 
@@ -151,7 +154,7 @@ SUPABASE_SERVICE_ROLE_KEY=...
 
 Tutte queste tabelle sono già presenti e funzionanti:
 
-`casistiche_documenti` 🆕, `collaboratori`, `commercianti`, `demolitori`, `demolitori_comuni`, `documenti`, `documenti_approvazione`, `fatture`, `foto_pratiche`, `impostazioni`, `interessi_commercianti`, `messaggi`, `messaggi_chat`, `notifiche`, `pratica_documenti_checklist` 🆕, `pratiche`, `solleciti`, `utenti`, `veicoli_vendita`, `veicoli_vendita_foto`
+`casistiche_documenti`, `collaboratori`, `commercianti`, `demolitori`, `demolitori_comuni`, `documenti`, `documenti_approvazione`, `fatture`, `foto_pratiche`, `impostazioni`, `interessi_commercianti`, `messaggi`, `messaggi_chat`, `notifiche`, `pratica_documenti_checklist`, `pratiche`, `solleciti`, `utenti`, `veicoli_vendita`, `veicoli_vendita_foto`
 
 Inoltre tabelle anagrafiche: `comuni`, `province`, `regioni` (intoccabili, usate per autocomplete e mappa).
 
@@ -163,9 +166,9 @@ Tabella centrale del progetto. Contiene tutte le pratiche di demolizione.
 - **Identificativi**: `id` (uuid), `user_id` (uuid), `creato_il` (timestamp)
 - **Veicolo**: `targa`, `tipo_mezzo`, `tipo_mezzo_altro` (text), `marca`, `modello`, `anno`, `km`, `incidentato` (bool), `marciante` (bool), `va_in_moto` (bool), `parti_mancanti` (bool), `note_veicolo`, `tipo_cambio` (text: manuale/automatico/non_so)
 - **Indirizzo**: `indirizzo_ritiro`, `comune_ritiro`, `provincia_ritiro`, `cap_ritiro`, `lat`, `lng`, `spazio_carro_attrezzi` (text: libero/stretto/no), `spazio_carro_attrezzi_note` (text libero)
-- **Cliente**: `codice_fiscale` (⚠️ ora NULLABLE — null per targhe straniere; per le società contiene la P.IVA a 11 cifre), `nome_richiedente`, `telefono`
-- **🆕 SISTEMA CASISTICHE (giugno 2026)**: `casistica` (text con CHECK sugli 8 codici, vedi 3.3), `fermo_amministrativo` (si/no/non_so, null se non applicabile), `targhe_presenti` (bool, null per targhe straniere), `delegato_nome`, `delegato_telefono` (null se consegna in prima persona), `numero_eredi` (int, solo casi eredi), `nomi_rinunciatari` (text — colonna pronta ma NON compilata dal flusso: si raccoglierà nell'area personale)
-- **Documenti dichiarati**: `libretto` (si/denuncia/no — ora NULLABLE), `certificato_proprieta` (NULLABLE; CHECK ammette digitale/cartaceo/documento_unico/smarrito/nessuno ma la UI attuale ne propone 4: digitale, cartaceo, smarrito, nessuno)
+- **Cliente**: `codice_fiscale` (⚠️ NULLABLE — null per targhe straniere; per le società contiene la P.IVA a 11 cifre), `nome_richiedente`, `telefono`
+- **SISTEMA CASISTICHE (giugno 2026)**: `casistica` (text con CHECK sugli 8 codici, vedi 3.3), `fermo_amministrativo` (si/no/non_so, null se non applicabile), `targhe_presenti` (bool, null per targhe straniere), `delegato_nome`, `delegato_telefono` (null se consegna in prima persona), `numero_eredi` (int, solo casi eredi), `nomi_rinunciatari` (text — colonna pronta ma NON compilata dal flusso: si raccoglierà nell'area personale)
+- **Documenti dichiarati**: `libretto` (si/denuncia/no — NULLABLE), `certificato_proprieta` (NULLABLE; CHECK ammette digitale/cartaceo/documento_unico/smarrito/nessuno ma la UI attuale ne propone 4: digitale, cartaceo, smarrito, nessuno)
 - **Legacy da rimuovere in pulizia finale**: `ruolo_richiedente`, `eredita` (sostituiti dal sistema casistiche)
 - **Workflow**: `demolitore_id`, `data_ritiro_prevista`, `data_certificato_rottamazione`, `data_certificato_pra`, `stato`
 - **Scadenze**: `urgente`, `scadenza_proposta_ritiro`, `scadenza_cert_rottamazione`, `scadenza_cert_pra`, `assegnazione_manuale`
@@ -176,21 +179,7 @@ autovettura, motoveicolo, ciclomotore, minicar, furgone,
 imbarcazione, pullman, camion, velivolo, altro
 ```
 
-### SQL rilevanti eseguiti a giugno 2026
-```sql
--- Colonne sistema casistiche (con CHECK sugli 8 codici per casistica)
-ALTER TABLE pratiche ADD COLUMN casistica TEXT, ADD COLUMN fermo_amministrativo TEXT,
-  ADD COLUMN targhe_presenti BOOLEAN, ADD COLUMN delegato_nome TEXT,
-  ADD COLUMN delegato_telefono TEXT, ADD COLUMN numero_eredi INT,
-  ADD COLUMN nomi_rinunciatari TEXT;
-
--- Targhe straniere: questi campi possono essere vuoti (12/06/2026)
-ALTER TABLE pratiche ALTER COLUMN codice_fiscale DROP NOT NULL;
-ALTER TABLE pratiche ALTER COLUMN certificato_proprieta DROP NOT NULL;
-ALTER TABLE pratiche ALTER COLUMN libretto DROP NOT NULL;
-```
-
-## 3.3 🆕 LE 8 CASISTICHE DI DEMOLIZIONE (cuore del sistema)
+## 3.3 LE 8 CASISTICHE DI DEMOLIZIONE (cuore del sistema)
 
 Documento sorgente di Davide: `Casistiche_Demolizione.md`. Ogni pratica viene classificata automaticamente dal flusso `/inizia` (funzione `derivaCasistica` in `types/pratica.ts`) e salvata in `pratiche.casistica`:
 
@@ -211,11 +200,11 @@ Documento sorgente di Davide: `Casistiche_Demolizione.md`. Ogni pratica viene cl
 
 Helper in `types/pratica.ts`: `derivaCasistica(intestazione, erediRinuncia, societaFallita)`, `delegaAmmessa(cas)` (false per non_intestatario e targhe_straniere), `fermoApplicabile(cas)` (false per targhe_straniere).
 
-## 3.4 🆕 SISTEMA DOCUMENTI DINAMICI — Tabelle create il 12/06/2026
+## 3.4 SISTEMA DOCUMENTI DINAMICI — ✅ COMPLETO E COLLAUDATO (fine giugno 2026)
 
 Architettura "ricettario + lista della spesa": un **catalogo** statico di regole + una **checklist** generata per ogni pratica.
 
-### `casistiche_documenti` (IL CATALOGO — si scrive una volta sola)
+### `casistiche_documenti` (IL CATALOGO)
 ```
 id                 uuid     PK
 casistica          text     CHECK sugli 8 codici
@@ -232,6 +221,9 @@ obbligatorio       bool
 ordine             int
 ```
 RLS: lettura pubblica (è il "menu", niente dati personali), gestione solo admin.
+✅ **POPOLATO: 89 documenti su tutte le 8 casistiche** (verificati con Davide).
+
+⭐ **Convenzione descrizione**: se un documento richiede foto fronte E retro, la sua `descrizione` DEVE contenere la parola "retro" (es. "Foto fronte e retro."). La UI usa questa parola per mostrare il suggerimento "manca il retro?" dopo il primo file. Per aggiungere un nuovo documento fronte/retro basta scriverlo nella descrizione: nessun deploy.
 
 ### `pratica_documenti_checklist` (LO STATO — una riga per documento per cliente)
 ```
@@ -240,48 +232,47 @@ pratica_id      uuid    FK pratiche (ON DELETE CASCADE)
 documento_id    uuid    FK casistiche_documenti
 indice_erede    int     Erede 1, Erede 2... (null per il resto)
 stato           text    'da_fare' | 'caricato' | 'approvato' | 'rifiutato'
-file_url        text    file caricato (bucket privato documenti-pratiche)
+file_url        text    ⭐ ARRAY JSON di file: [{"url": "...", "nome": "..."}]
 scaricato_il    tstz    per i moduli PDF: quando il cliente l'ha scaricato
 caricato_il     tstz
 nota_admin      text    es. 'Foto sfocata, ricaricala'
 aggiornato_il   tstz
 ```
 UNIQUE INDEX su (pratica_id, documento_id, COALESCE(indice_erede,0)).
-RLS: SELECT/INSERT/UPDATE solo proprietario della pratica o admin (stesso pattern di `pratiche`).
-✅ GRANT espliciti già applicati (vedi promemoria 8.4).
+RLS: SELECT/INSERT/UPDATE configurate. GRANT espliciti già applicati.
 
-### Come funziona (deciso il 12/06/2026)
-1. Alla creazione pratica (o primo accesso area personale) il sistema legge `casistica` + le risposte (CDC, targhe, fermo, delegato, n° eredi) e **genera le righe checklist** dal catalogo
-2. Il cliente carica ogni documento: **basta una foto col telefono**
-3. **Moduli PDF autocompilati** (deleghe, dichiarazioni): il cliente li scarica (sistema registra `scaricato_il`) → stampa e firma → **carica una FOTO del modulo firmato** (così l'admin vede che l'ha fatto) → consegna l'**originale al ritiro**
-4. **Approvazione admin per SINGOLO documento** (rifiuto con motivo in `nota_admin`) + bottone **"Approva tutti"** per velocità
-5. I documenti con `richiede_consegna=true` compongono la lista "porta con te al ritiro"
+⭐ **Convenzione `file_url`**: contiene un **array JSON** `[{url, nome}]` per supportare più file per documento (fronte/retro, più pagine) senza cambiare schema. Helper `leggiFile()`/`scriviFile()` in `TabDocumenti.tsx` (gestiscono anche il fallback stringa semplice legacy).
 
-## 3.5 Tabella `documenti`
+### ✅ TRIGGER DI GENERAZIONE AUTOMATICA ("commesso automatico")
+Trigger PostgreSQL su `pratiche`: alla creazione della pratica legge `casistica` + risposte (CDC, targhe, fermo, delegato, n° eredi) e **genera automaticamente le righe checklist** dal catalogo. I documenti `per_erede` sono duplicati per `indice_erede`.
+✅ Verificato end-to-end con test SQL (incluso caso complesso `eredi_accettato` multi-erede) e con pratica reale dal flusso ("EEEEE", vedi 8.1).
 
-Contiene i documenti **ufficiali** caricati per ogni pratica (NON le foto del veicolo).
+### ⭐ FLUSSO FRONTE/RETRO (deciso e implementato il 3/07/2026)
+1. Il cliente carica un file (foto o PDF): viene salvato SUBITO in `file_url`, ma **lo stato NON cambia** (resta `da_fare` o `rifiutato`) — il documento rimane "in preparazione" con miniature visibili e bollini attivi
+2. Se il catalogo dice fronte/retro (parola "retro" nella descrizione) la UI suggerisce "manca il retro?"
+3. Solo il bottone verde **"Ho finito, invia in verifica"** imposta `stato='caricato'` + `caricato_il` + azzera `nota_admin`
+4. Eliminazione file: se il documento era `caricato` e si elimina l'ultimo file → torna `da_fare`; se era in preparazione lo stato non cambia. Elimina sia dal bucket che dal record.
+5. Il cliente può eliminare file/foto SOLO negli stati in `STATI_MODIFICABILI_DA_CLIENTE` (costante in TabDocumenti: in_attesa_documenti, in_attesa_approvazione_admin, documenti_parzialmente_approvati, da_assegnare, in_attesa_assegnazione, in_assegnazione_manuale)
 
-```
-id            uuid          PK
-pratica_id    uuid          FK → pratiche.id
-tipo          text          es. 'carta_identita', 'tessera_sanitaria', 'libretto', 'certificato_proprieta', 'delega', ecc.
-url           text          link pubblico al file su Storage
-nome_file     text          nome originale del file
-verificato    boolean       default false (legacy, ora sostituito da documenti_approvazione)
-caricato_il   timestamp
-```
+### Come funziona il ciclo completo
+1. Creazione pratica → trigger genera checklist ✅
+2. Cliente carica ogni documento (foto col telefono, flusso fronte/retro) ✅
+3. Moduli PDF autocompilati: scarica (tracciato `scaricato_il`) → stampa/firma → carica FOTO del firmato → originale al ritiro (⏳ in attesa dei template da Davide)
+4. **Approvazione admin per SINGOLO documento** (rifiuto con motivo in `nota_admin`) + bottone **"Approva tutti"** — ⏳ PAGINA ADMIN DA COSTRUIRE (prossimo task)
+5. I documenti con `richiede_consegna=true` compongono la lista "Da portare al ritiro" ✅ (box scuro collassabile in TabDocumenti)
 
-⚠️ Dal 22/05/2026 supporta **più righe dello stesso `tipo`** per la stessa pratica (es. fronte + retro).
-⚠️ Rapporto con il nuovo sistema checklist da definire durante la costruzione della dashboard documenti (probabile migrazione/affiancamento).
+## 3.5 Tabella `documenti` (legacy)
+
+Documenti ufficiali del vecchio sistema. Sostituita da `pratica_documenti_checklist` per le pratiche nuove; mantenuta per compatibilità con le pratiche storiche. Da valutare migrazione/dismissione in pulizia finale.
 
 ## 3.6 Tabella `foto_pratiche`
 
 Foto **del veicolo**. `id`, `pratica_id`, `url` (bucket foto-pratiche), `caricato_il`.
+Le foto sono eliminabili dal cliente (con conferma) negli stati modificabili: si elimina sia il file dal bucket che la riga.
 
-## 3.7 Tabella `documenti_approvazione`
+## 3.7 Tabella `documenti_approvazione` (legacy)
 
-Tracking granulare approvazione documenti/foto da admin (legacy — il nuovo sistema checklist ha l'approvazione integrata nello `stato`).
-`id`, `pratica_id`, `tipo_documento`, `stato` ('approvato'|'rifiutato'|'in_attesa'), `nota_admin`, `creato_il`, `aggiornato_il`.
+Tracking granulare del vecchio sistema. TabDocumenti la legge ancora per lo stato approvazione delle FOTO veicolo (chiave `foto:{id}`). Il nuovo sistema documenti ha l'approvazione integrata nello `stato` della checklist.
 
 ## 3.8 Tabella `messaggi_chat`
 
@@ -305,7 +296,7 @@ Chiave-valore. Es: `max_pratiche_aperte_demolitore=15`
 
 ## 3.12 Tabelle ANCORA DA CREARE
 
-- 🆕 `recensioni` (id, pratica_id, cliente_id, demolitore_id, tipo, stelle, commento, creata_il)
+- `recensioni` (id, pratica_id, cliente_id, demolitore_id, tipo, stelle, commento, creata_il)
 - `aste` (id, riferimento_id, riferimento_tipo, tipo, prezzo_base, somma_per_cliente, date, stato, vincitore_id)
 - `offerte_asta` (id, asta_id, offerente_id, importo, timestamp)
 - `messaggi_preimpostati` (id, categoria, titolo, testo)
@@ -324,11 +315,12 @@ Chiave-valore. Es: `max_pratiche_aperte_demolitore=15`
 ```
 Cliente compila /inizia (14-15 mini-step, casistica derivata automaticamente) → crea account
    ↓
-🆕 Sistema genera la CHECKLIST DOCUMENTI dalla casistica (da costruire: generazione + dashboard)
+✅ TRIGGER genera la CHECKLIST DOCUMENTI dalla casistica (automatico, collaudato)
    ↓
-Cliente carica documenti in area personale (foto col telefono)
+✅ Cliente carica documenti in area personale (foto col telefono, flusso fronte/retro,
+   invio manuale "Ho finito, invia in verifica")
    ↓
-Admin approva (singolo documento o "Approva tutti")
+⏳ Admin approva (singolo documento o "Approva tutti") — PAGINA DA COSTRUIRE (prossimo task)
    ↓
 Quando TUTTI documenti ok → stato "da_assegnare", Step 2 sbloccato
    ↓
@@ -342,9 +334,9 @@ Demolitore ha 8 ORE per proporre data/ora ritiro
    ↓
 Cliente conferma/rifiuta (via chat in-app)
    ↓
-Giorno del ritiro → cliente consegna gli ORIGINALI (lista "porta con te") → demolitore clicca "✅ Veicolo ritirato"
+Giorno del ritiro → cliente consegna gli ORIGINALI (lista "Da portare al ritiro") → demolitore clicca "✅ Veicolo ritirato"
    ↓
-🆕 SISTEMA RECENSIONI (vedi 4.9):
+SISTEMA RECENSIONI (vedi 4.9):
    Cliente OBBLIGATO a lasciare 2 recensioni (demolitore + NoiDemoliamo)
    PRIMA di poter ricevere il certificato di rottamazione
    ↓
@@ -481,7 +473,7 @@ Tabella `recensioni`: vedi 3.12. Integrazioni: scoring algoritmo, dashboard demo
 ## 5.1 Albero principale (approssimativo)
 
 ```
-NoiDemoliamo/
+C:\Progetto_NoiDemoliamo\
 ├── app/
 │   ├── page.tsx                              # Home pubblica
 │   ├── layout.tsx                            # Layout root (no font Geist, viewport anti-zoom)
@@ -489,26 +481,27 @@ NoiDemoliamo/
 │   ├── login/page.tsx                        # Login multi-ruolo
 │   ├── inizia/                               # Flusso cliente mini-step
 │   │   ├── page.tsx                          # ⭐ Orchestratore: banner blu + getSteps dinamico + step inline
-│   │   │                                     #   (intestazione, eredi, societa-fallita, indirizzo, targa, cf,
-│   │   │                                     #    foto, fermo, consegna, libretto, cdc, account)
+│   │   │                                     #   + traduciErrore() per errori in italiano (07/2026)
 │   │   └── steps/                            # Step "storici" in file separati
-│   │       ├── StepTipoVeicolo.tsx           # Griglia 4+4 tipo veicolo (con Furgone)
-│   │       ├── StepIdentificaVeicolo.tsx     # Anno, km, marca, modello
-│   │       ├── StepCambioVeicolo.tsx         # Tipo cambio (stile RuoloButton uniformato 12/06)
-│   │       ├── StepCondizioniVeicolo.tsx     # ⭐ 4 card-riga con icone + "Cammina?" (12/06)
-│   │       └── AutocompleteIndirizzo.tsx     # Google Maps autocomplete custom
-│   ├── dashboard/                            # AREA CLIENTE
-│   │   ├── page.tsx                          # Lista pratiche cliente (DashboardCliente)
+│   │       ├── StepTipoVeicolo.tsx
+│   │       ├── StepIdentificaVeicolo.tsx
+│   │       ├── StepCambioVeicolo.tsx
+│   │       ├── StepCondizioniVeicolo.tsx
+│   │       └── AutocompleteIndirizzo.tsx
+│   ├── dashboard/                            # AREA CLIENTE — ✅ RISTILIZZATA (07/2026, stile /inizia)
+│   │   ├── page.tsx                          # Lista "Le tue pratiche"
 │   │   └── [id]/
-│   │       ├── page.tsx                      # Dettaglio pratica (3 tab)
-│   │       ├── TabDocumenti.tsx              # Tab 1 (da ristrutturare con sistema checklist)
-│   │       ├── TabStato.tsx                  # Tab 2
-│   │       └── TabChat.tsx                   # Tab 3
+│   │       ├── page.tsx                      # Dettaglio pratica: header blu, banner stato SVG, tab pillole
+│   │       ├── TabDocumenti.tsx              # ⭐ Sistema checklist COMPLETO (card stile /inizia,
+│   │       │                                 #   fronte/retro, foto eliminabili) — vedi 5.6
+│   │       ├── TabStato.tsx                  # Timeline + condizioni dichiarate a pillole + dati veicolo
+│   │       ├── TabChat.tsx                   # Chat
+│   │       └── UploadDocumentoModal.tsx      # ⚠️ LEGACY: non più usato da TabDocumenti, da rimuovere in pulizia
 │   ├── admin/
 │   │   ├── page.tsx                          # Dashboard admin
 │   │   ├── copertura/page.tsx                # Mappa Italia
 │   │   ├── demolitori/  (page + [id] + MappaComuni)
-│   │   └── pratiche/[id]/  (page + DocumentiApprovazione)
+│   │   └── pratiche/[id]/  (page + DocumentiApprovazione)   # ⏳ DA RIFARE sul nuovo sistema checklist
 │   └── api/assegna-pratica/route.ts
 ├── lib/  (supabase.ts, assegnazione.ts)
 ├── types/
@@ -516,114 +509,61 @@ NoiDemoliamo/
 │                                             #   delegaAmmessa, fermoApplicabile, CdcStato
 ├── public/  (logo, geojson)
 ├── .env.local
-├── ARCHITETTURA.md
+├── ARCHITETTURA.md                           # QUESTO FILE — la memoria del progetto
+├── CLAUDE.md                                 # Letto automaticamente da Claude Code → rimanda qui
+├── AGENTS.md
 └── package.json
 ```
 
-## 5.2 Flusso `/inizia` dettagliato — SISTEMA CASISTICHE ⭐⭐⭐ (giugno 2026)
+## 5.2 Flusso `/inizia` dettagliato — SISTEMA CASISTICHE ⭐⭐⭐
+
+(Struttura step invariata da giugno — vedi storico. Novità luglio:)
+
+- ⭐ **`traduciErrore()`**: gli errori Supabase in fase di submit sono tradotti in italiano semplice ("Failed to fetch" → "Errore di connessione. Controlla la tua rete e riprova."; email già registrata, password corta, email non valida, rate limit). L'errore originale finisce in console per il debug.
+- ⭐ **Step foto**: il bottone "Continua comunque con X foto →" (1-3 foto) è ora ben visibile (bordo e testo blu, semibold) ma resta gerarchicamente sotto il "Continua" pieno che appare a 4+ foto — l'incentivo a caricare più foto rimane.
 
 ### Ordine step (14-15 visibili; getSteps è dinamico in base alle risposte)
 
 ```
-Step 1 — TIPO VEICOLO (con box "Pensiamo a tutto noi")
-  • Griglia 4+4 + espansione "Altro" (Imbarcazione, Velivolo, Altro mezzo + campo testo)
-
-Step 2 — INTESTAZIONE ⭐ (sostituisce il vecchio step "Ruolo")
-  • "A chi è intestato il mezzo?" — 6 RuoloButton:
-    A me / A una persona deceduta / A un'altra persona / A una società o azienda /
-    A un'associazione o ente / Il mezzo ha targhe straniere
-  • Da qui parte la derivazione automatica della casistica
-
-Step 2b — RAMO EREDI (solo se "persona deceduta")
-  • "Qualcuno degli eredi ha rinunciato all'eredità?" Sì/No
-  • Box giallo guida (testo lungo di Davide: quando usare l'opzione, rinuncia formale
-    Notaio/Tribunale, chi ha rinunciato NON firma nulla, autocertificazione generata dall'app)
-  • Stepper "Quanti sono gli eredi?" 1-10
-  • ⚠️ Campo nomi rinunciatari RIMOSSO dal flusso (si raccoglierà in area personale)
-
-Step 2c — RAMO SOCIETÀ (solo se "società")
-  • "La società è fallita o in liquidazione?" Sì/No
-
-Step 3 — IDENTIFICA VEICOLO (anno, km, marca, modello)
-Step 4 — CAMBIO (solo per auto/minicar/furgone/pullman/camion/altro) — stile card uniformato
-Step 5 — CONDIZIONI ⭐ 4 card-riga con icone azzurre e sub esplicative:
-  • "È incidentata?" → Ha subito un incidente
-  • "Cammina?" → Riesce a muoversi con le sue ruote e il suo motore (campo DB resta `marciante`)
-  • "Va in moto?" → Il motore si avvia
-  • "Mancano delle parti?" → Es. motore, ruote, portiere, catalizzatore, batteria
-  • + Annotazioni opzionali
-
-Step 6 — INDIRIZZO + SPAZIO CARRO ATTREZZI
-Step 7 — TARGA
-  • Box "Le targhe sono fisicamente sul mezzo?" Sì/No (se No → avviso denuncia smarrimento)
-  • ⚠️ Per targhe straniere: box NASCOSTO, sottotitolo "Inserisci la targa estera così come appare sul mezzo"
-
-Step 8 — CF DINAMICO ⚠️ SALTATO per targhe straniere
-  • me → "Il tuo codice fiscale" (16 caratteri)
-  • deceduto → "CF dell'intestatario deceduto"
-  • altra_persona → "CF di chi risulta intestatario al PRA"
-  • societa → "Partita IVA della società intestataria" (accetta 11 O 16)
-  • associazione → "CF dell'associazione"
-
-Step 9 — FOTO (gamification 4 foto, sheet iOS)
-
-Step 10 — FERMO AMMINISTRATIVO ⚠️ SALTATO per targhe straniere
-  • "Il mezzo ha un fermo amministrativo?" Sì / No / Non lo so
-
-Step 11 — CONSEGNA ⚠️ SALTATO per non_intestatario e targhe straniere (delega non ammessa)
-  • "Chi consegnerà il mezzo al demolitore?" Io stesso / Una persona delegata
-  • Se delegato: nome + telefono + box info delega precompilata
-  • ⭐ Rassicurazione sotto il telefono: "Lo useremo solo per avvisare il delegato
-    e accordarci sul giorno del ritiro. Nessun altro utilizzo." (spesso compila il delegato stesso)
-
-Step 12 — LIBRETTO (sì / denuncia / no)
-Step 13 — CDC ⭐ SEMPLIFICATO (12/06) ⚠️ SALTATO per targhe straniere
-  • Sottotitolo: "È il documento che dimostra chi è il proprietario. Attenzione: non è il libretto"
-  • Box 💡 "Come capire quale hai": regola ottobre 2015 (prima=cartaceo con stemma ACI, dopo=digitale)
-  • 4 opzioni: "Sì, ho quello cartaceo" / "Il mio è digitale" (sub: "Passaggio dopo ottobre 2015:
-    il certificato è negli archivi digitali del PRA e non va consegnato al ritiro") /
-    "L'ho smarrito, ho la denuncia" / "Non lo trovo o non so cosa sia" (sub: "Nessun problema:
-    lo verifichiamo noi gratuitamente e ti spieghiamo come procedere")
-
-Step 14 — ACCOUNT FINALE UNIFICATO ⭐⭐ (lo step Anagrafica è stato FUSO qui, 12/06)
-  • Titolo "Ultimo passo!" (senza emoji)
-  • Timeline "Cosa succede dopo" IN ALTO con 4 icone SVG (busta/fotocamera/penna/carro):
-    1. Email di conferma → area personale
-    2. Carichi i documenti: BASTA UNA FOTO FATTA COL TELEFONO
-    3. Moduli da firmare? Te li prepariamo già compilati: li stampi, li firmi e basta
-    4. Documenti ok → ritiro gratuito a domicilio
-  • 4 campi con possessivi: "Il tuo nome e cognome" / "Il tuo numero di telefono"
-    (+ rassicurazione icona telefono: "Lo usiamo solo per coordinare il ritiro...
-    Nessuna chiamata commerciale") / "La tua email" / password
-  • Bottone "Conferma e invia richiesta"
-  • Striscia benefit: "Col tuo account gratuito hai:" Area personale · Chat col demolitore ·
-    Certificato di Rottamazione (icone SVG)
-  • Disclaimer terms + privacy
+1  TIPO VEICOLO (griglia 4+4 + "Altro")
+2  INTESTAZIONE (6 opzioni → deriva la casistica)
+2b RAMO EREDI (rinuncia sì/no + stepper 1-10)         [solo deceduto]
+2c RAMO SOCIETÀ FALLITA                                [solo società]
+3  IDENTIFICA VEICOLO (anno, km, marca, modello)
+4  CAMBIO                                              [solo auto/minicar/furgone/pullman/camion/altro]
+5  CONDIZIONI (4 card-riga: incidentata/cammina/va in moto/parti mancanti + note)
+6  INDIRIZZO + SPAZIO CARRO ATTREZZI
+7  TARGA (+ box targhe presenti; adattato per targhe straniere)
+8  CF DINAMICO                                         [saltato per targhe straniere]
+9  FOTO (gamification 4 foto)
+10 FERMO AMMINISTRATIVO                                [saltato per targhe straniere]
+11 CONSEGNA (io/delegato)                              [saltato per non_intestatario e targhe straniere]
+12 LIBRETTO
+13 CDC (regola ottobre 2015)                           [saltato per targhe straniere]
+14 ACCOUNT FINALE UNIFICATO ("Ultimo passo!")
 ```
 
-### Flusso targhe straniere (il più corto)
-tipo veicolo → intestazione → identifica → cambio → condizioni → indirizzo → targa → foto → libretto → account
-
-### ✅ COLLAUDO END-TO-END superato il 12/06/2026
-3 pratiche test (iPhone, sito live) verificate su DB: persona_fisica con delegato+fermo non_so ✅, societa con P.IVA 11 cifre ✅, targhe_straniere con tutti i campi non applicabili a null ✅. Le 3 pratiche restano nel DB come cavie per la checklist documenti (pulire prima del lancio).
+### ✅ Collaudi end-to-end superati
+- 12/06: 3 pratiche test (persona_fisica con delegato, societa con P.IVA, targhe_straniere)
+- 07/2026: pratica "EEEEE" (autovettura fiat panda, Messina) creata dal flusso completo → **trigger checklist verificato con pratica reale** ✅
 
 ### Personalizzazione dinamica per tipo veicolo
-Invariata: banner, titoli, articoli, generi (isFemminile: autovettura/minicar/imbarcazione), tipoAltro ovunque, helper functions (articolo, articoloDel, pronomeTuo, nomeVeicolo, veicoloHaCambio, ICONE_VEICOLO, getStepMeta — ora con parametro `intestazione` per i meta dinamici di cf e targa).
+Invariata: banner, titoli, articoli, generi (isFemminile: autovettura/minicar/imbarcazione), tipoAltro ovunque, helper functions (articolo, articoloDel, pronomeTuo, nomeVeicolo, veicoloHaCambio, ICONE_VEICOLO, getStepMeta con parametro `intestazione`).
 
-### Ottimizzazioni mobile (25/05, sempre valide)
-Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico, viewport meta, theme color blu, bottoni Continua mai disabilitati (validazione al click con banner errore + bordo rosso), normalizzazione targa/CF, formattazione km, step foto con gamification e sheet iOS.
+### Ottimizzazioni mobile (sempre valide)
+Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico, viewport meta, theme color blu, bottoni Continua mai disabilitati (validazione al click), normalizzazione targa/CF, formattazione km, gamification foto.
 
 ## 5.3 Pagine FATTE ✅
 
 - **Home `/`**: logo, CTA, pills benefit
 - **Login `/login`**: email + password, redirect per ruolo (demolitore/commerciante DA AGGIUNGERE)
-- **Flusso `/inizia`**: vedi 5.2 — COMPLETO E COLLAUDATO ⭐⭐⭐
-- **`/dashboard`**: lista pratiche cliente (verificata integra il 12/06)
-- **`/dashboard/[id]`**: dettaglio 3 tab (Documenti / Stato / Chat) — Tab Documenti DA RISTRUTTURARE col sistema checklist
+- **Flusso `/inizia`**: COMPLETO E COLLAUDATO ⭐⭐⭐ (+ errori in italiano)
+- **`/dashboard`**: ✅ RISTILIZZATA (07/2026) — sfondo lavanda, card bianca, header blu con saluto + Esci, card pratiche stile /inizia con icona veicolo per tipo, badge stato a pillola chiara, empty state con SVG
+- **`/dashboard/[id]`**: ✅ RISTILIZZATA (07/2026) — header blu con "← Pratiche" + "Marca Modello · Targa" + badge stato, banner dinamico per stato con icone SVG, tab a pillole (attiva blu piena). Tab Documenti = sistema checklist completo (vedi 5.6), Tab Stato = timeline + condizioni a pillole, Tab Chat invariata
 - **`/admin`**: dashboard con stats e filtri
 - **`/admin/copertura`**: mappa strategica Italia
 - **`/admin/demolitori` + [id]**: gestione demolitori con MappaComuni
-- **`/admin/pratiche/[id]`**: approvazione granulare + 4 card destino (chat DA AGGIUNGERE; nuovi campi casistica DA MOSTRARE)
+- **`/admin/pratiche/[id]`**: ⚠️ ancora sul VECCHIO sistema — approvazione documenti DA RIFARE su `pratica_documenti_checklist` (prossimo task)
 
 ## 5.4 Backend / API
 
@@ -633,85 +573,100 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 
 Bloccante: reCAPTCHA su `iservizi.aci.it`. Opzioni future: bookmarklet/estensione Chrome con captcha manuale, oppure Openapi.it Visura Targa PRA (~6€/chiamata). Riprendere quando il flusso cliente sarà stabile.
 
+## 5.6 ⭐ TabDocumenti — com'è fatto (riferimento per la pagina admin)
+
+Il componente più importante dell'area cliente. Design finale approvato dopo varie iterazioni ("Opzione A"):
+
+- **Anello di progresso SVG** "X su Y" + messaggio motivazionale ("Iniziamo!" / "Stai andando bene!")
+- **Card documento "Da preparare"** (stile /inizia): bordo 1,5px `#E5E7EB`, sfondo `#F9FAFB`, **quadratino blu 40px con icona per tipo di documento** (libretto→libro, carta identità/patente→tesserino, tessera sanitaria→croce, CDC→documento con timbro, denuncia→triangolo, delega→penna, visura→edificio, default→documento), nome semibold scuro protagonista, descrizione sotto
+- **Bollini "Scatta" e "File"**: due bottoni circolari sempre visibili che aprono DIRETTAMENTE fotocamera o selettore file (NIENTE popup intermedi — bocciati da Davide)
+- **Flusso fronte/retro** (vedi 3.4): miniature dei file in bozza con ✕ rosso, hint "manca il retro?" (solo se il catalogo lo prevede), bottone verde "Ho finito, invia in verifica"
+- **Documento rifiutato**: card in rosso (`#FEF6F6`/`#F3C8C8`), badge "Da rifare", `nota_admin` al posto della descrizione, bollini rossi
+- **"Già sistemati"**: collassato di default in una riga riassuntiva; espanso mostra righe compatte (spunta verde "Approvato" / orologio ambra "La stiamo verificando" + miniatura)
+- **Documenti per erede**: accordion per indice erede
+- **Moduli PDF** (template_pdf): card con badge "Modulo" e avviso "disponibile a breve" (finché non ci sono i template)
+- **"Da portare al ritiro"**: box navy scuro collassabile con la lista dei `richiede_consegna=true`
+- **Foto del veicolo**: griglia 3 colonne con ✕ rosso di eliminazione (conferma modale; elimina bucket + riga), due bottoni tratteggiati "Scatta foto"/"Scegli file"
+- **Dati**: due query separate (checklist + catalogo) unite in JS — NIENTE join `!inner` PostgREST (manca la FK dichiarata). Signed URL 1h per il bucket privato.
+
 ---
 
 # 🎨 PARTE 6 — DESIGN SYSTEM
 
-> Approvato il 22/05/2026, esteso a maggio-giugno 2026 con il flusso `/inizia` mobile-first.
+> Approvato il 22/05/2026, esteso a giugno con `/inizia`, **UNIFICATO a luglio 2026: tutta l'area cliente usa il linguaggio "/inizia"**.
 
 ## 6.1 Colori principali
 
-- **Blu navy primario** (topbar dashboard, sub-header, tab attivi): `#0d2144`
-- **Blu primario** (bottoni CTA, link, banner): `bg-blue-600` con hover `bg-blue-700`
-- **Banner blu gradient** (`/inizia`): `bg-gradient-to-r from-[#1d4ed8] to-[#2563eb]`
-- **Theme color mobile** (barra browser): `#2563eb`
-- **Sfondo dashboard**: `bg-[#f0f4f8]`
-- **Sfondo flusso `/inizia`**: `linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)` (sfumato blu/viola)
-- **Bianco card**: `bg-white` con `border border-gray-200`
+- **Sfondo AREA CLIENTE (tutte le pagine)**: `linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)` (lavanda) ⭐ esteso da /inizia a dashboard e dettaglio pratica
+- **Contenuto**: card bianca `rounded-3xl shadow-lg`, centrata `max-w-md`
+- **Header/banner blu**: `linear-gradient(90deg, #1d4ed8, #2563eb)` con bottone bianco/85 di navigazione a sinistra, eyebrow uppercase `text-blue-100`, badge stato a destra
+- **Blu primario** (bottoni CTA, link): `bg-blue-600` hover `bg-blue-700` / `#2563eb`
+- **Blu navy** (`#0d2144`): ora solo per accenti scuri (box "Da portare al ritiro", area admin legacy)
+- **Theme color mobile**: `#2563eb`
+- **Sfondo dashboard ADMIN (legacy)**: `bg-[#f0f4f8]` — l'admin verrà uniformato in seguito
 
-## 6.2 Colori secondari per stati
+## 6.2 Card/campi standard (stile "campi /inizia") ⭐ IL PATTERN DI RIFERIMENTO
 
-- **Verde** (positivo, successo): `bg-green-50`, `border-green-300`, `text-green-700`
-- **Giallo/Ambra** (attesa, attenzione): `bg-amber-50`, `border-amber-200`, `text-amber-800`
-- **Rosso** (problema, errore): `bg-red-50`, `border-red-300`, `text-red-700`
-- **Grigio** (neutro): `bg-gray-50`, `border-gray-200`, `text-gray-500`
-- **Azzurro sky** (info / "cosa succede dopo" / box 💡): `bg-sky-50`, `border-sky-200`, `text-sky-800`
+- Bordo `1.5px solid #E5E7EB`, sfondo `#F9FAFB`, radius 14, padding 14
+- **Quadratino icona 40px** `#DBEAFE` radius 12 con icona SVG blu `#2563eb` a sinistra
+- Titolo `fontWeight 600` `#111827` (protagonista), sottotitolo `12px #6B7280`
+- Variante errore/rifiutato: sfondo `#FEF6F6`, bordo `#F3C8C8`, tile `#FBDADA`, testo/icone `#C0392B`
+- Badge a pillola chiara: es. "Da rifare" `#FBDADA`/`#C0392B`, "Modulo" `#DBEAFE`/`#2563eb`
 
-Toggle Sì/No con colore semantico: verde = risposta positiva per il veicolo, rosso = problema.
-Spazio carro attrezzi: verde "Accesso libero" / ambra "Spazio stretto" / rosso "Non passa".
+## 6.3 Badge di stato pratica (pillole chiare)
 
-## 6.3 Tipografia
+in_attesa_documenti `#FAEEDA`/`#854F0B` · in verifica `#E0EDFB`/`#1E4E8C` · da rifare `#FBE2E2`/`#9B1C1C` · approvata/completata `#DCF3E4`/`#1F7A43` · assegnazione `#FDEBD9`/`#92500E` · ritiro confermato `#E4E4FB`/`#4338CA` · ritirata `#EDE4FB`/`#6B21A8` · certificati `#DDF2F0`/`#0F766E` · annullata `#E7EAEE`/`#4B5563`
+
+## 6.4 Colori semantici
+
+- **Verde** (positivo): `bg-green-50/300/700`; pillole condizioni `#EAF3DE`/`#27500A`; bottone invia `#16A34A`
+- **Giallo/Ambra** (attesa): `bg-amber-50/200/800`; "in verifica" `#d99412`
+- **Rosso** (problema): `bg-red-50/300/700`; eliminazione/rifiuto `#C0392B`
+- **Azzurro sky** (info/💡): `bg-sky-50/200/800`
+
+## 6.5 Tipografia
 
 - **Font**: default sistema (Tailwind sans), NO font custom
-- **Titoli pagina**: `text-xl font-semibold text-gray-900` (`/inizia`) o `text-xl font-bold` (dashboard)
-- **Titoli card**: `text-sm font-semibold text-gray-800`
+- **Titoli pagina**: `text-xl font-semibold text-gray-900` / `text-lg font-bold` (dashboard)
 - **Body**: `text-sm text-gray-700` · **Caption**: `text-xs text-gray-500` · **Micro**: `text-[10px]`/`text-[11px]`
 
 ### ⚠️ REGOLA MOBILE CRITICA
 - **Tutti gli input/textarea**: `text-base` (16px, anti-zoom iOS) + `text-gray-900` + `placeholder:text-gray-400`
 
-## 6.4 Componenti standard
+## 6.6 Componenti standard
 
-- **Topbar dashboard** (sticky): `bg-[#0d2144] px-4 py-3`
-- **Banner blu `/inizia`**: [← Indietro bianco/85] [icona in box w-10 + PASSO X DI N + titolo dinamico]
-- **Box "Pensiamo a tutto noi"** (step 1): gradient blu, icona check, "In base alle tue risposte ti diremo quali documenti preparare"
-- **Card**: `rounded-2xl p-4` (dashboard) / `rounded-3xl shadow-lg p-7` (`/inizia`)
-- **CTA primario `/inizia`**: `bg-blue-600 py-4 rounded-xl font-semibold text-base active:scale-[0.99]` — MAI disabilitato
-- **ErrorBadge**: `bg-red-50 border-red-200 rounded-xl p-3 text-sm text-red-800` con ⚠️
-- **RuoloButton** (intestazione/libretto/cdc/consegna/fermo): bollino blu con icona SVG (w-10) | label + sub | check rotondo; selezionato = bordo blu + sfondo blu chiaro + ✓ pieno
-- **Card-riga condizioni** 🆕 (12/06): `border-[1.5px] bg-gray-50 rounded-xl p-3` con icona azzurra w-9 + label semibold + sub + pill Sì/No a destra (px-3, min-w-[52px]); in errore: `border-red-300 bg-red-50/30`
-- **Box 💡 spiegazione** 🆕 (step CDC): `bg-sky-50` con barra blu a sinistra, testo con grassetti che spiega come riconoscere il documento
-- **Rassicurazione campo telefono** 🆕: `<p>` con icona SVG telefono blu 12px + testo `text-[11px] text-gray-500` sull'uso del numero
-- **Timeline "Cosa succede dopo"** 🆕 (step account, in alto): `bg-sky-50 rounded-xl`, 4 righe con icona SVG in box bianco w-6 (busta/fotocamera/penna/carro)
-- **Striscia benefit account** 🆕: titoletto "Col tuo account gratuito hai:" + 3 chip icona+testo (Area personale · Chat col demolitore · Certificato di Rottamazione)
-- **Stepper numerico** (numero eredi): − / numero grande / + (1-10)
-- **Sheet popup iOS** (step foto): overlay black/40 + sheet slide-up
-- **Tab bar dashboard**: container bianco rounded-2xl, attivo `bg-[#0d2144] text-white`
-- **Form input**: `border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 focus:border-blue-500 focus:bg-white placeholder:text-gray-400`
-- **Validazione live CF/P.IVA**: contatore a destra (0/16 o 0/11), messaggio dinamico colorato, bordo verde quando valido
+- **Header blu area cliente**: [bottone bianco/85 nav] [eyebrow uppercase + titolo] [badge pillola]
+- **Tab bar a pillole**: container `#EFF3F9` rounded-2xl p-1; tab attiva `#2563eb` bianca, inattive trasparenti `#5F6C7E`; badge rosso contatore
+- **Banner stato dinamico**: gradiente per stato (blu/rosso/verde/indaco/viola/teal/grigio) + icona SVG in box `bg-white/20` — NIENTE emoji
+- **Bollini azione** (Scatta/File): cerchio 38-40px `#DBEAFE`, icona blu, etichetta 10.5px semibold sotto; aprono direttamente camera/file picker
+- **✕ eliminazione**: cerchietto rosso `#C0392B` 19-22px in alto a destra di miniature/foto, con bordo bianco; SEMPRE con modale di conferma ("L'azione non può essere annullata")
+- **Modale conferma eliminazione**: icona cestino in cerchio rosso chiaro + 2 bottoni (Annulla / Sì, elimina con spinner)
+- **Bottone invio verde**: `#16A34A` radius 11, icona aeroplanino, "Ho finito, invia in verifica"
+- **RuoloButton** (/inizia): invariato
+- **ErrorBadge / box 💡 / rassicurazioni telefono / timeline "cosa succede dopo"**: invariati (vedi storico giugno)
+- **Form input**: `border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 focus:border-blue-500 focus:bg-white`
 
-## 6.5 Spaziatura
-
-- Container: `max-w-2xl px-3 py-3` (dashboard) / card `/inizia`: `max-w-md p-7`
-- Gap: `gap-3` tra card, `gap-2` interno
-
-## 6.6 Regole d'oro
+## 6.7 Regole d'oro
 
 1. **Mobile-first**: touch-friendly (min 44px)
-2. **No emoji nell'interfaccia funzionale**: SVG colorati (12/06: rimossi anche da "Ultimo passo!" e dal box cosa-succede-dopo)
+2. **NO emoji nell'interfaccia funzionale**: solo SVG (feather-style, stroke ~1.7-1.9). A luglio rimosse anche da dashboard, banner stato e badge.
 3. **Coerenza colori semantici**
 4. **Personalizzazione tipo veicolo OVUNQUE** + generi corretti
-5. **Stato sempre visibile** · empty state amichevoli
+5. **Stato sempre visibile** · empty state amichevoli (con SVG, non emoji)
 6. **Input `text-base` + `text-gray-900` + `placeholder:text-gray-400`** sempre
 7. **Bottoni `/inizia` mai disabilitati**: validazione al click
 8. **Una sola cosa per pagina** nei mini-step
 9. **Gamification dove possibile** (foto)
 10. **NO scrollIntoView automatico** su input
 11. **Niente trattini "—" nei titoli bottoni**
-12. ⭐ **Niente gergo tecnico/burocratico nei testi utente** (12/06): "Cammina?" non "marciante", spiegare il CDC con la regola ottobre 2015, sub esplicative sotto le domande. Il cliente medio non sa cosa sia un CDC.
-13. ⭐ **Rassicurare sui dati sensibili** (12/06): ogni campo telefono ha la spiegazione dell'uso. La gente è scettica a dare il numero.
-14. ⭐ **Possessivi nei label quando serve distinguere le persone** (12/06): "Il tuo nome" vs "Nome del delegato" — spesso compila il delegato stesso.
-15. ⭐ **La pagina finale è una guida, non un modulo** (12/06): timeline cosa-succede-dopo in alto, campi al centro, benefit sotto il bottone. Anti-ansia: "basta una foto", "te li prepariamo già compilati".
+12. **Niente gergo tecnico/burocratico nei testi utente**
+13. **Rassicurare sui dati sensibili** (ogni campo telefono spiega l'uso)
+14. **Possessivi nei label quando serve distinguere le persone**
+15. **La pagina finale è una guida, non un modulo**
+16. ⭐ **Niente grandi bottoni rettangolari dove basta un'azione compatta** (07/2026): bollini circolari, righe compatte
+17. ⭐ **I nomi dei documenti sono i protagonisti visivi** delle card (07/2026)
+18. ⭐ **Niente popup intermedi per scattare/caricare** (07/2026): i bottoni aprono direttamente fotocamera o file picker
+19. ⭐ **Azioni distruttive sempre con conferma** e solo negli stati in cui il cliente può modificare
 
 ---
 
@@ -719,113 +674,122 @@ Spazio carro attrezzi: verde "Accesso libero" / ambra "Spazio stretto" / rosso "
 
 > Davide è imprenditore, NON sviluppatore. Lavora con AI per costruire la piattaforma.
 
-## 7.1 Stile di lavoro preferito
+## 7.1 🆕 METODO DI LAVORO: CLAUDE CODE (dal 3/07/2026)
+
+Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `C:\Progetto_NoiDemoliamo`. Fine dell'era copia-incolla.
+
+**Regole per Claude Code**:
+1. ⭐ **REGOLA FONDAMENTALE**: prima di modificare file o eseguire comandi, SEMPRE proporre la modifica in linguaggio semplice e attendere conferma esplicita di Davide. Lui vuole pensarci prima.
+2. Spiegare cosa si sta per fare SENZA gergo tecnico
+3. Per i cambi di design: descrivere/mostrare prima l'idea, implementare dopo l'approvazione (Davide adora le anteprime con varianti A/B/C)
+4. Un commit per blocco di lavoro sensato, messaggio in italiano chiaro; push su `main` = deploy Vercel
+5. Chiedere a Davide di testare (localhost sul PC, URL Vercel su iPhone) prima di chiudere un task
+6. **MAI toccare o stampare `.env.local`** e le chiavi
+7. SQL su Supabase: Claude lo scrive, Davide lo incolla nel SQL Editor e conferma l'esito
+8. **A fine sessione: proporre di aggiornare QUESTO file (ARCHITETTURA.md)** con quanto fatto — è la memoria del progetto tra le sessioni
+9. `CLAUDE.md` (letto in automatico da Claude Code) deve solo rimandare qui: la fonte di verità è ARCHITETTURA.md
+
+## 7.2 Stile di comunicazione
 
 - **Istruzioni passo-passo brevissime**: uno step alla volta, "scrivimi fatto"
-- **Niente spiegazioni tecniche se non chiede** — linguaggio SEMPLICISSIMO, zero gergo (anche parole come "cornetta" o riferimenti datati confondono: spiegare sempre)
+- **Niente spiegazioni tecniche se non chiede** — linguaggio SEMPLICISSIMO, zero gergo
 - **Risposte compatte, no preamboli**
-- **File completi sostituibili** preferiti ("ridammi tutto il codice") MA per modifiche piccole su riga singola va bene **Ctrl+H** — ⚠️ i Ctrl+H multiriga gli falliscono spesso: in caso di dubbio dare il file completo
-- ⭐ **REGOLA FONDAMENTALE (memorizzata)**: prima di modificare o rigenerare codice, SEMPRE proporre la modifica e attendere conferma esplicita. Davide vuole pensarci prima.
-- **Anteprime visive** (visualize widget) PRIMA di ogni cambio di design, con varianti A/B/C tra cui scegliere — Davide le adora
-- **Comandi PowerShell** come stringhe pronte da copiare
+- **Anteprime visive** PRIMA di ogni cambio di design — Davide le adora
 - **Test su iPhone vero** via URL Vercel live (localhost non accessibile da telefono)
+- Davide non ricorda i percorsi → indicare percorso completo + come aprirlo
 
-## 7.2 Stack interazione
-
-- **Editor**: VS Code (Ctrl+P per aprire file, Ctrl+A → Ctrl+V → Ctrl+S)
-- **Terminale**: PowerShell di VS Code
-- **Git**: `git add . ; git commit -m "..." ; git push origin main`
-- **DB**: Supabase SQL Editor (dare SQL pronto da incollare, spiegato in italiano semplice)
-- **Verifica push**: `git status` (up to date = ok; changes not staged = manca add/commit; ahead = manca push)
-
-## 7.3 Sequenza di lavoro tipica
+## 7.3 Sequenza di lavoro tipica (con Claude Code)
 
 ```
 1. Davide dice cosa serve
-2. Claude propone (eventuale ask_user_input per scelte, anteprima visiva per design)
+2. Claude esplora il codice, propone (anteprima visiva per design, opzioni se servono)
 3. Davide CONFERMA esplicitamente
-4. Claude prepara file completo (create_file + present_files) o Ctrl+H singola riga
-5. Davide applica → Problems = 0 → push → test su iPhone
-6. Screenshot o feedback → correzioni → prossimo task
+4. Claude modifica i file (Davide approva le modifiche proposte da Claude Code)
+5. Problems = 0 → commit + push (con ok di Davide) → test su iPhone/browser
+6. Feedback → correzioni → prossimo task
+7. Fine sessione → aggiornare ARCHITETTURA.md
 ```
 
 ## 7.4 Convenzioni e note operative
 
-- Errori React loop → `npm run dev` · Errori TS "fantasma" → Restart TS Server
-- File "vuoto" → controllare contenuto prima di diagnosi complicate
+- Errori React loop → riavviare `npm run dev` · Errori TS "fantasma" → Restart TS Server
+- Panico Turbopack dopo spostamenti → cancellare `.next` (vedi 2.2)
 - Dopo ALTER TABLE: se errori colonna → `NOTIFY pgrst, 'reload schema';`
-- Davide non ricorda i percorsi → indicare percorso completo + come aprirlo (Ctrl+P)
 - ⚠️ Build Vercel può fallire SILENZIOSAMENTE per mappe/switch non esaustivi (caso storico: `furgone` mancante in `nomeCapitalizzato`). Quando si aggiunge un valore a un tipo, verificare TUTTE le mappe che lo usano.
 - Segnali VS Code: "M" arancione = da committare, numero rosso PROBLEMS = errori TS
 
 ---
 
-# 📋 PARTE 8 — STATO ATTUALE (12 giugno 2026)
+# 📋 PARTE 8 — STATO ATTUALE (3 luglio 2026)
 
 ## 8.1 ✅ FATTO
 
-### ⭐⭐⭐ SISTEMA CASISTICHE COMPLETO (5-12 giugno 2026) — COLLAUDATO
+### ⭐⭐⭐ SISTEMA DOCUMENTI DINAMICI COMPLETO LATO CLIENTE (fine giugno - 3 luglio 2026)
 
-- ✅ **Documento casistiche di Davide** analizzato: 8 casi + 2 integrazioni (fermo, targhe smarrite)
-- ✅ **types/pratica.ts**: tipi `Intestazione`, `Casistica`, helper `derivaCasistica`, `delegaAmmessa`, `fermoApplicabile`
-- ✅ **DB**: colonne `casistica` (con CHECK), `fermo_amministrativo`, `targhe_presenti`, `delegato_nome`, `delegato_telefono`, `numero_eredi`, `nomi_rinunciatari`; CF/certificato/libretto resi NULLABLE
-- ✅ **Step Intestazione** (passo 2): 6 opzioni RuoloButton, sostituisce il vecchio "Ruolo"
-- ✅ **Ramo eredi**: rinuncia sì/no + box guida giallo (testo Davide) + stepper eredi 1-10 (campo nomi rinunciatari rimosso dal flusso → area personale)
-- ✅ **Ramo società fallita**
-- ✅ **Step Fermo amministrativo** (sì/no/non lo so)
-- ✅ **Step Consegna** (io stesso/delegato) con nome+telefono delegato e rassicurazione uso telefono
-- ✅ **Step CF dinamico** per intestazione (P.IVA 11 cifre per società, label diverse per caso)
-- ✅ **Targhe straniere**: saltati CF, CDC, fermo, consegna, box targhe; sottotitolo targa adattato
-- ✅ **Step CDC semplificato**: "non è il libretto", box 💡 regola ottobre 2015, 4 opzioni chiare, "lo verifichiamo noi gratuitamente"
-- ✅ **Step Condizioni a card-riga**: icone azzurre, "Cammina?" al posto di "marciante", sub esplicative, batteria negli esempi
-- ✅ **Step Cambio** uniformato allo stile RuoloButton
-- ✅ **Pagina finale unificata** (Anagrafica FUSA in Account): "Ultimo passo!" senza emoji, timeline guida in alto con SVG, 4 campi con possessivi, rassicurazione telefono, striscia "Col tuo account gratuito hai:", disclaimer
-- ✅ **🧪 COLLAUDO END-TO-END superato** (12/06): 3 pratiche test da iPhone verificate su DB (persona_fisica con delegato, societa con P.IVA, targhe_straniere con null corretti)
+- ✅ **Catalogo popolato**: 89 documenti su tutte le 8 casistiche, verificati con Davide
+- ✅ **Trigger di generazione automatica** della checklist alla creazione pratica ("commesso automatico") — collaudato con SQL (incluso multi-erede) e con pratica reale
+- ✅ **RLS** su `pratica_documenti_checklist` (SELECT/INSERT/UPDATE)
+- ✅ **`file_url` come array JSON** `[{url, nome}]` per file multipli senza cambi di schema
+- ✅ **TabDocumenti nuovo** (design "Opzione A" + card stile /inizia, vedi 5.6): anello progresso, card con icona per tipo documento, bollini Scatta/File diretti (no popup), documenti rifiutati in rosso con nota admin, "Già sistemati" collassato, accordion eredi, box "Da portare al ritiro", moduli PDF con avviso "a breve"
+- ✅ **Flusso FRONTE/RETRO** con invio manuale: upload = bozza, bottone verde "Ho finito, invia in verifica" = stato caricato; hint "manca il retro?" pilotato dal catalogo (parola "retro" nella descrizione)
+- ✅ **Foto veicolo eliminabili** (✕ rosso + conferma; elimina bucket + riga; solo negli stati modificabili) — file documenti idem
 
-### ⭐⭐ SISTEMA DOCUMENTI DINAMICI — Fondamenta (12 giugno 2026)
+### ⭐⭐ RESTYLING AREA CLIENTE COMPLETO (3 luglio 2026)
 
-- ✅ **Tabelle create**: `casistiche_documenti` (catalogo) + `pratica_documenti_checklist` (stato) con RLS + UNIQUE index + GRANT espliciti — vedi PARTE 3.4
-- ✅ **Decisioni prese**: approvazione per singolo documento + bottone "Approva tutti"; moduli PDF = scarica (tracciato) → stampa/firma → carica FOTO del firmato → originale al ritiro
+Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bianca + header blu):
+- ✅ **`/dashboard` "Le tue pratiche"**: header blu con saluto + Esci, card pratiche con icona veicolo per tipo, badge pillola, empty state SVG
+- ✅ **`/dashboard/[id]`**: header blu "← Pratiche" + veicolo·targa + badge; banner stato dinamico con SVG (niente emoji); tab a pillole
+- ✅ **TabStato**: timeline (5 step) + sezione "Condizioni dichiarate" a pillole colorate (incidentata/cammina/va in moto/parti mancanti, verde/rosso, solo valori non null) + note cliente + dati veicolo collassabili
 
-### Storico (maggio 2026)
-- ✅ Refactoring completo `/inizia` mobile-first (mini-step, personalizzazione tipo veicolo, gamification foto, autocomplete Maps custom, normalizzazioni, validazioni live, anti-zoom iOS)
-- ✅ Dashboard cliente (lista + dettaglio 3 tab, upload, anteprime, chat persistente)
-- ✅ Area admin (dashboard, approvazione granulare, destino, demolitori, mappe, GeoJSON)
-- ✅ Tabelle e RLS storage, algoritmo assegnazione (da revisionare), Google Maps keys
+### ⭐ ALTRO (luglio 2026)
+
+- ✅ **Trasloco progetto** in `C:\Progetto_NoiDemoliamo` (fuori OneDrive) dopo incidente git — repo ri-clonato da GitHub, storia intatta, git ora sano (vedi 2.2)
+- ✅ **Errori /inizia in italiano** (`traduciErrore`) + bottone "Continua comunque con X foto" visibile
+- ✅ **Pratica test "EEEEE"** (fiat panda, Messina) creata dal flusso completo — conferma trigger + checklist
+- ✅ **Passaggio a Claude Code** come metodo di lavoro (3/07)
+
+### Storico giugno 2026
+- ✅ Sistema casistiche completo e collaudato (8 casi, derivazione automatica, flusso /inizia rifatto, DB aggiornato) — vedi PARTI 3.3 e 5.2
+- ✅ Tabelle `casistiche_documenti` + `pratica_documenti_checklist` con RLS + GRANT
+
+### Storico maggio 2026
+- ✅ Refactoring completo `/inizia` mobile-first, dashboard cliente v1, area admin, tabelle e RLS storage, algoritmo assegnazione (da revisionare), Google Maps keys
 
 ## 8.2 ⏳ PENDING — In ordine di priorità
 
-### 🔥🔥🔥 STEP 1 — SISTEMA DOCUMENTI DINAMICI (in corso)
+### 🔥🔥🔥 STEP 1 — PAGINA ADMIN APPROVAZIONE DOCUMENTI (▶️ PROSSIMO TASK)
 
-**▶️ PROSSIMO PASSO IMMEDIATO: popolare il catalogo `casistiche_documenti` col CASO 1 (persona_fisica)**
-- Claude presenta a Davide un'anteprima visiva della checklist come la vedrebbe il cliente, documento per documento, con tutte le condizioni (cdc cartaceo/smarrito, targhe assenti, fermo, delegato)
-- Davide corregge/approva → INSERT nel catalogo
-- Documenti caso 1 (dal documento casistiche): libretto, CDC, carta d'identità (o patente), CF/tessera sanitaria + denunce smarrimento alternative; se delegato → PDF DELEGA_CONSEGNA_VEICOLO_PRIVATO + CI/CF delegato; se fermo sì → DICHIARAZIONE_SOSTITUTIVA_STATO_VEICOLO_CON_FERMO_AMMINISTRATIVO; se targhe assenti → denuncia smarrimento targhe
+Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
+- Leggere `pratica_documenti_checklist` (+ catalogo) invece delle tabelle legacy
+- Per ogni documento: anteprima file (array JSON!), **Approva** / **Rifiuta con motivo** (`nota_admin`) → il cliente vede la card rossa "Da rifare"
+- Bottone **"Approva tutti"** per la velocità
+- Gestire il passaggio di stato pratica: tutti approvati → `da_assegnare`; qualche rifiuto → `documenti_parzialmente_approvati`
+- Mostrare anche foto veicolo e nuovi campi casistica (fermo, delegato, eredi, targhe presenti)
+- Coerente con il pattern grafico di TabDocumenti (vedi 5.6) per riconoscibilità
 
-Poi, in ordine:
-1. **Popolare gli altri 7 casi** (stesso metodo: anteprima → correzioni → INSERT)
-2. **Generazione automatica checklist** alla creazione pratica
-3. **Dashboard cliente — pagina documenti**: checklist con stato per documento, upload foto/PDF, barra progresso "X/Y pronti", PDF autocompilati da scaricare (Davide fornirà i template DELEGA_* e DICHIARAZIONI_*), sezione "da consegnare al ritiro", notifica "Sei pronto per il ritiro!"
-4. **Admin**: stato preparazione cliente, approva/rifiuta singolo documento + "Approva tutti", notifica nuovi upload
-5. **Pulizia finale**: rimuovere `ruolo_richiedente`/`eredita` da types e DB, eliminare le 3 pratiche test, eventuale refactoring step in file separati
+### 🔥🔥 STEP 2 — TEMPLATE PDF MODULI
+- Davide fornisce i template (DELEGA_*, DICHIARAZIONI_*) → attivare download precompilato (tracciando `scaricato_il`) al posto dell'avviso "a breve"
 
-### 🔥 STEP 2 — FINIRE LA DASHBOARD CLIENTE
-- Testare tab Stato e Chat con pratica vera, mostrare i nuovi campi casistica (fermo, delegato, eredi...) nel dettaglio
+### 🔥 STEP 3 — PULIZIA
+- Eliminare pratiche test: "ciccio", "Mario Verdi", "Sirio Valenti" (+ "EEEEE" quando non servirà più)
+- Rimuovere `UploadDocumentoModal.tsx` (legacy)
+- Rimuovere `ruolo_richiedente`/`eredita` da types e DB
+- Valutare dismissione tabelle `documenti`/`documenti_approvazione`
 
-### 🔥 STEP 3 — PAGINA ADMIN DETTAGLIO PRATICA
-- Chat funzionante (messaggi_chat), mostrare i nuovi campi casistica/fermo/delegato/eredi
+### 🔥 STEP 4 — PAGINA ADMIN DETTAGLIO PRATICA (resto)
+- Chat funzionante (messaggi_chat), campi casistica in vista
 
-### 🔥 STEP 4 — REVISIONE ALGORITMO + ASSEGNAZIONE MANUALE
+### 🔥 STEP 5 — REVISIONE ALGORITMO + ASSEGNAZIONE MANUALE
 - Fix velocità storica, colonne mancanti, mappa scelta manuale, GOOGLE_MAPS_SERVER_KEY su Vercel
 
-### 🔥 STEP 5 — SISTEMA RECENSIONI
+### 🔥 STEP 6 — SISTEMA RECENSIONI
 - Tabella + stato + pagina cliente bloccante + integrazione algoritmo + push Google Maps
 
-### 🆕 STEP 6 — TEST CROSS-PLATFORM ANDROID
-- Chrome DevTools / amici / BrowserStack: tastiere, scroll, sheet foto, autocomplete
+### 🆕 STEP 7 — TEST CROSS-PLATFORM ANDROID
+- Chrome DevTools / amici / BrowserStack: tastiere, scroll, foto, autocomplete
 
 ### 🔜 STEP SUCCESSIVI
-- Verifica PRA ACI (bookmarklet o Openapi ~6€), pagina Polizia Locale veicoli abbandonati, invito email demolitore + /imposta-password, login multi-ruolo completo, dashboard demolitore, notifiche in-app + SMS (Twilio) + push, messaggi preimpostati admin, PWA
+- Verifica PRA ACI (bookmarklet o Openapi ~6€), pagina Polizia Locale veicoli abbandonati, invito email demolitore + /imposta-password, login multi-ruolo completo, dashboard demolitore, notifiche in-app + SMS (Twilio) + push, messaggi preimpostati admin, PWA, restyling area admin in stile /inizia
 
 ### 🔮 PROSSIMI FLUSSI
 - Flusso B (asta demolitori), Flusso C (commercianti), acquisto NoiDemoliamo, Flusso D (/vendi-auto), area commercianti, fatturazione, statistiche
@@ -834,53 +798,48 @@ Poi, in ordine:
 
 - Errore RLS minore in `/inizia` (NON blocca)
 - Console "1 Issue" generica → da indagare
+- Avviso LCP sul logo in `/login` (solo suggerimento performance, non errore)
 - Test Android: mai fatto su device reale
-- 3 pratiche test nel DB (ciccio / Mario Verdi / Sirio Valenti) → utili come cavie per la checklist, eliminare prima del lancio
+- 4 pratiche test nel DB (ciccio / Mario Verdi / Sirio Valenti / EEEEE) → eliminare prima del lancio (EEEEE è la cavia attuale per i test documenti)
 
 ## 8.4 ⏰ PROMEMORIA SCADENZE FUTURE
 
-- 🗓️ **Supabase free tier**: aprire la dashboard ogni 5-6 giorni o il progetto va in pausa. Al lancio: Supabase Pro (~25$/mese).
+- 🗓️ **Supabase free tier**: aprire la dashboard ogni 5-6 giorni o il progetto va in pausa (già successo: causava "Failed to fetch"). Al lancio: Supabase Pro (~25$/mese).
 - 🗓️ **30 OTTOBRE 2026 — Supabase Data API change**: le NUOVE tabelle create dopo questa data NON saranno esposte automaticamente alla Data API. Servirà GRANT esplicito dopo ogni CREATE TABLE: `GRANT SELECT, INSERT, UPDATE, DELETE ON nome_tabella TO authenticated, anon;` (adattare i permessi al caso) + RLS come sempre.
-  - ✅ Già applicato preventivamente a `casistiche_documenti` e `pratica_documenti_checklist` (12/06/2026).
+  - ✅ Già applicato preventivamente a `casistiche_documenti` e `pratica_documenti_checklist`
   - ⚠️ Da ricordare per: `recensioni`, `aste`, `offerte_asta`, ecc.
 
 ---
 
 # 💡 PARTE 9 — DECISIONI BUSINESS CHIAVE
 
-(1-41: vedi storico — velocità come principio cardine, approvazione granulare, chat in-app, mobile-first, mini-step, gamification foto, normalizzazione input, CDC esteso, personalizzazione tipo veicolo, bottoni mai disabilitati, ecc. Tutte ancora valide.)
+(1-54: vedi storico — tutte ancora valide: velocità come principio cardine, approvazione granulare, chat in-app, mobile-first, mini-step, gamification foto, sistema casistiche con derivazione automatica, catalogo documenti come DATI, moduli PDF scarica-firma-fotografa, niente gergo, rassicurazioni telefono, ecc.)
 
-**Nuove decisioni giugno 2026:**
+**Nuove decisioni luglio 2026:**
 
-42. ⭐ **Sistema casistiche con derivazione automatica**: il cliente NON sceglie la casistica — risponde a domande semplici ("A chi è intestato?") e il sistema la deriva. 8 casistiche + 2 integrazioni trasversali (fermo, targhe smarrite).
-43. **Intestazione come passo 2**: subito dopo il tipo veicolo, così i rami (eredi, società) si aprono presto e il flusso si adatta.
-44. **Delega NON ammessa** per non_intestatario e targhe_straniere (vincolo normativo dal documento casistiche).
-45. **Targhe straniere = flusso minimo**: il mezzo non è al PRA italiano → niente CF, niente CDC, niente fermo, niente delega, niente box targhe. Le targhe vengono rimosse e riconsegnate per la cancellazione all'estero.
-46. **P.IVA per le società**: il campo CF accetta 11 cifre (P.IVA) o 16 (CF) quando l'intestatario è una società.
-47. **Nomi rinunciatari NON chiesti nel flusso**: il cliente all'inizio è diffidente — si raccolgono dopo, nell'area personale (colonna DB già pronta).
-48. **Catalogo documenti come DATI, non codice**: per cambiare i documenti richiesti si modifica una riga su Supabase, niente deploy.
-49. **Approvazione documenti**: per singolo documento (rifiuto con motivo) + bottone "Approva tutti" per la velocità.
-50. **Moduli PDF autocompilati**: scarica (tracciato `scaricato_il`) → stampa e firma → carica una FOTO del firmato (l'admin VEDE che l'ha fatto) → consegna l'ORIGINALE al ritiro. Semplice e intuitivo.
-51. **Niente gergo nei testi utente**: "Cammina?" non "marciante"; il CDC spiegato con la regola ottobre 2015; sub esplicative ovunque. Il campo DB può chiamarsi `marciante`, l'utente legge parole sue.
-52. **Rassicurazione sull'uso del telefono** ad ogni campo telefono (la gente è scettica; spesso compila il delegato).
-53. **Step finale unificato**: contatti + account in una sola pagina con possessivi ("Il tuo...") — meno schermate, zero ambiguità su di chi sono i dati.
-54. **La promessa della pagina finale è la roadmap**: "basta una foto", "moduli già compilati", "documenti ok → ritiro" — è esattamente ciò che il sistema documenti deve mantenere.
+55. ⭐ **Upload ≠ invio**: caricare un file NON manda il documento in verifica. Il cliente aggiunge tutte le foto che servono (fronte, retro, più pagine) e POI preme "Ho finito, invia in verifica". Niente più documenti a metà.
+56. ⭐ **Il suggerimento "manca il retro?" è pilotato dal catalogo**: appare solo se la descrizione del documento contiene "retro". Regola dati-non-codice: nuovi documenti fronte/retro = una riga su Supabase.
+57. **Niente popup intermedi per foto/file**: i bollini "Scatta" e "File" aprono direttamente fotocamera o selettore. Il popup di scelta è stato bocciato.
+58. **Il cliente può correggersi da solo**: foto veicolo e file documenti eliminabili (con conferma) finché la pratica è negli stati modificabili — meno chat di supporto per "ho caricato la foto sbagliata".
+59. **Un solo linguaggio visivo per tutta l'area cliente**: lo stile /inizia (lavanda, card bianca, header blu, campi con quadratino icona) è LO standard. Ogni nuova pagina cliente deve rispettarlo; l'admin verrà uniformato più avanti.
+60. **Il progetto vive fuori dal cloud sync**: mai dentro OneDrive/Dropbox (incompatibili con git).
+61. **Claude Code come ambiente di lavoro**: accesso diretto ai file con conferma obbligatoria di Davide su ogni modifica; ARCHITETTURA.md è la memoria tra le sessioni e va aggiornata a fine sessione.
 
 ---
 
-# 🚀 PARTE 10 — COME LAVORARE NELLA NUOVA CHAT
+# 🚀 PARTE 10 — COME LAVORARE NELLA NUOVA SESSIONE (Claude Code o chat)
 
-> Istruzioni per Claude nella nuova chat dopo aver letto questo file.
+> Istruzioni per Claude dopo aver letto questo file.
 
-1. **Leggi TUTTO questo file**, poi conferma a Davide di aver capito
-2. **Riprendi dal punto 8.2 STEP 1**: il prossimo passo immediato è **popolare il catalogo `casistiche_documenti` col Caso 1** (anteprima visiva → correzioni di Davide → INSERT)
+1. **Leggi TUTTO questo file**, poi conferma a Davide di aver capito (breve riassunto: dove siamo + prossimo task)
+2. **Riprendi dal punto 8.2 STEP 1**: la **pagina admin di approvazione documenti** sul nuovo sistema checklist. Prima esplora `/admin/pratiche/[id]` esistente, poi PROPONI l'approccio (con anteprima visiva) e attendi conferma.
 3. ⭐ **REGOLA FONDAMENTALE**: prima di modificare o rigenerare codice, SEMPRE proporre la modifica e attendere conferma esplicita di Davide
-4. **Rispetta il design system** (parte 6) e le **regole mobile critiche** (input text-base + text-gray-900, mai bottoni disabilitati, mai scrollIntoView)
-5. **Stile comunicazione** (parte 7): passo-passo, linguaggio semplicissimo, zero gergo, anteprime visive prima dei cambi design, file completi per modifiche grandi
-6. **Push**: `git add . ; git commit -m "..." ; git push origin main` — verificare con `git status`
+4. **Rispetta il design system** (parte 6) — in particolare il pattern card /inizia (6.2) e le regole d'oro (6.7)
+5. **Stile comunicazione** (parte 7): passo-passo, linguaggio semplicissimo, zero gergo, anteprime visive prima dei cambi design
+6. **Push**: commit chiari in italiano; push su main = deploy Vercel; verificare con `git status`
 7. **Mobile testing**: iPhone reale su URL Vercel live
 8. **Non assumere mai cose nuove**: se non sei sicuro, chiedi
-9. **A fine sessione**: proporre a Davide di aggiornare questo file
+9. **A fine sessione**: aggiornare QUESTO file con quanto fatto
 
 ---
 
@@ -888,12 +847,12 @@ Poi, in ordine:
 
 - **Founder**: Davide Di Viesto
 - **Email admin**: ddiviesto@gmail.com
-- **GitHub**: ddiviesto/NoidemoliaMo
+- **GitHub**: ddiviesto/NoiDemoliamo
 - **URL live**: https://noi-demoliamo.vercel.app
 - **Supabase URL**: https://egsufeczoroxqnagzqfq.supabase.co
-- **Cartella locale**: `C:\Users\Davide Di Viesto\Desktop\OneDrive\Noi_Demoliamo\Codex_Noi_Demoliamo\NoiDemoliamo`
+- **Cartella locale**: `C:\Progetto_NoiDemoliamo` ⚠️ (spostata FUORI da OneDrive a luglio 2026 — il vecchio percorso è obsoleto)
 - **Davide device principale**: iPhone (test mobile) + HP PC (sviluppo)
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 12 giugno 2026.**
+**Fine documento. Ultimo aggiornamento: 3 luglio 2026.**

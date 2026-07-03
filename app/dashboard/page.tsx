@@ -15,24 +15,96 @@ interface Pratica {
   creato_il: string
 }
 
-// Mappa stato → etichetta + colore + emoji
-const STATO_INFO: Record<string, { label: string; bg: string; text: string; emoji: string }> = {
-  in_attesa_documenti: { label: 'In attesa documenti', bg: 'bg-yellow-100', text: 'text-yellow-800', emoji: '📄' },
-  in_attesa_approvazione_admin: { label: 'In verifica', bg: 'bg-blue-100', text: 'text-blue-800', emoji: '🔍' },
-  documenti_parzialmente_approvati: { label: 'Documenti da rifare', bg: 'bg-red-100', text: 'text-red-800', emoji: '⚠️' },
-  da_assegnare: { label: 'In attesa assegnazione', bg: 'bg-orange-100', text: 'text-orange-800', emoji: '⏳' },
-  assegnata: { label: 'Demolitore assegnato', bg: 'bg-blue-100', text: 'text-blue-800', emoji: '🔧' },
-  ritiro_confermato: { label: 'Ritiro confermato', bg: 'bg-indigo-100', text: 'text-indigo-800', emoji: '📅' },
-  ritirata: { label: 'Veicolo ritirato', bg: 'bg-purple-100', text: 'text-purple-800', emoji: '🚚' },
-  in_attesa_cert_rottamazione: { label: 'In attesa certificato', bg: 'bg-teal-100', text: 'text-teal-800', emoji: '⏳' },
-  in_attesa_cert_radiazione_pra: { label: 'In attesa PRA', bg: 'bg-teal-100', text: 'text-teal-800', emoji: '⏳' },
-  completata: { label: 'Completata', bg: 'bg-green-100', text: 'text-green-800', emoji: '✅' },
-  annullata: { label: 'Annullata', bg: 'bg-gray-200', text: 'text-gray-600', emoji: '❌' },
+// ============================================================
+// Mappa stato → etichetta + colori pillola (chiari, come /inizia)
+// ============================================================
+
+const STATO_INFO: Record<string, { label: string; bg: string; text: string }> = {
+  in_attesa_documenti: { label: 'In attesa documenti', bg: '#FAEEDA', text: '#854F0B' },
+  in_attesa_approvazione_admin: { label: 'In verifica', bg: '#E0EDFB', text: '#1E4E8C' },
+  documenti_parzialmente_approvati: { label: 'Documenti da rifare', bg: '#FBE2E2', text: '#9B1C1C' },
+  da_assegnare: { label: 'In attesa assegnazione', bg: '#FDEBD9', text: '#92500E' },
+  assegnata: { label: 'Demolitore assegnato', bg: '#E0EDFB', text: '#1E4E8C' },
+  in_attesa_conferma_cliente: { label: 'Demolitore assegnato', bg: '#E0EDFB', text: '#1E4E8C' },
+  ritiro_confermato: { label: 'Ritiro confermato', bg: '#E4E4FB', text: '#4338CA' },
+  ritirata: { label: 'Veicolo ritirato', bg: '#EDE4FB', text: '#6B21A8' },
+  in_attesa_cert_rottamazione: { label: 'In attesa certificato', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_cert_radiazione_pra: { label: 'In attesa PRA', bg: '#DDF2F0', text: '#0F766E' },
+  completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43' },
+  annullata: { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563' },
 }
 
 function infoStato(stato: string) {
-  return STATO_INFO[stato] || { label: stato, bg: 'bg-gray-100', text: 'text-gray-600', emoji: '•' }
+  return STATO_INFO[stato] || { label: stato, bg: '#E7EAEE', text: '#4B5563' }
 }
+
+// ============================================================
+// ICONE SVG
+// ============================================================
+
+function IconaVeicolo({ tipo }: { tipo: string | null }) {
+  const common = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none' as const, stroke: '#2563eb', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const t = (tipo || '').toLowerCase()
+
+  if (t === 'motoveicolo' || t === 'ciclomotore') {
+    return (
+      <svg {...common}>
+        <circle cx="5.5" cy="17.5" r="2.5"/>
+        <circle cx="18.5" cy="17.5" r="2.5"/>
+        <path d="M15 6h2.5L20 10.5"/>
+        <path d="M5.5 17.5 9 11h5l4.5 6.5"/>
+        <path d="M9 11 7.5 8H5"/>
+      </svg>
+    )
+  }
+  if (t === 'furgone' || t === 'camion') {
+    return (
+      <svg {...common}>
+        <path d="M13 6v5a1 1 0 0 0 1 1h6.1a1 1 0 0 1 .7.3l.9.9a1 1 0 0 1 .3.7V17a1 1 0 0 1-1 1h-3"/>
+        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.2 4.2M9 18h5"/>
+        <circle cx="16" cy="18" r="2"/>
+        <circle cx="7" cy="18" r="2"/>
+      </svg>
+    )
+  }
+  if (t === 'imbarcazione') {
+    return (
+      <svg {...common}>
+        <path d="M12 3v14"/>
+        <path d="M12 4l7 9H5z"/>
+        <path d="M3 19c1.5 1.5 3.5 1.5 5 0s3.5-1.5 5 0 3.5 1.5 5 0 2-1 3 0"/>
+      </svg>
+    )
+  }
+  // default: autovettura / minicar / altro
+  return (
+    <svg {...common}>
+      <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/>
+      <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6"/>
+    </svg>
+  )
+}
+
+function IconaPinPiccola() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8a98a8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+      <circle cx="12" cy="10" r="3"/>
+    </svg>
+  )
+}
+
+function IconaScatolaVuota() {
+  return (
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#9aa7b5" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+      <line x1="12" y1="22.08" x2="12" y2="12"/>
+    </svg>
+  )
+}
+
+// ============================================================
 
 export default function DashboardCliente() {
   const router = useRouter()
@@ -73,97 +145,117 @@ export default function DashboardCliente() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-[#f0f4f8] flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Caricamento...</div>
+      <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-[#f0f4f8]">
-      {/* TOPBAR */}
-      <div className="bg-[#0d2144] px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">N</div>
-          <span className="text-white font-medium text-sm">NoiDemoliamo</span>
-        </div>
-        <div className="flex items-center gap-3">
-          {nomeUtente && <span className="text-blue-200 text-sm">Ciao, {nomeUtente}</span>}
-          <button onClick={logout} className="text-blue-300 hover:text-white text-sm transition-colors">Esci</button>
-        </div>
-      </div>
+    <main className="min-h-screen flex justify-center p-4 pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden" style={{ alignSelf: 'flex-start' }}>
 
-      <div className="max-w-2xl mx-auto px-4 py-6">
-
-        {/* TITOLO */}
-        <div className="flex items-center justify-between mb-5">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Le tue pratiche</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
+        {/* HEADER BLU (stile banner /inizia) */}
+        <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
+          <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold">
+            N
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
+            <div className="text-sm font-semibold leading-tight truncate">
+              {nomeUtente ? `Ciao, ${nomeUtente}!` : 'La tua area personale'}
+            </div>
           </div>
           <button
-            onClick={() => router.push('/inizia')}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors"
+            onClick={logout}
+            className="bg-white/85 hover:bg-white text-blue-700 rounded-lg px-3 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all"
           >
-            <span className="text-lg leading-none">+</span> Nuova
+            Esci
           </button>
         </div>
 
-        {/* LISTA PRATICHE */}
-        {pratiche.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-            <div className="text-4xl mb-3">📭</div>
-            <h2 className="text-base font-semibold text-gray-800 mb-1">Nessuna pratica</h2>
-            <p className="text-sm text-gray-500 mb-5">Inizia ora la tua prima richiesta di demolizione gratuita.</p>
+        <div className="p-4 flex flex-col gap-3">
+
+          {/* TITOLO + NUOVA */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-lg font-bold text-gray-900">Le tue pratiche</h1>
+              <p className="text-xs text-gray-500 mt-0.5">{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
+            </div>
             <button
               onClick={() => router.push('/inizia')}
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-3 rounded-xl"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl flex items-center gap-1.5 transition-colors active:scale-[0.98]"
             >
-              Richiedi demolizione
+              <span className="text-base leading-none">+</span> Nuova
             </button>
           </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {pratiche.map(p => {
-              const s = infoStato(p.stato)
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => router.push(`/dashboard/${p.id}`)}
-                  className="bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-all border border-transparent hover:border-blue-200 text-left"
-                >
-                  <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="text-base font-bold text-gray-900 truncate">
-                        {p.targa || '— Targa mancante'}
+
+          {/* LISTA PRATICHE */}
+          {pratiche.length === 0 ? (
+            <div style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '32px 20px', textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                <IconaScatolaVuota />
+              </div>
+              <h2 style={{ fontSize: 15, fontWeight: 600, color: '#111827', margin: 0 }}>Nessuna pratica</h2>
+              <p style={{ fontSize: 13, color: '#6B7280', margin: '4px 0 18px' }}>Inizia ora la tua prima richiesta di demolizione gratuita.</p>
+              <button
+                onClick={() => router.push('/inizia')}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-colors"
+              >
+                Richiedi demolizione
+              </button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {pratiche.map(p => {
+                const s = infoStato(p.stato)
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => router.push(`/dashboard/${p.id}`)}
+                    style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14, textAlign: 'left', transition: 'border-color 0.15s' }}
+                    className="hover:!border-blue-300 active:scale-[0.995]"
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      {/* Quadratino con icona veicolo */}
+                      <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <IconaVeicolo tipo={p.tipo_mezzo} />
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5 truncate">
-                        {p.tipo_mezzo && <span className="capitalize">{p.tipo_mezzo}</span>}
-                        {p.marca && p.modello && <span> · {p.marca} {p.modello}</span>}
+
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: 15, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {p.targa || 'Targa mancante'}
+                        </div>
+                        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {[p.tipo_mezzo && (p.tipo_mezzo.charAt(0).toUpperCase() + p.tipo_mezzo.slice(1)), [p.marca, p.modello].filter(Boolean).join(' ')].filter(Boolean).join(' · ')}
+                        </div>
                       </div>
+
+                      <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>
+                        {s.label}
+                      </span>
                     </div>
-                    <span className={`flex-shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full ${s.bg} ${s.text} flex items-center gap-1`}>
-                      <span>{s.emoji}</span>
-                      <span className="hidden sm:inline">{s.label}</span>
-                    </span>
-                  </div>
 
-                  {p.indirizzo_ritiro && (
-                    <div className="text-xs text-gray-500 flex items-center gap-1.5 mb-1.5">
-                      <span>📍</span>
-                      <span className="truncate">{p.indirizzo_ritiro}</span>
-                    </div>
-                  )}
+                    {(p.indirizzo_ritiro || p.creato_il) && (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
+                        {p.indirizzo_ritiro ? (
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: '#6B7280', minWidth: 0 }}>
+                            <IconaPinPiccola />
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.indirizzo_ritiro}</span>
+                          </span>
+                        ) : <span />}
+                        <span style={{ fontSize: 11, color: '#9AA7B5', flexShrink: 0 }}>
+                          {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
+                        </span>
+                      </div>
+                    )}
+                  </button>
+                )
+              })}
+            </div>
+          )}
 
-                  <p className="text-[11px] text-gray-400 mt-2">
-                    {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
-                  </p>
-                </button>
-              )
-            })}
-          </div>
-        )}
-
+        </div>
       </div>
     </main>
   )

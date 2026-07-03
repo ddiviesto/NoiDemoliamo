@@ -98,12 +98,12 @@ function estraiPathBucket(url: string, bucket: string): string | null {
 }
 
 // ============================================================
-// ICONE (vettoriali sottili)
+// ICONE GENERALI (vettoriali sottili)
 // ============================================================
 
 function IcoCamera({ size = 15, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
       <circle cx="12" cy="13" r="4"/>
     </svg>
@@ -112,7 +112,7 @@ function IcoCamera({ size = 15, color = 'currentColor' }: { size?: number; color
 
 function IcoFile({ size = 18, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
       <polyline points="14 2 14 8 20 8"/>
     </svg>
@@ -147,6 +147,15 @@ function IcoAlert({ size = 14, color = '#c0392b' }: { size?: number; color?: str
   )
 }
 
+function IcoSend({ size = 15, color = '#fff' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="22" y1="2" x2="11" y2="13"/>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+    </svg>
+  )
+}
+
 function IcoPackage({ size = 21, color = '#5dca9e' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
@@ -160,6 +169,88 @@ function IcoChevronDown({ size = 19, color = '#5e7290' }: { size?: number; color
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
       <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  )
+}
+
+// ============================================================
+// ICONA PER TIPO DI DOCUMENTO (nel quadratino blu)
+// ============================================================
+
+function IconaTipoDocumento({ nome, color }: { nome: string; color: string }) {
+  const n = nome.toLowerCase()
+  const common = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none' as const, stroke: color, strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+
+  if (n.includes('libretto') || n.includes('circolazione')) {
+    return (
+      <svg {...common}>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+      </svg>
+    )
+  }
+  if (n.includes('identità') || n.includes('identita') || n.includes('patente')) {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2"/>
+        <circle cx="9" cy="11" r="2"/>
+        <path d="M6 16c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5"/>
+        <line x1="14" y1="10" x2="18" y2="10"/>
+        <line x1="14" y1="13" x2="18" y2="13"/>
+      </svg>
+    )
+  }
+  if (n.includes('sanitaria') || n.includes('codice fiscale')) {
+    return (
+      <svg {...common}>
+        <rect x="3" y="5" width="18" height="14" rx="2"/>
+        <path d="M12 8.5v6M9 11.5h6"/>
+      </svg>
+    )
+  }
+  if (n.includes('proprietà') || n.includes('proprieta') || n.includes('cdp')) {
+    return (
+      <svg {...common}>
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14 2 14 8 20 8"/>
+        <circle cx="12" cy="15" r="2.2"/>
+        <path d="M12 12.8v-1.3"/>
+      </svg>
+    )
+  }
+  if (n.includes('denuncia') || n.includes('smarrimento')) {
+    return (
+      <svg {...common}>
+        <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/>
+        <line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    )
+  }
+  if (n.includes('delega')) {
+    return (
+      <svg {...common}>
+        <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+      </svg>
+    )
+  }
+  if (n.includes('visura') || n.includes('camerale')) {
+    return (
+      <svg {...common}>
+        <rect x="4" y="2" width="16" height="20" rx="1"/>
+        <line x1="9" y1="7" x2="15" y2="7"/>
+        <line x1="9" y1="11" x2="15" y2="11"/>
+        <path d="M9 22v-4h6v4"/>
+      </svg>
+    )
+  }
+  // default: documento generico
+  return (
+    <svg {...common}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="8" y1="13" x2="16" y2="13"/>
+      <line x1="8" y1="17" x2="13" y2="17"/>
     </svg>
   )
 }
@@ -199,6 +290,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   const [signedMap, setSignedMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [caricandoId, setCaricandoId] = useState<string | null>(null)
+  const [inviandoId, setInviandoId] = useState<string | null>(null)
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
   const [confermaElimina, setConfermaElimina] = useState<{ doc: DocChecklist; fileIdx: number } | null>(null)
   const [confermaEliminaFoto, setConfermaEliminaFoto] = useState<FotoPratica | null>(null)
@@ -308,6 +400,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     onDocRifiutatiCambiati(n)
   }, [docs, onDocRifiutatiCambiati])
 
+  // Carica file MA NON invia in verifica: il documento resta "in preparazione"
+  // finché il cliente non preme "Ho finito, invia in verifica".
   async function caricaFile(doc: DocChecklist, files: File[]) {
     setCaricandoId(doc.id)
     try {
@@ -324,14 +418,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         if (pub?.publicUrl) nuovi.push({ url: pub.publicUrl, nome: file.name })
       }
       const tutti = [...esistenti, ...nuovi]
+      // Solo file_url: lo stato NON cambia (resta da_fare o rifiutato)
       await supabase
         .from('pratica_documenti_checklist')
-        .update({
-          file_url: scriviFile(tutti),
-          stato: 'caricato',
-          caricato_il: new Date().toISOString(),
-          nota_admin: null,
-        })
+        .update({ file_url: scriviFile(tutti) })
         .eq('id', doc.id)
       await carica()
     } catch (err) {
@@ -339,6 +429,26 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       alert('Errore nel caricamento. Riprova.')
     }
     setCaricandoId(null)
+  }
+
+  // Invio manuale in verifica: qui il documento diventa "caricato"
+  async function inviaInVerifica(doc: DocChecklist) {
+    setInviandoId(doc.id)
+    try {
+      await supabase
+        .from('pratica_documenti_checklist')
+        .update({
+          stato: 'caricato',
+          caricato_il: new Date().toISOString(),
+          nota_admin: null,
+        })
+        .eq('id', doc.id)
+      await carica()
+    } catch (err) {
+      console.error('Errore invio in verifica:', err)
+      alert('Errore nell\'invio. Riprova.')
+    }
+    setInviandoId(null)
   }
 
   async function eliminaFileConfermato() {
@@ -353,7 +463,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         const path = estraiPathBucket(daRimuovere.url, 'documenti-pratiche')
         if (path) await supabase.storage.from('documenti-pratiche').remove([path])
       }
-      const nuovoStato = rimanenti.length === 0 ? 'da_fare' : 'caricato'
+      // Se il documento era già inviato (caricato) e non restano file, torna da fare.
+      // Se era in preparazione (da_fare/rifiutato), lo stato non cambia.
+      const nuovoStato = doc.stato === 'caricato' && rimanenti.length === 0 ? 'da_fare' : doc.stato
       await supabase
         .from('pratica_documenti_checklist')
         .update({
@@ -434,7 +546,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 
       {/* ====== STATO ====== */}
       {tuttoApprovato ? (
-        <div style={{ background: '#eef7f1', border: '0.5px solid #c8e6d5', borderRadius: 18, padding: 20, textAlign: 'center' }}>
+        <div style={{ background: '#eef7f1', border: '1.5px solid #c8e6d5', borderRadius: 18, padding: 20, textAlign: 'center' }}>
           <div style={{ width: 54, height: 54, margin: '0 auto 12px', background: '#1D9E75', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
@@ -461,8 +573,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
           <SezioneTitolo testo="Da preparare" />
           <div className="flex flex-col gap-2.5">
             {daFareGenerali.map(d => (
-              <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} eliminabile={puoEliminare}
-                onCarica={(files) => caricaFile(d, files)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
+              <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
+                onCarica={(files) => caricaFile(d, files)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
             ))}
             {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
           </div>
@@ -478,20 +590,20 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
               const docsErede = daFareEredi.filter(d => (d.indice_erede ?? 0) === idx)
               const aperto = erediAperti[idx] ?? (indiciEredi.length === 1)
               return (
-                <div key={idx} style={{ border: '0.5px solid #e8edf3', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
-                  <button onClick={() => setErediAperti(s => ({ ...s, [idx]: !aperto }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 13, background: '#f7f9fc' }}>
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#e6f1fb', color: '#185FA5', fontWeight: 500, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{idx}</div>
+                <div key={idx} style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
+                  <button onClick={() => setErediAperti(s => ({ ...s, [idx]: !aperto }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 13, background: '#F9FAFB' }}>
+                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#DBEAFE', color: '#2563eb', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{idx}</div>
                     <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                      <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{ordinaleErede(idx)} erede</div>
-                      <div style={{ fontSize: 11, color: '#8a98a8', marginTop: 1 }}>{docsErede.length} {docsErede.length === 1 ? 'documento' : 'documenti'}</div>
+                      <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{ordinaleErede(idx)} erede</div>
+                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{docsErede.length} {docsErede.length === 1 ? 'documento' : 'documenti'}</div>
                     </div>
                     <span style={{ transform: aperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><IcoChevronDown color="#8a98a8" /></span>
                   </button>
                   {aperto && (
                     <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {docsErede.map(d => (
-                        <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} eliminabile={puoEliminare}
-                          onCarica={(files) => caricaFile(d, files)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })} />
+                        <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
+                          onCarica={(files) => caricaFile(d, files)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })} />
                       ))}
                     </div>
                   )}
@@ -507,11 +619,11 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         <div>
           <SezioneTitolo testo="Già sistemati" />
           {!sistematiAperti ? (
-            <button onClick={() => setSistematiAperti(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #e8edf3', borderRadius: 14, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
+            <button onClick={() => setSistematiAperti(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '1.5px solid #E5E7EB', borderRadius: 14, background: '#fff' }}>
               <IcoCheck size={21} color="#1D9E75" />
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{sistemati.length} {sistemati.length === 1 ? 'documento sistemato' : 'documenti sistemati'}</div>
-                <div style={{ fontSize: 11, color: '#8a98a8', marginTop: 1 }}>{contaPerStato(sistemati)}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{sistemati.length} {sistemati.length === 1 ? 'documento sistemato' : 'documenti sistemati'}</div>
+                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{contaPerStato(sistemati)}</div>
               </div>
               <IcoChevronDown color="#8a98a8" />
             </button>
@@ -555,16 +667,16 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       )}
 
       {/* ====== FOTO DEL VEICOLO ====== */}
-      <div style={{ border: '0.5px solid #e8edf3', borderRadius: 16, padding: 16, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
+      <div style={{ border: '1.5px solid #E5E7EB', borderRadius: 16, padding: 16, background: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: foto.length > 0 ? 12 : 10 }}>
-          <span style={{ fontSize: 14, fontWeight: 500, color: '#0d2144' }}>Foto del veicolo</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Foto del veicolo</span>
           <span style={{ fontSize: 12, color: '#9aa7b5' }}>{foto.length} {foto.length === 1 ? 'foto' : 'foto'}</span>
         </div>
         {foto.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-3">
             {foto.map((f, idx) => (
               <div key={f.id} style={{ position: 'relative', width: '100%', aspectRatio: '1' }}>
-                <button onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', border: '0.5px solid #e8edf3', background: '#f3f5f8', display: 'block' }}>
+                <button onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8', display: 'block' }}>
                   {isPdfUrl(f.url) ? (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
                   ) : (
@@ -664,7 +776,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 
 function SezioneTitolo({ testo }: { testo: string }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 500, color: '#9aa7b5', letterSpacing: '0.04em', textTransform: 'uppercase', margin: '4px 2px 12px' }}>{testo}</div>
+    <div style={{ fontSize: 11, fontWeight: 600, color: '#9aa7b5', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '4px 2px 12px' }}>{testo}</div>
   )
 }
 
@@ -691,9 +803,14 @@ function nomeRitiro(d: DocChecklist): string {
   return d.nome
 }
 
+// Il documento richiede fronte e retro? Lo capiamo dal catalogo:
+// se la descrizione menziona "retro", suggeriamo il secondo lato.
+function richiedeRetro(d: DocChecklist): boolean {
+  return (d.descrizione || '').toLowerCase().includes('retro')
+}
+
 // ============================================================
-// BOLLINO AZIONE (Scatta / File) — apre direttamente
-// fotocamera o selettore file, senza popup intermedi
+// BOLLINO AZIONE (Scatta / File)
 // ============================================================
 
 function BollinoAzione({ etichetta, bg, colore, onClick, children }: {
@@ -705,24 +822,29 @@ function BollinoAzione({ etichetta, bg, colore, onClick, children }: {
 }) {
   return (
     <button onClick={onClick} aria-label={etichetta} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, width: 46, cursor: 'pointer' }}>
-      <span style={{ width: 40, height: 40, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 38, height: 38, borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         {children}
       </span>
-      <span style={{ fontSize: 10.5, fontWeight: 500, color: colore, lineHeight: 1 }}>{etichetta}</span>
+      <span style={{ fontSize: 10.5, fontWeight: 600, color: colore, lineHeight: 1 }}>{etichetta}</span>
     </button>
   )
 }
 
 // ============================================================
-// CARD DOCUMENTO DA PREPARARE (riga compatta, opzioni visibili)
+// CARD DOCUMENTO DA PREPARARE
+// Stile /inizia: bordo 1.5px, sfondo grigio chiaro, icona nel
+// quadratino blu. Le foto NON partono da sole: bottone verde
+// "Ho finito, invia in verifica".
 // ============================================================
 
 function DocCard(props: {
   doc: DocChecklist
   signedMap: Record<string, string>
   caricamento: boolean
+  invio: boolean
   eliminabile: boolean
   onCarica: (files: File[]) => void
+  onInvia: () => void
   onApri: (url: string, titolo: string) => void
   onElimina: (fileIdx: number) => void
 }) {
@@ -738,26 +860,35 @@ function DocCard(props: {
     e.target.value = ''
   }
 
-  const bordo = rifiutato ? '#f0d4d4' : '#e8edf3'
-  const bgBollino = rifiutato ? '#fbeaea' : '#e6f1fb'
-  const colBollino = rifiutato ? '#c0392b' : '#185FA5'
+  // Palette: blu di default, rosso se rifiutato (come /inizia con errore)
+  const bordo = rifiutato ? '#F3C8C8' : '#E5E7EB'
+  const bgCard = rifiutato ? '#FEF6F6' : '#F9FAFB'
+  const bgTile = rifiutato ? '#FBDADA' : '#DBEAFE'
+  const colTile = rifiutato ? '#C0392B' : '#2563eb'
 
   return (
-    <div style={{ background: '#fff', border: `0.5px solid ${bordo}`, borderRadius: 14, padding: '13px 14px', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
+    <div style={{ background: bgCard, border: `1.5px solid ${bordo}`, borderRadius: 14, padding: 14 }}>
       <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
       <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        {/* Quadratino con icona del documento */}
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: bgTile, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <IconaTipoDocumento nome={doc.nome} color={colTile} />
+        </div>
+
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 500, fontSize: 15, color: '#0d2144', lineHeight: 1.3 }}>{doc.nome}</span>
+            <span style={{ fontWeight: 600, fontSize: 14.5, color: '#111827', lineHeight: 1.3 }}>{doc.nome}</span>
             {rifiutato && (
-              <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 500, color: '#c0392b', background: '#fbeaea', padding: '3px 10px', borderRadius: 20 }}>Da rifare</span>
+              <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: '#C0392B', background: '#FBDADA', padding: '2px 9px', borderRadius: 20 }}>Da rifare</span>
             )}
           </div>
-          {doc.descrizione && !rifiutato && (
-            <div style={{ fontSize: 12, color: '#7a8a9a', marginTop: 3, lineHeight: 1.45 }}>{doc.descrizione}</div>
-          )}
+          {rifiutato && doc.nota_admin ? (
+            <div style={{ fontSize: 12, color: '#B03A2E', marginTop: 2, lineHeight: 1.4 }}>{doc.nota_admin}</div>
+          ) : doc.descrizione ? (
+            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2, lineHeight: 1.4 }}>{doc.descrizione}</div>
+          ) : null}
         </div>
 
         {props.caricamento ? (
@@ -766,50 +897,70 @@ function DocCard(props: {
           </div>
         ) : props.eliminabile ? (
           <div style={{ display: 'flex', gap: 10, flexShrink: 0, alignItems: 'flex-start' }}>
-            <BollinoAzione etichetta="Scatta" bg={bgBollino} colore={colBollino} onClick={() => inputCamera.current?.click()}>
-              <IcoCamera size={18} color={colBollino} />
+            <BollinoAzione etichetta="Scatta" bg={bgTile} colore={colTile} onClick={() => inputCamera.current?.click()}>
+              <IcoCamera size={18} color={colTile} />
             </BollinoAzione>
-            <BollinoAzione etichetta="File" bg={bgBollino} colore={colBollino} onClick={() => inputFile.current?.click()}>
-              <IcoFile size={18} color={colBollino} />
+            <BollinoAzione etichetta="File" bg={bgTile} colore={colTile} onClick={() => inputFile.current?.click()}>
+              <IcoFile size={18} color={colTile} />
             </BollinoAzione>
           </div>
         ) : null}
       </div>
 
-      {rifiutato && doc.nota_admin && (
-        <div style={{ fontSize: 12, color: '#c0392b', marginTop: 9, lineHeight: 1.45, display: 'flex', gap: 6 }}>
-          <span style={{ flexShrink: 0, marginTop: 1 }}><IcoAlert size={14} color="#c0392b" /></span><span>{doc.nota_admin}</span>
-        </div>
-      )}
-
+      {/* Miniature file caricati (in bozza, non ancora inviati) */}
       {files.length > 0 && (
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 11 }}>
-          {files.map((f, idx) => {
-            const url = props.signedMap[f.url] || f.url
-            return (
-              <div key={idx} style={{ position: 'relative', width: 60, height: 60 }}>
-                <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 60, height: 60, borderRadius: 10, overflow: 'hidden', border: '0.5px solid #e2e8f0', background: '#fff', display: 'block' }}>
-                  {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
-                    <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-                  ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+            {files.map((f, idx) => {
+              const url = props.signedMap[f.url] || f.url
+              return (
+                <div key={idx} style={{ position: 'relative', width: 56, height: 56 }}>
+                  <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', display: 'block' }}>
+                    {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
+                      <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+                    ) : (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    )}
+                  </button>
+                  {props.eliminabile && (
+                    <button onClick={() => props.onElimina(idx)} aria-label="Elimina file" style={{ position: 'absolute', top: -6, right: -6, width: 19, height: 19, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: `2px solid ${bgCard}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
                   )}
-                </button>
-                {props.eliminabile && (
-                  <button onClick={() => props.onElimina(idx)} style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 12, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                </div>
+              )
+            })}
+            <span style={{ fontSize: 11.5, color: '#6B7280' }}>
+              {files.length === 1
+                ? (richiedeRetro(doc) ? '1 file · manca il retro?' : '1 file caricato')
+                : `${files.length} file caricati`}
+            </span>
+          </div>
+
+          {/* Bottone di invio manuale in verifica */}
+          {props.eliminabile && (
+            <>
+              <button
+                onClick={props.onInvia}
+                disabled={props.invio}
+                style={{ width: '100%', marginTop: 12, padding: '11px 0', border: 'none', borderRadius: 11, background: props.invio ? '#86c9a3' : '#16A34A', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: props.invio ? 'default' : 'pointer' }}
+              >
+                {props.invio ? (
+                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Invio...</>
+                ) : (
+                  <><IcoSend size={15} color="#fff" />Ho finito, invia in verifica</>
                 )}
-              </div>
-            )
-          })}
-        </div>
+              </button>
+              <p style={{ margin: '7px 0 0', textAlign: 'center', fontSize: 10.5, color: '#9AA7B5' }}>Aggiungi tutte le foto necessarie, poi invia</p>
+            </>
+          )}
+        </>
       )}
     </div>
   )
 }
 
 // ============================================================
-// RIGA DOCUMENTO GIA' SISTEMATO (compatta)
+// RIGA DOCUMENTO GIA' SISTEMATO (inviato in verifica o approvato)
 // ============================================================
 
 function CardSistemato(props: {
@@ -826,17 +977,17 @@ function CardSistemato(props: {
   const url = primo ? (props.signedMap[primo.url] || primo.url) : null
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '0.5px solid #e8edf3', borderRadius: 14, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '1.5px solid #E5E7EB', borderRadius: 14, background: '#fff' }}>
       <span style={{ flexShrink: 0 }}>{approvato ? <IcoCheck size={21} color="#1D9E75" /> : <IcoClock size={21} color="#d99412" />}</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 500, fontSize: 14, color: '#0d2144' }}>{doc.nome}</div>
-        {!approvato && <div style={{ fontSize: 11, color: '#d99412', marginTop: 1 }}>La stiamo verificando</div>}
+        <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{doc.nome}</div>
+        {!approvato && <div style={{ fontSize: 11, color: '#d99412', marginTop: 1 }}>La stiamo verificando{files.length > 1 ? ` · ${files.length} file` : ''}</div>}
       </div>
       {approvato ? (
-        <span style={{ fontSize: 11.5, color: '#1D9E75', fontWeight: 500, flexShrink: 0 }}>Approvato</span>
+        <span style={{ fontSize: 11.5, color: '#1D9E75', fontWeight: 600, flexShrink: 0 }}>Approvato</span>
       ) : url ? (
         <div style={{ position: 'relative', width: 36, height: 36, flexShrink: 0 }}>
-          <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', border: '0.5px solid #e2e8f0', background: '#f3f5f8', display: 'block' }}>
+          <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8', display: 'block' }}>
             {isPdfUrl(primo?.nome) || isPdfUrl(primo?.url) ? (
               <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 600, color: '#c0392b' }}>PDF</div>
             ) : (
@@ -845,7 +996,7 @@ function CardSistemato(props: {
             )}
           </button>
           {props.eliminabile && (
-            <button onClick={() => props.onElimina(0)} style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            <button onClick={() => props.onElimina(0)} aria-label="Elimina file" style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
           )}
         </div>
       ) : null}
@@ -859,13 +1010,20 @@ function CardSistemato(props: {
 
 function ModuloCard({ doc }: { doc: DocChecklist }) {
   return (
-    <div style={{ border: '0.5px solid #e8edf3', borderRadius: 14, padding: 15, background: '#fff', boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-        <div style={{ fontWeight: 500, fontSize: 15, color: '#0d2144', lineHeight: 1.3 }}>{doc.nome}</div>
-        <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 500, color: '#185FA5', background: '#e6f1fb', padding: '3px 10px', borderRadius: 20 }}>Modulo</span>
+    <div style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14, background: '#F9FAFB' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <IconaTipoDocumento nome={doc.nome} color="#2563eb" />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 600, fontSize: 14.5, color: '#111827', lineHeight: 1.3 }}>{doc.nome}</span>
+            <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: '#2563eb', background: '#DBEAFE', padding: '2px 9px', borderRadius: 20 }}>Modulo</span>
+          </div>
+          {doc.descrizione && <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2, lineHeight: 1.4 }}>{doc.descrizione}</div>}
+        </div>
       </div>
-      {doc.descrizione && <div style={{ fontSize: 12, color: '#7a8a9a', marginTop: 4, lineHeight: 1.45 }}>{doc.descrizione}</div>}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, background: '#fbf3e3', border: '0.5px solid #f2e2c0', borderRadius: 10, padding: '9px 11px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, background: '#fbf3e3', border: '1px solid #f2e2c0', borderRadius: 10, padding: '9px 11px' }}>
         <span style={{ flexShrink: 0 }}><IcoClock size={15} color="#b5820f" /></span>
         <span style={{ fontSize: 11.5, color: '#9a6c0c', fontWeight: 500 }}>Questo modulo sarà disponibile a breve. Ti avviseremo.</span>
       </div>
@@ -895,15 +1053,15 @@ function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
       <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
       <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
       {caricando ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', border: '1.5px dashed #C9D3DF', borderRadius: 12, color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
           <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
         </div>
       ) : (
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => inputCamera.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+          <button onClick={() => inputCamera.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '1.5px dashed #C9D3DF', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 600 }}>
             <IcoCamera size={15} color="#2563eb" />Scatta foto
           </button>
-          <button onClick={() => inputFile.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '0.5px dashed #c9d3df', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
+          <button onClick={() => inputFile.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '1.5px dashed #C9D3DF', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 600 }}>
             <IcoFile size={15} color="#2563eb" />Scegli file
           </button>
         </div>
