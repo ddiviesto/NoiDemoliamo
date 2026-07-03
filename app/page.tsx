@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import AiutoWhatsApp from './components/AiutoWhatsApp'
 
 export default function Home() {
   return (
@@ -55,6 +56,8 @@ export default function Home() {
         </div>
 
       </div>
+
+      <AiutoWhatsApp />
     </main>
   )
 }

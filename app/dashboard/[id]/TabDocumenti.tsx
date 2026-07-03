@@ -31,6 +31,7 @@ interface DocChecklist {
 interface FileCaricato {
   url: string
   nome: string
+  lato?: 'fronte' | 'retro'   // valorizzato solo per i documenti fronte/retro caricati in due caselle
 }
 
 interface FotoPratica {
@@ -87,7 +88,7 @@ function leggiFile(fileUrl: string | null): FileCaricato[] {
 
 function scriviFile(files: FileCaricato[]): string | null {
   if (files.length === 0) return null
-  return JSON.stringify(files.map(f => ({ url: f.url, nome: f.nome })))
+  return JSON.stringify(files.map(f => f.lato ? { url: f.url, nome: f.nome, lato: f.lato } : { url: f.url, nome: f.nome }))
 }
 
 function estraiPathBucket(url: string, bucket: string): string | null {
@@ -402,12 +403,14 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 
   // Carica file MA NON invia in verifica: il documento resta "in preparazione"
   // finché il cliente non preme "Ho finito, invia in verifica".
-  async function caricaFile(doc: DocChecklist, files: File[]) {
+  async function caricaFile(doc: DocChecklist, files: File[], lato?: 'fronte' | 'retro') {
     setCaricandoId(doc.id)
     try {
       const esistenti = leggiFile(doc.file_url)
+      // Se sto caricando in una casella (fronte/retro) prendo un solo file e sostituisco quel lato
+      const daCaricare = lato ? files.slice(0, 1) : files
       const nuovi: FileCaricato[] = []
-      for (const file of files) {
+      for (const file of daCaricare) {
         const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
         const path = `${pratica.id}/${doc.codice}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
         const { error } = await supabase.storage
@@ -415,9 +418,11 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
           .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true })
         if (error) throw error
         const { data: pub } = supabase.storage.from('documenti-pratiche').getPublicUrl(path)
-        if (pub?.publicUrl) nuovi.push({ url: pub.publicUrl, nome: file.name })
+        if (pub?.publicUrl) nuovi.push(lato ? { url: pub.publicUrl, nome: file.name, lato } : { url: pub.publicUrl, nome: file.name })
       }
-      const tutti = [...esistenti, ...nuovi]
+      // In modalità casella: il nuovo file rimpiazza l'eventuale lato già presente
+      const base = lato ? esistenti.filter(f => f.lato !== lato) : esistenti
+      const tutti = [...base, ...nuovi]
       // Solo file_url: lo stato NON cambia (resta da_fare o rifiutato)
       await supabase
         .from('pratica_documenti_checklist')
@@ -529,17 +534,25 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     )
   }
 
-  const sistemati = docs.filter(d => d.stato === 'caricato' || d.stato === 'approvato')
-  const daFare = docs.filter(d => d.stato === 'da_fare' || d.stato === 'rifiutato')
+  // --- "Da chiarire insieme": il cliente ha detto di non avere né libretto né denuncia,
+  //     o di non sapere che certificato ha → prima lo contatta NoiDemoliamo (telefono/WhatsApp).
+  //     Il documento libretto viene tolto dalla lista attiva finché la situazione non è chiarita.
+  const librettoDaChiarire = pratica.libretto === 'no'
+  const cdcDaChiarire = pratica.certificato_proprieta === 'nessuno'
+  const isDocLibretto = (d: DocChecklist) => d.codice === 'LIBRETTO_CIRCOLAZIONE' || d.codice === 'LIBRETTO_ESTERO'
+  const docsAttivi = librettoDaChiarire ? docs.filter(d => !isDocLibretto(d)) : docs
+
+  const sistemati = docsAttivi.filter(d => d.stato === 'caricato' || d.stato === 'approvato')
+  const daFare = docsAttivi.filter(d => d.stato === 'da_fare' || d.stato === 'rifiutato')
   const daFareGenerali = daFare.filter(d => !d.per_erede && !d.template_pdf)
   const daFareModuli = daFare.filter(d => !d.per_erede && d.template_pdf)
   const daFareEredi = daFare.filter(d => d.per_erede)
   const indiciEredi = Array.from(new Set(daFareEredi.map(d => d.indice_erede ?? 0))).sort((a, b) => a - b)
-  const daConsegnare = docs.filter(d => d.richiede_consegna)
+  const daConsegnare = docsAttivi.filter(d => d.richiede_consegna)
 
-  const totale = docs.length
+  const totale = docsAttivi.length
   const pronti = sistemati.length
-  const tuttoApprovato = totale > 0 && docs.every(d => d.stato === 'approvato')
+  const tuttoApprovato = totale > 0 && docsAttivi.every(d => d.stato === 'approvato') && !librettoDaChiarire && !cdcDaChiarire
 
   return (
     <div className="flex flex-col gap-3">
@@ -567,6 +580,39 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
+      {/* ====== DA CHIARIRE INSIEME (libretto mancante / CDC sconosciuto) ====== */}
+      {(librettoDaChiarire || cdcDaChiarire) && (
+        <div style={{ background: '#FDF7EA', border: '1.5px solid #F0DFB8', borderRadius: 14, padding: 14 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14.5, color: '#111827' }}>Da chiarire insieme</div>
+              <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>Ti chiamiamo noi al più presto</div>
+            </div>
+          </div>
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {librettoDaChiarire && (
+              <div style={{ fontSize: 12.5, color: '#854F0B', lineHeight: 1.5 }}>
+                <strong>Libretto di circolazione</strong>: ci hai detto che non hai né il libretto né la denuncia. Ti spiegheremo come fare, intanto puoi preparare gli altri documenti.
+              </div>
+            )}
+            {cdcDaChiarire && (
+              <div style={{ fontSize: 12.5, color: '#854F0B', lineHeight: 1.5 }}>
+                <strong>Certificato di proprietà</strong>: lo verifichiamo noi gratuitamente e ti diremo se serve qualcosa.
+              </div>
+            )}
+          </div>
+          <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 0', borderRadius: 11, background: '#16A34A', color: '#fff', fontWeight: 600, fontSize: 13.5, textDecoration: 'none' }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.58 15.13L2 22l4.97-1.38A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.19-1.19l-.3-.18-2.95.82.8-2.87-.2-.31A8 8 0 1 1 12 20zm4.42-5.9c-.24-.12-1.43-.7-1.65-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.19 7.24 7.24 0 0 1-1.33-1.66c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.64 1.64 0 0 0 .24-.4.44.44 0 0 0-.02-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.88.88 0 0 0-.64.3 2.68 2.68 0 0 0-.84 2 4.65 4.65 0 0 0 .98 2.47 10.66 10.66 0 0 0 4.08 3.6 13.68 13.68 0 0 0 1.36.5 3.27 3.27 0 0 0 1.5.1 2.46 2.46 0 0 0 1.61-1.14 2 2 0 0 0 .14-1.14c-.06-.1-.22-.16-.46-.28z"/></svg>
+            Preferisci scriverci? Chatta su WhatsApp
+          </a>
+        </div>
+      )}
+
       {/* ====== DA PREPARARE: GENERALI + MODULI ====== */}
       {(daFareGenerali.length > 0 || daFareModuli.length > 0) && (
         <div>
@@ -574,7 +620,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
           <div className="flex flex-col gap-2.5">
             {daFareGenerali.map(d => (
               <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
-                onCarica={(files) => caricaFile(d, files)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
+                onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
             ))}
             {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
           </div>
@@ -603,7 +649,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
                     <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {docsErede.map(d => (
                         <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
-                          onCarica={(files) => caricaFile(d, files)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })} />
+                          onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })} />
                       ))}
                     </div>
                   )}
@@ -803,10 +849,37 @@ function nomeRitiro(d: DocChecklist): string {
   return d.nome
 }
 
-// Il documento richiede fronte e retro? Lo capiamo dal catalogo:
-// se la descrizione menziona "retro", suggeriamo il secondo lato.
-function richiedeRetro(d: DocChecklist): boolean {
-  return (d.descrizione || '').toLowerCase().includes('retro')
+// ============================================================
+// DOCUMENTI FRONTE / RETRO
+// Lista precisa presa dal file casistiche (docs/casistiche/Casistiche_Demolizione.md):
+// solo questi documenti hanno esattamente due lati. Tutti gli altri
+// (denunce, visure, autorizzazioni...) restano a caricamento libero.
+// ============================================================
+
+const CODICI_FRONTE_RETRO = new Set([
+  'LIBRETTO_CIRCOLAZIONE',
+  'LIBRETTO_ESTERO',
+  'CERTIFICATO_PROPRIETA_CARTACEO',
+  'CARTA_IDENTITA_PROPRIETARIO',
+  'CARTA_IDENTITA_EREDE',
+  'CARTA_IDENTITA_RAPPRESENTANTE',
+  'CARTA_IDENTITA_CURATORE',
+  'CARTA_IDENTITA_PRESIDENTE',
+  'CARTA_IDENTITA_DELEGATO',
+  'TESSERA_SANITARIA_PROPRIETARIO',
+  'TESSERA_SANITARIA_EREDE',
+  'TESSERA_SANITARIA_RAPPRESENTANTE',
+  'TESSERA_SANITARIA_CURATORE',
+  'TESSERA_SANITARIA_PRESIDENTE',
+  'TESSERA_SANITARIA_DELEGATO',
+])
+
+function richiedeFronteRetro(codice: string): boolean {
+  if (CODICI_FRONTE_RETRO.has(codice)) return true
+  // Robustezza: qualunque futura carta d'identità / tessera sanitaria di un nuovo soggetto
+  if (codice.startsWith('CARTA_IDENTITA_')) return true
+  if (codice.startsWith('TESSERA_SANITARIA_')) return true
+  return false
 }
 
 // ============================================================
@@ -843,22 +916,33 @@ function DocCard(props: {
   caricamento: boolean
   invio: boolean
   eliminabile: boolean
-  onCarica: (files: File[]) => void
+  onCarica: (files: File[], lato?: 'fronte' | 'retro') => void
   onInvia: () => void
   onApri: (url: string, titolo: string) => void
   onElimina: (fileIdx: number) => void
 }) {
-  const inputCamera = useRef<HTMLInputElement>(null)
-  const inputFile = useRef<HTMLInputElement>(null)
+  const inputCamFronte = useRef<HTMLInputElement>(null)
+  const inputFilFronte = useRef<HTMLInputElement>(null)
+  const inputCamRetro = useRef<HTMLInputElement>(null)
+  const inputFilRetro = useRef<HTMLInputElement>(null)
+  const inputCamLibero = useRef<HTMLInputElement>(null)
+  const inputFilLibero = useRef<HTMLInputElement>(null)
+  const [toggleUnico, setToggleUnico] = useState(false)
+
   const { doc } = props
   const files = leggiFile(doc.file_url)
   const rifiutato = doc.stato === 'rifiutato'
+  const frDoc = richiedeFronteRetro(doc.codice)
 
-  function handle(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files || e.target.files.length === 0) return
-    props.onCarica(Array.from(e.target.files))
-    e.target.value = ''
-  }
+  const haLato = files.some(f => f.lato)
+  const senzaLato = files.some(f => !f.lato)
+  // Modalità "due caselle": solo documenti fronte/retro, salvo che il cliente scelga
+  // "file unico" (o abbia già caricato un file senza lato, es. pratiche vecchie).
+  const modoSlot = frDoc && !senzaLato && (haLato || !toggleUnico)
+
+  const fronteFile = files.find(f => f.lato === 'fronte')
+  const retroFile = files.find(f => f.lato === 'retro')
+  const puoInviare = modoSlot ? (!!fronteFile && !!retroFile) : files.length > 0
 
   // Palette: blu di default, rosso se rifiutato (come /inizia con errore)
   const bordo = rifiutato ? '#F3C8C8' : '#E5E7EB'
@@ -866,13 +950,71 @@ function DocCard(props: {
   const bgTile = rifiutato ? '#FBDADA' : '#DBEAFE'
   const colTile = rifiutato ? '#C0392B' : '#2563eb'
 
+  function fileFromEvent(e: React.ChangeEvent<HTMLInputElement>): File[] {
+    const list = e.target.files ? Array.from(e.target.files) : []
+    e.target.value = ''
+    return list
+  }
+
+  const subtitle = rifiutato && doc.nota_admin
+    ? doc.nota_admin
+    : modoSlot
+      ? 'Servono due foto: fronte e retro'
+      : frDoc
+        ? 'Un unico file con fronte e retro'
+        : (doc.descrizione || '')
+  const subColor = rifiutato && doc.nota_admin ? '#B03A2E' : '#6B7280'
+
+  // Miniatura di un file (con ✕ di eliminazione)
+  function renderMini(f: FileCaricato, idx: number, size = 56) {
+    const url = props.signedMap[f.url] || f.url
+    return (
+      <div key={idx} style={{ position: 'relative', width: size, height: size }}>
+        <button onClick={() => props.onApri(url, doc.nome)} style={{ width: size, height: size, borderRadius: 10, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', display: 'block' }}>
+          {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
+            <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+          ) : (
+            /* eslint-disable-next-line @next/next/no-img-element */
+            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+          )}
+        </button>
+        {props.eliminabile && (
+          <button onClick={() => props.onElimina(idx)} aria-label="Elimina file" style={{ position: 'absolute', top: -6, right: -6, width: 19, height: 19, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: `2px solid ${bgCard}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+        )}
+      </div>
+    )
+  }
+
+  // Casella singola FRONTE o RETRO
+  function renderSlot(lato: 'fronte' | 'retro', file: FileCaricato | undefined, camRef: React.RefObject<HTMLInputElement | null>, filRef: React.RefObject<HTMLInputElement | null>) {
+    const idx = file ? files.indexOf(file) : -1
+    return (
+      <div style={{ flex: 1, minWidth: 0, border: `1.5px ${file ? 'solid #C7D6EC' : 'dashed #B5C6E0'}`, borderRadius: 11, background: '#fff', padding: 10, textAlign: 'center' }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: colTile, letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>{lato}</div>
+        {file ? (
+          <div style={{ display: 'flex', justifyContent: 'center' }}>{renderMini(file, idx, 52)}</div>
+        ) : props.eliminabile ? (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} style={{ width: 34, height: 34, borderRadius: '50%', background: bgTile, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><IcoCamera size={16} color={colTile} /></button>
+            <button onClick={() => filRef.current?.click()} aria-label={`Scegli file per il ${lato}`} style={{ width: 34, height: 34, borderRadius: '50%', background: bgTile, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><IcoFile size={15} color={colTile} /></button>
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
   return (
     <div style={{ background: bgCard, border: `1.5px solid ${bordo}`, borderRadius: 14, padding: 14 }}>
-      <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
-      <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
+      {/* input nascosti: due per le caselle, due per il caricamento libero */}
+      <input ref={inputCamFronte} type="file" accept="image/*" capture="environment" onChange={e => props.onCarica(fileFromEvent(e), 'fronte')} className="hidden" />
+      <input ref={inputFilFronte} type="file" accept="image/*,application/pdf" onChange={e => props.onCarica(fileFromEvent(e), 'fronte')} className="hidden" />
+      <input ref={inputCamRetro} type="file" accept="image/*" capture="environment" onChange={e => props.onCarica(fileFromEvent(e), 'retro')} className="hidden" />
+      <input ref={inputFilRetro} type="file" accept="image/*,application/pdf" onChange={e => props.onCarica(fileFromEvent(e), 'retro')} className="hidden" />
+      <input ref={inputCamLibero} type="file" accept="image/*" capture="environment" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
+      <input ref={inputFilLibero} type="file" accept="image/*,application/pdf" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
 
+      {/* HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        {/* Quadratino con icona del documento */}
         <div style={{ width: 40, height: 40, borderRadius: 12, background: bgTile, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <IconaTipoDocumento nome={doc.nome} color={colTile} />
         </div>
@@ -884,75 +1026,69 @@ function DocCard(props: {
               <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: '#C0392B', background: '#FBDADA', padding: '2px 9px', borderRadius: 20 }}>Da rifare</span>
             )}
           </div>
-          {rifiutato && doc.nota_admin ? (
-            <div style={{ fontSize: 12, color: '#B03A2E', marginTop: 2, lineHeight: 1.4 }}>{doc.nota_admin}</div>
-          ) : doc.descrizione ? (
-            <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2, lineHeight: 1.4 }}>{doc.descrizione}</div>
-          ) : null}
+          {subtitle ? <div style={{ fontSize: 12, color: subColor, marginTop: 2, lineHeight: 1.4 }}>{subtitle}</div> : null}
         </div>
 
         {props.caricamento ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#2563eb', fontSize: 12, fontWeight: 500, flexShrink: 0 }}>
-            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : props.eliminabile ? (
+          <div style={{ flexShrink: 0 }}><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
+        ) : (!modoSlot && props.eliminabile) ? (
           <div style={{ display: 'flex', gap: 10, flexShrink: 0, alignItems: 'flex-start' }}>
-            <BollinoAzione etichetta="Scatta" bg={bgTile} colore={colTile} onClick={() => inputCamera.current?.click()}>
+            <BollinoAzione etichetta="Scatta" bg={bgTile} colore={colTile} onClick={() => inputCamLibero.current?.click()}>
               <IcoCamera size={18} color={colTile} />
             </BollinoAzione>
-            <BollinoAzione etichetta="File" bg={bgTile} colore={colTile} onClick={() => inputFile.current?.click()}>
+            <BollinoAzione etichetta="File" bg={bgTile} colore={colTile} onClick={() => inputFilLibero.current?.click()}>
               <IcoFile size={18} color={colTile} />
             </BollinoAzione>
           </div>
         ) : null}
       </div>
 
-      {/* Miniature file caricati (in bozza, non ancora inviati) */}
-      {files.length > 0 && (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-            {files.map((f, idx) => {
-              const url = props.signedMap[f.url] || f.url
-              return (
-                <div key={idx} style={{ position: 'relative', width: 56, height: 56 }}>
-                  <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 56, height: 56, borderRadius: 10, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', display: 'block' }}>
-                    {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
-                      <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-                    ) : (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    )}
-                  </button>
-                  {props.eliminabile && (
-                    <button onClick={() => props.onElimina(idx)} aria-label="Elimina file" style={{ position: 'absolute', top: -6, right: -6, width: 19, height: 19, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: `2px solid ${bgCard}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-                  )}
-                </div>
-              )
-            })}
-            <span style={{ fontSize: 11.5, color: '#6B7280' }}>
-              {files.length === 1
-                ? (richiedeRetro(doc) ? '1 file · manca il retro?' : '1 file caricato')
-                : `${files.length} file caricati`}
-            </span>
-          </div>
+      {/* CASELLE FRONTE / RETRO */}
+      {modoSlot && (
+        <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
+          {renderSlot('fronte', fronteFile, inputCamFronte, inputFilFronte)}
+          {renderSlot('retro', retroFile, inputCamRetro, inputFilRetro)}
+        </div>
+      )}
 
-          {/* Bottone di invio manuale in verifica */}
-          {props.eliminabile && (
-            <>
-              <button
-                onClick={props.onInvia}
-                disabled={props.invio}
-                style={{ width: '100%', marginTop: 12, padding: '11px 0', border: 'none', borderRadius: 11, background: props.invio ? '#86c9a3' : '#16A34A', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: props.invio ? 'default' : 'pointer' }}
-              >
-                {props.invio ? (
-                  <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Invio...</>
-                ) : (
-                  <><IcoSend size={15} color="#fff" />Ho finito, invia in verifica</>
-                )}
-              </button>
-              <p style={{ margin: '7px 0 0', textAlign: 'center', fontSize: 10.5, color: '#9AA7B5' }}>Aggiungi tutte le foto necessarie, poi invia</p>
-            </>
+      {/* MINIATURE (caricamento libero / file unico) */}
+      {!modoSlot && files.length > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+          {files.map((f, idx) => renderMini(f, idx))}
+          <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 file caricato' : `${files.length} file caricati`}</span>
+        </div>
+      )}
+
+      {/* LINK cambia modalità: solo documenti fronte/retro e solo finché non c'è nulla di caricato */}
+      {frDoc && props.eliminabile && files.length === 0 && (
+        <div style={{ textAlign: 'center', marginTop: 11, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
+          {modoSlot ? (
+            <button onClick={() => setToggleUnico(true)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#2563eb', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Ho un unico file con fronte e retro</button>
+          ) : (
+            <button onClick={() => setToggleUnico(false)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#8a98a8', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Torna a fronte e retro separati</button>
           )}
+        </div>
+      )}
+
+      {/* INVIO */}
+      {props.eliminabile && files.length > 0 && (
+        <>
+          <button
+            onClick={props.onInvia}
+            disabled={props.invio || !puoInviare}
+            style={{ width: '100%', marginTop: 12, padding: '11px 0', border: 'none', borderRadius: 11, background: (props.invio || !puoInviare) ? '#B8D9C6' : '#16A34A', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: (props.invio || !puoInviare) ? 'default' : 'pointer' }}
+          >
+            {props.invio ? (
+              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Invio...</>
+            ) : (
+              <><IcoSend size={15} color="#fff" />Ho finito, invia in verifica</>
+            )}
+          </button>
+          <p style={{ margin: '7px 0 0', textAlign: 'center', fontSize: 10.5, color: '#9AA7B5' }}>
+            {modoSlot && !puoInviare
+              ? (!fronteFile ? 'Carica il fronte per inviare' : 'Carica il retro per inviare')
+              : 'Aggiungi tutte le foto necessarie, poi invia'}
+          </p>
         </>
       )}
     </div>
@@ -1057,12 +1193,24 @@ function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
           <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => inputCamera.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '1.5px dashed #C9D3DF', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 600 }}>
-            <IcoCamera size={15} color="#2563eb" />Scatta foto
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => inputCamera.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, padding: '14px 8px', border: 'none', borderRadius: 14, background: '#2563eb', textAlign: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
+            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 7 }}>
+              <span style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <IcoCamera size={19} color="#fff" />
+              </span>
+            </span>
+            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#fff' }}>Scatta foto</span>
+            <span style={{ display: 'block', fontSize: 10.5, color: '#BFDBFE', marginTop: 1 }}>Apri la fotocamera</span>
           </button>
-          <button onClick={() => inputFile.current?.click()} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', border: '1.5px dashed #C9D3DF', borderRadius: 12, background: '#fbfcfe', color: '#2563eb', fontSize: 12.5, fontWeight: 600 }}>
-            <IcoFile size={15} color="#2563eb" />Scegli file
+          <button onClick={() => inputFile.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, padding: '14px 8px', border: '1.5px solid #BFDBFE', borderRadius: 14, background: '#EFF6FF', textAlign: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}>
+            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 7 }}>
+              <span style={{ width: 38, height: 38, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              </span>
+            </span>
+            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1E4E8C' }}>Dalla galleria</span>
+            <span style={{ display: 'block', fontSize: 10.5, color: '#6B93C9', marginTop: 1 }}>Scegli file esistenti</span>
           </button>
         </div>
       )}

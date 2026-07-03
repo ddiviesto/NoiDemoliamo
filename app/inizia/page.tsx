@@ -10,6 +10,7 @@ import { StepCondizioniVeicolo } from './steps/StepCondizioniVeicolo'
 import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import AiutoWhatsApp from '../components/AiutoWhatsApp'
 
 // ============================================================
 // ICONE SVG GENERALI
@@ -1741,6 +1742,15 @@ export default function IniziaPage() {
                 errorBorder={erroreLibretto}
               />
             </div>
+            {dati.libretto === 'no' && (
+              <div className="mt-3 flex flex-col gap-2">
+                <InfoBadge>Nessun problema: <strong>ti chiamiamo noi</strong> per capire la situazione e dirti esattamente come fare. Intanto puoi completare la richiesta e caricare gli altri documenti.</InfoBadge>
+                <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.99]" style={{ background: '#16A34A' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.58 15.13L2 22l4.97-1.38A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.19-1.19l-.3-.18-2.95.82.8-2.87-.2-.31A8 8 0 1 1 12 20zm4.42-5.9c-.24-.12-1.43-.7-1.65-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.19 7.24 7.24 0 0 1-1.33-1.66c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.64 1.64 0 0 0 .24-.4.44.44 0 0 0-.02-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.88.88 0 0 0-.64.3 2.68 2.68 0 0 0-.84 2 4.65 4.65 0 0 0 .98 2.47 10.66 10.66 0 0 0 4.08 3.6 13.68 13.68 0 0 0 1.36.5 3.27 3.27 0 0 0 1.5.1 2.46 2.46 0 0 0 1.61-1.14 2 2 0 0 0 .14-1.14c-.06-.1-.22-.16-.46-.28z"/></svg>
+                  Preferisci scriverci? Chatta su WhatsApp
+                </a>
+              </div>
+            )}
             <button onClick={handleContinuaLibretto} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
@@ -1788,6 +1798,15 @@ export default function IniziaPage() {
                 errorBorder={erroreCdc}
               />
             </div>
+            {dati.cdc === 'nessuno' && (
+              <div className="mt-3 flex flex-col gap-2">
+                <InfoBadge>Lo verifichiamo noi gratuitamente e <strong>ti chiamiamo</strong> per dirti come procedere. Intanto puoi completare la richiesta e caricare gli altri documenti.</InfoBadge>
+                <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.99]" style={{ background: '#16A34A' }}>
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.58 15.13L2 22l4.97-1.38A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.19-1.19l-.3-.18-2.95.82.8-2.87-.2-.31A8 8 0 1 1 12 20zm4.42-5.9c-.24-.12-1.43-.7-1.65-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.19 7.24 7.24 0 0 1-1.33-1.66c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.64 1.64 0 0 0 .24-.4.44.44 0 0 0-.02-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.88.88 0 0 0-.64.3 2.68 2.68 0 0 0-.84 2 4.65 4.65 0 0 0 .98 2.47 10.66 10.66 0 0 0 4.08 3.6 13.68 13.68 0 0 0 1.36.5 3.27 3.27 0 0 0 1.5.1 2.46 2.46 0 0 0 1.61-1.14 2 2 0 0 0 .14-1.14c-.06-.1-.22-.16-.46-.28z"/></svg>
+                  Preferisci scriverci? Chatta su WhatsApp
+                </a>
+              </div>
+            )}
             <button onClick={handleContinuaCdc} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
           </>
         )}
@@ -1910,6 +1929,8 @@ export default function IniziaPage() {
         )}
 
       </div>
+
+      <AiutoWhatsApp />
     </main>
   )
 }

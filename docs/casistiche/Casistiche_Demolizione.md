@@ -50,7 +50,7 @@ Se **Proprietario mezzo** delega un'altra persona alla consegna del mezzo al Dem
 
 **Documenti che deve caricare in NoiDemoliamo Area personale dopo la compilazione del modulo (può fare foto direttamente dal telefono o caricamento file):**
 
-* **Atto di Morte proprietario deceduto** (fronte e retro)
+* **Atto di Morte proprietario deceduto**
 * Libretto Circolazione (fronte e retro)
 * Denuncia di smarrimento Libretto di Circolazione (se smarrito)
 * Certificato di Proprietà Cartaceo (fronte e retro) (Se è Digitale non deve caricarlo e non serve)

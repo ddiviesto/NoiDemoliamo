@@ -4,6 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import AiutoWhatsApp from '../components/AiutoWhatsApp'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -141,6 +142,8 @@ export default function Login() {
 
         </div>
       </div>
+
+      <AiutoWhatsApp />
     </main>
   )
 }

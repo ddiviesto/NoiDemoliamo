@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import AiutoWhatsApp from '../components/AiutoWhatsApp'
 
 interface Pratica {
   id: string
@@ -249,6 +250,8 @@ export default function DashboardCliente() {
 
         </div>
       </div>
+
+      <AiutoWhatsApp />
     </main>
   )
 }

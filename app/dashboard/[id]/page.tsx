@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import TabDocumenti from './TabDocumenti'
 import TabStato from './TabStato'
 import TabChat from './TabChat'
+import AiutoWhatsApp from '../../components/AiutoWhatsApp'
 
 export interface Pratica {
   id: string
@@ -318,6 +319,8 @@ export default function DettaglioPraticaCliente() {
 
         </div>
       </div>
+
+      <AiutoWhatsApp />
     </main>
   )
 }
