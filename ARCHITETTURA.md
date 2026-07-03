@@ -181,7 +181,7 @@ imbarcazione, pullman, camion, velivolo, altro
 
 ## 3.3 LE 8 CASISTICHE DI DEMOLIZIONE (cuore del sistema)
 
-Documento sorgente di Davide: `Casistiche_Demolizione.md`. Ogni pratica viene classificata automaticamente dal flusso `/inizia` (funzione `derivaCasistica` in `types/pratica.ts`) e salvata in `pratiche.casistica`:
+⭐ **FONTE UFFICIALE**: `docs/casistiche/Casistiche_Demolizione.md` (nel repo, collegato da `CLAUDE.md` → da leggere sempre). È la copia di lavoro autorevole del documento di Davide: elenca per ogni casistica i documenti da caricare, da consegnare al ritiro, i moduli PDF e le 2 integrazioni (fermo, targhe smarrite). Ogni pratica viene classificata automaticamente dal flusso `/inizia` (funzione `derivaCasistica` in `types/pratica.ts`) e salvata in `pratiche.casistica`:
 
 | # | Codice | Descrizione | Particolarità |
 |---|---|---|---|
@@ -223,7 +223,7 @@ ordine             int
 RLS: lettura pubblica (è il "menu", niente dati personali), gestione solo admin.
 ✅ **POPOLATO: 89 documenti su tutte le 8 casistiche** (verificati con Davide).
 
-⭐ **Convenzione descrizione**: se un documento richiede foto fronte E retro, la sua `descrizione` DEVE contenere la parola "retro" (es. "Foto fronte e retro."). La UI usa questa parola per mostrare il suggerimento "manca il retro?" dopo il primo file. Per aggiungere un nuovo documento fronte/retro basta scriverlo nella descrizione: nessun deploy.
+⭐ **Documenti FRONTE/RETRO (rifatto luglio 2026)**: i documenti a due lati hanno **due caselle separate "Fronte" e "Retro"** nella pagina cliente (+ link "Ho un unico file con fronte e retro" per chi ha uno scan/PDF unico). L'invio in verifica è bloccato finché mancano entrambi i lati. Il riconoscimento NON dipende più dalla parola "retro" nella descrizione (metodo fragile, abbandonato): ora c'è una **lista ufficiale di codici** in `TabDocumenti.tsx` (`CODICI_FRONTE_RETRO` + prefissi `CARTA_IDENTITA_*` / `TESSERA_SANITARIA_*`), presa dal file casistiche. Documenti fronte/retro: libretto, libretto estero, certificato di proprietà cartaceo, carta d'identità/patente, codice fiscale/tessera sanitaria. **L'atto di morte NON è fronte/retro.** Tutti gli altri documenti (denunce, visure, autorizzazioni…) restano a **caricamento libero** (1 o più pagine). Il `lato` ('fronte'/'retro') è salvato nel JSON di `file_url`.
 
 ### `pratica_documenti_checklist` (LO STATO — una riga per documento per cliente)
 ```
@@ -309,6 +309,9 @@ Chiave-valore. Es: `max_pratiche_aperte_demolitore=15`
 ---
 
 # 🔄 PARTE 4 — I 4 FLUSSI DELLA PRATICA
+
+### ⭐ Regola "TI CHIAMIAMO NOI" (documenti da chiarire — luglio 2026)
+Se il cliente nel flusso `/inizia` dichiara di **non avere né libretto né denuncia** ("Non ho nessuno dei due", `libretto='no'`) oppure **non sa che certificato di proprietà ha** ("Non lo trovo o non so cosa sia", `certificato_proprieta='nessuno'`), NON si procede in automatico: **prima NoiDemoliamo lo contatta** (telefono/WhatsApp) per capire la situazione. In `/inizia` compare un box rassicurante + bottone WhatsApp; nella pagina documenti il libretto viene tolto dalla lista da caricare e sostituito dal box "**Da chiarire insieme — Ti chiamiamo noi al più presto**" (giallo/ambra) con WhatsApp. Il cliente intanto può caricare gli altri documenti. ⏳ Da integrare nella pagina admin: evidenziare queste pratiche come "Da contattare".
 
 ## 4.1 Flusso A — Demolizione standard ✅ FUNZIONANTE
 
@@ -555,8 +558,8 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 
 ## 5.3 Pagine FATTE ✅
 
-- **Home `/`**: logo, CTA, pills benefit
-- **Login `/login`**: email + password, redirect per ruolo (demolitore/commerciante DA AGGIUNGERE)
+- **Home `/`**: ✅ stile app (lavanda, logo, spunte SVG, bottoni app, riga rassicurazione, WhatsApp)
+- **Login `/login`**: ✅ stile app (header blu, campi con icona, mostra/nascondi password); NO "Registrati" (ruoli diversi); redirect admin/cliente (demolitore/commerciante DA AGGIUNGERE)
 - **Flusso `/inizia`**: COMPLETO E COLLAUDATO ⭐⭐⭐ (+ errori in italiano)
 - **`/dashboard`**: ✅ RISTILIZZATA (07/2026) — sfondo lavanda, card bianca, header blu con saluto + Esci, card pratiche stile /inizia con icona veicolo per tipo, badge stato a pillola chiara, empty state con SVG
 - **`/dashboard/[id]`**: ✅ RISTILIZZATA (07/2026) — header blu con "← Pratiche" + "Marca Modello · Targa" + badge stato, banner dinamico per stato con icone SVG, tab a pillole (attiva blu piena). Tab Documenti = sistema checklist completo (vedi 5.6), Tab Stato = timeline + condizioni a pillole, Tab Chat invariata
@@ -724,6 +727,17 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ## 8.1 ✅ FATTO
 
+### ⭐⭐⭐ SESSIONE 3 luglio 2026 (pomeriggio) — Fronte/retro, assistenza WhatsApp, home/login, casistiche in repo
+
+- ✅ **File casistiche nel repo**: `docs/casistiche/Casistiche_Demolizione.md` (fonte ufficiale 8 casistiche) + collegato a `CLAUDE.md`. Verificata la coerenza catalogo DB ↔ codice ↔ file. Correzioni: fermo applicabile ai casi 1-7 (non solo 1-6); atto di morte NON fronte/retro.
+- ✅ **Verifica completa modulo→trigger→pagina cliente** su tutte le combinazioni: la catena genera i documenti giusti. Bug trovati e loro stato in 8.2.
+- ✅ **Documenti FRONTE/RETRO a due caselle** + opzione "file unico" (vedi 3.4). Riconoscimento per lista di codici, non più per parola "retro".
+- ✅ **Regola "Ti chiamiamo noi"** per libretto mancante / CDC sconosciuto (vedi 4.0 sopra 4.1): box in `/inizia` + box "Da chiarire insieme" nella pagina documenti.
+- ✅ **Assistenza WhatsApp ovunque**: componente `app/components/AiutoWhatsApp.tsx` (cerchio verde fisso in basso a destra, etichetta "Serve aiuto?" che sparisce dopo 6s) su home, login, `/inizia`, dashboard, pagina pratica. Numero **+39 351 828 0493**.
+- ✅ **Home ristilizzata** in stile app (lavanda, logo, spunte SVG, bottoni app) — niente più emoji.
+- ✅ **Login ristilizzato** (header blu, campi con icona, mostra/nascondi password, tolto "Registrati" perché i ruoli si registrano in modi diversi).
+- ✅ Ritocchi minori: bottoni foto veicolo più moderni ("Scatta foto" / "Dalla galleria"), tolto "+ Nuova" dalla dashboard cliente (il cliente ha sempre una pratica).
+
 ### ⭐⭐⭐ SISTEMA DOCUMENTI DINAMICI COMPLETO LATO CLIENTE (fine giugno - 3 luglio 2026)
 
 - ✅ **Catalogo popolato**: 89 documenti su tutte le 8 casistiche, verificati con Davide
@@ -766,6 +780,11 @@ Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
 - Gestire il passaggio di stato pratica: tutti approvati → `da_assegnare`; qualche rifiuto → `documenti_parzialmente_approvati`
 - Mostrare anche foto veicolo e nuovi campi casistica (fermo, delegato, eredi, targhe presenti)
 - Coerente con il pattern grafico di TabDocumenti (vedi 5.6) per riconoscibilità
+
+### 🔥🔥 STEP 1-bis — FIX EMERSI DALLA VERIFICA CASISTICHE (3/07/2026)
+- **Caso 7 (non intestatario)**: nel flusso `/inizia`, libretto e CDC sono OBBLIGATORI ("se non ha non può procedere" da file casistiche). Oggi il modulo lascia comunque scegliere "smarrito/non ce l'ho" e crea la pratica. → aggiungere avviso di stop.
+- **Denunce di smarrimento Carta d'Identità / Codice Fiscale**: previste dal file casistiche per ogni persona, ma NON presenti nel catalogo DB e senza domanda nel flusso. → decidere se aggiungerle.
+- **Pagina admin**: gestire i casi "Da chiarire insieme" (evidenziare pratiche da contattare) e i casi "non so" su fermo/CDC.
 
 ### 🔥🔥 STEP 2 — TEMPLATE PDF MODULI
 - Davide fornisce i template (DELEGA_*, DICHIARAZIONI_*) → attivare download precompilato (tracciando `scaricato_il`) al posto dell'avviso "a breve"
@@ -823,7 +842,11 @@ Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
 58. **Il cliente può correggersi da solo**: foto veicolo e file documenti eliminabili (con conferma) finché la pratica è negli stati modificabili — meno chat di supporto per "ho caricato la foto sbagliata".
 59. **Un solo linguaggio visivo per tutta l'area cliente**: lo stile /inizia (lavanda, card bianca, header blu, campi con quadratino icona) è LO standard. Ogni nuova pagina cliente deve rispettarlo; l'admin verrà uniformato più avanti.
 60. **Il progetto vive fuori dal cloud sync**: mai dentro OneDrive/Dropbox (incompatibili con git).
-61. **Claude Code come ambiente di lavoro**: accesso diretto ai file con conferma obbligatoria di Davide su ogni modifica; ARCHITETTURA.md è la memoria tra le sessioni e va aggiornata a fine sessione.
+61. **Claude Code come ambiente di lavoro**: accesso diretto ai file con conferma obbligatoria di Davide su ogni modifica; ARCHITETTURA.md è la memoria tra le sessioni e va aggiornata a fine sessione (solo cose stabili/fondamentali: flussi, regole, come vuole il sito — non trivia estetica).
+62. ⭐ **Documenti fronte/retro = due caselle separate** (non una sola con foto ammucchiate): il cliente carica Fronte e Retro in slot distinti; l'invio è bloccato finché mancano. Chi ha uno scan/PDF unico usa il link "Ho un unico file". Quali documenti sono fronte/retro è deciso dal **file casistiche** (lista di codici nel codice, non dalla descrizione).
+63. ⭐ **"Prima ti chiamiamo noi"**: quando il cliente non ha libretto/denuncia o non sa che CDC ha, NON si automatizza nulla — NoiDemoliamo lo contatta (telefono/WhatsApp) per capire il caso. Meglio una chiamata che un cliente bloccato o una pratica sbagliata.
+64. ⭐ **Assistenza WhatsApp sempre a un tocco**: pulsante fisso (+39 351 828 0493) su tutte le pagine cliente. Ridurre l'abbandono di chi si blocca.
+65. **La home fa parte dell'area cliente**: stesso linguaggio visivo /inizia (lavanda, logo, spunte SVG, bottoni app). Niente emoji nell'interfaccia.
 
 ---
 
@@ -847,6 +870,7 @@ Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
 
 - **Founder**: Davide Di Viesto
 - **Email admin**: ddiviesto@gmail.com
+- **WhatsApp assistenza clienti**: +39 351 828 0493 (pulsante fisso su tutte le pagine cliente)
 - **GitHub**: ddiviesto/NoiDemoliamo
 - **URL live**: https://noi-demoliamo.vercel.app
 - **Supabase URL**: https://egsufeczoroxqnagzqfq.supabase.co
