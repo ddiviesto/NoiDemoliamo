@@ -308,6 +308,31 @@ function isFemminile(tipo: TipoMezzo | null): boolean {
 }
 
 // ============================================================
+// TRADUZIONE ERRORI IN ITALIANO
+// ============================================================
+
+function traduciErrore(e: unknown): string {
+  const msg = e instanceof Error ? e.message : ''
+  const m = msg.toLowerCase()
+  if (m.includes('failed to fetch') || m.includes('network') || m.includes('load failed') || m.includes('fetch')) {
+    return 'Errore di connessione. Controlla la tua rete e riprova.'
+  }
+  if (m.includes('already registered') || m.includes('already been registered') || m.includes('user already exists')) {
+    return "Questa email è già registrata. Prova ad accedere dalla pagina di login, oppure usa un'altra email."
+  }
+  if (m.includes('password') && (m.includes('6') || m.includes('at least') || m.includes('short'))) {
+    return 'La password è troppo corta: deve avere almeno 6 caratteri.'
+  }
+  if (m.includes('invalid email') || m.includes('validate email') || m.includes('invalid format')) {
+    return "L'email inserita non sembra valida. Controllala e riprova."
+  }
+  if (m.includes('rate limit') || m.includes('too many')) {
+    return 'Troppi tentativi ravvicinati. Attendi qualche minuto e riprova.'
+  }
+  return 'Si è verificato un errore. Riprova tra qualche istante.'
+}
+
+// ============================================================
 // META STEP
 // ============================================================
 
@@ -920,7 +945,8 @@ export default function IniziaPage() {
 
       router.push('/dashboard')
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Errore imprevisto. Riprova.')
+      console.error('Errore invio pratica:', e)
+      setError(traduciErrore(e))
     } finally {
       setLoading(false)
       setLoadingMessage('')
@@ -1360,8 +1386,8 @@ export default function IniziaPage() {
               )}
 
               {foto.length > 0 && foto.length < 4 && (
-                <button onClick={next} className="w-full py-3 mt-2 rounded-xl font-medium text-sm bg-white text-gray-500 border-[1.5px] border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
-                  Continua comunque con {foto.length} {foto.length === 1 ? 'foto' : 'foto'}
+                <button onClick={next} className="w-full py-3.5 mt-2 rounded-xl font-semibold text-sm bg-white text-blue-700 border-[1.5px] border-blue-300 hover:border-blue-400 hover:bg-blue-50 active:scale-[0.99] transition-all">
+                  Continua comunque con {foto.length} {foto.length === 1 ? 'foto' : 'foto'} →
                 </button>
               )}
 

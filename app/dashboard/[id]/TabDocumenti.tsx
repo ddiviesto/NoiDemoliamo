@@ -201,6 +201,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   const [caricandoId, setCaricandoId] = useState<string | null>(null)
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
   const [confermaElimina, setConfermaElimina] = useState<{ doc: DocChecklist; fileIdx: number } | null>(null)
+  const [confermaEliminaFoto, setConfermaEliminaFoto] = useState<FotoPratica | null>(null)
   const [eliminazioneInCorso, setEliminazioneInCorso] = useState(false)
   const [sistematiAperti, setSistematiAperti] = useState(false)
   const [erediAperti, setErediAperti] = useState<Record<number, boolean>>({})
@@ -368,6 +369,23 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     }
     setEliminazioneInCorso(false)
     setConfermaElimina(null)
+  }
+
+  async function eliminaFotoConfermato() {
+    if (!confermaEliminaFoto) return
+    setEliminazioneInCorso(true)
+    try {
+      const f = confermaEliminaFoto
+      const path = estraiPathBucket(f.url, 'foto-pratiche')
+      if (path) await supabase.storage.from('foto-pratiche').remove([path])
+      await supabase.from('foto_pratiche').delete().eq('id', f.id)
+      await carica()
+    } catch (err) {
+      console.error('Errore eliminazione foto:', err)
+      alert('Errore nell\'eliminazione. Riprova.')
+    }
+    setEliminazioneInCorso(false)
+    setConfermaEliminaFoto(null)
   }
 
   async function uploadFotoExtra(files: File[]) {
@@ -545,14 +563,19 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         {foto.length > 0 && (
           <div className="grid grid-cols-3 gap-2 mb-3">
             {foto.map((f, idx) => (
-              <button key={f.id} onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })} style={{ width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', border: '0.5px solid #e8edf3', background: '#f3f5f8' }}>
-                {isPdfUrl(f.url) ? (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-                ) : (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div key={f.id} style={{ position: 'relative', width: '100%', aspectRatio: '1' }}>
+                <button onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', border: '0.5px solid #e8edf3', background: '#f3f5f8', display: 'block' }}>
+                  {isPdfUrl(f.url) ? (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+                  ) : (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                </button>
+                {puoEliminare && (
+                  <button onClick={() => setConfermaEliminaFoto(f)} aria-label="Elimina foto" style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 13, fontWeight: 700, lineHeight: 1, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>×</button>
                 )}
-              </button>
+              </div>
             ))}
           </div>
         )}
@@ -582,7 +605,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
-      {/* ====== MODALE CONFERMA ELIMINAZIONE ====== */}
+      {/* ====== MODALE CONFERMA ELIMINAZIONE DOCUMENTO ====== */}
       {confermaElimina && (
         <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => !eliminazioneInCorso && setConfermaElimina(null)}>
           <div className="bg-white rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4" onClick={e => e.stopPropagation()}>
@@ -600,6 +623,31 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
             <div className="grid grid-cols-2 gap-2">
               <button onClick={() => setConfermaElimina(null)} disabled={eliminazioneInCorso} className="bg-white border-2 border-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-xs disabled:opacity-50">Annulla</button>
               <button onClick={eliminaFileConfermato} disabled={eliminazioneInCorso} className="bg-red-600 text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
+                {eliminazioneInCorso ? <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino...</> : 'Sì, elimina'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====== MODALE CONFERMA ELIMINAZIONE FOTO ====== */}
+      {confermaEliminaFoto && (
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => !eliminazioneInCorso && setConfermaEliminaFoto(null)}>
+          <div className="bg-white rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-gray-900 text-sm">Eliminare questa foto?</p>
+                <p className="text-xs text-gray-500 mt-0.5">L&apos;azione non può essere annullata.</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button onClick={() => setConfermaEliminaFoto(null)} disabled={eliminazioneInCorso} className="bg-white border-2 border-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-xs disabled:opacity-50">Annulla</button>
+              <button onClick={eliminaFotoConfermato} disabled={eliminazioneInCorso} className="bg-red-600 text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
                 {eliminazioneInCorso ? <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino...</> : 'Sì, elimina'}
               </button>
             </div>

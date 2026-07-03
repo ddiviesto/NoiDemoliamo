@@ -113,17 +113,48 @@ function indiceStepAttuale(stato: string): number {
 }
 
 // ============================================================
+// PILLOLA CONDIZIONE VEICOLO
+// ============================================================
+
+type TonoPillola = 'verde' | 'rosso' | 'neutro'
+
+function PillolaCondizione({ label, tono }: { label: string; tono: TonoPillola }) {
+  const stili: Record<TonoPillola, { bg: string; color: string }> = {
+    verde: { bg: '#EAF3DE', color: '#27500A' },
+    rosso: { bg: '#FCEBEB', color: '#791F1F' },
+    neutro: { bg: '#EEF1F5', color: '#4B5B6B' },
+  }
+  const s = stili[tono]
+  return (
+    <span style={{ fontSize: 12, fontWeight: 500, padding: '4px 11px', borderRadius: 999, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+      {label}
+    </span>
+  )
+}
+
+// Costruisce le pillole solo per i valori effettivamente noti (non null)
+function pilloleCondizioni(p: Pratica): { label: string; tono: TonoPillola }[] {
+  const out: { label: string; tono: TonoPillola }[] = []
+  if (p.incidentato !== null) out.push({ label: p.incidentato ? 'Incidentata' : 'Non incidentata', tono: p.incidentato ? 'rosso' : 'verde' })
+  if (p.marciante !== null) out.push({ label: p.marciante ? 'Marciante' : 'Non marciante', tono: p.marciante ? 'verde' : 'rosso' })
+  if (p.va_in_moto !== null) out.push({ label: p.va_in_moto ? 'Va in moto' : 'Non va in moto', tono: p.va_in_moto ? 'verde' : 'rosso' })
+  if (p.parti_mancanti !== null) out.push({ label: p.parti_mancanti ? 'Parti mancanti' : 'Nessuna parte mancante', tono: p.parti_mancanti ? 'rosso' : 'verde' })
+  return out
+}
+
+// ============================================================
 
 export default function TabStato({ pratica }: Props) {
   const [datiAperti, setDatiAperti] = useState(false)
   const stepIdx = indiceStepAttuale(pratica.stato)
   const isAnnullata = pratica.stato === 'annullata'
+  const pillole = pilloleCondizioni(pratica)
 
   return (
     <div className="flex flex-col gap-3">
 
       {/* TIMELINE */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5">
+      <div className="bg-white border border-gray-200 rounded-2xl p-5" style={{ boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
         <div className="flex items-center gap-2 mb-1">
           <IconaPin />
           <p className="text-sm font-bold text-gray-900">Il percorso della tua pratica</p>
@@ -198,7 +229,7 @@ export default function TabStato({ pratica }: Props) {
       </div>
 
       {/* DATI VEICOLO COLLAPSABILI */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
         <button
           onClick={() => setDatiAperti(!datiAperti)}
           className="w-full px-4 py-3.5 flex items-center justify-between"
@@ -216,19 +247,33 @@ export default function TabStato({ pratica }: Props) {
             <DataRiga label="Tipo" valore={pratica.tipo_mezzo} capitalize />
             <DataRiga label="Marca / modello" valore={[pratica.marca, pratica.modello].filter(Boolean).join(' ')} />
             <DataRiga label="Anno · km" valore={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
-            <DataRiga label="Marciante" valore={pratica.marciante ? 'Sì' : 'No'} />
-            <DataRiga label="Incidentato" valore={pratica.incidentato ? 'Sì' : 'No'} />
-            <DataRiga
-              label="Indirizzo ritiro"
-              valore={
-                [pratica.indirizzo_ritiro, pratica.comune_ritiro && `${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`]
-                  .filter(Boolean)
-                  .join(' · ')
-              }
-            />
+
+            {/* CONDIZIONI: pillole colorate con tutte le scelte del cliente */}
+            {pillole.length > 0 && (
+              <div className="mt-1">
+                <div className="text-[11px] text-gray-500 uppercase tracking-wide mb-2">Condizioni dichiarate</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {pillole.map((p, i) => (
+                    <PillolaCondizione key={i} label={p.label} tono={p.tono} />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mt-1">
+              <DataRiga
+                label="Indirizzo ritiro"
+                valore={
+                  [pratica.indirizzo_ritiro, pratica.comune_ritiro && `${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`]
+                    .filter(Boolean)
+                    .join(' · ')
+                }
+              />
+            </div>
+
             {pratica.note_veicolo && (
               <div className="mt-1 bg-gray-50 rounded-xl p-3">
-                <div className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Note</div>
+                <div className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Note del cliente</div>
                 <div className="text-xs text-gray-700 italic">{pratica.note_veicolo}</div>
               </div>
             )}
