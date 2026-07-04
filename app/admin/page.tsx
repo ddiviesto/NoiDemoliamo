@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import AdminSidebar from './_components/AdminSidebar'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -145,11 +146,6 @@ export default function AdminDashboard() {
     carica()
   }, [router])
 
-  async function handleLogout() {
-    await supabase.auth.signOut()
-    router.push('/')
-  }
-
   async function eliminaPratica() {
     if (!confermaElimina) return
     setEliminando(true)
@@ -246,27 +242,12 @@ export default function AdminDashboard() {
   return (
     <main className="min-h-screen flex" style={{ background: '#F4F5FB' }}>
 
-      {/* SIDEBAR */}
-      <aside className="flex flex-col flex-shrink-0 bg-white border-r border-gray-200" style={{ width: 210 }}>
-        <div className="px-4 py-4 flex items-center gap-2.5 border-b border-gray-100">
-          <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold" style={{ background: 'linear-gradient(135deg, #1d4ed8, #2563eb)' }}>N</div>
-          <div>
-            <div className="text-sm font-bold text-gray-900 leading-none">NoiDemoliamo</div>
-            <div className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 mt-1">Admin</div>
-          </div>
-        </div>
-        <nav className="flex flex-col gap-1 p-2.5 flex-1">
-          <NavItem attivo label="Pratiche" onClick={() => {}} icon={<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" />} />
-          <NavItem label="Demolitori" onClick={() => router.push('/admin/demolitori')} icon={<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>} />
-          <NavItem label="Copertura" onClick={() => router.push('/admin/copertura')} icon={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></>} />
-        </nav>
+      {/* SIDEBAR (condivisa) */}
+      <AdminSidebar attivo="pratiche" extra={
         <button onClick={apriPulizia} className="mx-2.5 px-3 py-2 text-[11px] font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-left transition-colors">
           Pulisci account senza pratiche
         </button>
-        <button onClick={handleLogout} className="m-2.5 px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg text-left transition-colors">
-          Esci
-        </button>
-      </aside>
+      } />
 
       {/* MAIN */}
       <div className="flex-1 min-w-0 flex flex-col">
@@ -434,15 +415,6 @@ export default function AdminDashboard() {
 // ============================================================
 // SOTTOCOMPONENTI
 // ============================================================
-
-function NavItem({ label, icon, attivo = false, onClick }: { label: string; icon: React.ReactNode; attivo?: boolean; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${attivo ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
-      {label}
-    </button>
-  )
-}
 
 function CardBucket({ valore, label, bordo, colore, alert = false, attivo = false, onClick }: { valore: number; label: string; bordo: string; colore: string; alert?: boolean; attivo?: boolean; onClick: () => void }) {
   return (

@@ -3,6 +3,7 @@
 /// <reference types="@types/google.maps" />
 
 import { useEffect, useRef, useState } from 'react'
+import { loadGoogleMaps } from '@/lib/googleMaps'
 
 // Tipologia dei record salvati nel database per la copertura del demolitore.
 // Distingue tra unità intere selezionate e singoli comuni/province inclusi/esclusi.
@@ -45,34 +46,6 @@ const COLOR_EXCLUDED_FILL = '#ef4444'
 const COLOR_EXCLUDED_STROKE = '#dc2626'
 const COLOR_HOVER_FILL = '#93c5fd'
 const COLOR_BORDER = '#94a3b8'
-
-// Singleton: previene doppio caricamento dello script Google Maps in dev (StrictMode).
-let googleMapsScriptPromise: Promise<void> | null = null
-
-function loadGoogleMaps(apiKey: string): Promise<void> {
-  if (googleMapsScriptPromise) return googleMapsScriptPromise
-  if (typeof window !== 'undefined' && window.google?.maps) {
-    googleMapsScriptPromise = Promise.resolve()
-    return googleMapsScriptPromise
-  }
-  googleMapsScriptPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>('script[data-gmaps-loader="1"]')
-    if (existing) {
-      existing.addEventListener('load', () => resolve())
-      existing.addEventListener('error', () => reject(new Error('Google Maps script failed')))
-      return
-    }
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&language=it&region=IT`
-    script.async = true
-    script.defer = true
-    script.dataset.gmapsLoader = '1'
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Google Maps script failed'))
-    document.head.appendChild(script)
-  })
-  return googleMapsScriptPromise
-}
 
 // Mappa provincia → slug regione (per scaricare i file dei comuni dal Supabase Storage)
 const PROVINCE_REGIONI: Record<string, string> = {
@@ -563,7 +536,7 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
 
     let cancelled = false
 
-    loadGoogleMaps(apiKey).then(() => {
+    loadGoogleMaps().then(() => {
       if (cancelled) return
       initMappa()
     }).catch(err => console.error('Errore caricamento Google Maps:', err))
@@ -946,23 +919,6 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
           )}
         </div>
 
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-          <p className="text-xs text-blue-700 font-semibold mb-2">Come usare la mappa</p>
-          <p className="text-[11px] text-blue-600 leading-relaxed mb-2">
-            <strong>3 livelli di zoom</strong> mostrano regioni, province o comuni.
-            Clicca per <strong>aggiungere</strong> (blu) o <strong>togliere</strong> (trasparente).
-          </p>
-          <p className="text-[11px] text-blue-600 leading-relaxed mb-1">
-            <strong>Esempio &quot;tutta la Toscana tranne Pisa&quot;:</strong>
-          </p>
-          <p className="text-[11px] text-blue-500 leading-relaxed mb-0.5">1. Vista regioni: clicca Toscana → blu</p>
-          <p className="text-[11px] text-blue-500 leading-relaxed mb-0.5">2. Vista province: clicca Pisa → trasparente</p>
-          <p className="text-[11px] text-blue-500 leading-relaxed mb-2">3. Da zoom basso vedrai la Toscana &quot;a chiazze&quot;: solo le aree coperte sono blu.</p>
-          <p className="text-[11px] text-blue-600 leading-relaxed">
-            Per <strong>singoli comuni fuori</strong> da regioni/province: zoom alto, clicca i comuni.
-          </p>
-        </div>
-
         {(regioniSelezionate.size > 0 || provinceSelezionate.size > 0 || comuniInclusi.size > 0 || comuniEsclusi.size > 0) && (
           <button
             onClick={() => {
@@ -972,9 +928,10 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
               setComuniInclusi(new Set())
               setComuniEsclusi(new Set())
             }}
-            className="w-full bg-white border border-red-200 text-red-600 py-2.5 rounded-xl text-xs font-semibold hover:bg-red-50 transition-all"
+            className="w-full bg-white border border-red-200 text-red-600 py-2.5 rounded-xl text-xs font-semibold hover:bg-red-50 transition-all flex items-center justify-center gap-1.5"
           >
-            🗑️ Cancella tutto
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+            Cancella tutto
           </button>
         )}
 

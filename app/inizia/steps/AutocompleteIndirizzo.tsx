@@ -1,6 +1,7 @@
 ﻿'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
+import { loadGoogleMaps } from '@/lib/googleMaps'
 
 // ============================================================
 // Tipi minimi per le nuove API Google Places
@@ -79,50 +80,6 @@ interface Props {
 }
 
 // ============================================================
-// Caricamento singleton dello script Google Maps
-// ============================================================
-
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
-
-let scriptCaricato = false
-let scriptInCaricamento = false
-const callbacksInAttesa: (() => void)[] = []
-
-function caricaScriptGoogleMaps(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (scriptCaricato) {
-      resolve()
-      return
-    }
-    if (scriptInCaricamento) {
-      callbacksInAttesa.push(resolve)
-      return
-    }
-    if (!GOOGLE_MAPS_API_KEY) {
-      reject(new Error('Chiave Google Maps mancante'))
-      return
-    }
-    scriptInCaricamento = true
-    window.initGoogleMapsAutocomplete = () => {
-      scriptCaricato = true
-      scriptInCaricamento = false
-      resolve()
-      callbacksInAttesa.forEach(cb => cb())
-      callbacksInAttesa.length = 0
-    }
-    const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&loading=async&libraries=places&callback=initGoogleMapsAutocomplete&language=it&region=IT&v=weekly`
-    script.async = true
-    script.defer = true
-    script.onerror = () => {
-      scriptInCaricamento = false
-      reject(new Error('Errore caricamento Google Maps'))
-    }
-    document.head.appendChild(script)
-  })
-}
-
-// ============================================================
 // COMPONENTE
 // ============================================================
 
@@ -150,7 +107,7 @@ export default function AutocompleteIndirizzo({
 
     async function init() {
       try {
-        await caricaScriptGoogleMaps()
+        await loadGoogleMaps()
         if (!attivo || !window.google?.maps?.importLibrary) return
 
         const lib = (await window.google.maps.importLibrary('places')) as unknown as PlacesLibrary

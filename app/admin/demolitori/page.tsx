@@ -3,14 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import AdminSidebar from '../_components/AdminSidebar'
+import AutocompleteIndirizzo from '../../inizia/steps/AutocompleteIndirizzo'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
 interface Demolitore {
   id: string
   ragione_sociale: string
-  email: string | null
-  telefono: string | null
   citta: string | null
   provincia: string | null
   stato: string
@@ -19,189 +19,261 @@ interface Demolitore {
   creato_il: string
 }
 
+interface CoperturaRow { demolitore_id: string; comune: string; tipo: string }
+
+const STATO_META: Record<string, { label: string; bg: string; text: string }> = {
+  attivo: { label: 'Attivo', bg: '#DCF3E4', text: '#1F7A43' },
+  in_attesa: { label: 'In attesa', bg: '#FAEEDA', text: '#854F0B' },
+  sospeso: { label: 'Sospeso', bg: '#FBE2E2', text: '#9B1C1C' },
+}
+function metaStato(s: string) { return STATO_META[s] || { label: s, bg: '#E7EAEE', text: '#4B5563' } }
+
+function riassuntoCopertura(records: CoperturaRow[]): string | null {
+  const regioni = records.filter(r => r.tipo === 'regione').map(r => r.comune)
+  const province = records.filter(r => r.tipo === 'provincia').map(r => r.comune)
+  const comuni = records.filter(r => r.tipo === 'comune_incluso')
+  if (regioni.length) return regioni.slice(0, 2).join(' · ') + (regioni.length > 2 ? ` +${regioni.length - 2}` : '')
+  if (province.length) return 'Prov. ' + province.slice(0, 2).join(' · ') + (province.length > 2 ? ` +${province.length - 2}` : '')
+  if (comuni.length) return `${comuni.length} ${comuni.length === 1 ? 'comune' : 'comuni'}`
+  return null
+}
+
+const FORM_VUOTO = {
+  ragione_sociale: '', piva: '', codice_sdi: '',
+  indirizzo: '', citta: '', provincia: '', cap: '', lat: null as number | null, lng: null as number | null,
+  telefono_fisso: '', email_aziendale: '', pec: '', email_assegnazione: '',
+  titolare_nome: '', titolare_cellulare: '',
+  referente_nome: '', referente_cellulare: '',
+}
+
 export default function GestioneDemolitori() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [demolitori, setDemolitori] = useState<Demolitore[]>([])
+  const [coperture, setCoperture] = useState<Record<string, CoperturaRow[]>>({})
+  const [aperte, setAperte] = useState<Record<string, number>>({})
+  const [ricerca, setRicerca] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [salvando, setSalvando] = useState(false)
-  const [form, setForm] = useState({
-    ragione_sociale: '',
-    email: '',
-    telefono: '',
-    indirizzo: '',
-    citta: '',
-    provincia: '',
-    cap: '',
-    fee_per_pratica: '',
-    note: '',
-  })
+  const [form, setForm] = useState({ ...FORM_VUOTO })
 
   useEffect(() => {
     async function carica() {
       const { data: { session } } = await supabase.auth.getSession()
-      if (!session || session.user.email !== ADMIN_EMAIL) {
-        router.push('/login')
-        return
-      }
-      const { data } = await supabase
-        .from('demolitori')
-        .select('*')
-        .order('creato_il', { ascending: false })
-      if (data) setDemolitori(data)
+      if (!session || session.user.email !== ADMIN_EMAIL) { router.push('/login'); return }
+      await ricarica()
       setLoading(false)
     }
     carica()
   }, [router])
+
+  async function ricarica() {
+    const { data } = await supabase.from('demolitori').select('id, ragione_sociale, citta, provincia, stato, fee_per_pratica, contratto_firmato, creato_il').order('creato_il', { ascending: false })
+    setDemolitori(data || [])
+
+    const { data: cov } = await supabase.from('demolitori_comuni').select('demolitore_id, comune, tipo')
+    const mappaCov: Record<string, CoperturaRow[]> = {}
+    for (const c of (cov as CoperturaRow[]) || []) (mappaCov[c.demolitore_id] ||= []).push(c)
+    setCoperture(mappaCov)
+
+    const { data: prat } = await supabase.from('pratiche').select('demolitore_id, stato').not('demolitore_id', 'is', null)
+    const mappaAperte: Record<string, number> = {}
+    for (const p of prat || []) {
+      if (p.stato === 'completata' || p.stato === 'annullata') continue
+      if (p.demolitore_id) mappaAperte[p.demolitore_id] = (mappaAperte[p.demolitore_id] || 0) + 1
+    }
+    setAperte(mappaAperte)
+  }
+
+  function set<K extends keyof typeof FORM_VUOTO>(k: K, v: (typeof FORM_VUOTO)[K]) {
+    setForm(f => ({ ...f, [k]: v }))
+  }
 
   async function salva() {
     if (!form.ragione_sociale.trim()) return
     setSalvando(true)
     const { error } = await supabase.from('demolitori').insert({
       ragione_sociale: form.ragione_sociale,
-      email: form.email || null,
-      telefono: form.telefono || null,
+      piva: form.piva || null,
+      codice_sdi: form.codice_sdi || null,
       indirizzo: form.indirizzo || null,
       citta: form.citta || null,
       provincia: form.provincia || null,
       cap: form.cap || null,
-      fee_per_pratica: parseFloat(form.fee_per_pratica) || 0,
-      note: form.note || null,
+      lat: form.lat,
+      lng: form.lng,
+      telefono_fisso: form.telefono_fisso || null,
+      email_aziendale: form.email_aziendale || null,
+      pec: form.pec || null,
+      email_assegnazione: form.email_assegnazione || null,
+      titolare_nome: form.titolare_nome || null,
+      titolare_cellulare: form.titolare_cellulare || null,
+      referente_nome: form.referente_nome || null,
+      referente_cellulare: form.referente_cellulare || null,
       stato: 'in_attesa',
       contratto_firmato: false,
+      fee_per_pratica: 0,
     })
     if (!error) {
-      const { data } = await supabase.from('demolitori').select('*').order('creato_il', { ascending: false })
-      if (data) setDemolitori(data)
-      setForm({ ragione_sociale: '', email: '', telefono: '', indirizzo: '', citta: '', provincia: '', cap: '', fee_per_pratica: '', note: '' })
+      await ricarica()
+      setForm({ ...FORM_VUOTO })
       setShowForm(false)
+    } else {
+      console.error(error)
+      alert('Errore nel salvataggio. Controlla i campi e riprova.')
     }
     setSalvando(false)
   }
 
-  const STATO_COLOR: Record<string, string> = {
-    attivo: 'bg-green-100 text-green-800',
-    in_attesa: 'bg-yellow-100 text-yellow-800',
-    sospeso: 'bg-red-100 text-red-800',
-  }
+  const attivi = demolitori.filter(d => d.stato === 'attivo').length
+  const q = ricerca.trim().toLowerCase()
+  const filtrati = q ? demolitori.filter(d => [d.ragione_sociale, d.citta, d.provincia].filter(Boolean).join(' ').toLowerCase().includes(q)) : demolitori
 
   if (loading) return (
-    <main className="min-h-screen bg-[#f0f4f8] flex items-center justify-center">
-      <div className="text-gray-400 text-sm">Caricamento...</div>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: '#F4F5FB' }}>
+      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
 
   return (
-    <main className="min-h-screen bg-[#f0f4f8]">
-      <div className="bg-[#0d2144] px-6 py-4 flex items-center gap-4">
-        <button onClick={() => router.push('/admin')} className="text-blue-300 hover:text-white transition-colors text-sm">
-          ← Indietro
-        </button>
-        <span className="text-white font-medium text-sm">Gestione demolitori</span>
-      </div>
+    <main className="min-h-screen flex" style={{ background: '#F4F5FB' }}>
+      <AdminSidebar attivo="demolitori" />
 
-      <div className="max-w-4xl mx-auto px-4 py-8">
-
-        <div className="flex items-center justify-between mb-6">
+      <div className="flex-1 min-w-0 flex flex-col">
+        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Demolitori</h1>
-            <p className="text-sm text-gray-500 mt-0.5">{demolitori.length} demolitori registrati</p>
+            <h1 className="text-lg font-bold text-gray-900 leading-none">Demolitori</h1>
+            <p className="text-xs text-gray-400 mt-1">{demolitori.length} registrati · {attivi} attivi</p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="bg-blue-600 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all"
-          >
-            + Aggiungi demolitore
+          <div className="flex-1 max-w-xs ml-auto">
+            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA7B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+              <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca demolitore…" className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400" />
+            </div>
+          </div>
+          <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-colors">
+            <span className="text-base leading-none">+</span> Aggiungi
           </button>
         </div>
 
-        {/* FORM NUOVO DEMOLITORE */}
-        {showForm && (
-          <div className="bg-white rounded-2xl p-6 shadow-sm mb-6">
-            <h2 className="text-base font-semibold text-gray-800 mb-4">Nuovo demolitore</h2>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Ragione sociale *</label>
-                <input type="text" value={form.ragione_sociale} onChange={e => setForm(f => ({ ...f, ragione_sociale: e.target.value }))} placeholder="Es. Rossi Demolizioni Srl" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Email</label>
-                <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="info@demolizioni.it" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Telefono</label>
-                <input type="tel" value={form.telefono} onChange={e => setForm(f => ({ ...f, telefono: e.target.value }))} placeholder="333 1234567" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Indirizzo sede</label>
-                <input type="text" value={form.indirizzo} onChange={e => setForm(f => ({ ...f, indirizzo: e.target.value }))} placeholder="Via Roma 1" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Città</label>
-                <input type="text" value={form.citta} onChange={e => setForm(f => ({ ...f, citta: e.target.value }))} placeholder="Roma" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Provincia</label>
-                <input type="text" value={form.provincia} onChange={e => setForm(f => ({ ...f, provincia: e.target.value }))} placeholder="RM" maxLength={2} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white uppercase" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">CAP</label>
-                <input type="text" value={form.cap} onChange={e => setForm(f => ({ ...f, cap: e.target.value }))} placeholder="00100" maxLength={5} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Fee per pratica (€)</label>
-                <input type="number" value={form.fee_per_pratica} onChange={e => setForm(f => ({ ...f, fee_per_pratica: e.target.value }))} placeholder="50" className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-              </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-medium text-gray-500 mb-1">Note</label>
-                <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Note interne..." rows={2} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm bg-gray-50 outline-none focus:border-blue-500 focus:bg-white resize-none" />
-              </div>
+        <div className="p-6 overflow-auto">
+          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#F7F9FC] text-[10.5px] font-bold text-gray-400 uppercase tracking-wide">
+              <div style={{ flex: 2.2 }}>Demolitore</div>
+              <div style={{ flex: 1.4 }}>Stato</div>
+              <div style={{ flex: 1.8 }}>Copertura</div>
+              <div style={{ flex: 1 }}>Fee</div>
+              <div style={{ flex: 1, textAlign: 'right' }}>Aperte</div>
             </div>
-            <div className="flex gap-2 mt-4">
-              <button onClick={salva} disabled={salvando || !form.ragione_sociale} className={`px-6 py-2.5 rounded-xl text-sm font-semibold transition-all ${!salvando && form.ragione_sociale ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed'}`}>
-                {salvando ? 'Salvataggio...' : 'Salva demolitore'}
-              </button>
-              <button onClick={() => setShowForm(false)} className="px-6 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 transition-all">
-                Annulla
-              </button>
-            </div>
-          </div>
-        )}
 
-        {/* LISTA DEMOLITORI */}
-        {demolitori.length === 0 ? (
-          <div className="bg-white rounded-2xl p-8 text-center shadow-sm">
-            <div className="text-4xl mb-3">🏭</div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-1">Nessun demolitore</h2>
-            <p className="text-sm text-gray-500">Aggiungi il primo demolitore per iniziare.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {demolitori.map(d => (
-              <div key={d.id} onClick={() => router.push(`/admin/demolitori/${d.id}`)} className="bg-white rounded-2xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer border border-transparent hover:border-blue-200">
-                <div className="flex items-start justify-between mb-2">
-                  <div>
-                    <span className="font-bold text-gray-900">{d.ragione_sociale}</span>
-                    {d.citta && <span className="text-sm text-gray-400 ml-2">· {d.citta} ({d.provincia})</span>}
+            {filtrati.length === 0 ? (
+              <div className="px-4 py-10 text-center text-sm text-gray-400">{demolitori.length === 0 ? 'Nessun demolitore. Aggiungi il primo per iniziare.' : 'Nessun demolitore trovato.'}</div>
+            ) : (
+              filtrati.map(d => {
+                const s = metaStato(d.stato)
+                const cop = riassuntoCopertura(coperture[d.id] || [])
+                return (
+                  <div key={d.id} onClick={() => router.push(`/admin/demolitori/${d.id}`)} className="flex items-center gap-3 px-4 py-3 border-t border-gray-100 cursor-pointer hover:bg-blue-50/40 transition-colors">
+                    <div style={{ flex: 2.2, minWidth: 0 }}>
+                      <div className="text-[13px] font-semibold text-gray-900 truncate flex items-center gap-1.5">
+                        {d.ragione_sociale}
+                        {d.contratto_firmato && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                      </div>
+                      <div className="text-[11px] text-gray-400 truncate">{d.citta ? `${d.citta}${d.provincia ? ` (${d.provincia})` : ''}` : '—'}</div>
+                    </div>
+                    <div style={{ flex: 1.4 }}>
+                      <span className="inline-block text-[10.5px] font-semibold rounded-full" style={{ background: s.bg, color: s.text, padding: '3px 9px' }}>{s.label}</span>
+                    </div>
+                    <div style={{ flex: 1.8, minWidth: 0 }}>
+                      {cop ? <span className="text-[11.5px] text-gray-600 truncate">{cop}</span> : <span className="text-[11.5px] text-gray-300">Da impostare</span>}
+                    </div>
+                    <div style={{ flex: 1 }} className="text-[12px] text-gray-700">{d.fee_per_pratica ? `${d.fee_per_pratica} €` : '—'}</div>
+                    <div style={{ flex: 1, textAlign: 'right' }} className="text-[12px] font-semibold text-gray-700">{aperte[d.id] || 0}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`text-xs font-semibold px-3 py-1.5 rounded-full ${STATO_COLOR[d.stato] || 'bg-gray-100 text-gray-600'}`}>
-                      {d.stato === 'attivo' ? 'Attivo' : d.stato === 'in_attesa' ? 'In attesa' : 'Sospeso'}
-                    </span>
-                    {d.contratto_firmato && <span className="text-xs bg-green-50 text-green-700 px-2 py-1 rounded-lg">📝 Contratto firmato</span>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 text-sm text-gray-500">
-                  {d.email && <span>✉️ {d.email}</span>}
-                  {d.telefono && <span>📞 {d.telefono}</span>}
-                  <span>💶 {d.fee_per_pratica}€/pratica</span>
-                </div>
-              </div>
-            ))}
+                )
+              })
+            )}
           </div>
-        )}
-
+        </div>
       </div>
+
+      {/* MODALE NUOVO DEMOLITORE */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-xl max-h-[92vh] overflow-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+              <h2 className="text-base font-semibold text-gray-900">Nuovo demolitore</h2>
+              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-700 text-xl">×</button>
+            </div>
+
+            <div className="px-6 py-5 flex flex-col gap-5">
+              <Sezione titolo="Azienda">
+                <div className="grid grid-cols-2 gap-3">
+                  <Campo cols={2} label="Ragione sociale *" value={form.ragione_sociale} onChange={v => set('ragione_sociale', v)} placeholder="Rossi Demolizioni Srl" />
+                  <Campo label="Partita IVA" value={form.piva} onChange={v => set('piva', v)} placeholder="01234567890" />
+                  <Campo label="Codice SDI" value={form.codice_sdi} onChange={v => set('codice_sdi', v.toUpperCase())} placeholder="ABCDEFG" maxLength={7} />
+                </div>
+              </Sezione>
+
+              <Sezione titolo="Indirizzo sede">
+                <AutocompleteIndirizzo
+                  placeholder="Cerca l'indirizzo…"
+                  onSelezione={(d) => setForm(f => ({ ...f, indirizzo: d.indirizzo, citta: d.comune || '', provincia: d.provincia || '', cap: d.cap || '', lat: d.lat ?? null, lng: d.lng ?? null }))}
+                />
+                {form.indirizzo && <p className="text-[11px] text-gray-500 mt-1.5">{form.indirizzo}{form.citta ? ` · ${form.citta}` : ''}{form.provincia ? ` (${form.provincia})` : ''}{form.cap ? ` · ${form.cap}` : ''}</p>}
+              </Sezione>
+
+              <Sezione titolo="Contatti azienda">
+                <div className="grid grid-cols-2 gap-3">
+                  <Campo label="Telefono fisso" value={form.telefono_fisso} onChange={v => set('telefono_fisso', v)} placeholder="081 1234567" />
+                  <Campo label="Email aziendale" value={form.email_aziendale} onChange={v => set('email_aziendale', v)} placeholder="info@azienda.it" />
+                  <Campo label="PEC" value={form.pec} onChange={v => set('pec', v)} placeholder="azienda@pec.it" />
+                  <Campo label="Email assegnazione pratiche" value={form.email_assegnazione} onChange={v => set('email_assegnazione', v)} placeholder="pratiche@azienda.it" />
+                </div>
+              </Sezione>
+
+              <Sezione titolo="Titolare">
+                <div className="grid grid-cols-2 gap-3">
+                  <Campo label="Nome e cognome" value={form.titolare_nome} onChange={v => set('titolare_nome', v)} placeholder="Mario Rossi" />
+                  <Campo label="Cellulare" value={form.titolare_cellulare} onChange={v => set('titolare_cellulare', v)} placeholder="333 1234567" />
+                </div>
+              </Sezione>
+
+              <Sezione titolo="Referente pratiche demolizione">
+                <div className="grid grid-cols-2 gap-3">
+                  <Campo label="Nome e cognome" value={form.referente_nome} onChange={v => set('referente_nome', v)} placeholder="Luca Bianchi" />
+                  <Campo label="Cellulare" value={form.referente_cellulare} onChange={v => set('referente_cellulare', v)} placeholder="333 7654321" />
+                </div>
+              </Sezione>
+            </div>
+
+            <div className="flex gap-2 justify-end px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
+              <button onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100">Annulla</button>
+              <button onClick={salva} disabled={salvando || !form.ragione_sociale.trim()} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
+                {salvando ? 'Salvataggio…' : 'Salva demolitore'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+  )
+}
+
+function Sezione({ titolo, children }: { titolo: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wide mb-2">{titolo}</p>
+      {children}
+    </div>
+  )
+}
+
+function Campo({ label, value, onChange, placeholder, cols = 1, maxLength }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; cols?: 1 | 2; maxLength?: number }) {
+  return (
+    <div className={cols === 2 ? 'col-span-2' : ''}>
+      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={maxLength} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
+    </div>
   )
 }
