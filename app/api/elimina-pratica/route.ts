@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const praticaId: string | undefined = body.pratica_id
+    // Se true, elimina anche l'account + login del cliente (solo se non ha altre pratiche)
+    const eliminaAccount: boolean = body.elimina_account === true
     if (!praticaId) {
       return NextResponse.json({ error: 'Manca pratica_id' }, { status: 400 })
     }
@@ -65,10 +67,11 @@ export async function POST(req: NextRequest) {
     const supabase = createClient(supabaseUrl, serviceKey)
 
     // La pratica esiste?
-    const { data: pratica } = await supabase.from('pratiche').select('id').eq('id', praticaId).single()
+    const { data: pratica } = await supabase.from('pratiche').select('id, user_id').eq('id', praticaId).single()
     if (!pratica) {
       return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
     }
+    const userId: string | null = pratica.user_id
 
     // 1) Cancella i file dallo Storage (entrambi i bucket)
     for (const bucket of BUCKETS) {
@@ -89,7 +92,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Errore durante l\'eliminazione della pratica' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    // 4) (Opzionale) Cancella anche l'account + login del cliente,
+    //    ma SOLO se non ha altre pratiche e non è admin/operatore.
+    let accountEliminato = false
+    let accountNonEliminatoMotivo: string | null = null
+    if (eliminaAccount && userId) {
+      const { count } = await supabase.from('pratiche').select('id', { count: 'exact', head: true }).eq('user_id', userId)
+      if (count && count > 0) {
+        accountNonEliminatoMotivo = 'Il cliente ha altre pratiche: account mantenuto per non lasciarle orfane.'
+      } else {
+        const { data: au } = await supabase.auth.admin.getUserById(userId)
+        const { data: profilo } = await supabase.from('utenti').select('tipo').eq('id', userId).single()
+        const tipo = profilo?.tipo
+        if (au?.user?.email === ADMIN_EMAIL || (tipo && ['admin', 'demolitore', 'commerciante', 'collaboratore'].includes(tipo))) {
+          accountNonEliminatoMotivo = 'Account protetto (admin o operatore): non eliminato.'
+        } else {
+          await supabase.from('utenti').delete().eq('id', userId)
+          try { await supabase.auth.admin.deleteUser(userId) } catch (e) { console.warn('deleteUser:', e) }
+          accountEliminato = true
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, account_eliminato: accountEliminato, account_non_eliminato_motivo: accountNonEliminatoMotivo })
   } catch (err) {
     console.error('Errore endpoint eliminazione:', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })

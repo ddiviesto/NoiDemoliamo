@@ -118,6 +118,10 @@ export default function AdminDashboard() {
   const [confermaElimina, setConfermaElimina] = useState<Pratica | null>(null)
   const [eliminando, setEliminando] = useState(false)
   const [erroreElimina, setErroreElimina] = useState<string | null>(null)
+  const [pulisciOpen, setPulisciOpen] = useState(false)
+  const [candidatiPulizia, setCandidatiPulizia] = useState<{ id: string; nome: string | null; tipo: string | null }[] | null>(null)
+  const [pulendo, setPulendo] = useState(false)
+  const [risultatoPulizia, setRisultatoPulizia] = useState<number | null>(null)
 
   useEffect(() => {
     async function carica() {
@@ -165,6 +169,42 @@ export default function AdminDashboard() {
       setErroreElimina('Errore di rete durante l\'eliminazione.')
     }
     setEliminando(false)
+  }
+
+  async function apriPulizia() {
+    setPulisciOpen(true)
+    setCandidatiPulizia(null)
+    setRisultatoPulizia(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pulisci-utenti', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ dry_run: true }),
+      })
+      const data = await res.json()
+      setCandidatiPulizia(data.candidati || [])
+    } catch {
+      setCandidatiPulizia([])
+    }
+  }
+
+  async function eseguiPulizia() {
+    setPulendo(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pulisci-utenti', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      setRisultatoPulizia(data.eliminati ?? 0)
+      setCandidatiPulizia([])
+    } catch {
+      setRisultatoPulizia(null)
+    }
+    setPulendo(false)
   }
 
   // Conteggi per i riquadri "Da fare ora"
@@ -220,6 +260,9 @@ export default function AdminDashboard() {
           <NavItem label="Demolitori" onClick={() => router.push('/admin/demolitori')} icon={<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>} />
           <NavItem label="Copertura" onClick={() => router.push('/admin/copertura')} icon={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></>} />
         </nav>
+        <button onClick={apriPulizia} className="mx-2.5 px-3 py-2 text-[11px] font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-left transition-colors">
+          Pulisci account senza pratiche
+        </button>
         <button onClick={handleLogout} className="m-2.5 px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg text-left transition-colors">
           Esci
         </button>
@@ -340,6 +383,46 @@ export default function AdminDashboard() {
               <button onClick={eliminaPratica} disabled={eliminando} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                 {eliminando ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino…</> : 'Sì, elimina'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE PULIZIA ACCOUNT SENZA PRATICHE */}
+      {pulisciOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
+            <p className="font-semibold text-gray-900">Pulisci account senza pratiche</p>
+            <p className="text-sm text-gray-500 mt-1">Verranno cancellati (account + login) solo i <b>clienti senza nessuna pratica</b>. Admin e operatori (demolitori, commercianti) non vengono mai toccati.</p>
+
+            {risultatoPulizia != null ? (
+              <div className="mt-4 rounded-xl p-4 text-center" style={{ background: '#DCF3E4' }}>
+                <p className="text-sm font-semibold" style={{ color: '#1F7A43' }}>{risultatoPulizia} {risultatoPulizia === 1 ? 'account eliminato' : 'account eliminati'}</p>
+              </div>
+            ) : candidatiPulizia == null ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-6 justify-center"><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Controllo in corso…</div>
+            ) : candidatiPulizia.length === 0 ? (
+              <div className="mt-4 text-sm text-gray-400 text-center py-3">Nessun account da pulire. È già tutto in ordine.</div>
+            ) : (
+              <div className="mt-3 max-h-52 overflow-auto border border-gray-100 rounded-xl divide-y divide-gray-100">
+                {candidatiPulizia.map(u => (
+                  <div key={u.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-gray-800">{u.nome || 'Senza nome'}</span>
+                    <span className="text-[11px] text-gray-400">{u.tipo || 'cliente'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setPulisciOpen(false)} disabled={pulendo} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">
+                {risultatoPulizia != null ? 'Chiudi' : 'Annulla'}
+              </button>
+              {risultatoPulizia == null && candidatiPulizia && candidatiPulizia.length > 0 && (
+                <button onClick={eseguiPulizia} disabled={pulendo} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
+                  {pulendo ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Pulisco…</> : `Elimina ${candidatiPulizia.length}`}
+                </button>
+              )}
             </div>
           </div>
         </div>

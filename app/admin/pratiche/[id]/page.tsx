@@ -149,7 +149,7 @@ export default function DettaglioPraticaAdmin() {
     await ricaricaPratica()
   }
 
-  async function eliminaDefinitiva() {
+  async function eliminaDefinitiva(eliminaAccount: boolean) {
     if (!pratica) return
     setEliminando(true)
     setErroreElimina(null)
@@ -158,10 +158,11 @@ export default function DettaglioPraticaAdmin() {
       const res = await fetch('/api/elimina-pratica', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ pratica_id: pratica.id }),
+        body: JSON.stringify({ pratica_id: pratica.id, elimina_account: eliminaAccount }),
       })
       const data = await res.json()
       if (!res.ok) { setErroreElimina(data?.error || 'Errore durante l\'eliminazione'); setEliminando(false); return }
+      if (eliminaAccount && data.account_non_eliminato_motivo) alert(data.account_non_eliminato_motivo)
       router.push('/admin')
     } catch {
       setErroreElimina('Errore di rete durante l\'eliminazione.')
@@ -278,17 +279,20 @@ export default function DettaglioPraticaAdmin() {
             <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
             </div>
-            <p className="text-center font-semibold text-gray-900">Eliminare definitivamente?</p>
+            <p className="text-center font-semibold text-gray-900">Come vuoi eliminare?</p>
             <p className="text-center text-sm text-gray-500 mt-1">
-              La pratica <b>{pratica.targa || 'senza targa'}</b>, con tutti i suoi documenti, foto e file, sarà cancellata per sempre dal database e dai server. L&apos;azione non può essere annullata.
+              La pratica <b>{pratica.targa || 'senza targa'}</b>, con documenti, foto e file, sarà cancellata per sempre. Scegli se cancellare anche l&apos;account del cliente.
             </p>
             {erroreElimina && <p className="text-center text-xs text-red-600 mt-2">{erroreElimina}</p>}
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => setEliminaOpen(false)} disabled={eliminando} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">Annulla</button>
-              <button onClick={eliminaDefinitiva} disabled={eliminando} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
-                {eliminando ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino…</> : 'Sì, elimina'}
-              </button>
-            </div>
+            {eliminando ? (
+              <div className="flex items-center gap-2 justify-center text-sm text-gray-500 py-5"><div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />Elimino…</div>
+            ) : (
+              <div className="flex flex-col gap-2 mt-4">
+                <button onClick={() => eliminaDefinitiva(false)} className="w-full px-4 py-2.5 text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl">Elimina solo la pratica</button>
+                <button onClick={() => eliminaDefinitiva(true)} className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl">Elimina pratica + account cliente</button>
+                <button onClick={() => setEliminaOpen(false)} className="w-full px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-xl mt-1">Annulla</button>
+              </div>
+            )}
           </div>
         </div>
       )}
