@@ -188,7 +188,9 @@ export default function DettaglioPraticaAdmin() {
         {/* STEP 1: DOCUMENTI */}
         <DocumentiApprovazione
           praticaId={pratica.id}
+          statoPratica={pratica.stato}
           onStatoCambiato={(approvati) => setTuttiApprovati(approvati)}
+          onRicaricaPratica={ricaricaPratica}
         />
 
         {/* STEP 2: DESTINO PRATICA */}
