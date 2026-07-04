@@ -1193,24 +1193,12 @@ function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
           <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => inputCamera.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, padding: '14px 8px', border: 'none', borderRadius: 14, background: '#2563eb', textAlign: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
-            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 7 }}>
-              <span style={{ width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <IcoCamera size={19} color="#fff" />
-              </span>
-            </span>
-            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#fff' }}>Scatta foto</span>
-            <span style={{ display: 'block', fontSize: 10.5, color: '#BFDBFE', marginTop: 1 }}>Apri la fotocamera</span>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => inputCamera.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 8px', border: 'none', borderRadius: 12, background: '#2563eb', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.22)', transition: 'transform 0.1s' }}>
+            <IcoCamera size={16} color="#fff" />Scatta foto
           </button>
-          <button onClick={() => inputFile.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, padding: '14px 8px', border: '1.5px solid #BFDBFE', borderRadius: 14, background: '#EFF6FF', textAlign: 'center', cursor: 'pointer', transition: 'transform 0.1s' }}>
-            <span style={{ display: 'flex', justifyContent: 'center', marginBottom: 7 }}>
-              <span style={{ width: 38, height: 38, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-              </span>
-            </span>
-            <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1E4E8C' }}>Dalla galleria</span>
-            <span style={{ display: 'block', fontSize: 10.5, color: '#6B93C9', marginTop: 1 }}>Scegli file esistenti</span>
+          <button onClick={() => inputFile.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 8px', border: '1.5px solid #BFDBFE', borderRadius: 12, background: '#EFF6FF', color: '#1E4E8C', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'transform 0.1s' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Dalla galleria
           </button>
         </div>
       )}
