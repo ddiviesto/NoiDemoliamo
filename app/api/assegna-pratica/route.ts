@@ -78,6 +78,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const praticaId: string | undefined = body.pratica_id
+    // Modalità:
+    //  - dry_run: calcola e restituisce la classifica SENZA assegnare
+    //  - demolitore_id: assegna quel demolitore specifico (conferma auto o scelta manuale)
+    //  - nessuno dei due: comportamento legacy (assegna automaticamente il vincitore)
+    const dryRun: boolean = body.dry_run === true
+    const demolitoreIdScelto: string | undefined = body.demolitore_id
+    const manuale: boolean = body.manuale === true
     if (!praticaId) {
       return NextResponse.json({ error: 'Manca pratica_id' }, { status: 400 })
     }
@@ -111,7 +118,39 @@ export async function POST(req: NextRequest) {
     if (errPratica || !pratica) {
       return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
     }
-    if (pratica.demolitore_id) {
+    // MODALITÀ "ASSEGNA QUESTO DEMOLITORE" (conferma del suggerito o scelta manuale)
+    if (demolitoreIdScelto) {
+      const { data: demo } = await supabase
+        .from('demolitori')
+        .select('id, ragione_sociale')
+        .eq('id', demolitoreIdScelto)
+        .single()
+      if (!demo) {
+        return NextResponse.json({ error: 'Demolitore non trovato' }, { status: 404 })
+      }
+      const oraA = new Date()
+      const scadenzaA = calcolaScadenzaOreLavorative(oraA, 8)
+      const { error: errAssegna } = await supabase
+        .from('pratiche')
+        .update({
+          demolitore_id: demo.id,
+          stato: 'assegnata',
+          data_assegnazione: oraA.toISOString(),
+          scadenza_proposta_ritiro: scadenzaA.toISOString(),
+          assegnazione_manuale: manuale,
+          aggiornato_il: oraA.toISOString(),
+        })
+        .eq('id', praticaId)
+      if (errAssegna) {
+        console.error('Errore assegnazione demolitore scelto:', errAssegna)
+        return NextResponse.json({ error: 'Errore salvataggio assegnazione' }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, vincitore: demo, scadenza_proposta_ritiro: scadenzaA.toISOString() })
+    }
+
+    // Il calcolo (dry-run) è permesso anche se già assegnata (per riassegnare);
+    // l'auto-assegnazione legacy invece blocca se già assegnata.
+    if (!dryRun && pratica.demolitore_id) {
       return NextResponse.json({ error: 'Pratica già assegnata' }, { status: 400 })
     }
 
@@ -130,6 +169,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Manca GOOGLE_MAPS_SERVER_KEY nel server' }, { status: 500 })
     }
     const risultato = await calcolaAssegnazione(supabase, praticaInput, googleKey, regioneRitiro)
+
+    // MODALITÀ "CALCOLA E MOSTRA" (dry-run): restituisce la classifica senza scrivere nulla
+    if (dryRun) {
+      return NextResponse.json({
+        success: true,
+        dry_run: true,
+        vincitore: risultato.vincitore,
+        candidati: risultato.candidati_valutati,
+        motivo: risultato.motivo_fallimento ?? null,
+      })
+    }
 
     // CASO A: nessun demolitore valido → pratica va in assegnazione manuale
     if (!risultato.vincitore) {

@@ -115,6 +115,9 @@ export default function AdminDashboard() {
   const [demolitori, setDemolitori] = useState<Record<string, string>>({})
   const [filtro, setFiltro] = useState<Filtro>('tutte')
   const [ricerca, setRicerca] = useState('')
+  const [confermaElimina, setConfermaElimina] = useState<Pratica | null>(null)
+  const [eliminando, setEliminando] = useState(false)
+  const [erroreElimina, setErroreElimina] = useState<string | null>(null)
 
   useEffect(() => {
     async function carica() {
@@ -141,6 +144,27 @@ export default function AdminDashboard() {
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  async function eliminaPratica() {
+    if (!confermaElimina) return
+    setEliminando(true)
+    setErroreElimina(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/elimina-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: confermaElimina.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErroreElimina(data?.error || 'Errore durante l\'eliminazione'); setEliminando(false); return }
+      setPratiche(prev => prev.filter(p => p.id !== confermaElimina.id))
+      setConfermaElimina(null)
+    } catch {
+      setErroreElimina('Errore di rete durante l\'eliminazione.')
+    }
+    setEliminando(false)
   }
 
   // Conteggi per i riquadri "Da fare ora"
@@ -244,6 +268,7 @@ export default function AdminDashboard() {
               <div style={{ flex: 2 }}>Cliente</div>
               <div style={{ flex: 2 }}>Stato</div>
               <div style={{ flex: 1, textAlign: 'right' }}>Attesa</div>
+              <div style={{ width: 28 }} />
             </div>
 
             {ordinate.length === 0 ? (
@@ -282,6 +307,13 @@ export default function AdminDashboard() {
                         ? <span className="text-[11.5px] font-semibold" style={{ color: rosso ? '#C0392B' : '#6b7280' }}>{formatAttesa(min)}</span>
                         : <span className="text-[11.5px] text-gray-300">—</span>}
                     </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setErroreElimina(null); setConfermaElimina(p) }}
+                      aria-label="Elimina pratica"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                    </button>
                   </div>
                 )
               })
@@ -290,6 +322,28 @@ export default function AdminDashboard() {
 
         </div>
       </div>
+
+      {/* MODALE ELIMINAZIONE DEFINITIVA */}
+      {confermaElimina && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+            </div>
+            <p className="text-center font-semibold text-gray-900">Eliminare definitivamente?</p>
+            <p className="text-center text-sm text-gray-500 mt-1">
+              La pratica <b>{confermaElimina.targa || 'senza targa'}</b>, con documenti, foto e file, sarà cancellata per sempre dal database e dai server. Non si può annullare.
+            </p>
+            {erroreElimina && <p className="text-center text-xs text-red-600 mt-2">{erroreElimina}</p>}
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setConfermaElimina(null)} disabled={eliminando} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">Annulla</button>
+              <button onClick={eliminaPratica} disabled={eliminando} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
+                {eliminando ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino…</> : 'Sì, elimina'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }

@@ -16,10 +16,12 @@ interface Pratica {
   user_id: string | null
   targa: string | null
   tipo_mezzo: string | null
+  tipo_mezzo_altro: string | null
   marca: string | null
   modello: string | null
   anno: number | null
   km: number | null
+  tipo_cambio: string | null
   incidentato: boolean | null
   marciante: boolean | null
   va_in_moto: boolean | null
@@ -28,20 +30,75 @@ interface Pratica {
   indirizzo_ritiro: string | null
   comune_ritiro: string | null
   provincia_ritiro: string | null
-  lat: number | null
-  lng: number | null
+  cap_ritiro: string | null
+  spazio_carro_attrezzi: string | null
+  spazio_carro_attrezzi_note: string | null
   codice_fiscale: string | null
   nome_richiedente: string | null
   telefono: string | null
-  ruolo_richiedente: string | null
+  casistica: string | null
+  fermo_amministrativo: string | null
+  targhe_presenti: boolean | null
+  delegato_nome: string | null
+  delegato_telefono: string | null
+  numero_eredi: number | null
+  nomi_rinunciatari: string | null
+  libretto: string | null
+  certificato_proprieta: string | null
   demolitore_id: string | null
+  data_assegnazione: string | null
+  scadenza_proposta_ritiro: string | null
   stato: string
-  note_admin: string | null
   creato_il: string
 }
 
+interface Candidato {
+  id: string
+  ragione_sociale: string
+  citta?: string | null
+  distanza_km?: number
+  durata_minuti?: number
+  velocita_media_giorni?: number
+  pratiche_aperte?: number
+}
+
+const STATO_META: Record<string, { label: string; bg: string; text: string }> = {
+  in_attesa_documenti: { label: 'Attesa documenti', bg: '#FAEEDA', text: '#854F0B' },
+  in_attesa_approvazione_admin: { label: 'Documenti da approvare', bg: '#E0EDFB', text: '#1E4E8C' },
+  documenti_parzialmente_approvati: { label: 'Documenti da rifare', bg: '#FBE2E2', text: '#9B1C1C' },
+  da_assegnare: { label: 'Da assegnare', bg: '#FDEBD9', text: '#92500E' },
+  in_assegnazione_manuale: { label: 'Assegnazione manuale', bg: '#FBE2E2', text: '#9B1C1C' },
+  assegnata: { label: 'Assegnata', bg: '#E0EDFB', text: '#1E4E8C' },
+  in_attesa_conferma_cliente: { label: 'Attesa conferma cliente', bg: '#E0EDFB', text: '#1E4E8C' },
+  ritiro_confermato: { label: 'Ritiro confermato', bg: '#E4E4FB', text: '#4338CA' },
+  ritirata: { label: 'Veicolo ritirato', bg: '#EDE4FB', text: '#6B21A8' },
+  in_attesa_cert_rottamazione: { label: 'Attesa cert. rottamazione', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_cert_radiazione_pra: { label: 'Attesa cert. PRA', bg: '#DDF2F0', text: '#0F766E' },
+  completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43' },
+  annullata: { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563' },
+}
+
+const NOMI_CASISTICHE: Record<string, string> = {
+  persona_fisica: 'Persona fisica', eredi_accettato: 'Eredi (accettata)', eredi_rinuncia: 'Eredi (con rinuncia)',
+  societa: 'Società', societa_fallita: 'Società fallita', associazione: 'Associazione',
+  non_intestatario: 'Non intestatario', targhe_straniere: 'Targhe straniere',
+}
+
+function metaStato(s: string) { return STATO_META[s] || { label: s, bg: '#E7EAEE', text: '#4B5563' } }
+function fmtData(x: string | null) {
+  if (!x) return '—'
+  return new Date(x).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+const CAMBIO_LABEL: Record<string, string> = { manuale: 'Manuale', automatico: 'Automatico', non_so: 'Non so' }
+const SPAZIO_LABEL: Record<string, string> = { libero: 'Libero, comodo', stretto: 'Stretto', no: 'No, difficile' }
+const FERMO_LABEL: Record<string, string> = { si: 'Sì', no: 'No', non_so: 'Non lo sa' }
+const LIBRETTO_LABEL: Record<string, string> = { si: 'Ha l\'originale', denuncia: 'Denuncia di smarrimento', no: 'Non ce l\'ha' }
+const CDC_LABEL: Record<string, string> = { digitale: 'Digitale', cartaceo: 'Cartaceo', smarrito: 'Smarrito (denuncia)', nessuno: 'Non lo sa', documento_unico: 'Documento unico' }
+function lbl(map: Record<string, string>, v: string | null) { return v ? (map[v] || v) : null }
+
 // ============================================================
-// COMPONENTE
+// PAGINA
 // ============================================================
 
 export default function DettaglioPraticaAdmin() {
@@ -50,318 +107,426 @@ export default function DettaglioPraticaAdmin() {
   const id = params.id as string
 
   const [pratica, setPratica] = useState<Pratica | null>(null)
+  const [demolitoreNome, setDemolitoreNome] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  // Tutti i documenti approvati? Aggiornato dal componente DocumentiApprovazione
-  const [tuttiApprovati, setTuttiApprovati] = useState(false)
-  const [processoInCorso, setProcessoInCorso] = useState(false)
-  const [messaggio, setMessaggio] = useState<{ tipo: 'ok' | 'errore'; testo: string } | null>(null)
+  const [eliminaOpen, setEliminaOpen] = useState(false)
+  const [eliminando, setEliminando] = useState(false)
+  const [erroreElimina, setErroreElimina] = useState<string | null>(null)
 
-  // -----------------------------
-  // CARICAMENTO
-  // -----------------------------
   useEffect(() => {
     async function carica() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session || session.user.email !== ADMIN_EMAIL) { router.push('/login'); return }
-
-      const { data, error } = await supabase
-        .from('pratiche')
-        .select('*')
-        .eq('id', id)
-        .single()
-      if (error || !data) {
-        router.push('/admin')
-        return
-      }
+      const { data, error } = await supabase.from('pratiche').select('*').eq('id', id).single()
+      if (error || !data) { router.push('/admin'); return }
       setPratica(data)
+      if (data.demolitore_id) {
+        const { data: d } = await supabase.from('demolitori').select('ragione_sociale').eq('id', data.demolitore_id).single()
+        setDemolitoreNome(d?.ragione_sociale ?? null)
+      }
       setLoading(false)
     }
     if (id) carica()
   }, [id, router])
 
-  // -----------------------------
-  // AZIONI DESTINO PRATICA
-  // -----------------------------
-
-  async function assegnaDemolizioneStandard() {
-    if (!pratica) return
-    if (!confirm('Confermi l\'assegnazione automatica al miglior demolitore disponibile?')) return
-    setProcessoInCorso(true)
-    setMessaggio(null)
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Sessione scaduta')
-
-      const res = await fetch('/api/assegna-pratica', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ pratica_id: pratica.id }),
-      })
-      const data = await res.json()
-
-      if (!res.ok || !data.success) {
-        const motivo = data?.motivo || data?.error || 'Errore sconosciuto'
-        setMessaggio({ tipo: 'errore', testo: `Assegnazione non riuscita: ${motivo}` })
-        // Ricarica la pratica per vedere se è passata a "in_assegnazione_manuale"
-        await ricaricaPratica()
-        return
+  async function ricaricaPratica() {
+    const { data } = await supabase.from('pratiche').select('*').eq('id', id).single()
+    if (data) {
+      setPratica(data)
+      if (data.demolitore_id) {
+        const { data: d } = await supabase.from('demolitori').select('ragione_sociale').eq('id', data.demolitore_id).single()
+        setDemolitoreNome(d?.ragione_sociale ?? null)
+      } else {
+        setDemolitoreNome(null)
       }
-
-      setMessaggio({
-        tipo: 'ok',
-        testo: `Pratica assegnata a ${data.vincitore?.ragione_sociale ?? 'demolitore'}`,
-      })
-      await ricaricaPratica()
-    } catch (err) {
-      console.error('Errore assegnazione:', err)
-      setMessaggio({ tipo: 'errore', testo: 'Errore di rete durante l\'assegnazione.' })
-    } finally {
-      setProcessoInCorso(false)
     }
   }
 
   async function annullaPratica() {
     if (!pratica) return
-    if (!confirm('Sei sicuro di voler ANNULLARE questa pratica? L\'azione è quasi sempre irreversibile.')) return
-    setProcessoInCorso(true)
-    const { error } = await supabase
-      .from('pratiche')
-      .update({ stato: 'annullata', aggiornato_il: new Date().toISOString() })
-      .eq('id', pratica.id)
-    setProcessoInCorso(false)
-    if (error) {
-      alert('Errore durante l\'annullamento. Riprova.')
-      return
-    }
-    setMessaggio({ tipo: 'ok', testo: 'Pratica annullata' })
+    if (!confirm('Sei sicuro di voler ANNULLARE questa pratica?')) return
+    await supabase.from('pratiche').update({ stato: 'annullata', aggiornato_il: new Date().toISOString() }).eq('id', pratica.id)
     await ricaricaPratica()
   }
 
-  async function ricaricaPratica() {
-    const { data } = await supabase.from('pratiche').select('*').eq('id', id).single()
-    if (data) setPratica(data)
+  async function eliminaDefinitiva() {
+    if (!pratica) return
+    setEliminando(true)
+    setErroreElimina(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/elimina-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErroreElimina(data?.error || 'Errore durante l\'eliminazione'); setEliminando(false); return }
+      router.push('/admin')
+    } catch {
+      setErroreElimina('Errore di rete durante l\'eliminazione.')
+      setEliminando(false)
+    }
   }
 
-  // -----------------------------
-  // RENDER
-  // -----------------------------
-
   if (loading) return (
-    <main className="min-h-screen bg-[#f0f4f8] flex items-center justify-center">
-      <div className="text-gray-400 text-sm">Caricamento...</div>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: '#F4F5FB' }}>
+      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
-
   if (!pratica) return null
 
-  const labelStato = etichettaStato(pratica.stato)
-  const coloreStato = coloreStatoClasses(pratica.stato)
-  const statoDestinoBloccato = !tuttiApprovati || ['assegnata', 'in_assegnazione', 'completata', 'annullata'].includes(pratica.stato)
+  const m = metaStato(pratica.stato)
 
   return (
-    <main className="min-h-screen bg-[#f0f4f8]">
-      <div className="bg-[#0d2144] px-6 py-4 flex items-center gap-4">
-        <button onClick={() => router.push('/admin')} className="text-blue-300 hover:text-white text-sm transition-colors">
-          ← Indietro
+    <main className="min-h-screen" style={{ background: '#F4F5FB' }}>
+
+      {/* TOP BAR */}
+      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
+        <button onClick={() => router.push('/admin')} className="text-sm text-blue-600 font-semibold flex items-center gap-1 hover:text-blue-700">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
+          Pratiche
         </button>
-        <span className="text-white font-medium text-sm">
-          Pratica {pratica.targa || '—'} · {pratica.marca || ''} {pratica.modello || ''}
-        </span>
-        <span className={`ml-auto text-[11px] font-medium px-2.5 py-1 rounded-full ${coloreStato}`}>
-          {labelStato}
-        </span>
+        <span className="text-base font-bold text-gray-900">{pratica.targa || 'Targa mancante'}{pratica.marca && ` · ${pratica.marca} ${pratica.modello || ''}`}</span>
+        <span className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-full" style={{ background: m.bg, color: m.text }}>{m.label}</span>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6 flex flex-col gap-3">
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-        {/* MESSAGGIO FEEDBACK */}
-        {messaggio && (
-          <div className={`rounded-xl px-4 py-3 text-sm font-medium ${messaggio.tipo === 'ok' ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
-            {messaggio.testo}
+          {/* COLONNA SINISTRA: documenti + foto */}
+          <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
+            <DocumentiApprovazione
+              praticaId={pratica.id}
+              statoPratica={pratica.stato}
+              onRicaricaPratica={ricaricaPratica}
+            />
           </div>
-        )}
 
-        {/* STEP 1: DOCUMENTI */}
-        <DocumentiApprovazione
-          praticaId={pratica.id}
-          statoPratica={pratica.stato}
-          onStatoCambiato={(approvati) => setTuttiApprovati(approvati)}
-          onRicaricaPratica={ricaricaPratica}
-        />
+          {/* COLONNA DESTRA: assegnazione + dati */}
+          <div className="w-full lg:w-[340px] flex-shrink-0 flex flex-col gap-4">
 
-        {/* STEP 2: DESTINO PRATICA */}
-        <div
-          className={`bg-white border border-gray-200 rounded-2xl p-5 transition-opacity ${statoDestinoBloccato ? 'opacity-55' : 'opacity-100'}`}
-        >
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-sm font-semibold text-gray-800 flex items-center gap-1.5">
-              {statoDestinoBloccato ? '🔒' : '🚀'} Step 2 · Destino pratica
+            <AssegnazioneCard pratica={pratica} demolitoreNome={demolitoreNome} onAssegnato={ricaricaPratica} />
+
+            <CardInfo titolo="Cliente">
+              <Riga label="Nome" value={pratica.nome_richiedente} />
+              <Riga label="Telefono" value={pratica.telefono} />
+              <Riga label="Codice fiscale" value={pratica.codice_fiscale} mono />
+            </CardInfo>
+
+            <CardInfo titolo="Veicolo">
+              <Riga label="Targa" value={pratica.targa} />
+              <Riga label="Tipo" value={pratica.tipo_mezzo === 'altro' && pratica.tipo_mezzo_altro ? `Altro: ${pratica.tipo_mezzo_altro}` : pratica.tipo_mezzo} />
+              <Riga label="Marca / modello" value={`${pratica.marca || ''} ${pratica.modello || ''}`.trim() || null} />
+              <Riga label="Anno · km" value={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
+              {pratica.tipo_cambio && <Riga label="Cambio" value={lbl(CAMBIO_LABEL, pratica.tipo_cambio)} />}
+              {/* Condizioni dichiarate dal cliente */}
+              <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-gray-100">
+                <CondPill valore={pratica.incidentato} buonoSe={false} testoSi="Incidentata" testoNo="Non incidentata" />
+                <CondPill valore={pratica.marciante} buonoSe={true} testoSi="Cammina" testoNo="Non cammina" />
+                <CondPill valore={pratica.va_in_moto} buonoSe={true} testoSi="Si avvia" testoNo="Non si avvia" />
+                <CondPill valore={pratica.parti_mancanti} buonoSe={false} testoSi="Parti mancanti" testoNo="Completo" />
+              </div>
+              {pratica.note_veicolo && <div className="text-xs text-gray-600 italic mt-2 pt-2 border-t border-gray-100">“{pratica.note_veicolo}”</div>}
+            </CardInfo>
+
+            <CardInfo titolo="Ritiro">
+              <p className="text-sm text-gray-700">
+                {pratica.indirizzo_ritiro || '—'}
+                {pratica.comune_ritiro && ` · ${pratica.comune_ritiro}`}
+                {pratica.provincia_ritiro && ` (${pratica.provincia_ritiro})`}
+                {pratica.cap_ritiro && ` · ${pratica.cap_ritiro}`}
+              </p>
+              {pratica.spazio_carro_attrezzi && (
+                <div className="mt-2 pt-2 border-t border-gray-100">
+                  <Riga label="Spazio carro attrezzi" value={lbl(SPAZIO_LABEL, pratica.spazio_carro_attrezzi)} />
+                  {pratica.spazio_carro_attrezzi_note && <div className="text-xs text-gray-600 italic mt-1">“{pratica.spazio_carro_attrezzi_note}”</div>}
+                </div>
+              )}
+            </CardInfo>
+
+            <CardInfo titolo="Dichiarazioni e casistica">
+              {pratica.casistica && <Riga label="Casistica" value={NOMI_CASISTICHE[pratica.casistica] || pratica.casistica} />}
+              {pratica.libretto && <Riga label="Libretto" value={lbl(LIBRETTO_LABEL, pratica.libretto)} />}
+              {pratica.certificato_proprieta && <Riga label="Cert. proprietà" value={lbl(CDC_LABEL, pratica.certificato_proprieta)} />}
+              {pratica.fermo_amministrativo && <Riga label="Fermo amministrativo" value={lbl(FERMO_LABEL, pratica.fermo_amministrativo)} />}
+              {pratica.targhe_presenti != null && <Riga label="Targhe" value={pratica.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite'} />}
+              {pratica.delegato_nome && <Riga label="Delegato" value={`${pratica.delegato_nome}${pratica.delegato_telefono ? ` · ${pratica.delegato_telefono}` : ''}`} />}
+              {pratica.numero_eredi != null && (pratica.casistica === 'eredi_accettato' || pratica.casistica === 'eredi_rinuncia') && <Riga label="Numero eredi" value={String(pratica.numero_eredi)} />}
+              {pratica.nomi_rinunciatari && <Riga label="Rinunciatari" value={pratica.nomi_rinunciatari} />}
+            </CardInfo>
+
+            <div className="flex flex-col gap-2 pt-1">
+              {pratica.stato !== 'annullata' && (
+                <button onClick={annullaPratica} className="text-xs text-gray-500 hover:text-amber-700 border border-gray-200 hover:border-amber-200 px-3 py-2.5 rounded-xl transition-colors">
+                  Annulla pratica
+                </button>
+              )}
+              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:bg-red-50 px-3 py-2.5 rounded-xl transition-colors">
+                Elimina definitivamente
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* MODALE ELIMINAZIONE DEFINITIVA */}
+      {eliminaOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+            </div>
+            <p className="text-center font-semibold text-gray-900">Eliminare definitivamente?</p>
+            <p className="text-center text-sm text-gray-500 mt-1">
+              La pratica <b>{pratica.targa || 'senza targa'}</b>, con tutti i suoi documenti, foto e file, sarà cancellata per sempre dal database e dai server. L&apos;azione non può essere annullata.
             </p>
-            {statoDestinoBloccato && pratica.demolitore_id == null && (
-              <span className="text-[11px] text-gray-400 italic">Si sblocca quando tutti i documenti sono approvati</span>
-            )}
-            {pratica.demolitore_id && (
-              <span className="text-[11px] text-green-700 italic">Già assegnata</span>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-3">
-            <CardDestino
-              icona="🔧"
-              titolo="Demolizione standard"
-              descrizione="Algoritmo sceglie il demolitore migliore"
-              disabilitata={statoDestinoBloccato || processoInCorso}
-              onClick={assegnaDemolizioneStandard}
-              colore="blue"
-            />
-            <CardDestino
-              icona="🔥"
-              titolo="Asta demolitori"
-              descrizione="Trattativa extra per auto interessanti"
-              disabilitata={true}
-              onClick={() => alert('In arrivo prossimamente')}
-              colore="orange"
-            />
-            <CardDestino
-              icona="💼"
-              titolo="Proponi ai commercianti"
-              descrizione="Test mercato → poi OK cliente"
-              disabilitata={true}
-              onClick={() => alert('In arrivo prossimamente')}
-              colore="purple"
-            />
-            <CardDestino
-              icona="🛒"
-              titolo="Compra per NoiDemoliamo"
-              descrizione="Richiede OK cliente"
-              disabilitata={true}
-              onClick={() => alert('In arrivo prossimamente')}
-              colore="green"
-            />
+            {erroreElimina && <p className="text-center text-xs text-red-600 mt-2">{erroreElimina}</p>}
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setEliminaOpen(false)} disabled={eliminando} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">Annulla</button>
+              <button onClick={eliminaDefinitiva} disabled={eliminando} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
+                {eliminando ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino…</> : 'Sì, elimina'}
+              </button>
+            </div>
           </div>
         </div>
-
-        {/* DATI CLIENTE E VEICOLO */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div className="bg-white border border-gray-200 rounded-2xl p-5">
-            <p className="text-sm font-semibold text-gray-800 mb-3">👤 Cliente</p>
-            <DataItem label="Nome" value={pratica.nome_richiedente} />
-            <DataItem label="Telefono" value={pratica.telefono} />
-            <DataItem label="CF" value={pratica.codice_fiscale} mono />
-            <DataItem label="Ruolo" value={pratica.ruolo_richiedente} />
-          </div>
-          <div className="bg-white border border-gray-200 rounded-2xl p-5">
-            <p className="text-sm font-semibold text-gray-800 mb-3">🚗 Veicolo</p>
-            <DataItem label="Targa" value={pratica.targa} />
-            <DataItem label="Tipo" value={pratica.tipo_mezzo} />
-            <DataItem label="Marca / modello" value={`${pratica.marca || ''} ${pratica.modello || ''}`.trim() || null} />
-            <DataItem label="Anno · km" value={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
-            <DataItem label="Marciante" value={pratica.marciante ? 'Sì' : 'No'} />
-            <DataItem label="Incidentato" value={pratica.incidentato ? 'Sì' : 'No'} />
-          </div>
-        </div>
-
-        {/* INDIRIZZO RITIRO */}
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
-          <p className="text-sm font-semibold text-gray-800 mb-2">📍 Indirizzo ritiro</p>
-          <p className="text-sm text-gray-700">
-            {pratica.indirizzo_ritiro || '—'}
-            {pratica.comune_ritiro && ` · ${pratica.comune_ritiro}`}
-            {pratica.provincia_ritiro && ` (${pratica.provincia_ritiro})`}
-          </p>
-        </div>
-
-        {/* NOTE VEICOLO */}
-        {pratica.note_veicolo && (
-          <div className="bg-white border border-gray-200 rounded-2xl p-5">
-            <p className="text-sm font-semibold text-gray-800 mb-2">📝 Note del cliente sul veicolo</p>
-            <p className="text-sm text-gray-600 italic">{pratica.note_veicolo}</p>
-          </div>
-        )}
-
-        {/* ANNULLA PRATICA */}
-        <div className="flex justify-end pt-2">
-          <button
-            onClick={annullaPratica}
-            disabled={processoInCorso || pratica.stato === 'annullata'}
-            className="text-xs text-gray-500 hover:text-red-600 border border-gray-200 px-3 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            🗑️ Annulla pratica
-          </button>
-        </div>
-
-      </div>
+      )}
     </main>
   )
 }
 
+function CondPill({ valore, buonoSe, testoSi, testoNo }: { valore: boolean | null; buonoSe: boolean; testoSi: string; testoNo: string }) {
+  if (valore == null) return null
+  const buono = valore === buonoSe
+  return (
+    <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, background: buono ? '#EAF3DE' : '#FBE2E2', color: buono ? '#27500A' : '#9B1C1C' }}>
+      {valore ? testoSi : testoNo}
+    </span>
+  )
+}
+
 // ============================================================
-// SOTTOCOMPONENTI
+// CARD ASSEGNAZIONE
 // ============================================================
 
-function DataItem({ label, value, mono = false }: { label: string; value: string | null; mono?: boolean }) {
+function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: Pratica; demolitoreNome: string | null; onAssegnato: () => void }) {
+  const [mode, setMode] = useState<'idle' | 'lista'>('idle')
+  const [manuale, setManuale] = useState(false)
+  const [caricando, setCaricando] = useState(false)
+  const [candidati, setCandidati] = useState<Candidato[]>([])
+  const [vincitoreId, setVincitoreId] = useState<string | null>(null)
+  const [motivo, setMotivo] = useState<string | null>(null)
+  const [tuttiDemolitori, setTuttiDemolitori] = useState<Candidato[] | null>(null)
+  const [confermandoId, setConfermandoId] = useState<string | null>(null)
+  const [errore, setErrore] = useState<string | null>(null)
+
+  const assegnata = !!pratica.demolitore_id
+  const puoAssegnare = ['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(pratica.stato)
+
+  async function calcola(perManuale: boolean) {
+    setManuale(perManuale)
+    setMode('lista')
+    setCaricando(true)
+    setErrore(null)
+    setMotivo(null)
+    setTuttiDemolitori(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/assegna-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, dry_run: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrore(data?.error || 'Errore nel calcolo'); setCandidati([]); return }
+      setCandidati(data.candidati || [])
+      setVincitoreId(data.vincitore?.id ?? null)
+      setMotivo(data.motivo ?? null)
+    } catch {
+      setErrore('Errore di rete durante il calcolo.')
+    } finally {
+      setCaricando(false)
+    }
+  }
+
+  async function caricaTutti() {
+    const { data } = await supabase.from('demolitori').select('id, ragione_sociale, citta').eq('stato', 'attivo').order('ragione_sociale')
+    setTuttiDemolitori((data as Candidato[]) || [])
+  }
+
+  async function conferma(demolitoreId: string) {
+    setConfermandoId(demolitoreId)
+    setErrore(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/assegna-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, demolitore_id: demolitoreId, manuale }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrore(data?.error || 'Errore assegnazione'); return }
+      setMode('idle')
+      onAssegnato()
+    } catch {
+      setErrore('Errore di rete durante l\'assegnazione.')
+    } finally {
+      setConfermandoId(null)
+    }
+  }
+
+  // --- Vista: già assegnata ---
+  if (assegnata) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-2xl p-4">
+        <p className="text-sm font-semibold text-gray-800 mb-3">Assegnazione</p>
+        <div className="rounded-xl p-3" style={{ background: '#E6F1FB', border: '1px solid #B5D4F4' }}>
+          <div className="flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E4E8C" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
+            <span className="text-sm font-bold" style={{ color: '#0C447C' }}>{demolitoreNome || 'Demolitore'}</span>
+          </div>
+          <div className="text-[11.5px] mt-2" style={{ color: '#1E4E8C' }}>Assegnata il {fmtData(pratica.data_assegnazione)}</div>
+          {pratica.scadenza_proposta_ritiro && <div className="text-[11.5px]" style={{ color: '#1E4E8C' }}>Deve proporre il ritiro entro {fmtData(pratica.scadenza_proposta_ritiro)}</div>}
+        </div>
+        {mode === 'idle' ? (
+          <button onClick={() => calcola(true)} className="mt-3 text-xs text-gray-500 hover:text-blue-600 underline">Riassegna a un altro demolitore</button>
+        ) : (
+          <ListaCandidati caricando={caricando} candidati={candidati} vincitoreId={manuale ? null : vincitoreId} motivo={motivo} errore={errore} confermandoId={confermandoId} tuttiDemolitori={tuttiDemolitori} onConferma={conferma} onCaricaTutti={caricaTutti} onChiudi={() => setMode('idle')} />
+        )}
+      </div>
+    )
+  }
+
+  // --- Vista: non ancora assegnabile (documenti non pronti) ---
+  if (!puoAssegnare) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-2xl p-4">
+        <p className="text-sm font-semibold text-gray-800 mb-2">Assegnazione</p>
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+          Prima approva tutti i documenti
+        </div>
+      </div>
+    )
+  }
+
+  // --- Vista: da assegnare ---
   return (
-    <div className="flex justify-between text-sm py-1">
-      <span className="text-gray-500">{label}</span>
-      <span className={`font-medium text-gray-800 ${mono ? 'font-mono text-xs' : ''}`}>{value || '—'}</span>
+    <div className="bg-white border border-gray-200 rounded-2xl p-4">
+      <p className="text-sm font-semibold text-gray-800 mb-3">Assegnazione</p>
+      {mode === 'idle' ? (
+        <div className="flex flex-col gap-2">
+          <button onClick={() => calcola(false)} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4m0 12v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4" /><circle cx="12" cy="12" r="3" /></svg>
+            Assegna in automatico
+          </button>
+          <button onClick={() => { calcola(true) }} className="w-full bg-white hover:bg-blue-50 text-blue-600 border border-blue-200 rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+            Scegli io il demolitore
+          </button>
+        </div>
+      ) : (
+        <ListaCandidati caricando={caricando} candidati={candidati} vincitoreId={manuale ? null : vincitoreId} motivo={motivo} errore={errore} confermandoId={confermandoId} tuttiDemolitori={tuttiDemolitori} onConferma={conferma} onCaricaTutti={caricaTutti} onChiudi={() => setMode('idle')} />
+      )}
     </div>
   )
 }
 
-function CardDestino(props: {
-  icona: string
-  titolo: string
-  descrizione: string
-  disabilitata: boolean
-  onClick: () => void
-  colore: 'blue' | 'orange' | 'purple' | 'green'
+function ListaCandidati(props: {
+  caricando: boolean
+  candidati: Candidato[]
+  vincitoreId: string | null
+  motivo: string | null
+  errore: string | null
+  confermandoId: string | null
+  tuttiDemolitori: Candidato[] | null
+  onConferma: (id: string) => void
+  onCaricaTutti: () => void
+  onChiudi: () => void
 }) {
-  const coloreIcona = {
-    blue: 'text-blue-600',
-    orange: 'text-orange-600',
-    purple: 'text-purple-600',
-    green: 'text-green-600',
-  }[props.colore]
+  const { caricando, candidati, vincitoreId, motivo, errore, confermandoId, tuttiDemolitori } = props
+
+  if (caricando) {
+    return <div className="flex items-center gap-2 text-sm text-gray-500 py-4 justify-center"><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Calcolo in corso…</div>
+  }
+
   return (
-    <button
-      onClick={props.onClick}
-      disabled={props.disabilitata}
-      className="bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-xl p-3 flex items-start gap-3 text-left disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-    >
-      <span className={`text-xl ${coloreIcona}`}>{props.icona}</span>
-      <div>
-        <div className="text-sm font-medium text-gray-800">{props.titolo}</div>
-        <div className="text-xs text-gray-500 mt-0.5">{props.descrizione}</div>
-      </div>
-    </button>
+    <div className="mt-1">
+      {errore && <div className="text-xs text-red-600 mb-2">{errore}</div>}
+
+      {candidati.length > 0 ? (
+        <div className="flex flex-col gap-2">
+          {candidati.map((c, i) => {
+            const consigliato = vincitoreId === c.id
+            const vel = c.velocita_media_giorni != null && c.velocita_media_giorni < 999 ? `${c.velocita_media_giorni.toFixed(1)} gg` : 'nuovo'
+            return (
+              <div key={c.id} className="rounded-xl p-2.5" style={{ border: `1.5px solid ${consigliato ? '#B5D4F4' : '#E5E7EB'}`, background: consigliato ? '#F3F8FE' : '#fff' }}>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-bold text-gray-400">{i + 1}º</span>
+                  <span className="text-[13px] font-semibold text-gray-900 flex-1 truncate">{c.ragione_sociale}</span>
+                  {consigliato && <span className="text-[9.5px] font-bold px-2 py-0.5 rounded-full" style={{ background: '#2563eb', color: '#fff' }}>Consigliato</span>}
+                </div>
+                <div className="flex gap-3 mt-1.5 text-[11px] text-gray-500">
+                  {c.distanza_km != null && <span><b className="text-gray-700">{Math.round(c.distanza_km)} km</b>{c.durata_minuti != null && ` · ${Math.round(c.durata_minuti)} min`}</span>}
+                  <span><b className="text-gray-700">{vel}</b></span>
+                  {c.pratiche_aperte != null && <span>{c.pratiche_aperte} aperte</span>}
+                </div>
+                <button onClick={() => props.onConferma(c.id)} disabled={confermandoId != null} className="mt-2 w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-1.5 text-xs font-semibold disabled:opacity-50">
+                  {confermandoId === c.id ? 'Assegnazione…' : `Assegna a ${c.ragione_sociale}`}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="text-xs text-gray-500">
+          <p className="mb-2">{motivo || 'Nessun demolitore copre questa zona.'}</p>
+          {tuttiDemolitori == null ? (
+            <button onClick={props.onCaricaTutti} className="text-blue-600 underline font-semibold">Mostra tutti i demolitori attivi</button>
+          ) : tuttiDemolitori.length === 0 ? (
+            <p className="text-gray-400">Nessun demolitore attivo nel sistema.</p>
+          ) : (
+            <div className="flex flex-col gap-2 mt-1">
+              {tuttiDemolitori.map(c => (
+                <div key={c.id} className="rounded-xl p-2.5 border border-gray-200 flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-semibold text-gray-900 truncate">{c.ragione_sociale}</div>
+                    {c.citta && <div className="text-[11px] text-gray-400">{c.citta}</div>}
+                  </div>
+                  <button onClick={() => props.onConferma(c.id)} disabled={confermandoId != null} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50 flex-shrink-0">
+                    {confermandoId === c.id ? '…' : 'Assegna'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      <button onClick={props.onChiudi} className="mt-3 text-xs text-gray-400 hover:text-gray-600">Chiudi</button>
+    </div>
   )
 }
 
-function etichettaStato(stato: string): string {
-  const map: Record<string, string> = {
-    'in_attesa_documenti': 'Attesa documenti',
-    'in_attesa_approvazione_admin': 'Da approvare',
-    'da_assegnare': 'Da assegnare',
-    'in_assegnazione_manuale': 'Assegnazione manuale',
-    'assegnata': 'Assegnata',
-    'in_attesa_conferma_cliente': 'Attesa conferma cliente',
-    'ritiro_confermato': 'Ritiro confermato',
-    'ritirata': 'Veicolo ritirato',
-    'in_attesa_cert_rottamazione': 'Attesa cert. rottamazione',
-    'in_attesa_cert_radiazione_pra': 'Attesa cert. PRA',
-    'completata': 'Completata',
-    'annullata': 'Annullata',
-  }
-  return map[stato] || stato
+// ============================================================
+// SOTTOCOMPONENTI DATI
+// ============================================================
+
+function CardInfo({ titolo, children }: { titolo: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-2xl p-4">
+      <p className="text-sm font-semibold text-gray-800 mb-2.5">{titolo}</p>
+      {children}
+    </div>
+  )
 }
 
-function coloreStatoClasses(stato: string): string {
-  if (['completata'].includes(stato)) return 'bg-green-100 text-green-800'
-  if (['annullata'].includes(stato)) return 'bg-gray-200 text-gray-600'
-  if (['assegnata', 'ritiro_confermato', 'ritirata'].includes(stato)) return 'bg-blue-100 text-blue-800'
-  if (stato === 'in_assegnazione_manuale') return 'bg-red-100 text-red-800'
-  return 'bg-yellow-100 text-yellow-800'
+function Riga({ label, value, mono = false }: { label: string; value: string | null; mono?: boolean }) {
+  return (
+    <div className="flex justify-between gap-3 text-sm py-1">
+      <span className="text-gray-500 flex-shrink-0">{label}</span>
+      <span className={`font-medium text-gray-800 text-right truncate ${mono ? 'font-mono text-xs' : ''}`}>{value || '—'}</span>
+    </div>
+  )
 }
