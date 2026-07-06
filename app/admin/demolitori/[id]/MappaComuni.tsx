@@ -869,48 +869,87 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
     : layerCorrente === 'province' ? 'Province'
     : 'Comuni'
 
+  // La copertura è stata MODIFICATA rispetto a quella salvata?
+  // Confronta una "firma" della selezione attuale con quella iniziale (dal DB).
+  function firmaSets(r: Set<string>, p: Set<string>, pe: Set<string>, ci: Set<string>, ce: Set<string>): string {
+    return JSON.stringify({ r: [...r].sort(), p: [...p].sort(), pe: [...pe].sort(), ci: [...ci].sort(), ce: [...ce].sort() })
+  }
+  const setsIniziali = (() => {
+    const r = new Set<string>(), p = new Set<string>(), pe = new Set<string>(), ci = new Set<string>(), ce = new Set<string>()
+    for (const rec of coperturaIniziale || []) {
+      if (rec.tipo === 'regione') r.add(rec.comune)
+      else if (rec.tipo === 'provincia') p.add(rec.comune)
+      else if (rec.tipo === 'provincia_esclusa') pe.add(rec.comune)
+      else if (rec.tipo === 'comune_incluso') ci.add(rec.comune)
+      else if (rec.tipo === 'comune_escluso') ce.add(rec.comune)
+    }
+    return { r, p, pe, ci, ce }
+  })()
+  const coperturaModificata =
+    firmaSets(regioniSelezionate, provinceSelezionate, provinceEscluse, comuniInclusi, comuniEsclusi) !==
+    firmaSets(setsIniziali.r, setsIniziali.p, setsIniziali.pe, setsIniziali.ci, setsIniziali.ce)
+
   return (
-    <div style={{ display: 'flex', gap: '12px', height: '580px' }}>
-      <div style={{ width: '220px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 flex-1 overflow-y-auto">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Vista</p>
-            <span className="text-xs font-bold text-blue-600">{labelLayer}</span>
+    <div style={{ display: 'flex', gap: '12px', height: '600px' }}>
+      <div style={{ width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        <div className="flex-1 overflow-y-auto p-3.5" style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14 }}>
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[10.5px] font-bold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.5 }}>Vista attuale</p>
+            <span className="text-[10.5px] font-bold px-2.5 py-1 rounded-full" style={{ background: '#DBEAFE', color: '#1E4E8C' }}>{labelLayer}</span>
           </div>
 
           {regioniSelezionate.size === 0 && provinceSelezionate.size === 0 && comuniInclusi.size === 0 ? (
-            <p className="text-xs text-gray-300 text-center mt-4">Clicca sulla mappa per selezionare l'area di copertura</p>
+            <div className="text-center mt-6 px-2">
+              <div className="flex justify-center mb-2">
+                <span style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                </span>
+              </div>
+              <p className="text-xs font-semibold text-gray-700">Nessuna zona selezionata</p>
+              <p className="text-[11px] mt-1" style={{ color: '#94A3B8', lineHeight: 1.5 }}>Clicca sulla mappa per aggiungere le zone coperte</p>
+            </div>
           ) : (
-            <div className="flex flex-col gap-2 mt-2">
+            <div className="flex flex-col gap-1.5 mt-1">
               {regioniSelezionate.size > 0 && (
                 <>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">Regioni</p>
+                  <p className="text-[10px] font-bold uppercase mt-1" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Regioni</p>
                   {Array.from(regioniSelezionate).sort().map(r => (
-                    <div key={r} className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                      <span className="text-xs font-medium text-blue-800 flex-1">{r}</span>
+                    <div key={r} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#E0EDFB' }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
+                      <span className="text-xs font-bold flex-1 truncate" style={{ color: '#1E4E8C' }}>{r}</span>
                     </div>
                   ))}
                 </>
               )}
               {provinceSelezionate.size > 0 && (
                 <>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mt-1">Province</p>
+                  <p className="text-[10px] font-bold uppercase mt-1" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Province</p>
                   {Array.from(provinceSelezionate).sort().map(p => (
-                    <div key={p} className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                      <span className="text-xs font-medium text-blue-800 flex-1">{p}</span>
+                    <div key={p} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#E0EDFB' }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
+                      <span className="text-xs font-bold flex-1 truncate" style={{ color: '#1E4E8C' }}>{p}</span>
                     </div>
                   ))}
                 </>
               )}
               {comuniInclusi.size > 0 && (
                 <>
-                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mt-1">Comuni inclusi</p>
+                  <p className="text-[10px] font-bold uppercase mt-1" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Comuni inclusi</p>
                   {Array.from(comuniInclusi).sort().map(c => (
-                    <div key={c} className="flex items-center gap-2 bg-blue-50 border border-blue-100 rounded-lg px-2 py-1.5">
-                      <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0" />
-                      <span className="text-xs font-medium text-blue-800 flex-1">{c}</span>
+                    <div key={c} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#E0EDFB' }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
+                      <span className="text-xs font-bold flex-1 truncate" style={{ color: '#1E4E8C' }}>{c}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {comuniEsclusi.size > 0 && (
+                <>
+                  <p className="text-[10px] font-bold uppercase mt-1" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Esclusi</p>
+                  {Array.from(comuniEsclusi).sort().map(c => (
+                    <div key={c} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#FBE2E2' }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#E24B4A', flexShrink: 0 }} />
+                      <span className="text-xs font-bold flex-1 truncate" style={{ color: '#9B1C1C' }}>{c}</span>
                     </div>
                   ))}
                 </>
@@ -935,14 +974,18 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
           </button>
         )}
 
-        {(regioniSelezionate.size > 0 || provinceSelezionate.size > 0 || comuniInclusi.size > 0) && (
-          <button onClick={handleSalva} className="w-full bg-blue-600 text-white py-3 rounded-xl text-sm font-semibold hover:bg-blue-700 transition-all">
-            Salva copertura
-          </button>
+        {/* Il salvataggio appare SOLO se la copertura è stata modificata */}
+        {coperturaModificata && (
+          <>
+            <p className="text-[11.5px] font-semibold text-center" style={{ color: '#B45309', margin: 0 }}>Modifiche non salvate</p>
+            <button onClick={handleSalva} className="w-full text-white py-3 rounded-xl text-sm font-bold transition-all hover:opacity-95 active:scale-[0.99]" style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
+              Salva copertura
+            </button>
+          </>
         )}
       </div>
 
-      <div style={{ flex: 1, position: 'relative', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e2e8f0' }}>
+      <div style={{ flex: 1, position: 'relative', borderRadius: '14px', overflow: 'hidden', border: '1.5px solid #E5E7EB', boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
             <div className="flex flex-col items-center gap-2">

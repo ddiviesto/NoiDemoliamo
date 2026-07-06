@@ -21,12 +21,19 @@ interface Demolitore {
 
 interface CoperturaRow { demolitore_id: string; comune: string; tipo: string }
 
-const STATO_META: Record<string, { label: string; bg: string; text: string }> = {
-  attivo: { label: 'Attivo', bg: '#DCF3E4', text: '#1F7A43' },
-  in_attesa: { label: 'In attesa', bg: '#FAEEDA', text: '#854F0B' },
-  sospeso: { label: 'Sospeso', bg: '#FBE2E2', text: '#9B1C1C' },
+// Stato semplificato: o è attivo (riceve pratiche) o non lo è.
+function metaStato(s: string) {
+  return s === 'attivo'
+    ? { label: 'Attivo', bg: '#DCF3E4', text: '#1F7A43' }
+    : { label: 'Non attivo', bg: '#E7EAEE', text: '#4B5563' }
 }
-function metaStato(s: string) { return STATO_META[s] || { label: s, bg: '#E7EAEE', text: '#4B5563' } }
+
+function iniziali(nome: string): string {
+  const parti = nome.trim().split(/\s+/).filter(Boolean)
+  if (parti.length === 0) return '—'
+  if (parti.length === 1) return parti[0].slice(0, 2).toUpperCase()
+  return (parti[0][0] + parti[1][0]).toUpperCase()
+}
 
 function riassuntoCopertura(records: CoperturaRow[]): string | null {
   const regioni = records.filter(r => r.tipo === 'regione').map(r => r.comune)
@@ -130,13 +137,13 @@ export default function GestioneDemolitori() {
   const filtrati = q ? demolitori.filter(d => [d.ragione_sociale, d.citta, d.provincia].filter(Boolean).join(' ').toLowerCase().includes(q)) : demolitori
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: '#F4F5FB' }}>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
 
   return (
-    <main className="min-h-screen flex" style={{ background: '#F4F5FB' }}>
+    <main className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
       <AdminSidebar attivo="demolitori" />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -157,43 +164,64 @@ export default function GestioneDemolitori() {
         </div>
 
         <div className="p-6 overflow-auto">
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#F7F9FC] text-[10.5px] font-bold text-gray-400 uppercase tracking-wide">
-              <div style={{ flex: 2.2 }}>Demolitore</div>
-              <div style={{ flex: 1.4 }}>Stato</div>
-              <div style={{ flex: 1.8 }}>Copertura</div>
-              <div style={{ flex: 1 }}>Fee</div>
-              <div style={{ flex: 1, textAlign: 'right' }}>Aperte</div>
+          {filtrati.length === 0 ? (
+            <div className="px-4 py-10 text-center text-sm text-gray-500 bg-white" style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>
+              {demolitori.length === 0 ? 'Nessun demolitore. Aggiungi il primo per iniziare.' : 'Nessun demolitore trovato.'}
             </div>
-
-            {filtrati.length === 0 ? (
-              <div className="px-4 py-10 text-center text-sm text-gray-400">{demolitori.length === 0 ? 'Nessun demolitore. Aggiungi il primo per iniziare.' : 'Nessun demolitore trovato.'}</div>
-            ) : (
-              filtrati.map(d => {
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {filtrati.map(d => {
                 const s = metaStato(d.stato)
                 const cop = riassuntoCopertura(coperture[d.id] || [])
+                const barColor = d.stato === 'attivo' ? '#97C459' : '#C0C7D1'
+                const nAperte = aperte[d.id] || 0
                 return (
-                  <div key={d.id} onClick={() => router.push(`/admin/demolitori/${d.id}`)} className="flex items-center gap-3 px-4 py-3 border-t border-gray-100 cursor-pointer hover:bg-blue-50/40 transition-colors">
-                    <div style={{ flex: 2.2, minWidth: 0 }}>
-                      <div className="text-[13px] font-semibold text-gray-900 truncate flex items-center gap-1.5">
-                        {d.ragione_sociale}
-                        {d.contratto_firmato && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-                      </div>
-                      <div className="text-[11px] text-gray-400 truncate">{d.citta ? `${d.citta}${d.provincia ? ` (${d.provincia})` : ''}` : '—'}</div>
+                  <div
+                    key={d.id}
+                    onClick={() => router.push(`/admin/demolitori/${d.id}`)}
+                    className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
+                    style={{ border: '1.5px solid #E5E7EB', borderLeft: `4px solid ${barColor}`, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}
+                  >
+                    {/* Quadratino iniziali */}
+                    <div style={{ width: 46, height: 46, borderRadius: 12, background: '#DBEAFE', color: '#1E4E8C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
+                      {iniziali(d.ragione_sociale)}
                     </div>
-                    <div style={{ flex: 1.4 }}>
-                      <span className="inline-block text-[10.5px] font-semibold rounded-full" style={{ background: s.bg, color: s.text, padding: '3px 9px' }}>{s.label}</span>
+
+                    {/* Nome + città */}
+                    <div style={{ flex: 1.6, minWidth: 0 }}>
+                      <div className="text-[15px] font-bold text-gray-900 truncate">{d.ragione_sociale}</div>
+                      <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>{d.citta ? `${d.citta}${d.provincia ? ` (${d.provincia})` : ''}` : 'Sede non impostata'}</div>
                     </div>
-                    <div style={{ flex: 1.8, minWidth: 0 }}>
-                      {cop ? <span className="text-[11.5px] text-gray-600 truncate">{cop}</span> : <span className="text-[11.5px] text-gray-300">Da impostare</span>}
+
+                    {/* Stato */}
+                    <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: s.bg, color: s.text, padding: '4px 12px' }}>{s.label}</span>
                     </div>
-                    <div style={{ flex: 1 }} className="text-[12px] text-gray-700">{d.fee_per_pratica ? `${d.fee_per_pratica} €` : '—'}</div>
-                    <div style={{ flex: 1, textAlign: 'right' }} className="text-[12px] font-semibold text-gray-700">{aperte[d.id] || 0}</div>
+
+                    {/* Copertura */}
+                    <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+                      <div className="text-[10.5px] font-bold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Copertura</div>
+                      {cop
+                        ? <div className="text-[13px] font-semibold truncate" style={{ color: '#111827', marginTop: 2 }}>{cop}</div>
+                        : <div className="text-[13px] truncate" style={{ color: '#94A3B8', marginTop: 2 }}>Da impostare</div>}
+                    </div>
+
+                    {/* Fee */}
+                    <div style={{ flexShrink: 0, minWidth: 70, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+                      <div className="text-[10.5px] font-bold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Fee</div>
+                      <div className="text-[13.5px] font-bold" style={{ color: '#111827', marginTop: 2 }}>{d.fee_per_pratica ? `${d.fee_per_pratica} €` : '—'}</div>
+                    </div>
+
+                    {/* Pratiche aperte */}
+                    <div style={{ flexShrink: 0, textAlign: 'center', background: nAperte > 0 ? '#E0EDFB' : '#F3F5F9', borderRadius: 10, padding: '6px 14px', minWidth: 70 }}>
+                      <div className="text-[15px] font-bold" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>{nAperte}</div>
+                      <div className="text-[10px] font-semibold uppercase" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>aperte</div>
+                    </div>
                   </div>
                 )
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
         </div>
       </div>
 
@@ -217,6 +245,7 @@ export default function GestioneDemolitori() {
 
               <Sezione titolo="Indirizzo sede">
                 <AutocompleteIndirizzo
+                  compatto
                   placeholder="Cerca l'indirizzo…"
                   onSelezione={(d) => setForm(f => ({ ...f, indirizzo: d.indirizzo, citta: d.comune || '', provincia: d.provincia || '', cap: d.cap || '', lat: d.lat ?? null, lng: d.lng ?? null }))}
                 />
@@ -272,8 +301,8 @@ function Sezione({ titolo, children }: { titolo: string; children: React.ReactNo
 function Campo({ label, value, onChange, placeholder, cols = 1, maxLength }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; cols?: 1 | 2; maxLength?: number }) {
   return (
     <div className={cols === 2 ? 'col-span-2' : ''}>
-      <label className="block text-xs font-medium text-gray-500 mb-1">{label}</label>
-      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={maxLength} className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
+      <label className="block text-[11px] font-semibold mb-1.5" style={{ color: '#475569' }}>{label}</label>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} maxLength={maxLength} className="w-full border-[1.5px] border-gray-200 rounded-[10px] px-3 py-2 text-[13.5px] font-medium text-gray-900 bg-white outline-none hover:border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-400" />
     </div>
   )
 }

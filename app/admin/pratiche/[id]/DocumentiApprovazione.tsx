@@ -96,6 +96,23 @@ const NOMI_CASISTICHE: Record<string, string> = {
   targhe_straniere: 'Targhe straniere',
 }
 
+// Stile card condiviso (identico alle card della lista pratiche)
+const STILE_CARD: React.CSSProperties = {
+  background: '#fff',
+  border: '1.5px solid #E5E7EB',
+  borderRadius: 14,
+  boxShadow: '0 1px 3px rgba(16,24,40,0.07)',
+}
+
+function TitoloCard({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0 }}>
+      <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+      {children}
+    </p>
+  )
+}
+
 // ============================================================
 // COMPONENTE
 // ============================================================
@@ -264,7 +281,7 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
 
   if (loading) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-6 flex items-center justify-center">
+      <div className="p-6 flex items-center justify-center" style={STILE_CARD}>
         <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </div>
     )
@@ -281,11 +298,11 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
 
   return (
     <>
-      <div className="bg-white border border-gray-200 rounded-2xl p-5">
+      <div className="p-5" style={STILE_CARD}>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-semibold text-gray-800">Documenti da approvare</p>
-            <p className="text-xs text-gray-400 mt-0.5">{approvatiCount} di {daApprovare.length} approvati{daVerificareCount > 0 ? ` · ${daVerificareCount} da verificare` : ''}</p>
+            <TitoloCard>Documenti da approvare</TitoloCard>
+            <p className="text-xs mt-1" style={{ color: '#64748b' }}>{approvatiCount} di {daApprovare.length} approvati{daVerificareCount > 0 ? ` · ${daVerificareCount} da verificare` : ''}</p>
           </div>
           {daVerificareCount > 0 && (
             <button onClick={approvaTutti} disabled={azione} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50">
@@ -341,8 +358,8 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
 
       {/* FOTO DEL VEICOLO (sola visione) */}
       {foto.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-2xl p-5">
-          <p className="text-sm font-semibold text-gray-800 mb-3">Foto del veicolo <span className="text-gray-400 font-normal">· {foto.length}</span></p>
+        <div className="p-5" style={STILE_CARD}>
+          <div className="mb-3"><TitoloCard>Foto del veicolo <span style={{ color: '#64748b', fontWeight: 400 }}>· {foto.length}</span></TitoloCard></div>
           <div className="flex flex-wrap gap-2">
             {foto.map((f, idx) => (
               /* eslint-disable-next-line @next/next/no-img-element */
@@ -473,7 +490,7 @@ function RigaDoc(props: {
           </div>
         )}
         {(doc.stato === 'approvato' || doc.stato === 'rifiutato') && (
-          <button onClick={doc.stato === 'approvato' ? props.onRifiuta : props.onTornaInVerifica} disabled={props.azione} style={{ background: 'none', border: 'none', color: '#8a98a8', fontSize: 11.5, textDecoration: 'underline' }}>
+          <button onClick={doc.stato === 'approvato' ? props.onRifiuta : props.onTornaInVerifica} disabled={props.azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
             {doc.stato === 'approvato' ? 'Rifiuta' : 'Rimetti in verifica'}
           </button>
         )}

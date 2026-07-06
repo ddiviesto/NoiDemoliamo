@@ -233,14 +233,14 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: '#F4F5FB' }}>
+      <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen flex" style={{ background: '#F4F5FB' }}>
+    <main className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
 
       {/* SIDEBAR (condivisa) */}
       <AdminSidebar attivo="pratiche" extra={
@@ -256,11 +256,11 @@ export default function AdminDashboard() {
         <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-none">Pratiche</h1>
-            <p className="text-xs text-gray-400 mt-1">{pratiche.length} totali</p>
+            <p className="text-xs text-gray-500 mt-1">{pratiche.length} totali</p>
           </div>
           <div className="flex-1 max-w-md ml-auto">
             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA7B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
               <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca targa, cliente, telefono…" className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400" />
               {ricerca && <button onClick={() => setRicerca('')} className="text-gray-400 hover:text-gray-600 text-sm">×</button>}
             </div>
@@ -284,65 +284,83 @@ export default function AdminDashboard() {
             <ChipFiltro attivo={filtro === 'completate'} onClick={() => setFiltro('completate')}>Completate/annullate</ChipFiltro>
           </div>
 
-          {/* TABELLA */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <div className="flex items-center gap-3 px-4 py-2.5 bg-[#F7F9FC] text-[10.5px] font-bold text-gray-400 uppercase tracking-wide">
-              <div style={{ width: 4 }} />
-              <div style={{ flex: 2.4 }}>Veicolo</div>
-              <div style={{ flex: 2 }}>Cliente</div>
-              <div style={{ flex: 2 }}>Stato</div>
-              <div style={{ flex: 1, textAlign: 'right' }}>Attesa</div>
-              <div style={{ width: 28 }} />
-            </div>
-
-            {ordinate.length === 0 ? (
-              <div className="px-4 py-10 text-center text-sm text-gray-400">Nessuna pratica in questa vista.</div>
-            ) : (
-              ordinate.map(p => {
+          {/* LISTA PRATICHE A CARD */}
+          {ordinate.length === 0 ? (
+            <div className="card-admin px-4 py-10 text-center text-sm text-gray-500">Nessuna pratica in questa vista.</div>
+          ) : (
+            <div className="flex flex-col gap-2.5">
+              {ordinate.map(p => {
                 const m = metaStato(p.stato)
                 const contatta = daContattare(p)
                 const min = minutiAttesa(p)
                 const rosso = rango(p) <= 2 && min > SOGLIA_ROSSO_MIN
+                const chiusa = !isAttiva(p.stato)
                 const barColor = contatta ? '#E24B4A' : m.bar
+                const azioneRichiesta = rango(p) <= 2
                 return (
-                  <div key={p.id} onClick={() => router.push(`/admin/pratiche/${p.id}`)} className="flex items-center gap-3 px-4 py-3 border-t border-gray-100 cursor-pointer hover:bg-blue-50/40 transition-colors">
-                    <div style={{ width: 4, height: 36, background: barColor, borderRadius: 4, flexShrink: 0 }} />
-                    <div style={{ flex: 2.4, minWidth: 0 }}>
-                      <div className="text-[13px] font-semibold text-gray-900 truncate">{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}</div>
-                      <div className="text-[11px] text-gray-400 truncate">
+                  <div
+                    key={p.id}
+                    onClick={() => router.push(`/admin/pratiche/${p.id}`)}
+                    className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
+                    style={{ border: '1.5px solid #E5E7EB', borderLeft: `4px solid ${barColor}`, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa ? 0.82 : 1 }}
+                  >
+                    {/* Quadratino icona veicolo (o spunta se chiusa) */}
+                    <div style={{ width: 46, height: 46, borderRadius: 12, background: p.stato === 'completata' ? '#DCF3E4' : '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      {p.stato === 'completata'
+                        ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        : <IconaVeicolo tipo={p.tipo_mezzo} />}
+                    </div>
+
+                    {/* Veicolo */}
+                    <div style={{ flex: 1.6, minWidth: 0 }}>
+                      <div className="text-[15px] font-bold text-gray-900 truncate">{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}</div>
+                      <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
                         {p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : (p.tipo_mezzo || '—')}
-                        {p.comune_ritiro && ` · ${p.comune_ritiro}`}
+                        {p.comune_ritiro && ` · ${p.comune_ritiro}`}{p.provincia_ritiro && ` (${p.provincia_ritiro})`}
                       </div>
                     </div>
-                    <div style={{ flex: 2, minWidth: 0 }}>
-                      <div className="text-[12.5px] text-gray-700 truncate">{p.nome_richiedente || '—'}</div>
-                      <div className="text-[11px] text-gray-400 truncate">{p.telefono || ''}</div>
+
+                    {/* Cliente */}
+                    <div style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+                      <div className="text-[13.5px] font-semibold text-gray-900 truncate">{p.nome_richiedente || '—'}</div>
+                      <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>{p.telefono || ''}</div>
                     </div>
-                    <div style={{ flex: 2, minWidth: 0 }}>
-                      <span className="inline-block text-[10.5px] font-semibold rounded-full" style={{ background: contatta ? '#FDF7EA' : m.bg, color: contatta ? '#854F0B' : m.text, padding: '3px 9px' }}>
+
+                    {/* Stato + demolitore */}
+                    <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: contatta ? '#FDF7EA' : m.bg, color: contatta ? '#854F0B' : m.text, padding: '4px 12px' }}>
                         {contatta ? 'Da contattare' : m.label}
                       </span>
                       {p.demolitore_id && demolitori[p.demolitore_id] && (
-                        <div className="text-[11px] text-gray-500 truncate mt-1">→ {demolitori[p.demolitore_id]}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.9" style={{ flexShrink: 0 }}><path d="M3 21h18M6 21V7l6-4 6 4v14" /></svg>
+                          <span className="text-[12.5px] font-semibold truncate" style={{ color: '#374151' }}>{demolitori[p.demolitore_id]}</span>
+                        </div>
                       )}
                     </div>
-                    <div style={{ flex: 1, textAlign: 'right' }}>
-                      {isAttiva(p.stato)
-                        ? <span className="text-[11.5px] font-semibold" style={{ color: rosso ? '#C0392B' : '#6b7280' }}>{formatAttesa(min)}</span>
-                        : <span className="text-[11.5px] text-gray-300">—</span>}
-                    </div>
+
+                    {/* Attesa */}
+                    {!chiusa ? (
+                      <div style={{ flexShrink: 0, textAlign: 'center', background: rosso ? '#FCEBEB' : '#F3F5F9', borderRadius: 10, padding: '6px 12px', minWidth: 74 }}>
+                        <div className="text-[14px] font-bold" style={{ color: rosso ? '#A32D2D' : '#374151' }}>{formatAttesa(min)}</div>
+                        <div className="text-[10px] font-semibold uppercase" style={{ color: rosso ? '#A32D2D' : '#6B7280' }}>{azioneRichiesta ? 'in attesa' : 'in corso'}</div>
+                      </div>
+                    ) : (
+                      <div style={{ flexShrink: 0, minWidth: 74 }} />
+                    )}
+
                     <button
                       onClick={(e) => { e.stopPropagation(); setErroreElimina(null); setConfermaElimina(p) }}
                       aria-label="Elimina pratica"
-                      className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-600 hover:bg-red-50 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
                     >
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
                     </button>
                   </div>
                 )
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
 
         </div>
       </div>
@@ -416,9 +434,51 @@ export default function AdminDashboard() {
 // SOTTOCOMPONENTI
 // ============================================================
 
+function IconaVeicolo({ tipo }: { tipo: string | null }) {
+  const common = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' as const, stroke: '#2563eb', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
+  const t = (tipo || '').toLowerCase()
+
+  if (t === 'motoveicolo' || t === 'ciclomotore') {
+    return (
+      <svg {...common}>
+        <circle cx="5.5" cy="17.5" r="2.5" />
+        <circle cx="18.5" cy="17.5" r="2.5" />
+        <path d="M15 6h2.5L20 10.5" />
+        <path d="M5.5 17.5 9 11h5l4.5 6.5" />
+        <path d="M9 11 7.5 8H5" />
+      </svg>
+    )
+  }
+  if (t === 'furgone' || t === 'camion') {
+    return (
+      <svg {...common}>
+        <path d="M13 6v5a1 1 0 0 0 1 1h6.1a1 1 0 0 1 .7.3l.9.9a1 1 0 0 1 .3.7V17a1 1 0 0 1-1 1h-3" />
+        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.2 4.2M9 18h5" />
+        <circle cx="16" cy="18" r="2" />
+        <circle cx="7" cy="18" r="2" />
+      </svg>
+    )
+  }
+  if (t === 'imbarcazione') {
+    return (
+      <svg {...common}>
+        <path d="M12 3v14" />
+        <path d="M12 4l7 9H5z" />
+        <path d="M3 19c1.5 1.5 3.5 1.5 5 0s3.5-1.5 5 0 3.5 1.5 5 0 2-1 3 0" />
+      </svg>
+    )
+  }
+  return (
+    <svg {...common}>
+      <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" />
+      <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6" />
+    </svg>
+  )
+}
+
 function CardBucket({ valore, label, bordo, colore, alert = false, attivo = false, onClick }: { valore: number; label: string; bordo: string; colore: string; alert?: boolean; attivo?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="bg-white rounded-xl p-3.5 text-left transition-all hover:shadow-sm" style={{ border: `1.5px solid ${attivo ? '#2563eb' : bordo}` }}>
+    <button onClick={onClick} className="bg-white rounded-xl p-3.5 text-left transition-all hover:shadow-md" style={{ border: `1.5px solid ${attivo ? '#2563eb' : bordo}`, boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 3px 8px rgba(16,24,40,0.04)' }}>
       <div className="flex items-center gap-1.5" style={{ fontSize: 22, fontWeight: 700, color: colore }}>
         {valore}
         {alert && valore > 0 && (

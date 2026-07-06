@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase'
 // `extra` = slot opzionale per azioni specifiche della pagina (es. pulizia account).
 // ============================================================
 
-type Sezione = 'pratiche' | 'demolitori' | 'copertura'
+type Sezione = 'pratiche' | 'demolitori'
 
 export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra?: React.ReactNode }) {
   const router = useRouter()
@@ -31,7 +31,6 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
       <nav className="flex flex-col gap-1 p-2.5 flex-1">
         <NavItem attivo={attivo === 'pratiche'} label="Pratiche" onClick={() => router.push('/admin')} icon={<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" />} />
         <NavItem attivo={attivo === 'demolitori'} label="Demolitori" onClick={() => router.push('/admin/demolitori')} icon={<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>} />
-        <NavItem attivo={attivo === 'copertura'} label="Copertura" onClick={() => router.push('/admin/copertura')} icon={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></>} />
       </nav>
       {extra}
       <button onClick={logout} className="m-2.5 px-3 py-2 text-xs font-semibold text-gray-500 hover:text-gray-800 hover:bg-gray-50 rounded-lg text-left transition-colors">

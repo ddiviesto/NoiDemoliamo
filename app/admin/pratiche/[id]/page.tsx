@@ -85,6 +85,23 @@ const NOMI_CASISTICHE: Record<string, string> = {
 }
 
 function metaStato(s: string) { return STATO_META[s] || { label: s, bg: '#E7EAEE', text: '#4B5563' } }
+
+// Stile card condiviso (identico alle card della lista pratiche)
+const STILE_CARD: React.CSSProperties = {
+  background: '#fff',
+  border: '1.5px solid #E5E7EB',
+  borderRadius: 14,
+  boxShadow: '0 1px 3px rgba(16,24,40,0.07)',
+}
+
+function TitoloCard({ children }: { children: React.ReactNode }) {
+  return (
+    <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0 }}>
+      <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+      {children}
+    </p>
+  )
+}
 function fmtData(x: string | null) {
   if (!x) return '—'
   return new Date(x).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
@@ -171,7 +188,7 @@ export default function DettaglioPraticaAdmin() {
   }
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: '#F4F5FB' }}>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
@@ -180,16 +197,26 @@ export default function DettaglioPraticaAdmin() {
   const m = metaStato(pratica.stato)
 
   return (
-    <main className="min-h-screen" style={{ background: '#F4F5FB' }}>
+    <main className="min-h-screen" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
 
       {/* TOP BAR */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
-        <button onClick={() => router.push('/admin')} className="text-sm text-blue-600 font-semibold flex items-center gap-1 hover:text-blue-700">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
-          Pratiche
+        <button
+          onClick={() => router.push('/admin')}
+          className="flex items-center gap-1.5 text-[12.5px] font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 rounded-xl px-3.5 py-2 transition-colors flex-shrink-0"
+          style={{ border: '1.5px solid #E5E7EB' }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          Indietro
         </button>
-        <span className="text-base font-bold text-gray-900">{pratica.targa || 'Targa mancante'}{pratica.marca && ` · ${pratica.marca} ${pratica.modello || ''}`}</span>
-        <span className="ml-auto text-[11px] font-semibold px-3 py-1 rounded-full" style={{ background: m.bg, color: m.text }}>{m.label}</span>
+        <div style={{ width: 1, height: 32, background: '#E5E7EB', flexShrink: 0 }} />
+        <div className="min-w-0">
+          <div className="text-[16px] font-bold text-gray-900 leading-tight truncate">{pratica.targa || 'Targa mancante'}{pratica.marca && ` · ${pratica.marca} ${pratica.modello || ''}`}</div>
+          <div className="text-[12px] truncate" style={{ color: '#4B5563' }}>
+            {pratica.nome_richiedente || '—'}{pratica.comune_ritiro && ` · ${pratica.comune_ritiro}`}{pratica.provincia_ritiro && ` (${pratica.provincia_ritiro})`}
+          </div>
+        </div>
+        <span className="ml-auto text-[11.5px] font-bold px-3.5 py-1.5 rounded-full flex-shrink-0" style={{ background: m.bg, color: m.text }}>{m.label}</span>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
@@ -257,13 +284,13 @@ export default function DettaglioPraticaAdmin() {
               {pratica.nomi_rinunciatari && <Riga label="Rinunciatari" value={pratica.nomi_rinunciatari} />}
             </CardInfo>
 
-            <div className="flex flex-col gap-2 pt-1">
+            <div className="flex gap-2 pt-1">
               {pratica.stato !== 'annullata' && (
-                <button onClick={annullaPratica} className="text-xs text-gray-500 hover:text-amber-700 border border-gray-200 hover:border-amber-200 px-3 py-2.5 rounded-xl transition-colors">
+                <button onClick={annullaPratica} className="flex-1 text-xs font-semibold text-gray-600 hover:text-amber-700 bg-white hover:bg-amber-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #E5E7EB' }}>
                   Annulla pratica
                 </button>
               )}
-              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="text-xs text-red-500 hover:text-red-700 border border-red-200 hover:bg-red-50 px-3 py-2.5 rounded-xl transition-colors">
+              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="flex-1 text-xs font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #F3C8C8' }}>
                 Elimina definitivamente
               </button>
             </div>
@@ -383,8 +410,8 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
   // --- Vista: già assegnata ---
   if (assegnata) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <p className="text-sm font-semibold text-gray-800 mb-3">Assegnazione</p>
+      <div className="p-4" style={STILE_CARD}>
+        <div className="mb-3"><TitoloCard>Assegnazione</TitoloCard></div>
         <div className="rounded-xl p-3" style={{ background: '#E6F1FB', border: '1px solid #B5D4F4' }}>
           <div className="flex items-center gap-2">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1E4E8C" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
@@ -405,8 +432,8 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
   // --- Vista: non ancora assegnabile (documenti non pronti) ---
   if (!puoAssegnare) {
     return (
-      <div className="bg-white border border-gray-200 rounded-2xl p-4">
-        <p className="text-sm font-semibold text-gray-800 mb-2">Assegnazione</p>
+      <div className="p-4" style={STILE_CARD}>
+        <div className="mb-2"><TitoloCard>Assegnazione</TitoloCard></div>
         <div className="flex items-center gap-2 text-xs text-gray-400">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
           Prima approva tutti i documenti
@@ -417,8 +444,8 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
 
   // --- Vista: da assegnare ---
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4">
-      <p className="text-sm font-semibold text-gray-800 mb-3">Assegnazione</p>
+    <div className="p-4" style={STILE_CARD}>
+      <div className="mb-3"><TitoloCard>Assegnazione</TitoloCard></div>
       {mode === 'idle' ? (
         <div className="flex flex-col gap-2">
           <button onClick={() => calcola(false)} className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl py-2.5 text-sm font-semibold flex items-center justify-center gap-2 transition-colors">
@@ -519,8 +546,8 @@ function ListaCandidati(props: {
 
 function CardInfo({ titolo, children }: { titolo: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-4">
-      <p className="text-sm font-semibold text-gray-800 mb-2.5">{titolo}</p>
+    <div className="p-4" style={STILE_CARD}>
+      <div className="mb-3"><TitoloCard>{titolo}</TitoloCard></div>
       {children}
     </div>
   )
@@ -528,9 +555,9 @@ function CardInfo({ titolo, children }: { titolo: string; children: React.ReactN
 
 function Riga({ label, value, mono = false }: { label: string; value: string | null; mono?: boolean }) {
   return (
-    <div className="flex justify-between gap-3 text-sm py-1">
-      <span className="text-gray-500 flex-shrink-0">{label}</span>
-      <span className={`font-medium text-gray-800 text-right truncate ${mono ? 'font-mono text-xs' : ''}`}>{value || '—'}</span>
+    <div className="flex justify-between items-center gap-3 py-1.5" style={{ borderBottom: '1px solid #F3F5F9' }}>
+      <span className="text-[13px] flex-shrink-0" style={{ color: '#64748b' }}>{label}</span>
+      <span className={`text-[13.5px] font-semibold text-right truncate ${mono ? 'font-mono !text-[12px]' : ''}`} style={{ color: '#111827' }}>{value || '—'}</span>
     </div>
   )
 }
