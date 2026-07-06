@@ -454,6 +454,15 @@ Implementato in `lib/assegnazione.ts` + endpoint `/api/assegna-pratica/route.ts`
 ### Flusso admin (deciso e collaudato)
 Un solo flusso: **"Assegna in automatico"** lancia l'algoritmo in modalità **dry-run** (calcola SENZA scrivere) e mostra la **classifica** dei candidati (1° = "Consigliato", con distanza · velocità · pratiche aperte). L'admin **conferma** il suggerito o ne sceglie un altro dalla lista → solo allora l'endpoint assegna davvero. **"Scegli io"** mostra la stessa lista senza suggerimento. Endpoint `/api/assegna-pratica` modalità: `dry_run` (calcola), `demolitore_id` (assegna quello scelto, `manuale` true/false), legacy (auto).
 
+### ⭐ RIASSEGNAZIONE / DISASSEGNAZIONE (6-7/07/2026)
+Se ci sono difficoltà con un demolitore, l'admin può sempre cambiare:
+- **"Riassegna a un altro demolitore"** → sceglie il nuovo dalla lista (in un colpo)
+- **"Rimuovi assegnazione"** → la pratica torna `da_assegnare` (endpoint `assegna-pratica` con `disassegna: true`; azzera demolitore, date e scadenze)
+- Ogni cambio setta **`pratiche.riassegnata = true`** → il CLIENTE vede messaggi SERENI (mai allarmanti) nel banner della sua area: "Stiamo scegliendo un nuovo demolitore" (se da_assegnare) / "Nuovo demolitore in arrivo… ti contatterà entro 8 ore lavorative" (quando riassegnata). Quando ci saranno le notifiche vere, questi eventi andranno anche lì.
+
+### ⭐ IMPORTO UNA TANTUM SULLA PRATICA (vedi anche 3.10)
+`pratiche.fee_concordata` + card "Importo pratica" nel dettaglio admin: prezzo concordato per la SINGOLA pratica (trattativa extra su auto interessante, o ritiro fuori copertura es. 300-400€). In fattura vince su tutte le tariffe. L'assegnazione fuori copertura si fa manualmente ("Mostra tutti i demolitori attivi").
+
 ### ⚠️ Fix applicati (erano i bug che bloccavano tutto)
 1. ✅ **Velocità storica**: ora su `data_ritiro_effettuato` (non più certificato rottamazione)
 2. ✅ **Colonne aggiunte a `pratiche`**: `data_assegnazione`, `data_ritiro_effettuato`, `scadenza_proposta_ritiro`, `assegnazione_manuale` (mancavano → l'assegnazione falliva)
@@ -536,6 +545,7 @@ C:\Progetto_NoiDemoliamo\
 
 - ⭐ **`traduciErrore()`**: gli errori Supabase in fase di submit sono tradotti in italiano semplice ("Failed to fetch" → "Errore di connessione. Controlla la tua rete e riprova."; email già registrata, password corta, email non valida, rate limit). L'errore originale finisce in console per il debug.
 - ⭐ **Step foto**: il bottone "Continua comunque con X foto →" (1-3 foto) è ora ben visibile (bordo e testo blu, semibold) ma resta gerarchicamente sotto il "Continua" pieno che appare a 4+ foto — l'incentivo a caricare più foto rimane.
+- ⭐⭐ **SECONDA PRATICA PER CLIENTE REGISTRATO** (6-7/07/2026): `/inizia` rileva la sessione attiva (solo tipo 'cliente'). Se loggato: lo step finale diventa "Conferma e invia" (NIENTE email/password — prima si bloccava su "email già registrata"), nome/telefono precompilati da `utenti`, e la pratica si aggancia a `user_id` esistente → le pratiche si accodano nella sua area. Ingresso dal bottone tratteggiato "**+ Richiedi un'altra demolizione**" in fondo alla lista pratiche della dashboard cliente. Il trigger checklist lavora per pratica, quindi ogni pratica ha i suoi documenti.
 
 ### Ordine step (14-15 visibili; getSteps è dinamico in base alle risposte)
 
@@ -773,6 +783,17 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 # 📋 PARTE 8 — STATO ATTUALE (6 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐⭐⭐ SESSIONE 6-7 luglio 2026 (seconda parte) — RIFINITURE E FLUSSI OPERATIVI
+
+- ✅ **Restyle completo area admin** secondo il design system 6.8 (card, profilo demolitore, lavanda)
+- ✅ **Contribuzione demolitore** rifatta: lettura + modifica a tasto, tariffe con badge zona, etichetta "fuori copertura" (informativa: tariffe valide anche fuori zona per ritiri manuali)
+- ✅ **Importo una tantum per pratica** (`fee_concordata` + `/api/pratica-fee`) — collaudato (400€)
+- ✅ **Riassegnazione/disassegnazione** con messaggi sereni al cliente (`riassegnata`) — collaudata
+- ✅ **Seconda pratica per cliente registrato** (bottone dashboard + /inizia consapevole della sessione) — collaudata
+- ✅ **Pagina cliente rifinita**: banner demolitore (8 ore lavorative), box smeraldo "Documenti originali da portare al ritiro" con lista numerata, messaggi senza esclamativi, icone nuove
+- ✅ **Note e cronologia demolitore** (`demolitori_note`), copertura a tendina con salva-se-modificato
+- 🔔 Deciso: **sistema notifiche email+SMS** come task prioritario futuro (lista eventi in 8.2)
 
 ### ⭐⭐⭐ SESSIONE 6 luglio 2026 — AREA ADMIN (CRM) + ASSEGNAZIONE AUTOMATICA
 
