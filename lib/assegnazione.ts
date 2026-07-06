@@ -150,8 +150,8 @@ async function contaPraticheAperteDemolitore(
 
 /**
  * Calcola la velocità media di un demolitore: giorni dalla data di assegnazione
- * alla data del certificato di rottamazione, mediati sulle ultime N pratiche
- * completate.
+ * al RITIRO EFFETTIVO del veicolo, mediati sulle ultime N pratiche ritirate.
+ * Misura la reattività reale del demolitore (quanto ci mette a passare a ritirare).
  */
 async function velocitaMediaDemolitore(
   supabase: SupabaseClient,
@@ -160,18 +160,17 @@ async function velocitaMediaDemolitore(
 ): Promise<number> {
   const { data } = await supabase
     .from('pratiche')
-    .select('data_assegnazione, data_certificato_rottamazione')
+    .select('data_assegnazione, data_ritiro_effettuato')
     .eq('demolitore_id', demolitoreId)
-    .eq('stato', 'completata')
     .not('data_assegnazione', 'is', null)
-    .not('data_certificato_rottamazione', 'is', null)
-    .order('data_certificato_rottamazione', { ascending: false })
+    .not('data_ritiro_effettuato', 'is', null)
+    .order('data_ritiro_effettuato', { ascending: false })
     .limit(ultimeN)
   if (!data || data.length === 0) return VELOCITA_DEFAULT_GIORNI
 
   const giorni = data.map(p => {
     const da = new Date(p.data_assegnazione).getTime()
-    const a = new Date(p.data_certificato_rottamazione).getTime()
+    const a = new Date(p.data_ritiro_effettuato).getTime()
     return (a - da) / (1000 * 60 * 60 * 24)
   })
   return giorni.reduce((s, g) => s + g, 0) / giorni.length

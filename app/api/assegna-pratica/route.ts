@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { calcolaAssegnazione, PraticaDaAssegnare } from '@/lib/assegnazione'
+import { nomeProvincia } from '@/lib/province'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -154,14 +155,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Pratica già assegnata' }, { status: 400 })
     }
 
+    // La pratica salva la provincia come sigla (es. "ME"); la copertura usa il nome
+    // intero (es. "Messina"). Converto la sigla nel nome prima di cercare i demolitori.
+    const provinciaNome = nomeProvincia(pratica.provincia_ritiro)
+
     const praticaInput: PraticaDaAssegnare = {
       id: pratica.id,
       comune_ritiro: pratica.comune_ritiro,
-      provincia_ritiro: pratica.provincia_ritiro,
+      provincia_ritiro: provinciaNome,
       lat: pratica.lat,
       lng: pratica.lng,
     }
-    const regioneRitiro = pratica.provincia_ritiro ? PROVINCE_REGIONI[pratica.provincia_ritiro] ?? null : null
+    const regioneRitiro = provinciaNome ? PROVINCE_REGIONI[provinciaNome] ?? null : null
 
     // ESEGUE L'ALGORITMO
     const googleKey = process.env.GOOGLE_MAPS_SERVER_KEY!

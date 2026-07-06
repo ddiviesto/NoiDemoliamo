@@ -96,19 +96,11 @@ const NOMI_CASISTICHE: Record<string, string> = {
   targhe_straniere: 'Targhe straniere',
 }
 
-// Stati pratica ancora nella fase documenti (in cui possiamo aggiornare lo stato)
-const STATI_FASE_DOCUMENTI = [
-  'in_attesa_documenti',
-  'in_attesa_approvazione_admin',
-  'documenti_parzialmente_approvati',
-  'da_assegnare',
-]
-
 // ============================================================
 // COMPONENTE
 // ============================================================
 
-export default function DocumentiApprovazione({ praticaId, statoPratica, onStatoCambiato, onRicaricaPratica }: Props) {
+export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRicaricaPratica }: Props) {
   const [docs, setDocs] = useState<DocRiga[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [dati, setDati] = useState<DatiPratica | null>(null)
@@ -198,25 +190,28 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
     setFoto((fotos as FotoPratica[]) || [])
     setDati((prat as DatiPratica) || null)
     setLoading(false)
+
+    // Auto-sincronizza lo stato della pratica coi documenti (self-heal all'apertura):
+    // se i documenti sono già tutti approvati ma la pratica è rimasta indietro, la sblocca.
+    aggiornaStatoPratica()
   }
 
-  // Ricalcola e salva lo stato della pratica in base ai documenti
-  async function aggiornaStatoPratica(righeAggiornate: DocRiga[]) {
-    if (!STATI_FASE_DOCUMENTI.includes(statoPratica)) return
-    const daApprovare = righeAggiornate.filter(d => d.richiede_upload)
-    if (daApprovare.length === 0) return
-    const approvati = daApprovare.filter(d => d.stato === 'approvato').length
-    const rifiutati = daApprovare.filter(d => d.stato === 'rifiutato').length
-
-    let nuovo: string
-    if (approvati === daApprovare.length) nuovo = 'da_assegnare'
-    else if (rifiutati > 0) nuovo = 'documenti_parzialmente_approvati'
-    else nuovo = 'in_attesa_approvazione_admin'
-
-    if (nuovo !== statoPratica) {
-      await supabase.from('pratiche').update({ stato: nuovo, aggiornato_il: new Date().toISOString() }).eq('id', praticaId)
-      onRicaricaPratica?.()
+  // Ricalcola lo stato della pratica in base ai documenti (lato server, col service role).
+  // Ricarica la pratica solo se lo stato è effettivamente cambiato.
+  async function aggiornaStatoPratica() {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pratica-stato', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: praticaId }),
+      })
+      const data = await res.json().catch(() => null)
+      if (data && data.cambiato === false) return
+    } catch (e) {
+      console.error('Errore aggiornamento stato pratica:', e)
     }
+    onRicaricaPratica?.()
   }
 
   async function approva(doc: DocRiga) {
@@ -224,7 +219,7 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
     await supabase.from('pratica_documenti_checklist').update({ stato: 'approvato', nota_admin: null, aggiornato_il: new Date().toISOString() }).eq('id', doc.id)
     const aggiornate = docs.map(d => d.id === doc.id ? { ...d, stato: 'approvato' as const, nota_admin: null } : d)
     setDocs(aggiornate)
-    await aggiornaStatoPratica(aggiornate)
+    await aggiornaStatoPratica()
     setAzione(false)
   }
 
@@ -233,7 +228,7 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
     await supabase.from('pratica_documenti_checklist').update({ stato: 'caricato', nota_admin: null, aggiornato_il: new Date().toISOString() }).eq('id', doc.id)
     const aggiornate = docs.map(d => d.id === doc.id ? { ...d, stato: 'caricato' as const, nota_admin: null } : d)
     setDocs(aggiornate)
-    await aggiornaStatoPratica(aggiornate)
+    await aggiornaStatoPratica()
     setAzione(false)
   }
 
@@ -244,7 +239,7 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
     await supabase.from('pratica_documenti_checklist').update({ stato: 'rifiutato', nota_admin: notaRifiuto.trim(), aggiornato_il: new Date().toISOString() }).eq('id', modalRifiuto.id)
     const aggiornate = docs.map(d => d.id === modalRifiuto.id ? { ...d, stato: 'rifiutato' as const, nota_admin: notaRifiuto.trim() } : d)
     setDocs(aggiornate)
-    await aggiornaStatoPratica(aggiornate)
+    await aggiornaStatoPratica()
     setModalRifiuto(null)
     setNotaRifiuto('')
     setAzione(false)
@@ -259,7 +254,7 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
     }
     const aggiornate = docs.map(d => (d.richiede_upload && d.stato === 'caricato') ? { ...d, stato: 'approvato' as const, nota_admin: null } : d)
     setDocs(aggiornate)
-    await aggiornaStatoPratica(aggiornate)
+    await aggiornaStatoPratica()
     setAzione(false)
   }
 
