@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi, Intestazione, derivaCasistica, delegaAmmessa, fermoApplicabile } from '../../types/pratica'
 import { StepTipoVeicolo } from './steps/StepTipoVeicolo'
@@ -652,6 +652,26 @@ export default function IniziaPage() {
   const [erroreCdc, setErroreCdc] = useState(false)
   const [erroreAccount, setErroreAccount] = useState<{nome?: boolean; telefono?: boolean; email?: boolean; password?: boolean}>({})
 
+  // Cliente GIÀ registrato e loggato: la nuova pratica si aggancia al suo account
+  // (niente creazione account allo step finale, le pratiche si mettono in fila).
+  const [utenteLoggato, setUtenteLoggato] = useState<{ id: string } | null>(null)
+  useEffect(() => {
+    async function rilevaSessione() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
+      const { data: u } = await supabase.from('utenti').select('nome, telefono, email, tipo').eq('id', session.user.id).single()
+      if (u?.tipo && u.tipo !== 'cliente') return // admin/operatori: flusso normale
+      setUtenteLoggato({ id: session.user.id })
+      setDati(prev => ({
+        ...prev,
+        nome: u?.nome || prev.nome,
+        telefono: u?.telefono || prev.telefono,
+        email: u?.email || session.user.email || prev.email,
+      }))
+    }
+    rilevaSessione()
+  }, [])
+
   const steps = getSteps(dati)
   const curStep = steps[curIdx]
   const total = steps.length
@@ -798,8 +818,11 @@ export default function IniziaPage() {
     const e: {nome?: boolean; telefono?: boolean; email?: boolean; password?: boolean} = {}
     if (!dati.nome) e.nome = true
     if (!dati.telefono) e.telefono = true
-    if (!dati.email) e.email = true
-    if (!dati.password) e.password = true
+    // Cliente già loggato: email e password non servono
+    if (!utenteLoggato) {
+      if (!dati.email) e.email = true
+      if (!dati.password) e.password = true
+    }
     if (e.nome || e.telefono || e.email || e.password) {
       setErroreAccount(e)
       return
@@ -857,15 +880,23 @@ export default function IniziaPage() {
   async function handleSubmit() {
     setLoading(true)
     setError('')
-    setLoadingMessage('Creo il tuo account...')
     try {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: dati.email,
-        password: dati.password,
-      })
-      if (authError) throw authError
-      const userId = authData.user?.id
-      if (!userId) throw new Error('Utente non creato')
+      let userId: string
+      if (utenteLoggato) {
+        // Cliente già registrato: la pratica si aggiunge al suo account
+        userId = utenteLoggato.id
+        setLoadingMessage('Salvo la richiesta di demolizione...')
+      } else {
+        setLoadingMessage('Creo il tuo account...')
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: dati.email,
+          password: dati.password,
+        })
+        if (authError) throw authError
+        const nuovoId = authData.user?.id
+        if (!nuovoId) throw new Error('Utente non creato')
+        userId = nuovoId
+      }
 
       const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
       const isEredi = cas === 'eredi_accettato' || cas === 'eredi_rinuncia'
@@ -934,15 +965,17 @@ export default function IniziaPage() {
         }
       }
 
-      setLoadingMessage('Finalizzo la registrazione...')
-      await supabase.from('utenti').insert({
-        id: userId,
-        nome: dati.nome,
-        email: dati.email,
-        telefono: dati.telefono,
-        tipo: 'cliente',
-        stato: 'attivo',
-      })
+      if (!utenteLoggato) {
+        setLoadingMessage('Finalizzo la registrazione...')
+        await supabase.from('utenti').insert({
+          id: userId,
+          nome: dati.nome,
+          email: dati.email,
+          telefono: dati.telefono,
+          tipo: 'cliente',
+          stato: 'attivo',
+        })
+      }
 
       router.push('/dashboard')
     } catch (e: unknown) {
@@ -1813,10 +1846,18 @@ export default function IniziaPage() {
 
         {curStep === 'account' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Ultimo passo!</h1>
-            <p className="text-sm text-gray-500 mb-4">Crea il tuo account per seguire la pratica fino al ritiro.</p>
+            <h1 className="text-xl font-semibold text-gray-900 mb-1">{utenteLoggato ? 'Conferma e invia' : 'Ultimo passo!'}</h1>
+            <p className="text-sm text-gray-500 mb-4">{utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.'}</p>
 
-            {/* Cosa succede dopo - timeline guida */}
+            {utenteLoggato && (
+              <div className="flex items-start gap-2.5 bg-sky-50 border border-sky-200 rounded-xl p-3 mb-4 text-xs text-sky-800">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5 text-sky-600"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                <span>La troverai subito nella tua <strong>area personale</strong>, accanto alle altre pratiche, pronta per il caricamento dei documenti.</span>
+              </div>
+            )}
+
+            {/* Cosa succede dopo - timeline guida (solo per chi si registra ora) */}
+            {!utenteLoggato && (
             <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-4">
               <div className="text-xs font-bold text-sky-900 mb-2">Cosa succede dopo:</div>
               <div className="flex flex-col gap-2">
@@ -1859,6 +1900,7 @@ export default function IniziaPage() {
                 </div>
               </div>
             </div>
+            )}
 
             {error && <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700 mb-3">⚠️ {error}</div>}
             {(erroreAccount.nome || erroreAccount.telefono || erroreAccount.email || erroreAccount.password) && (
@@ -1882,19 +1924,24 @@ export default function IniziaPage() {
                   <span>Lo usiamo solo per coordinare il ritiro e aggiornarti sulla tua pratica. Nessuna chiamata commerciale.</span>
                 </p>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
-                <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
-                <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }} placeholder="••••••••" className={inputClass(erroreAccount.password)} />
-              </div>
+              {!utenteLoggato && (
+                <>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
+                    <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
+                    <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }} placeholder="••••••••" className={inputClass(erroreAccount.password)} />
+                  </div>
+                </>
+              )}
               <button onClick={handleContinuaAccount} disabled={loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'}`}>
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Conferma e invia richiesta'}
               </button>
 
-              {/* Benefit account */}
+              {/* Benefit account (solo per chi si registra ora) */}
+              {!utenteLoggato && (
               <div className="mt-1">
                 <div className="text-[11px] font-bold text-blue-900 text-center mb-2">Col tuo account gratuito hai:</div>
                 <div className="flex items-center justify-center gap-4 flex-wrap">
@@ -1920,6 +1967,7 @@ export default function IniziaPage() {
                   </div>
                 </div>
               </div>
+              )}
 
               <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">
                 Continuando accetti termini di servizio e informativa privacy.

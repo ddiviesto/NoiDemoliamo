@@ -245,6 +245,16 @@ export default function DashboardCliente() {
                   </button>
                 )
               })}
+
+              {/* Nuova richiesta: si aggiunge in fila alle pratiche esistenti */}
+              <button
+                onClick={() => router.push('/inizia')}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors active:scale-[0.99]"
+                style={{ border: '1.5px dashed #93C5FD', background: '#F8FAFF' }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                Richiedi un&apos;altra demolizione
+              </button>
             </div>
           )}
 
