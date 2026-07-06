@@ -48,6 +48,7 @@ interface Pratica {
   demolitore_id: string | null
   data_assegnazione: string | null
   scadenza_proposta_ritiro: string | null
+  fee_concordata: number | null
   stato: string
   creato_il: string
 }
@@ -236,6 +237,8 @@ export default function DettaglioPraticaAdmin() {
 
             <AssegnazioneCard pratica={pratica} demolitoreNome={demolitoreNome} onAssegnato={ricaricaPratica} />
 
+            <FeePraticaCard pratica={pratica} onAggiornata={ricaricaPratica} />
+
             <CardInfo titolo="Cliente">
               <Riga label="Nome" value={pratica.nome_richiedente} />
               <Riga label="Telefono" value={pratica.telefono} />
@@ -351,6 +354,29 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
   const [tuttiDemolitori, setTuttiDemolitori] = useState<Candidato[] | null>(null)
   const [confermandoId, setConfermandoId] = useState<string | null>(null)
   const [errore, setErrore] = useState<string | null>(null)
+  const [disassegnando, setDisassegnando] = useState(false)
+
+  async function disassegna() {
+    if (!confirm('Rimuovere l\'assegnazione? La pratica tornerà "da assegnare" e il cliente vedrà che stiamo scegliendo un nuovo demolitore.')) return
+    setDisassegnando(true)
+    setErrore(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/assegna-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, disassegna: true }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrore(data?.error || 'Errore durante la disassegnazione'); return }
+      setMode('idle')
+      onAssegnato()
+    } catch {
+      setErrore('Errore di rete.')
+    } finally {
+      setDisassegnando(false)
+    }
+  }
 
   const assegnata = !!pratica.demolitore_id
   const puoAssegnare = ['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(pratica.stato)
@@ -421,7 +447,15 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
           {pratica.scadenza_proposta_ritiro && <div className="text-[11.5px]" style={{ color: '#1E4E8C' }}>Deve proporre il ritiro entro {fmtData(pratica.scadenza_proposta_ritiro)}</div>}
         </div>
         {mode === 'idle' ? (
-          <button onClick={() => calcola(true)} className="mt-3 text-xs text-gray-500 hover:text-blue-600 underline">Riassegna a un altro demolitore</button>
+          <div className="flex flex-col gap-1.5 mt-3">
+            <div className="flex items-center gap-4">
+              <button onClick={() => calcola(true)} disabled={disassegnando} className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline">Riassegna a un altro demolitore</button>
+              <button onClick={disassegna} disabled={disassegnando} className="text-xs font-semibold text-red-500 hover:text-red-700 underline disabled:opacity-50">
+                {disassegnando ? 'Rimozione…' : 'Rimuovi assegnazione'}
+              </button>
+            </div>
+            {errore && <p className="text-[11px] text-red-600">{errore}</p>}
+          </div>
         ) : (
           <ListaCandidati caricando={caricando} candidati={candidati} vincitoreId={manuale ? null : vincitoreId} motivo={motivo} errore={errore} confermandoId={confermandoId} tuttiDemolitori={tuttiDemolitori} onConferma={conferma} onCaricaTutti={caricaTutti} onChiudi={() => setMode('idle')} />
         )}
@@ -536,6 +570,101 @@ function ListaCandidati(props: {
       )}
 
       <button onClick={props.onChiudi} className="mt-3 text-xs text-gray-400 hover:text-gray-600">Chiudi</button>
+    </div>
+  )
+}
+
+// ============================================================
+// CARD IMPORTO CONCORDATO (una tantum per la singola pratica)
+// Se impostato, in fattura vale questo importo e ignora le tariffe
+// del demolitore. Lettura di default, modifica col tasto.
+// ============================================================
+
+function FeePraticaCard({ pratica, onAggiornata }: { pratica: Pratica; onAggiornata: () => void }) {
+  const [edit, setEdit] = useState(false)
+  const [valore, setValore] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [errore, setErrore] = useState<string | null>(null)
+
+  async function salva(fee: number | null) {
+    setSalvando(true)
+    setErrore(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pratica-fee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, fee }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErrore(data?.error || 'Errore nel salvataggio'); return }
+      setEdit(false)
+      setValore('')
+      onAggiornata()
+    } catch {
+      setErrore('Errore di rete.')
+    } finally {
+      setSalvando(false)
+    }
+  }
+
+  return (
+    <div className="p-4" style={STILE_CARD}>
+      <div className="flex items-center justify-between mb-2.5">
+        <TitoloCard>Importo pratica</TitoloCard>
+        {!edit && (
+          <button onClick={() => { setValore(pratica.fee_concordata != null ? String(pratica.fee_concordata) : ''); setEdit(true) }} className="text-xs font-bold text-blue-600 hover:text-blue-700 underline">
+            {pratica.fee_concordata != null ? 'Modifica' : 'Imposta'}
+          </button>
+        )}
+      </div>
+
+      {!edit ? (
+        pratica.fee_concordata != null ? (
+          <div style={{ background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)', border: '1px solid #BFDBFE', borderRadius: 12, padding: '11px 14px' }}>
+            <div className="flex items-baseline gap-1.5">
+              <span style={{ fontSize: 22, fontWeight: 800, color: '#0C447C' }}>{pratica.fee_concordata} €</span>
+              <span className="text-[10.5px] font-bold uppercase" style={{ color: '#5B87BE', letterSpacing: 0.4 }}>concordato · una tantum</span>
+            </div>
+            <div className="text-[11.5px] mt-1" style={{ color: '#1E4E8C' }}>In fattura per questa pratica vale questo importo.</div>
+          </div>
+        ) : (
+          <p className="text-[12.5px]" style={{ color: '#64748b' }}>Nessun importo speciale: si applicano le tariffe del demolitore.</p>
+        )
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              value={valore}
+              onChange={e => { setValore(e.target.value); setErrore(null) }}
+              placeholder="Es. 300"
+              autoFocus
+              className="w-24 rounded-[10px] px-2.5 py-1.5 text-[15px] font-extrabold bg-white outline-none focus:ring-2 focus:ring-blue-100"
+              style={{ border: '1.5px solid #93C5FD', color: '#0C447C' }}
+            />
+            <span className="text-xs" style={{ color: '#64748b' }}>€ per questa pratica</span>
+          </div>
+          {errore && <p className="text-[11px] text-red-600 mt-1.5">{errore}</p>}
+          <div className="flex items-center gap-2 mt-3">
+            {pratica.fee_concordata != null && (
+              <button onClick={() => salva(null)} disabled={salvando} className="text-[11.5px] font-semibold text-red-600 hover:text-red-700 underline mr-auto">
+                Rimuovi importo
+              </button>
+            )}
+            <button onClick={() => { setEdit(false); setErrore(null) }} disabled={salvando} className="text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-[10px] px-4 py-2 transition-colors ml-auto">
+              Annulla
+            </button>
+            <button
+              onClick={() => { const f = parseFloat(valore); if (isNaN(f) || f < 0) { setErrore('Scrivi un importo valido'); return } salva(f) }}
+              disabled={salvando}
+              className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-[10px] px-5 py-2 disabled:opacity-40 transition-colors"
+            >
+              {salvando ? 'Salvataggio…' : 'Salva'}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

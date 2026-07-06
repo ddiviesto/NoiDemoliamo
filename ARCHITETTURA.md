@@ -288,7 +288,7 @@ Chiave-valore. Es: `max_pratiche_aperte_demolitore=15`
 
 - `demolitori`: anagrafica. Campi professionali (agg. 6/07/2026): `ragione_sociale`, `piva`, `codice_sdi`, `indirizzo`/`citta`/`provincia`/`cap`/`lat`/`lng` (da Google autocomplete), `telefono_fisso`, `titolare_nome`/`titolare_cellulare`, `referente_nome`/`referente_cellulare`, `email_assegnazione`, `email_aziendale`, `pec`, `stato` (attivo/in_attesa/sospeso), `fee_per_pratica` (fee BASE), `contratto_firmato`, `velocita_media_giorni`.
 - `demolitori_comuni`: copertura geografica (demolitore_id, comune, provincia [NOME intero], tipo: 'regione'|'provincia'|'provincia_esclusa'|'comune_incluso'|'comune_escluso'). Impostata dalla mappa `MappaComuni`.
-- ⭐ `demolitori_tariffe` (nuova, 6/07/2026): tariffe speciali per zona (id, demolitore_id, tipo 'regione'|'provincia'|'comune', nome, fee). **Regola fatturazione (più specifico vince)**: fee del veicolo = tariffa del COMUNE di ritiro, altrimenti PROVINCIA, altrimenti REGIONE, altrimenti `fee_per_pratica` base. Il ritiro effettivo (`data_ritiro_effettuato`) fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore. RLS: solo admin.
+- ⭐ `demolitori_tariffe` (nuova, 6/07/2026): tariffe speciali per zona (id, demolitore_id, tipo 'regione'|'provincia'|'comune', nome, fee). **Regola fatturazione (più specifico vince)**: fee del veicolo = **`pratiche.fee_concordata` se valorizzata (importo UNA TANTUM concordato per la singola pratica, es. veicolo fuori zona pagato 300€)**, altrimenti tariffa del COMUNE di ritiro, altrimenti PROVINCIA, altrimenti REGIONE, altrimenti `fee_per_pratica` base. Le tariffe di zona sono INDIPENDENTI dalla copertura (una tariffa fuori copertura vale per i ritiri fuori zona assegnati manualmente; la UI mostra l'etichetta informativa "fuori copertura"). Il ritiro effettivo (`data_ritiro_effettuato`) fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore. RLS: solo admin. Endpoint `/api/pratica-fee` per impostare/rimuovere l'importo concordato.
 - ⭐ `demolitori_note` (nuova, 7/07/2026): note/cronologia del demolitore (id, demolitore_id, testo, creato_il). Timeline nella scheda demolitore. RLS: solo admin.
 - **Stato demolitore semplificato nell'interfaccia**: o è **Attivo** (riceve pratiche) o **Non attivo** (valori DB `in_attesa`/`sospeso` mostrati entrambi come "Non attivo"). Il campo `contratto_firmato` esiste nel DB ma NON è più gestito dall'interfaccia (ai contratti pensa Davide).
 
@@ -858,8 +858,28 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 ### 🆕 STEP 7 — TEST CROSS-PLATFORM ANDROID
 - Chrome DevTools / amici / BrowserStack: tastiere, scroll, foto, autocomplete
 
+### 🔔 STEP — SISTEMA NOTIFICHE VERE (email + SMS) — voluto da Davide (7/07/2026)
+Oggi le comunicazioni al cliente vivono SOLO nel banner della sua area personale (le vede quando apre il sito). Servono notifiche ATTIVE. Eventi da coprire:
+
+**Al cliente (email + SMS dove ha senso):**
+1. Registrazione / pratica creata → benvenuto + riepilogo e prossimi passi
+2. Documento rifiutato → "c'è un documento da rifare"
+3. Tutti i documenti approvati → "sei pronto, stiamo assegnando il demolitore"
+4. **Demolitore assegnato** → "ti contatterà entro 8 ore lavorative"
+5. **Riassegnazione** → "nuovo demolitore in arrivo" (tono sereno, come il banner)
+6. Ritiro confermato → data/ora + **promemoria documenti ORIGINALI da portare**
+7. Promemoria il giorno prima del ritiro (SMS)
+8. Veicolo ritirato → conferma + richiesta recensioni
+9. Certificato rottamazione disponibile / radiazione PRA completata
+
+**Al demolitore:**
+10. Nuova pratica assegnata → email a `email_assegnazione` (campo già pronto) con dati ritiro
+11. Promemoria scadenza 8 ore se non ha ancora proposto il ritiro
+
+Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/`notifiche_sms_inviate` già progettate (3.12, ricordare i GRANT post 30/10).
+
 ### 🔜 STEP SUCCESSIVI
-- Verifica PRA ACI (bookmarklet o Openapi ~6€), pagina Polizia Locale veicoli abbandonati, invito email demolitore + /imposta-password, login multi-ruolo completo, dashboard demolitore, notifiche in-app + SMS (Twilio) + push, messaggi preimpostati admin, PWA, restyling area admin in stile /inizia
+- Verifica PRA ACI (bookmarklet o Openapi ~6€), pagina Polizia Locale veicoli abbandonati, invito email demolitore + /imposta-password, login multi-ruolo completo, dashboard demolitore, messaggi preimpostati admin, PWA
 
 ### 🔮 PROSSIMI FLUSSI
 - Flusso B (asta demolitori), Flusso C (commercianti), acquisto NoiDemoliamo, Flusso D (/vendi-auto), area commercianti, fatturazione, statistiche

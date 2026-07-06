@@ -36,6 +36,7 @@ export interface Pratica {
   data_ritiro_prevista: string | null
   data_certificato_rottamazione: string | null
   data_certificato_pra: string | null
+  riassegnata: boolean | null
   stato: string
   creato_il: string
 }
@@ -85,6 +86,16 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
         bg: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
       }
     case 'da_assegnare':
+      // Se la pratica è stata riassegnata, il cliente non deve allarmarsi:
+      // messaggio sereno "stiamo scegliendo un nuovo demolitore".
+      if (p.riassegnata) {
+        return {
+          icona: ico(<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>),
+          titolo: 'Stiamo scegliendo un nuovo demolitore',
+          sottotitolo: 'Nessun problema per la tua pratica: ti aggiorniamo a breve, non devi fare nulla',
+          bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+        }
+      }
       return {
         icona: ico(<polyline points="20 6 9 17 4 12"/>),
         titolo: 'Documenti approvati',
@@ -93,6 +104,14 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
       }
     case 'assegnata':
     case 'in_attesa_conferma_cliente':
+      if (p.riassegnata) {
+        return {
+          icona: ico(<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>),
+          titolo: 'Nuovo demolitore in arrivo',
+          sottotitolo: 'Abbiamo aggiornato l\'assegnazione: un nuovo demolitore ti contatterà entro 8 ore lavorative per fissare il ritiro',
+          bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
+        }
+      }
       return {
         icona: ico(<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>),
         titolo: 'Il tuo demolitore è pronto',

@@ -86,6 +86,8 @@ export async function POST(req: NextRequest) {
     const dryRun: boolean = body.dry_run === true
     const demolitoreIdScelto: string | undefined = body.demolitore_id
     const manuale: boolean = body.manuale === true
+    // disassegna: toglie il demolitore e riporta la pratica in 'da_assegnare'
+    const disassegna: boolean = body.disassegna === true
     if (!praticaId) {
       return NextResponse.json({ error: 'Manca pratica_id' }, { status: 400 })
     }
@@ -119,6 +121,31 @@ export async function POST(req: NextRequest) {
     if (errPratica || !pratica) {
       return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
     }
+    // MODALITÀ "DISASSEGNA": rimuove il demolitore, la pratica torna da assegnare.
+    // Segna 'riassegnata' così il cliente vede un messaggio adeguato (non allarmante).
+    if (disassegna) {
+      if (!pratica.demolitore_id) {
+        return NextResponse.json({ error: 'La pratica non è assegnata' }, { status: 400 })
+      }
+      const { error: errDis } = await supabase
+        .from('pratiche')
+        .update({
+          demolitore_id: null,
+          stato: 'da_assegnare',
+          data_assegnazione: null,
+          scadenza_proposta_ritiro: null,
+          data_ritiro_prevista: null,
+          riassegnata: true,
+          aggiornato_il: new Date().toISOString(),
+        })
+        .eq('id', praticaId)
+      if (errDis) {
+        console.error('Errore disassegnazione:', errDis)
+        return NextResponse.json({ error: 'Errore durante la disassegnazione' }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, disassegnata: true })
+    }
+
     // MODALITÀ "ASSEGNA QUESTO DEMOLITORE" (conferma del suggerito o scelta manuale)
     if (demolitoreIdScelto) {
       const { data: demo } = await supabase
@@ -131,16 +158,23 @@ export async function POST(req: NextRequest) {
       }
       const oraA = new Date()
       const scadenzaA = calcolaScadenzaOreLavorative(oraA, 8)
+      const aggiornamento: Record<string, unknown> = {
+        demolitore_id: demo.id,
+        stato: 'assegnata',
+        data_assegnazione: oraA.toISOString(),
+        scadenza_proposta_ritiro: scadenzaA.toISOString(),
+        data_ritiro_prevista: null,
+        assegnazione_manuale: manuale,
+        aggiornato_il: oraA.toISOString(),
+      }
+      // Cambio di demolitore su pratica già assegnata → il cliente vedrà il
+      // messaggio "nuovo demolitore in arrivo" (non allarmante).
+      if (pratica.demolitore_id && pratica.demolitore_id !== demo.id) {
+        aggiornamento.riassegnata = true
+      }
       const { error: errAssegna } = await supabase
         .from('pratiche')
-        .update({
-          demolitore_id: demo.id,
-          stato: 'assegnata',
-          data_assegnazione: oraA.toISOString(),
-          scadenza_proposta_ritiro: scadenzaA.toISOString(),
-          assegnazione_manuale: manuale,
-          aggiornato_il: oraA.toISOString(),
-        })
+        .update(aggiornamento)
         .eq('id', praticaId)
       if (errAssegna) {
         console.error('Errore assegnazione demolitore scelto:', errAssegna)

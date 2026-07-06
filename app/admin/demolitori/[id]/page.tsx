@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import MappaComuni, { CoperturaRecord } from './MappaComuni'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { REGIONI, PROVINCE } from '../../_data/zone'
+import { REGIONI, PROVINCE, PROVINCIA_A_REGIONE } from '../../_data/zone'
 import AutocompleteIndirizzo from '../../../inizia/steps/AutocompleteIndirizzo'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
@@ -97,10 +97,12 @@ export default function DettaglioDemolitore() {
 
   // Tariffe per zona
   const [tariffe, setTariffe] = useState<Tariffa[]>([])
+  const [modificaTariffe, setModificaTariffe] = useState(false)
   const [nuovaTipo, setNuovaTipo] = useState<TipoZona>('regione')
   const [nuovoNome, setNuovoNome] = useState('')
   const [nuovaFee, setNuovaFee] = useState('')
   const [erroreTariffa, setErroreTariffa] = useState<string | null>(null)
+  const [infoTariffa, setInfoTariffa] = useState<string | null>(null)
 
   // Note e cronologia
   const [note, setNote] = useState<Nota[]>([])
@@ -173,10 +175,27 @@ export default function DettaglioDemolitore() {
     setDemolitore(prev => prev ? { ...prev, fee_per_pratica: fee } : null)
   }
 
+  // La zona di una tariffa è dentro l'area di copertura del demolitore?
+  // (informativo, non bloccante: una tariffa fuori zona vale per i ritiri
+  //  fuori copertura assegnati manualmente). Per i comuni non giudichiamo.
+  function zonaCoperta(tipo: TipoZona, nome: string): boolean {
+    const norm = (s: string) => s.toLowerCase().split('/')[0].trim()
+    const regioniCop = copertura.filter(r => r.tipo === 'regione').map(r => norm(r.comune))
+    if (tipo === 'regione') return regioniCop.includes(norm(nome))
+    if (tipo === 'provincia') {
+      const provCop = copertura.filter(r => r.tipo === 'provincia').map(r => norm(r.comune))
+      if (provCop.includes(norm(nome))) return true
+      const reg = PROVINCIA_A_REGIONE[nome]
+      return reg ? regioniCop.includes(norm(reg)) : false
+    }
+    return true
+  }
+
   async function aggiungiTariffa() {
     const nome = nuovoNome.trim()
     const fee = parseFloat(nuovaFee)
     setErroreTariffa(null)
+    setInfoTariffa(null)
     if (!nome) { setErroreTariffa('Scrivi la zona'); return }
     if (isNaN(fee)) { setErroreTariffa('Scrivi un importo'); return }
     const { data, error } = await supabase.from('demolitori_tariffe')
@@ -188,6 +207,10 @@ export default function DettaglioDemolitore() {
     }
     setTariffe(prev => [...prev, data as Tariffa])
     setNuovoNome(''); setNuovaFee('')
+    if (!zonaCoperta(nuovaTipo, nome)) {
+      setInfoTariffa('Zona fuori copertura: questa tariffa varrà per i ritiri fuori zona assegnati manualmente.')
+      setTimeout(() => setInfoTariffa(null), 6000)
+    }
   }
 
   async function aggiornaFeeTariffa(tid: string, feeStr: string) {
@@ -433,51 +456,121 @@ export default function DettaglioDemolitore() {
           {/* COLONNA DESTRA */}
           <div className="w-full lg:w-[340px] flex-shrink-0 flex flex-col gap-4">
 
-            {/* CONTRIBUZIONE */}
+            {/* CONTRIBUZIONE (lettura di default, modifica col tasto) */}
             <div className="p-5" style={STILE_CARD}>
-              <div className="mb-3"><TitoloCard>Contribuzione</TitoloCard></div>
-              <div className="flex items-center gap-2">
-                <input type="number" defaultValue={demolitore.fee_per_pratica || ''} onBlur={e => aggiornaFeeBase(parseFloat(e.target.value) || 0)} placeholder="0" className="w-24 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xl font-bold bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" style={{ color: '#3E4C63' }} />
-                <span className="text-sm" style={{ color: '#64748b' }}>€ / pratica <span style={{ color: '#94A3B8' }}>(base)</span></span>
-              </div>
-
-              <div className="mt-3 pt-3" style={{ borderTop: '1px solid #F1F3F8' }}>
-                <p className="text-[10.5px] font-bold uppercase mb-2" style={{ color: '#5B6779', letterSpacing: 0.5 }}>Tariffe speciali per zona</p>
-
-                {tariffe.length > 0 && (
-                  <div className="flex flex-col gap-1.5 mb-2.5">
-                    {tariffe.map(t => (
-                      <div key={t.id} className="group flex items-center gap-2 rounded-xl px-3 py-2" style={{ background: '#F6F8FB', border: '1px solid #E5E9F0' }}>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[12.5px] font-semibold truncate" style={{ color: '#3E4C63' }}>{t.nome}</div>
-                          <div className="text-[10px] font-bold uppercase" style={{ color: '#5B6779', letterSpacing: 0.4 }}>{TIPO_ZONA_LABEL[t.tipo]}</div>
-                        </div>
-                        <input type="number" defaultValue={t.fee} onBlur={e => aggiornaFeeTariffa(t.id, e.target.value)} className="w-16 border border-gray-200 rounded-lg px-2 py-1 text-[13.5px] font-bold bg-white outline-none focus:border-blue-500 text-right" style={{ color: '#3E4C63' }} />
-                        <span className="text-xs" style={{ color: '#94A3B8' }}>€</span>
-                        <button onClick={() => eliminaTariffa(t.id)} aria-label="Elimina tariffa" className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-600 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+              <div className="flex items-center justify-between mb-3">
+                <TitoloCard>Contribuzione</TitoloCard>
+                {!modificaTariffe && (
+                  <button onClick={() => setModificaTariffe(true)} className="flex items-center gap-1.5 text-xs font-bold rounded-xl px-4 py-2 transition-colors" style={{ background: '#2563eb', color: '#fff' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                    Modifica
+                  </button>
                 )}
-
-                <div className="flex items-center gap-1.5">
-                  <select value={nuovaTipo} onChange={e => { setNuovaTipo(e.target.value as TipoZona); setNuovoNome('') }} className="border border-gray-200 rounded-lg px-1.5 py-1.5 text-[11px] text-gray-700 bg-gray-50 outline-none focus:border-blue-500">
-                    <option value="regione">Regione</option>
-                    <option value="provincia">Provincia</option>
-                    <option value="comune">Comune</option>
-                  </select>
-                  <input list="zone-suggerimenti" value={nuovoNome} onChange={e => { setNuovoNome(e.target.value); setErroreTariffa(null) }} placeholder={nuovaTipo === 'comune' ? 'Scrivi il comune' : 'Cerca…'} className="flex-1 min-w-0 border border-gray-200 rounded-lg px-2 py-1.5 text-sm text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white" />
-                  <input type="number" value={nuovaFee} onChange={e => { setNuovaFee(e.target.value); setErroreTariffa(null) }} placeholder="€" className="w-12 border border-gray-200 rounded-lg px-1.5 py-1.5 text-sm text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white text-right" />
-                </div>
-                <datalist id="zone-suggerimenti">
-                  {(nuovaTipo === 'regione' ? REGIONI : nuovaTipo === 'provincia' ? PROVINCE : []).map(z => <option key={z} value={z} />)}
-                </datalist>
-                <button onClick={aggiungiTariffa} className="mt-2 w-full py-2 rounded-xl text-xs font-bold text-blue-600 hover:bg-blue-50 transition-colors" style={{ border: '1.5px dashed #BFDBFE' }}>+ Aggiungi tariffa</button>
-                {erroreTariffa && <p className="text-[11px] text-red-600 mt-1.5">{erroreTariffa}</p>}
-                <p className="text-[10.5px] mt-2 leading-relaxed" style={{ color: '#64748b' }}>Fatturazione con la tariffa più specifica: comune › provincia › regione › base.</p>
               </div>
+
+              {!modificaTariffe ? (
+                /* ===== LETTURA ===== */
+                <>
+                  {/* Tariffa base protagonista */}
+                  <div style={{ background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)', border: '1px solid #BFDBFE', borderRadius: 12, padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 13 }}>
+                    <span style={{ width: 42, height: 42, borderRadius: 12, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                    </span>
+                    <div>
+                      <div className="flex items-baseline gap-1.5">
+                        <span style={{ fontSize: 25, fontWeight: 800, color: '#0C447C' }}>{demolitore.fee_per_pratica || 0} €</span>
+                        <span style={{ fontSize: 12.5, color: '#1E4E8C' }}>a pratica</span>
+                      </div>
+                      <div style={{ fontSize: 10.5, fontWeight: 700, color: '#5B87BE', textTransform: 'uppercase', letterSpacing: 0.5 }}>Tariffa base</div>
+                    </div>
+                  </div>
+
+                  {/* Tariffe speciali */}
+                  {tariffe.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[10.5px] font-bold uppercase mb-2" style={{ color: '#5B6779', letterSpacing: 0.5 }}>Tariffe speciali · {tariffe.length}</p>
+                      <div className="flex flex-col gap-1.5">
+                        {tariffe.map(t => (
+                          <div key={t.id} className="flex items-center justify-between gap-2 rounded-[10px] px-3 py-2.5" style={{ background: '#F6F8FB', border: '1px solid #E5E9F0' }}>
+                            <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                              <span className="text-[13px] font-bold truncate" style={{ color: '#3E4C63' }}>{t.nome}</span>
+                              <BadgeZona tipo={t.tipo} />
+                              {!zonaCoperta(t.tipo, t.nome) && (
+                                <span className="text-[9px] font-bold uppercase rounded-full px-2 py-0.5" style={{ background: '#EEF1F7', color: '#64748b', letterSpacing: 0.3 }}>Fuori copertura</span>
+                              )}
+                            </div>
+                            <span style={{ fontSize: 14.5, fontWeight: 800, color: '#0C447C', flexShrink: 0 }}>{t.fee} €</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Regola di fatturazione a pillole */}
+                  <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                    <span className="text-[10px] font-semibold" style={{ color: '#5B6779' }}>Vince la più specifica:</span>
+                    <PillRegola attiva>Comune</PillRegola><Freccina /><PillRegola>Provincia</PillRegola><Freccina /><PillRegola>Regione</PillRegola><Freccina /><PillRegola>Base</PillRegola>
+                  </div>
+                </>
+              ) : (
+                /* ===== MODIFICA ===== */
+                <>
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <span className="text-[11px] font-semibold" style={{ color: '#334155' }}>Tariffa base</span>
+                    <input type="number" defaultValue={demolitore.fee_per_pratica || ''} onBlur={e => aggiornaFeeBase(parseFloat(e.target.value) || 0)} placeholder="0" className="w-20 rounded-[10px] px-2.5 py-1.5 text-[15px] font-extrabold bg-white outline-none focus:ring-2 focus:ring-blue-100" style={{ border: '1.5px solid #93C5FD', color: '#0C447C' }} />
+                    <span className="text-xs" style={{ color: '#64748b' }}>€ / pratica</span>
+                  </div>
+
+                  {tariffe.length > 0 && (
+                    <div className="flex flex-col gap-1.5 mb-3">
+                      {tariffe.map(t => (
+                        <div key={t.id} className="flex items-center gap-2 rounded-[10px] px-3 py-2" style={{ background: '#F6F8FB', border: '1px solid #E5E9F0' }}>
+                          <div className="flex items-center gap-2 min-w-0 flex-1 flex-wrap">
+                            <span className="text-[13px] font-bold truncate" style={{ color: '#3E4C63' }}>{t.nome}</span>
+                            <BadgeZona tipo={t.tipo} />
+                          </div>
+                          <input type="number" defaultValue={t.fee} onBlur={e => aggiornaFeeTariffa(t.id, e.target.value)} className="w-16 rounded-lg px-2 py-1 text-[13px] font-bold bg-white outline-none focus:border-blue-500 text-right" style={{ border: '1.5px solid #E5E7EB', color: '#3E4C63' }} />
+                          <button onClick={() => eliminaTariffa(t.id)} aria-label="Elimina tariffa" className="w-6 h-6 flex items-center justify-center text-gray-300 hover:text-red-600 flex-shrink-0">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Nuova tariffa */}
+                  <div style={{ background: '#F9FBFF', border: '1.5px dashed #93C5FD', borderRadius: 12, padding: 12 }}>
+                    <p className="text-[10.5px] font-bold uppercase mb-2" style={{ color: '#1E4E8C', letterSpacing: 0.5 }}>Nuova tariffa</p>
+                    <div className="flex gap-1.5 mb-2">
+                      {(['regione', 'provincia', 'comune'] as TipoZona[]).map(tp => (
+                        <button key={tp} onClick={() => { setNuovaTipo(tp); setNuovoNome(''); setErroreTariffa(null) }} className="text-[11px] font-bold rounded-full px-3.5 py-1.5 transition-colors" style={nuovaTipo === tp ? { background: '#2563eb', color: '#fff' } : { background: '#fff', color: '#4B5563', border: '1px solid #E5E7EB' }}>
+                          {TIPO_ZONA_LABEL[tp]}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <input list="zone-suggerimenti" value={nuovoNome} onChange={e => { setNuovoNome(e.target.value); setErroreTariffa(null) }} placeholder={nuovaTipo === 'comune' ? 'Scrivi il comune…' : `Cerca la ${TIPO_ZONA_LABEL[nuovaTipo].toLowerCase()}…`} className="flex-1 min-w-0 rounded-[9px] px-2.5 py-2 text-[12.5px] font-medium text-gray-900 bg-white outline-none focus:ring-2 focus:ring-blue-100 placeholder:text-gray-400" style={{ border: '1.5px solid #E5E7EB' }} />
+                      <input type="number" value={nuovaFee} onChange={e => { setNuovaFee(e.target.value); setErroreTariffa(null) }} placeholder="€" className="w-14 rounded-[9px] px-2 py-2 text-[12.5px] font-bold text-gray-900 bg-white outline-none focus:ring-2 focus:ring-blue-100 text-right placeholder:text-gray-400" style={{ border: '1.5px solid #E5E7EB' }} />
+                      <button onClick={aggiungiTariffa} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-[9px] px-3.5 transition-colors">Aggiungi</button>
+                    </div>
+                    <datalist id="zone-suggerimenti">
+                      {(nuovaTipo === 'regione' ? REGIONI : nuovaTipo === 'provincia' ? PROVINCE : []).map(z => <option key={z} value={z} />)}
+                    </datalist>
+                    {erroreTariffa && <p className="text-[11px] text-red-600 mt-1.5">{erroreTariffa}</p>}
+                    {infoTariffa && <p className="text-[11px] font-semibold mt-1.5" style={{ color: '#1E4E8C' }}>{infoTariffa}</p>}
+                  </div>
+
+                  <div className="flex justify-end gap-2 mt-3">
+                    <button
+                      onClick={() => { setNuovoNome(''); setNuovaFee(''); setErroreTariffa(null); setInfoTariffa(null); setModificaTariffe(false) }}
+                      className="text-xs font-semibold text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-[10px] px-4 py-2 transition-colors"
+                    >
+                      Annulla
+                    </button>
+                    <button onClick={() => { setModificaTariffe(false); setErroreTariffa(null); setInfoTariffa(null) }} className="text-xs font-bold rounded-[10px] px-5 py-2 transition-colors" style={{ background: '#2563eb', color: '#fff' }}>Fatto</button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* NOTE E CRONOLOGIA */}
@@ -579,6 +672,28 @@ export default function DettaglioDemolitore() {
 // ============================================================
 // SOTTOCOMPONENTI
 // ============================================================
+
+// Badge colorato per il tipo di zona di una tariffa
+function BadgeZona({ tipo }: { tipo: TipoZona }) {
+  const stile = tipo === 'regione'
+    ? { background: '#EDE4FB', color: '#6B21A8' }
+    : tipo === 'provincia'
+      ? { background: '#E0EDFB', color: '#1E4E8C' }
+      : { background: '#DCF3E4', color: '#1F7A43' }
+  return <span className="text-[9.5px] font-extrabold uppercase rounded-full px-2 py-0.5" style={{ ...stile, letterSpacing: 0.4, flexShrink: 0 }}>{TIPO_ZONA_LABEL[tipo]}</span>
+}
+
+function PillRegola({ children, attiva = false }: { children: React.ReactNode; attiva?: boolean }) {
+  return (
+    <span className="text-[10px] font-bold rounded-full px-2 py-0.5" style={attiva ? { background: '#E0EDFB', color: '#1E4E8C' } : { background: '#EEF1F7', color: '#4B5563' }}>
+      {children}
+    </span>
+  )
+}
+
+function Freccina() {
+  return <span style={{ color: '#94A3B8', fontSize: 10 }}>›</span>
+}
 
 function StatVetro({ valore, label }: { valore: string; label: string }) {
   return (
