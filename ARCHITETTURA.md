@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **3 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **6 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -284,10 +284,11 @@ Chat persistente tra cliente, admin, demolitore, commerciante.
 
 Chiave-valore. Es: `max_pratiche_aperte_demolitore=15`
 
-## 3.10 Tabella `demolitori` e `demolitori_comuni`
+## 3.10 Tabella `demolitori`, `demolitori_comuni`, `demolitori_tariffe`
 
-- `demolitori`: anagrafica (id, ragione_sociale, indirizzo, citta, provincia, lat, lng, stato)
-- `demolitori_comuni`: copertura geografica (demolitore_id, comune, provincia, tipo: 'regione'|'provincia'|'provincia_esclusa'|'comune_incluso'|'comune_escluso')
+- `demolitori`: anagrafica. Campi professionali (agg. 6/07/2026): `ragione_sociale`, `piva`, `codice_sdi`, `indirizzo`/`citta`/`provincia`/`cap`/`lat`/`lng` (da Google autocomplete), `telefono_fisso`, `titolare_nome`/`titolare_cellulare`, `referente_nome`/`referente_cellulare`, `email_assegnazione`, `email_aziendale`, `pec`, `stato` (attivo/in_attesa/sospeso), `fee_per_pratica` (fee BASE), `contratto_firmato`, `velocita_media_giorni`.
+- `demolitori_comuni`: copertura geografica (demolitore_id, comune, provincia [NOME intero], tipo: 'regione'|'provincia'|'provincia_esclusa'|'comune_incluso'|'comune_escluso'). Impostata dalla mappa `MappaComuni`.
+- ⭐ `demolitori_tariffe` (nuova, 6/07/2026): tariffe speciali per zona (id, demolitore_id, tipo 'regione'|'provincia'|'comune', nome, fee). **Regola fatturazione (più specifico vince)**: fee del veicolo = tariffa del COMUNE di ritiro, altrimenti PROVINCIA, altrimenti REGIONE, altrimenti `fee_per_pratica` base. Il ritiro effettivo (`data_ritiro_effettuato`) fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore. RLS: solo admin.
 
 ## 3.11 Altre tabelle rilevanti
 
@@ -432,10 +433,14 @@ acquistata_da_noidemoliamo
 annullata
 ```
 
-## 4.7 Algoritmo di assegnazione AUTOMATICA
+⚠️ **VINCOLO DB `pratiche_stato_check`** (bug scoperto e risolto 6/07/2026): la colonna `pratiche.stato` ha un CHECK constraint con l'elenco degli stati ammessi. All'inizio mancavano i nuovi stati (es. `da_assegnare`): il DB **rifiutava in silenzio** l'update → la pratica restava bloccata su "in_attesa_documenti". Il constraint ora contiene TUTTI gli stati qui sopra. **Se aggiungi un nuovo stato al workflow, aggiornalo anche nel constraint**, altrimenti le transizioni falliscono senza errore visibile.
+
+⭐ **Le transizioni di stato pratica passano dal SERVER** (service role), non dal browser admin: endpoint `/api/pratica-stato` ricalcola lo stato dai documenti (tutti approvati → `da_assegnare`, ecc.). La pagina admin si **auto-sincronizza all'apertura** (self-heal: se i documenti sono a posto ma la pratica è indietro, la sblocca da sola).
+
+## 4.7 Algoritmo di assegnazione AUTOMATICA — ✅ COLLAUDATO (6 luglio 2026)
 
 Implementato in `lib/assegnazione.ts` + endpoint `/api/assegna-pratica/route.ts`.
-⚠️ **STATO**: codice scritto ma **DA REVISIONARE E TESTARE INSIEME**.
+✅ **Testato end-to-end**: pratica a Messina → demolitore che copre la provincia trovato, distanza calcolata, assegnato con nome visibile.
 
 ```
 1. Prerequisiti (comune + provincia + lat/lng)
@@ -444,12 +449,17 @@ Implementato in `lib/assegnazione.ts` + endpoint `/api/assegna-pratica/route.ts`
 7. Ordina: velocità → distanza → pratiche aperte → 8. vincitore + lista debug
 ```
 
-### ⚠️ Cose da fixare insieme
-1. Velocità storica: usare `data_ritiro_effettuato` (non `data_certificato_rottamazione`)
-2. Colonne da verificare/aggiungere in `pratiche`: `data_assegnazione`, `data_ritiro_effettuato`
-3. Colonna `stato` in `demolitori` — verificare esista
-4. Aggiungere media recensioni allo scoring (dopo sistema recensioni)
-5. Fallback nessun demolitore → `in_assegnazione_manuale`
+### Flusso admin (deciso e collaudato)
+Un solo flusso: **"Assegna in automatico"** lancia l'algoritmo in modalità **dry-run** (calcola SENZA scrivere) e mostra la **classifica** dei candidati (1° = "Consigliato", con distanza · velocità · pratiche aperte). L'admin **conferma** il suggerito o ne sceglie un altro dalla lista → solo allora l'endpoint assegna davvero. **"Scegli io"** mostra la stessa lista senza suggerimento. Endpoint `/api/assegna-pratica` modalità: `dry_run` (calcola), `demolitore_id` (assegna quello scelto, `manuale` true/false), legacy (auto).
+
+### ⚠️ Fix applicati (erano i bug che bloccavano tutto)
+1. ✅ **Velocità storica**: ora su `data_ritiro_effettuato` (non più certificato rottamazione)
+2. ✅ **Colonne aggiunte a `pratiche`**: `data_assegnazione`, `data_ritiro_effettuato`, `scadenza_proposta_ritiro`, `assegnazione_manuale` (mancavano → l'assegnazione falliva)
+3. ✅ **`demolitori.stato`** esiste
+4. ⭐ **CONVERSIONE PROVINCIA sigla→nome** (`lib/province.ts`): le pratiche salvano la provincia come **sigla** ("ME", presa da Google), la copertura usa il **nome** ("Messina"). L'algoritmo converte prima di confrontare, altrimenti "nessun demolitore copre".
+5. ✅ Fallback nessun demolitore → `in_assegnazione_manuale`
+6. ⏳ Media recensioni nello scoring (dopo sistema recensioni)
+7. ⏳ **`GOOGLE_MAPS_SERVER_KEY` su Vercel** ancora da aggiungere (in locale c'è; senza, l'automatica online non calcola le distanze)
 
 ## 4.8 Assegnazione MANUALE (DA COSTRUIRE)
 
@@ -563,14 +573,19 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - **Flusso `/inizia`**: COMPLETO E COLLAUDATO ⭐⭐⭐ (+ errori in italiano)
 - **`/dashboard`**: ✅ RISTILIZZATA (07/2026) — sfondo lavanda, card bianca, header blu con saluto + Esci, card pratiche stile /inizia con icona veicolo per tipo, badge stato a pillola chiara, empty state con SVG
 - **`/dashboard/[id]`**: ✅ RISTILIZZATA (07/2026) — header blu con "← Pratiche" + "Marca Modello · Targa" + badge stato, banner dinamico per stato con icone SVG, tab a pillole (attiva blu piena). Tab Documenti = sistema checklist completo (vedi 5.6), Tab Stato = timeline + condizioni a pillole, Tab Chat invariata
-- **`/admin`**: dashboard con stats e filtri
-- **`/admin/copertura`**: mappa strategica Italia
-- **`/admin/demolitori` + [id]**: gestione demolitori con MappaComuni
-- **`/admin/pratiche/[id]`**: ⚠️ ancora sul VECCHIO sistema — approvazione documenti DA RIFARE su `pratica_documenti_checklist` (prossimo task)
+- **AREA ADMIN = CRM da PC** ✅ (rifatta 6/07/2026, stile app in versione dashboard densa; NON mobile). **Sidebar condivisa** `app/admin/_components/AdminSidebar.tsx` (Pratiche · Demolitori · Copertura) su tutte le pagine.
+- **`/admin`**: ✅ CRM pratiche per **priorità d'azione** ("Da fare ora": da contattare, da approvare, da assegnare, in corso) + ricerca + colonna Attesa (rossa oltre 30 min) + colonna demolitore. Cestino per riga (elimina definitiva). Bottone "Pulisci account senza pratiche".
+- **`/admin/pratiche/[id]`**: ✅ RIFATTA — approvazione documenti sul nuovo sistema checklist (approva/rifiuta con motivo, "approva tutti", banner "da contattare", tutti i dati dichiarati dal cliente), assegnazione (auto+manuale con nome demolitore), eliminazione doppia scelta (solo pratica / pratica + account cliente).
+- **`/admin/demolitori` + [id]**: ✅ RIFATTA professionale — lista con copertura/fee/aperte; scheda con anagrafica completa modificabile (Google autocomplete), statistiche, stato/contratto, **tariffe speciali per zona**, e la **mappa `MappaComuni` intatta** per la copertura.
+- **`/admin/copertura`**: mappa strategica Italia (ancora stile vecchio, da uniformare)
 
 ## 5.4 Backend / API
 
-**`/api/assegna-pratica/route.ts`** — Endpoint algoritmo assegnazione (DA REVISIONARE).
+- **`/api/assegna-pratica`** — algoritmo assegnazione ✅ (modalità dry-run / assegna demolitore scelto / auto). Converte sigla→nome provincia (`lib/province.ts`).
+- **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role).
+- **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
+- **`/api/pulisci-utenti`** — cancella account clienti senza pratiche (mai admin/operatori).
+- ⭐ **Google Maps**: caricatore condiviso `lib/googleMaps.ts` — carica lo script UNA volta per pagina (autocomplete indirizzo + mappa copertura convivono senza conflitto).
 
 ## 5.5 Verifica PRA ACI — ABBANDONATA per ora
 
@@ -723,9 +738,17 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ---
 
-# 📋 PARTE 8 — STATO ATTUALE (3 luglio 2026)
+# 📋 PARTE 8 — STATO ATTUALE (6 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐⭐⭐ SESSIONE 6 luglio 2026 — AREA ADMIN (CRM) + ASSEGNAZIONE AUTOMATICA
+
+- ✅ **CRM admin** completo (vedi 5.3): pratiche per priorità d'azione, ricerca, attesa, demolitore; dettaglio pratica con tutti i dati + approvazione documenti nuovo sistema; **eliminazione definitiva** (DB + storage, doppia scelta pratica/account) + pulizia account senza pratiche; **sidebar condivisa**.
+- ✅ **Gestione demolitori professionale** (vedi 3.10 e 5.3): campi anagrafici completi (P.IVA, SDI, titolare, referente, email assegnazione/aziendale, PEC, indirizzo Google autocomplete), **tariffe per zona** (`demolitori_tariffe`, regola più-specifico-vince), mappa copertura intatta.
+- ✅ **Assegnazione automatica COLLAUDATA** (vedi 4.7): dry-run → classifica → conferma; nome demolitore visibile.
+- ✅ **Bug DB fondamentali risolti**: constraint `pratiche_stato_check` completato con tutti gli stati; colonne mancanti aggiunte a `pratiche`; conversione provincia sigla→nome; transizioni stato via server (`/api/pratica-stato`).
+- ✅ **Google Maps loader condiviso** (`lib/googleMaps.ts`) — autocomplete + mappa convivono.
 
 ### ⭐⭐⭐ SESSIONE 3 luglio 2026 (pomeriggio) — Fronte/retro, assistenza WhatsApp, home/login, casistiche in repo
 
@@ -771,15 +794,11 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 
 ## 8.2 ⏳ PENDING — In ordine di priorità
 
-### 🔥🔥🔥 STEP 1 — PAGINA ADMIN APPROVAZIONE DOCUMENTI (▶️ PROSSIMO TASK)
-
-Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
-- Leggere `pratica_documenti_checklist` (+ catalogo) invece delle tabelle legacy
-- Per ogni documento: anteprima file (array JSON!), **Approva** / **Rifiuta con motivo** (`nota_admin`) → il cliente vede la card rossa "Da rifare"
-- Bottone **"Approva tutti"** per la velocità
-- Gestire il passaggio di stato pratica: tutti approvati → `da_assegnare`; qualche rifiuto → `documenti_parzialmente_approvati`
-- Mostrare anche foto veicolo e nuovi campi casistica (fermo, delegato, eredi, targhe presenti)
-- Coerente con il pattern grafico di TabDocumenti (vedi 5.6) per riconoscibilità
+### 🔥🔥🔥 STEP 0 — DA FARE SUBITO (emersi 6/07/2026)
+- **`GOOGLE_MAPS_SERVER_KEY` su Vercel**: senza, l'assegnazione automatica ONLINE non calcola le distanze (in locale funziona).
+- **Assegnazione MANUALE ("Scegli io")**: da testare fino in fondo (il flusso c'è).
+- **Dashboard/pagina DEMOLITORE**: il demolitore deve vedere le pratiche assegnate, proporre data ritiro, segnare **ritiro effettivo** (`data_ritiro_effettuato` → fa partire la fatturazione), caricare certificati. ANCORA DA COSTRUIRE.
+- ✅ ~~STEP 1 — Pagina admin approvazione documenti~~ FATTA (vedi 8.1 sessione 6/07).
 
 ### 🔥🔥 STEP 1-bis — FIX EMERSI DALLA VERIFICA CASISTICHE (3/07/2026)
 - **Caso 7 (non intestatario)**: nel flusso `/inizia`, libretto e CDC sono OBBLIGATORI ("se non ha non può procedere" da file casistiche). Oggi il modulo lascia comunque scegliere "smarrito/non ce l'ho" e crea la pratica. → aggiungere avviso di stop.
@@ -798,8 +817,8 @@ Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
 ### 🔥 STEP 4 — PAGINA ADMIN DETTAGLIO PRATICA (resto)
 - Chat funzionante (messaggi_chat), campi casistica in vista
 
-### 🔥 STEP 5 — REVISIONE ALGORITMO + ASSEGNAZIONE MANUALE
-- Fix velocità storica, colonne mancanti, mappa scelta manuale, GOOGLE_MAPS_SERVER_KEY su Vercel
+### ✅ STEP 5 — ALGORITMO ASSEGNAZIONE — FATTO (6/07/2026)
+- ✅ Velocità storica, colonne, conversione province, dry-run+conferma. Resta: assegnazione manuale su MAPPA (ora è a lista), media recensioni nello scoring, `GOOGLE_MAPS_SERVER_KEY` su Vercel.
 
 ### 🔥 STEP 6 — SISTEMA RECENSIONI
 - Tabella + stato + pagina cliente bloccante + integrazione algoritmo + push Google Maps
@@ -848,6 +867,14 @@ Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
 64. ⭐ **Assistenza WhatsApp sempre a un tocco**: pulsante fisso (+39 351 828 0493) su tutte le pagine cliente. Ridurre l'abbandono di chi si blocca.
 65. **La home fa parte dell'area cliente**: stesso linguaggio visivo /inizia (lavanda, logo, spunte SVG, bottoni app). Niente emoji nell'interfaccia.
 
+**Nuove decisioni 6 luglio 2026:**
+
+66. ⭐ **L'admin è un CRM da PC**, non mobile: stesso linguaggio visivo dell'app ma layout denso da dashboard, organizzato per **priorità d'azione** (non perdere nessuna pratica con decine al giorno). Sidebar condivisa.
+67. ⭐ **L'algoritmo suggerisce, l'admin decide**: l'assegnazione automatica calcola la classifica ma assegna solo dopo conferma dell'admin (che può scegliere un altro demolitore). L'admin deve poter assegnare sempre anche a mano.
+68. ⭐ **Fee del demolitore per ZONA, fatturazione automatica**: tariffa base + tariffe per regione/provincia/comune; il veicolo viene fatturato con la **tariffa più specifica** in base al luogo di ritiro. Il **ritiro effettivo** fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore.
+69. **Eliminazione pratica ≠ eliminazione account**: due azioni distinte e consapevoli (scelta doppia nel dettaglio) + pulizia account senza pratiche separata. Mai orfani, mai admin/operatori.
+70. ⚙️ **Gotcha da ricordare**: (a) i nuovi stati pratica vanno aggiunti al constraint `pratiche_stato_check` o falliscono in silenzio; (b) la provincia è **sigla** nelle pratiche e **nome** nella copertura → convertire (`lib/province.ts`); (c) Google Maps si carica una volta sola per pagina (`lib/googleMaps.ts`).
+
 ---
 
 # 🚀 PARTE 10 — COME LAVORARE NELLA NUOVA SESSIONE (Claude Code o chat)
@@ -879,4 +906,4 @@ Rifare l'approvazione in `/admin/pratiche/[id]` sul nuovo sistema:
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 3 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 6 luglio 2026.**
