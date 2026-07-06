@@ -289,6 +289,8 @@ Chiave-valore. Es: `max_pratiche_aperte_demolitore=15`
 - `demolitori`: anagrafica. Campi professionali (agg. 6/07/2026): `ragione_sociale`, `piva`, `codice_sdi`, `indirizzo`/`citta`/`provincia`/`cap`/`lat`/`lng` (da Google autocomplete), `telefono_fisso`, `titolare_nome`/`titolare_cellulare`, `referente_nome`/`referente_cellulare`, `email_assegnazione`, `email_aziendale`, `pec`, `stato` (attivo/in_attesa/sospeso), `fee_per_pratica` (fee BASE), `contratto_firmato`, `velocita_media_giorni`.
 - `demolitori_comuni`: copertura geografica (demolitore_id, comune, provincia [NOME intero], tipo: 'regione'|'provincia'|'provincia_esclusa'|'comune_incluso'|'comune_escluso'). Impostata dalla mappa `MappaComuni`.
 - ⭐ `demolitori_tariffe` (nuova, 6/07/2026): tariffe speciali per zona (id, demolitore_id, tipo 'regione'|'provincia'|'comune', nome, fee). **Regola fatturazione (più specifico vince)**: fee del veicolo = tariffa del COMUNE di ritiro, altrimenti PROVINCIA, altrimenti REGIONE, altrimenti `fee_per_pratica` base. Il ritiro effettivo (`data_ritiro_effettuato`) fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore. RLS: solo admin.
+- ⭐ `demolitori_note` (nuova, 7/07/2026): note/cronologia del demolitore (id, demolitore_id, testo, creato_il). Timeline nella scheda demolitore. RLS: solo admin.
+- **Stato demolitore semplificato nell'interfaccia**: o è **Attivo** (riceve pratiche) o **Non attivo** (valori DB `in_attesa`/`sospeso` mostrati entrambi come "Non attivo"). Il campo `contratto_firmato` esiste nel DB ma NON è più gestito dall'interfaccia (ai contratti pensa Davide).
 
 ## 3.11 Altre tabelle rilevanti
 
@@ -576,8 +578,8 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - **AREA ADMIN = CRM da PC** ✅ (rifatta 6/07/2026, stile app in versione dashboard densa; NON mobile). **Sidebar condivisa** `app/admin/_components/AdminSidebar.tsx` (Pratiche · Demolitori · Copertura) su tutte le pagine.
 - **`/admin`**: ✅ CRM pratiche per **priorità d'azione** ("Da fare ora": da contattare, da approvare, da assegnare, in corso) + ricerca + colonna Attesa (rossa oltre 30 min) + colonna demolitore. Cestino per riga (elimina definitiva). Bottone "Pulisci account senza pratiche".
 - **`/admin/pratiche/[id]`**: ✅ RIFATTA — approvazione documenti sul nuovo sistema checklist (approva/rifiuta con motivo, "approva tutti", banner "da contattare", tutti i dati dichiarati dal cliente), assegnazione (auto+manuale con nome demolitore), eliminazione doppia scelta (solo pratica / pratica + account cliente).
-- **`/admin/demolitori` + [id]**: ✅ RIFATTA professionale — lista con copertura/fee/aperte; scheda con anagrafica completa modificabile (Google autocomplete), statistiche, stato/contratto, **tariffe speciali per zona**, e la **mappa `MappaComuni` intatta** per la copertura.
-- **`/admin/copertura`**: mappa strategica Italia (ancora stile vecchio, da uniformare)
+- **`/admin/demolitori` + [id]**: ✅ RIFATTA — lista a card; scheda "profilo CRM" (7/07/2026): testata blu con statistiche e toggle Attivo/Non attivo, anagrafica in LETTURA con modifica a tasto, tariffe per zona, **Note e cronologia** (timeline), **copertura a tendina** (zone a pillole sempre visibili, mappa solo premendo Modifica, "Salva copertura" solo se modificata — logica `MappaComuni` intatta).
+- ~~`/admin/copertura`~~: ELIMINATA (7/07/2026) — la copertura si gestisce solo dentro la scheda demolitore.
 
 ## 5.4 Backend / API
 
@@ -685,6 +687,36 @@ in_attesa_documenti `#FAEEDA`/`#854F0B` · in verifica `#E0EDFB`/`#1E4E8C` · da
 17. ⭐ **I nomi dei documenti sono i protagonisti visivi** delle card (07/2026)
 18. ⭐ **Niente popup intermedi per scattare/caricare** (07/2026): i bottoni aprono direttamente fotocamera o file picker
 19. ⭐ **Azioni distruttive sempre con conferma** e solo negli stati in cui il cliente può modificare
+
+## 6.8 ⭐ DESIGN SYSTEM AREA ADMIN (CRM) — STABILE, approvato da Davide (7/07/2026)
+
+> Il layout e i colori che piacciono a Davide. OGNI nuova pagina admin DEVE seguire questi input.
+
+**Fondamenta**
+- **Sfondo pagina**: lavanda di sistema `linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)` (lo stesso dell'area cliente)
+- **Card**: bianche, bordo `1.5px solid #E5E7EB`, radius 14, ombra morbida `0 1px 3px rgba(16,24,40,0.07)` (costante `STILE_CARD`)
+- **Titoli card**: barretta blu verticale a sinistra + testo bold `#0F1B33` (componente `TitoloCard`)
+- **NO emoji, NO freccette testuali** (←/→): solo icone SVG. Bottone "Indietro" = pillola grigia con chevron SVG
+
+**Le liste sono CARD, non tabelle** (pratiche e demolitori):
+- Quadratino icona 46px `#DBEAFE` (icona veicolo / iniziali), titolo bold 15px `#111827` protagonista, sottotitolo `#4B5563`
+- Colonne interne separate da divisori verticali `#EEF1F5`, pillole di stato colorate, riquadro metrica a destra (attesa/aperte; rosso `#FCEBEB`/`#A32D2D` se urgente)
+- Bordo sinistro 4px colorato per stato/urgenza; azioni (cestino) visibili solo al passaggio del mouse
+
+**Pagine "profilo"** (scheda demolitore, riferimento per future schede):
+- Testata **blu gradiente** `linear-gradient(120deg,#1d4ed8,#2563eb,#3b82f6)` con iniziali, SOLO ragione sociale/nome, toggle di stato, e **statistiche "in vetro"** (`rgba(255,255,255,0.14)`)
+
+**Tipografia dei dati (bilanciamento approvato)**
+- Titoli sezione: `#1E293B` bold uppercase 12px (con iconcina 28px `#DBEAFE`)
+- Etichette dato: `#5B6779` bold uppercase 10.5px
+- **Valori: `#3E4C63` semibold — MAI nero pieno** (il nero "spara")
+- Dato in lettura: riquadro `#F6F8FB` bordo `#E5E9F0` radius 10
+
+**Regola MODIFICA A TASTO (vale per ogni form admin)**
+- Di default tutto in **sola lettura** (click sui campi non modifica nulla)
+- Bottone blu **"Modifica"** (con matita) → campi editabili, tutti **identici** (bordo 1.5px, radius 10, focus ring blu; autocomplete in versione `compatto`)
+- **"Salva" appare/si attiva SOLO se qualcosa è davvero cambiato** + avviso ambra "Modifiche non salvate" + bottone Annulla che ripristina
+- Stesso principio per l'area di copertura (tendina: pillole zone sempre visibili, mappa solo in modifica)
 
 ---
 
@@ -874,6 +906,13 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 68. ⭐ **Fee del demolitore per ZONA, fatturazione automatica**: tariffa base + tariffe per regione/provincia/comune; il veicolo viene fatturato con la **tariffa più specifica** in base al luogo di ritiro. Il **ritiro effettivo** fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore.
 69. **Eliminazione pratica ≠ eliminazione account**: due azioni distinte e consapevoli (scelta doppia nel dettaglio) + pulizia account senza pratiche separata. Mai orfani, mai admin/operatori.
 70. ⚙️ **Gotcha da ricordare**: (a) i nuovi stati pratica vanno aggiunti al constraint `pratiche_stato_check` o falliscono in silenzio; (b) la provincia è **sigla** nelle pratiche e **nome** nella copertura → convertire (`lib/province.ts`); (c) Google Maps si carica una volta sola per pagina (`lib/googleMaps.ts`).
+
+**Nuove decisioni 7 luglio 2026:**
+
+71. ⭐ **Il design admin è FISSATO** (vedi 6.8): lavanda + card con ombra, liste a card (non tabelle), profili con testata blu e statistiche in vetro, valori mai nero pieno. Ogni nuova pagina admin segue quegli input senza reinventare.
+72. ⭐ **Modifica solo col tasto**: nei form admin niente campi sempre editabili — lettura di default, "Modifica" esplicito, salvataggio solo se qualcosa è cambiato. Evita modifiche/salvataggi accidentali.
+73. **Niente gestione contratti nell'interfaccia** (per ora): ai contratti pensa Davide. Lo stato demolitore è un semplice Attivo/Non attivo.
+74. **Cronologia demolitore come note datate** (`demolitori_note`): la storia del rapporto col demolitore si scrive lì, non in un campo note statico.
 
 ---
 
