@@ -563,8 +563,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
           <div style={{ width: 54, height: 54, margin: '0 auto 12px', background: '#1D9E75', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <p style={{ fontWeight: 500, fontSize: 16, color: '#0F6E56', margin: 0 }}>Sei pronto per il ritiro!</p>
-          <p style={{ fontSize: 12.5, color: '#3c7a60', marginTop: 4, lineHeight: 1.45 }}>Tutti i documenti sono stati approvati. Ottimo lavoro.</p>
+          <p style={{ fontWeight: 600, fontSize: 16, color: '#0F6E56', margin: 0 }}>Documenti tutti approvati</p>
+          <p style={{ fontSize: 12.5, color: '#3c7a60', marginTop: 4, lineHeight: 1.5 }}>È tutto in ordine. Tieni gli originali a portata di mano: ti serviranno il giorno del ritiro.</p>
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '6px 6px 2px' }}>
@@ -668,8 +668,11 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
             <button onClick={() => setSistematiAperti(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '1.5px solid #E5E7EB', borderRadius: 14, background: '#fff' }}>
               <IcoCheck size={21} color="#1D9E75" />
               <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{sistemati.length} {sistemati.length === 1 ? 'documento sistemato' : 'documenti sistemati'}</div>
-                <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{contaPerStato(sistemati)}</div>
+                <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>
+                  {sistemati.every(d => d.stato === 'approvato')
+                    ? `${sistemati.length} ${sistemati.length === 1 ? 'Documento approvato' : 'Documenti approvati'}`
+                    : contaPerStato(sistemati)}
+                </div>
               </div>
               <IcoChevronDown color="#8a98a8" />
             </button>
@@ -685,27 +688,38 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
-      {/* ====== DA PORTARE AL RITIRO ====== */}
+      {/* ====== DOCUMENTI ORIGINALI DA PORTARE AL RITIRO ====== */}
       {daConsegnare.length > 0 && (
-        <div style={{ background: '#0d2144', borderRadius: 16, padding: 16 }}>
-          <button onClick={() => setRitiroAperto(a => !a)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, background: 'none', border: 'none' }}>
-            <IcoPackage size={21} color="#5dca9e" />
+        <div style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', borderRadius: 16, padding: 16, boxShadow: '0 4px 14px rgba(20,184,166,0.3)' }}>
+          <button onClick={() => setRitiroAperto(a => !a)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+            <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
+                <rect x="8" y="2" width="8" height="4" rx="1" />
+                <line x1="9" y1="12" x2="15" y2="12" />
+                <line x1="9" y1="16" x2="13" y2="16" />
+              </svg>
+            </span>
             <div style={{ flex: 1, textAlign: 'left' }}>
-              <div style={{ color: '#fff', fontWeight: 500, fontSize: 14 }}>Da portare al ritiro</div>
-              <div style={{ color: '#9db4d4', fontSize: 11.5, marginTop: 1 }}>{daConsegnare.length} originali da consegnare</div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: 14.5, lineHeight: 1.3 }}>Documenti originali da portare al ritiro</div>
+              <div style={{ color: '#CCFBF1', fontSize: 11.5, marginTop: 2 }}>Consegnali al demolitore il giorno del ritiro</div>
             </div>
-            <span style={{ transform: ritiroAperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><IcoChevronDown color="#5e7290" /></span>
+            <span style={{ background: '#fff', color: '#0F766E', fontSize: 12.5, fontWeight: 800, borderRadius: 999, padding: '3px 11px', flexShrink: 0 }}>{daConsegnare.length}</span>
+            <span style={{ transform: ritiroAperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><IcoChevronDown color="#CCFBF1" /></span>
           </button>
           {ritiroAperto && (
-            <div style={{ marginTop: 13 }}>
-              <p style={{ color: '#acc3e0', fontSize: 12, marginBottom: 6, lineHeight: 1.45 }}>Il giorno del ritiro consegna questi originali al demolitore:</p>
-              <div style={{ fontSize: 13, color: '#fff' }}>
+            <div style={{ marginTop: 14 }}>
+              <div style={{ background: '#fff', borderRadius: 12, padding: '4px 14px' }}>
                 {daConsegnare.map((d, i) => (
-                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '7px 0', borderBottom: i < daConsegnare.length - 1 ? '0.5px solid #25395a' : 'none' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#5dca9e" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="9.5"/><polyline points="8.5 12 11 14.5 15.5 9.5"/></svg>
-                    <span>{nomeRitiro(d)}</span>
+                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < daConsegnare.length - 1 ? '1px solid #EEF1F5' : 'none' }}>
+                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#CCFBF1', color: '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
                   </div>
                 ))}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, padding: '0 2px' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CCFBF1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>Servono <b style={{ color: '#fff' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.</span>
               </div>
             </div>
           )}

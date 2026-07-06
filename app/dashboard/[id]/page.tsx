@@ -87,16 +87,16 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
     case 'da_assegnare':
       return {
         icona: ico(<polyline points="20 6 9 17 4 12"/>),
-        titolo: 'Documenti approvati!',
+        titolo: 'Documenti approvati',
         sottotitolo: 'Stiamo assegnando un demolitore alla tua pratica',
         bg: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
       }
     case 'assegnata':
     case 'in_attesa_conferma_cliente':
       return {
-        icona: ico(<><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></>),
-        titolo: 'Demolitore assegnato',
-        sottotitolo: 'Ti contatterà a breve per fissare il ritiro',
+        icona: ico(<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>),
+        titolo: 'Il tuo demolitore è pronto',
+        sottotitolo: 'Ti contatterà entro 8 ore lavorative per concordare giorno e ora del ritiro',
         bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'ritiro_confermato':
@@ -182,12 +182,15 @@ function IconaDocumenti({ attivo }: { attivo: boolean }) {
 }
 
 function IconaStato({ attivo }: { attivo: boolean }) {
+  // Timeline a tappe: rappresenta l'avanzamento della pratica
   return (
     <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={attivo ? '#fff' : '#8a98a8'} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="5" cy="6" r="2"/>
-      <path d="M5 8 Q 5 12, 12 12 T 19 16"/>
-      <circle cx="12" cy="12" r="2"/>
-      <circle cx="19" cy="18" r="2"/>
+      <circle cx="5.5" cy="5" r="2" />
+      <line x1="11" y1="5" x2="20" y2="5" />
+      <circle cx="5.5" cy="12" r="2" />
+      <line x1="11" y1="12" x2="20" y2="12" />
+      <circle cx="5.5" cy="19" r="2" />
+      <line x1="11" y1="19" x2="16" y2="19" />
     </svg>
   )
 }
