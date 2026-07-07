@@ -49,8 +49,10 @@ interface Pratica {
   data_assegnazione: string | null
   scadenza_proposta_ritiro: string | null
   fee_concordata: number | null
+  motivo_annullamento: string | null
   stato: string
   creato_il: string
+  aggiornato_il: string | null
 }
 
 interface Candidato {
@@ -130,6 +132,10 @@ export default function DettaglioPraticaAdmin() {
   const [eliminaOpen, setEliminaOpen] = useState(false)
   const [eliminando, setEliminando] = useState(false)
   const [erroreElimina, setErroreElimina] = useState<string | null>(null)
+  const [annullaOpen, setAnnullaOpen] = useState(false)
+  const [annullando, setAnnullando] = useState(false)
+  const [motivoAnnulla, setMotivoAnnulla] = useState('')
+  const [erroreAnnulla, setErroreAnnulla] = useState<string | null>(null)
 
   useEffect(() => {
     async function carica() {
@@ -162,9 +168,26 @@ export default function DettaglioPraticaAdmin() {
 
   async function annullaPratica() {
     if (!pratica) return
-    if (!confirm('Sei sicuro di voler ANNULLARE questa pratica?')) return
-    await supabase.from('pratiche').update({ stato: 'annullata', aggiornato_il: new Date().toISOString() }).eq('id', pratica.id)
-    await ricaricaPratica()
+    const motivo = motivoAnnulla.trim()
+    if (!motivo) { setErroreAnnulla('Scrivi il motivo dell\'annullamento: resterà nella cronologia.'); return }
+    setAnnullando(true)
+    setErroreAnnulla(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pratica-annulla', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, motivo }),
+      })
+      const data = await res.json()
+      if (!res.ok) { setErroreAnnulla(data?.error || 'Errore durante l\'annullamento'); setAnnullando(false); return }
+      await ricaricaPratica()
+      setAnnullaOpen(false)
+      setMotivoAnnulla('')
+    } catch {
+      setErroreAnnulla('Errore di rete.')
+    }
+    setAnnullando(false)
   }
 
   async function eliminaDefinitiva(eliminaAccount: boolean) {
@@ -208,7 +231,7 @@ export default function DettaglioPraticaAdmin() {
           style={{ border: '1.5px solid #E5E7EB' }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          Indietro
+          Torna alle pratiche
         </button>
         <div style={{ width: 1, height: 32, background: '#E5E7EB', flexShrink: 0 }} />
         <div className="min-w-0">
@@ -235,7 +258,31 @@ export default function DettaglioPraticaAdmin() {
           {/* COLONNA DESTRA: assegnazione + dati */}
           <div className="w-full lg:w-[340px] flex-shrink-0 flex flex-col gap-4">
 
-            <AssegnazioneCard pratica={pratica} demolitoreNome={demolitoreNome} onAssegnato={ricaricaPratica} />
+            {/* Pratica annullata: motivo sempre visibile (cronologia) */}
+            {pratica.stato === 'annullata' && (
+              <div className="p-4" style={{ ...STILE_CARD, background: '#FBFBFD', borderColor: '#D8DCE5' }}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#E7EAEE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                  </span>
+                  <div>
+                    <div className="text-[13.5px] font-bold text-gray-800">Pratica annullata</div>
+                    {pratica.aggiornato_il && <div className="text-[10.5px] font-semibold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>{fmtData(pratica.aggiornato_il)}</div>}
+                  </div>
+                </div>
+                <div className="text-[13px] rounded-[10px] px-3 py-2.5" style={{ background: '#F3F4F7', color: '#3E4C63', lineHeight: 1.5 }}>
+                  {pratica.motivo_annullamento || 'Motivo non registrato (annullata prima dell\'introduzione delle note).'}
+                </div>
+                {pratica.demolitore_id && (
+                  <div className="flex items-center gap-1.5 mt-2 text-[11.5px]" style={{ color: '#64748b' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /></svg>
+                    Annullata dopo l&apos;assegnazione a <b className="text-gray-700">{demolitoreNome || 'demolitore'}</b>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {pratica.stato !== 'annullata' && <AssegnazioneCard pratica={pratica} demolitoreNome={demolitoreNome} onAssegnato={ricaricaPratica} />}
 
             <FeePraticaCard pratica={pratica} onAggiornata={ricaricaPratica} />
 
@@ -289,7 +336,7 @@ export default function DettaglioPraticaAdmin() {
 
             <div className="flex gap-2 pt-1">
               {pratica.stato !== 'annullata' && (
-                <button onClick={annullaPratica} className="flex-1 text-xs font-semibold text-gray-600 hover:text-amber-700 bg-white hover:bg-amber-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #E5E7EB' }}>
+                <button onClick={() => setAnnullaOpen(true)} className="flex-1 text-xs font-semibold text-gray-600 hover:text-amber-700 bg-white hover:bg-amber-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #E5E7EB' }}>
                   Annulla pratica
                 </button>
               )}
@@ -302,6 +349,43 @@ export default function DettaglioPraticaAdmin() {
         </div>
       </div>
 
+      {/* MODALE ANNULLA PRATICA */}
+      {annullaOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: '#FAEEDA' }}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+            </div>
+            <p className="text-center font-semibold text-gray-900">Annullare questa pratica?</p>
+            <p className="text-center text-sm text-gray-500 mt-1">
+              La pratica <b>{pratica.targa || 'senza targa'}</b> resterà nello storico come annullata (non viene cancellata). Il cliente la vedrà come annullata nella sua area.
+            </p>
+            {pratica.demolitore_id && (
+              <div className="flex items-start gap-2 rounded-xl px-3 py-2.5 mt-3" style={{ background: '#FDF7EA', border: '1.5px solid #F0DFB8' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                <span className="text-xs" style={{ color: '#854F0B' }}>È assegnata a <b>{demolitoreNome || 'un demolitore'}</b>: resterà traccia nelle statistiche (sue e tue). Per lui la pratica risulterà annullata.</span>
+              </div>
+            )}
+            <label className="block text-xs font-semibold text-gray-700 mt-4 mb-1.5">Perché la annulli? <span className="text-gray-400 font-normal">(resta nella cronologia)</span></label>
+            <textarea
+              value={motivoAnnulla}
+              onChange={e => { setMotivoAnnulla(e.target.value); setErroreAnnulla(null) }}
+              rows={3}
+              autoFocus
+              placeholder="Es. il cliente ci ha ripensato / veicolo già rottamato / pratica doppia…"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-amber-500 resize-none placeholder:text-gray-400"
+            />
+            {erroreAnnulla && <p className="text-[11.5px] text-red-600 mt-1">{erroreAnnulla}</p>}
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => { setAnnullaOpen(false); setMotivoAnnulla(''); setErroreAnnulla(null) }} disabled={annullando} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">Indietro</button>
+              <button onClick={annullaPratica} disabled={annullando} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white rounded-xl disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: '#B45309' }}>
+                {annullando ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Annullo…</> : 'Sì, annulla pratica'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODALE ELIMINAZIONE DEFINITIVA */}
       {eliminaOpen && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -313,14 +397,26 @@ export default function DettaglioPraticaAdmin() {
             <p className="text-center text-sm text-gray-500 mt-1">
               La pratica <b>{pratica.targa || 'senza targa'}</b>, con documenti, foto e file, sarà cancellata per sempre. Scegli se cancellare anche l&apos;account del cliente.
             </p>
+            {pratica.demolitore_id && (
+              <div className="flex items-start gap-2 rounded-xl px-3 py-2.5 mt-3" style={{ background: '#FDF7EA', border: '1.5px solid #F0DFB8' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                <span className="text-xs" style={{ color: '#854F0B' }}>Attenzione: è <b>assegnata a {demolitoreNome || 'un demolitore'}</b>. Eliminandola sparirà anche per lui.</span>
+              </div>
+            )}
             {erroreElimina && <p className="text-center text-xs text-red-600 mt-2">{erroreElimina}</p>}
             {eliminando ? (
               <div className="flex items-center gap-2 justify-center text-sm text-gray-500 py-5"><div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />Elimino…</div>
             ) : (
-              <div className="flex flex-col gap-2 mt-4">
-                <button onClick={() => eliminaDefinitiva(false)} className="w-full px-4 py-2.5 text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl">Elimina solo la pratica</button>
-                <button onClick={() => eliminaDefinitiva(true)} className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl">Elimina pratica + account cliente</button>
-                <button onClick={() => setEliminaOpen(false)} className="w-full px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-xl mt-1">Annulla</button>
+              <div className="flex flex-col gap-2.5 mt-4">
+                <div>
+                  <button onClick={() => eliminaDefinitiva(false)} className="w-full px-4 py-2.5 text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl">Elimina solo la pratica</button>
+                  <p className="text-[11px] text-gray-500 text-center mt-1">L&apos;account del cliente resta attivo: potrà accedere e fare altre pratiche.</p>
+                </div>
+                <div>
+                  <button onClick={() => eliminaDefinitiva(true)} className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl">Elimina pratica + account cliente</button>
+                  <p className="text-[11px] text-gray-500 text-center mt-1">Cancella anche login e accesso del cliente (solo se non ha altre pratiche).</p>
+                </div>
+                <button onClick={() => setEliminaOpen(false)} className="w-full px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-xl">Annulla</button>
               </div>
             )}
           </div>
@@ -355,9 +451,9 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
   const [confermandoId, setConfermandoId] = useState<string | null>(null)
   const [errore, setErrore] = useState<string | null>(null)
   const [disassegnando, setDisassegnando] = useState(false)
+  const [confermaRimuovi, setConfermaRimuovi] = useState(false)
 
   async function disassegna() {
-    if (!confirm('Rimuovere l\'assegnazione? La pratica tornerà "da assegnare" e il cliente vedrà che stiamo scegliendo un nuovo demolitore.')) return
     setDisassegnando(true)
     setErrore(null)
     try {
@@ -370,6 +466,7 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
       const data = await res.json()
       if (!res.ok) { setErrore(data?.error || 'Errore durante la disassegnazione'); return }
       setMode('idle')
+      setConfermaRimuovi(false)
       onAssegnato()
     } catch {
       setErrore('Errore di rete.')
@@ -447,15 +544,38 @@ function AssegnazioneCard({ pratica, demolitoreNome, onAssegnato }: { pratica: P
           {pratica.scadenza_proposta_ritiro && <div className="text-[11.5px]" style={{ color: '#1E4E8C' }}>Deve proporre il ritiro entro {fmtData(pratica.scadenza_proposta_ritiro)}</div>}
         </div>
         {mode === 'idle' ? (
+          <>
           <div className="flex flex-col gap-1.5 mt-3">
             <div className="flex items-center gap-4">
               <button onClick={() => calcola(true)} disabled={disassegnando} className="text-xs font-semibold text-blue-600 hover:text-blue-700 underline">Riassegna a un altro demolitore</button>
-              <button onClick={disassegna} disabled={disassegnando} className="text-xs font-semibold text-red-500 hover:text-red-700 underline disabled:opacity-50">
+              <button onClick={() => setConfermaRimuovi(true)} disabled={disassegnando} className="text-xs font-semibold text-red-500 hover:text-red-700 underline disabled:opacity-50">
                 {disassegnando ? 'Rimozione…' : 'Rimuovi assegnazione'}
               </button>
             </div>
             {errore && <p className="text-[11px] text-red-600">{errore}</p>}
           </div>
+
+          {/* MODALE CONFERMA RIMOZIONE ASSEGNAZIONE */}
+          {confermaRimuovi && (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: '#FAEEDA' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><line x1="4" y1="4" x2="20" y2="20" /></svg>
+                </div>
+                <p className="text-center font-semibold text-gray-900">Rimuovere l&apos;assegnazione?</p>
+                <p className="text-center text-sm text-gray-500 mt-1">
+                  La pratica torna <b>da assegnare</b> e il cliente vedrà il messaggio &quot;stiamo scegliendo un nuovo demolitore&quot;.
+                </p>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={() => setConfermaRimuovi(false)} disabled={disassegnando} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">Indietro</button>
+                  <button onClick={disassegna} disabled={disassegnando} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white rounded-xl disabled:opacity-50 flex items-center justify-center gap-2" style={{ background: '#B45309' }}>
+                    {disassegnando ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Rimuovo…</> : 'Sì, rimuovi'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          </>
         ) : (
           <ListaCandidati caricando={caricando} candidati={candidati} vincitoreId={manuale ? null : vincitoreId} motivo={motivo} errore={errore} confermandoId={confermandoId} tuttiDemolitori={tuttiDemolitori} onConferma={conferma} onCaricaTutti={caricaTutti} onChiudi={() => setMode('idle')} />
         )}

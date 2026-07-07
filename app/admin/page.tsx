@@ -107,7 +107,25 @@ function formatAttesa(min: number): string {
 // COMPONENTE
 // ============================================================
 
-type Filtro = 'tutte' | 'contattare' | 'approvare' | 'assegnare' | 'in_corso' | 'completate'
+type Filtro = 'tutte' | 'moduli' | 'contattare' | 'approvare' | 'assegnare' | 'assegnate' | 'ritirate' | 'completate' | 'annullate'
+
+// ============================================================
+// PIPELINE: ogni pratica appartiene a UN solo riquadro del flusso.
+// 1 Moduli inseriti → 2 Da contattare → 3 Documenti da approvare →
+// 4 Da assegnare → 5 Assegnate → 6 Ritirate (fatturazione) → 7 Completate
+// La pratica è COMPLETATA solo col certificato di cancellazione targhe PRA.
+// ============================================================
+
+function bucketDi(p: Pratica): Filtro {
+  if (p.stato === 'annullata') return 'annullate'
+  if (p.stato === 'completata') return 'completate'
+  if (['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra'].includes(p.stato)) return 'ritirate'
+  if (['assegnata', 'in_attesa_conferma_cliente', 'ritiro_confermato'].includes(p.stato)) return 'assegnate'
+  if (['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(p.stato)) return 'assegnare'
+  if (daContattare(p)) return 'contattare'
+  if (p.stato === 'in_attesa_approvazione_admin') return 'approvare'
+  return 'moduli' // in_attesa_documenti + documenti_parzialmente_approvati (in mano al cliente)
+}
 
 export default function AdminDashboard() {
   const router = useRouter()
@@ -203,20 +221,16 @@ export default function AdminDashboard() {
     setPulendo(false)
   }
 
-  // Conteggi per i riquadri "Da fare ora"
-  const nContattare = pratiche.filter(daContattare).length
-  const nApprovare = pratiche.filter(p => p.stato === 'in_attesa_approvazione_admin').length
-  const nAssegnare = pratiche.filter(p => p.stato === 'da_assegnare').length
-  const nInCorso = pratiche.filter(p => isAttiva(p.stato) && !daContattare(p) && p.stato !== 'in_attesa_approvazione_admin' && p.stato !== 'da_assegnare').length
+  // Conteggi per riquadro della pipeline
+  const conta = (b: Filtro) => pratiche.filter(p => bucketDi(p) === b).length
+  const nDaRifare = pratiche.filter(p => p.stato === 'documenti_parzialmente_approvati').length
 
-  // Filtro + ricerca
+  // Filtro + ricerca ("Tutte" = tutto il flusso, escluse le annullate)
   const q = ricerca.trim().toLowerCase()
   const filtrate = pratiche.filter(p => {
-    if (filtro === 'contattare' && !daContattare(p)) return false
-    if (filtro === 'approvare' && p.stato !== 'in_attesa_approvazione_admin') return false
-    if (filtro === 'assegnare' && p.stato !== 'da_assegnare') return false
-    if (filtro === 'in_corso' && !(isAttiva(p.stato) && !daContattare(p) && p.stato !== 'in_attesa_approvazione_admin' && p.stato !== 'da_assegnare')) return false
-    if (filtro === 'completate' && isAttiva(p.stato)) return false
+    const b = bucketDi(p)
+    if (filtro === 'tutte') { if (b === 'annullate') return false }
+    else if (b !== filtro) return false
     if (q) {
       const blob = [p.targa, p.nome_richiedente, p.telefono, p.marca, p.modello, p.comune_ritiro].filter(Boolean).join(' ').toLowerCase()
       if (!blob.includes(q)) return false
@@ -269,19 +283,22 @@ export default function AdminDashboard() {
 
         <div className="p-6 overflow-auto">
 
-          {/* DA FARE ORA */}
-          <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Da fare ora</div>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-            <CardBucket attivo={filtro === 'contattare'} onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')} valore={nContattare} label="Da contattare" bordo="#F0DFB8" colore="#92500E" alert />
-            <CardBucket attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} valore={nApprovare} label="Documenti da approvare" bordo="#B5D4F4" colore="#1E4E8C" />
-            <CardBucket attivo={filtro === 'assegnare'} onClick={() => setFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} valore={nAssegnare} label="Da assegnare" bordo="#F6D2A8" colore="#92500E" />
-            <CardBucket attivo={filtro === 'in_corso'} onClick={() => setFiltro(filtro === 'in_corso' ? 'tutte' : 'in_corso')} valore={nInCorso} label="In corso" bordo="#E5E7EB" colore="#374151" />
+          {/* PIPELINE DEL FLUSSO PRATICHE */}
+          <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
+          <div className="grid grid-cols-4 xl:grid-cols-7 gap-2 mb-5">
+            <CardBucket attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} valore={conta('moduli')} label="Moduli inseriti" sub={nDaRifare > 0 ? `${nDaRifare} da rifare` : undefined} bordo="#F0DFB8" colore="#854F0B" />
+            <CardBucket attivo={filtro === 'contattare'} onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')} valore={conta('contattare')} label="Da contattare" bordo="#F3C8C8" colore="#9B1C1C" alert />
+            <CardBucket attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} valore={conta('approvare')} label="Documenti da approvare" bordo="#B5D4F4" colore="#1E4E8C" />
+            <CardBucket attivo={filtro === 'assegnare'} onClick={() => setFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} valore={conta('assegnare')} label="Da assegnare" bordo="#F6D2A8" colore="#92500E" />
+            <CardBucket attivo={filtro === 'assegnate'} onClick={() => setFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} valore={conta('assegnate')} label="Assegnate" bordo="#C7D2FE" colore="#4338CA" />
+            <CardBucket attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} valore={conta('ritirate')} label="Ritirate" sub="in fatturazione" bordo="#A7DED8" colore="#0F766E" />
+            <CardBucket attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} valore={conta('completate')} label="Completate" bordo="#C8E6D5" colore="#1F7A43" />
           </div>
 
           {/* FILTRI RAPIDI */}
           <div className="flex gap-1.5 mb-3 flex-wrap text-xs">
-            <ChipFiltro attivo={filtro === 'tutte'} onClick={() => setFiltro('tutte')}>Tutte {pratiche.length}</ChipFiltro>
-            <ChipFiltro attivo={filtro === 'completate'} onClick={() => setFiltro('completate')}>Completate/annullate</ChipFiltro>
+            <ChipFiltro attivo={filtro === 'tutte'} onClick={() => setFiltro('tutte')}>Tutte {pratiche.filter(p => bucketDi(p) !== 'annullate').length}</ChipFiltro>
+            <ChipFiltro attivo={filtro === 'annullate'} onClick={() => setFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}>Annullate {conta('annullate')}</ChipFiltro>
           </div>
 
           {/* LISTA PRATICHE A CARD */}
@@ -476,16 +493,17 @@ function IconaVeicolo({ tipo }: { tipo: string | null }) {
   )
 }
 
-function CardBucket({ valore, label, bordo, colore, alert = false, attivo = false, onClick }: { valore: number; label: string; bordo: string; colore: string; alert?: boolean; attivo?: boolean; onClick: () => void }) {
+function CardBucket({ valore, label, sub, bordo, colore, alert = false, attivo = false, onClick }: { valore: number; label: string; sub?: string; bordo: string; colore: string; alert?: boolean; attivo?: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className="bg-white rounded-xl p-3.5 text-left transition-all hover:shadow-md" style={{ border: `1.5px solid ${attivo ? '#2563eb' : bordo}`, boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 3px 8px rgba(16,24,40,0.04)' }}>
-      <div className="flex items-center gap-1.5" style={{ fontSize: 22, fontWeight: 700, color: colore }}>
+    <button onClick={onClick} className="bg-white rounded-xl px-3 py-3 text-left transition-all hover:shadow-md" style={{ border: `1.5px solid ${attivo ? '#2563eb' : bordo}`, boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 3px 8px rgba(16,24,40,0.04)' }}>
+      <div className="flex items-center gap-1.5" style={{ fontSize: 21, fontWeight: 800, color: colore, lineHeight: 1.1 }}>
         {valore}
         {alert && valore > 0 && (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
         )}
       </div>
-      <div className="text-xs text-gray-500 mt-0.5">{label}</div>
+      <div className="text-[11px] font-semibold text-gray-700 mt-1 leading-tight">{label}</div>
+      {sub && <div className="text-[10px] mt-0.5" style={{ color: colore }}>{sub}</div>}
     </button>
   )
 }

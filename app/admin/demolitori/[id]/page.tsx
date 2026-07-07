@@ -82,7 +82,9 @@ export default function DettaglioDemolitore() {
 
   const [demolitore, setDemolitore] = useState<Demolitore | null>(null)
   const [copertura, setCopertura] = useState<CoperturaRecord[]>([])
-  const [stats, setStats] = useState<{ aperte: number; completate: number }>({ aperte: 0, completate: 0 })
+  const [stats, setStats] = useState<{ aperte: number; completate: number; annullate: number }>({ aperte: 0, completate: 0, annullate: 0 })
+  const [praticheAnnullate, setPraticheAnnullate] = useState<{ id: string; targa: string | null; marca: string | null; modello: string | null; nome_richiedente: string | null; motivo_annullamento: string | null; aggiornato_il: string | null }[]>([])
+  const [annullateOpen, setAnnullateOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [salvando, setSalvando] = useState(false)
   const [messaggio, setMessaggio] = useState<{ ok: boolean; testo: string } | null>(null)
@@ -130,10 +132,12 @@ export default function DettaglioDemolitore() {
       const { data: cov } = await supabase.from('demolitori_comuni').select('*').eq('demolitore_id', id)
       if (cov) setCopertura(cov as CoperturaRecord[])
 
-      const { data: prat } = await supabase.from('pratiche').select('stato').eq('demolitore_id', id)
+      const { data: prat } = await supabase.from('pratiche').select('id, targa, marca, modello, nome_richiedente, stato, motivo_annullamento, aggiornato_il').eq('demolitore_id', id)
       const aperte = (prat || []).filter(p => p.stato !== 'completata' && p.stato !== 'annullata').length
       const completate = (prat || []).filter(p => p.stato === 'completata').length
-      setStats({ aperte, completate })
+      const listaAnnullate = (prat || []).filter(p => p.stato === 'annullata')
+      setStats({ aperte, completate, annullate: listaAnnullate.length })
+      setPraticheAnnullate(listaAnnullate)
 
       const { data: tar } = await supabase.from('demolitori_tariffe').select('*').eq('demolitore_id', id).order('tipo')
       setTariffe((tar as Tariffa[]) || [])
@@ -294,7 +298,7 @@ export default function DettaglioDemolitore() {
           style={{ border: '1.5px solid #E5E7EB' }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          Indietro
+          Torna ai demolitori
         </button>
       </div>
 
@@ -322,9 +326,10 @@ export default function DettaglioDemolitore() {
           </div>
 
           {/* Statistiche in vetro */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 mt-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 mt-4">
             <StatVetro valore={String(stats.aperte)} label="Pratiche aperte" />
             <StatVetro valore={String(stats.completate)} label="Completate" />
+            <StatVetro valore={String(stats.annullate)} label="Annullate" allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => setAnnullateOpen(true) : undefined} />
             <StatVetro valore={demolitore.velocita_media_giorni > 0 ? `${demolitore.velocita_media_giorni}g` : '—'} label="Velocità media" />
             <StatVetro valore={demolitore.fee_per_pratica ? `${demolitore.fee_per_pratica} €` : '—'} label="Fee base" />
           </div>
@@ -472,16 +477,11 @@ export default function DettaglioDemolitore() {
                 /* ===== LETTURA ===== */
                 <>
                   {/* Tariffa base protagonista */}
-                  <div style={{ background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)', border: '1px solid #BFDBFE', borderRadius: 12, padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 13 }}>
-                    <span style={{ width: 42, height: 42, borderRadius: 12, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                    </span>
-                    <div>
-                      <div className="flex items-baseline gap-1.5">
-                        <span style={{ fontSize: 25, fontWeight: 800, color: '#0C447C' }}>{demolitore.fee_per_pratica || 0} €</span>
-                        <span style={{ fontSize: 12.5, color: '#1E4E8C' }}>a pratica</span>
-                      </div>
-                      <div style={{ fontSize: 10.5, fontWeight: 700, color: '#5B87BE', textTransform: 'uppercase', letterSpacing: 0.5 }}>Tariffa base</div>
+                  <div style={{ background: 'linear-gradient(135deg, #EFF6FF, #DBEAFE)', border: '1px solid #BFDBFE', borderRadius: 12, padding: '14px 16px' }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 700, color: '#5B87BE', textTransform: 'uppercase', letterSpacing: 0.6 }}>Tariffa base</div>
+                    <div className="flex items-baseline gap-1.5" style={{ marginTop: 3 }}>
+                      <span style={{ fontSize: 28, fontWeight: 800, color: '#0C447C', letterSpacing: '-0.5px' }}>{demolitore.fee_per_pratica || 0} €</span>
+                      <span style={{ fontSize: 13, color: '#1E4E8C' }}>/ pratica</span>
                     </div>
                   </div>
 
@@ -665,6 +665,40 @@ export default function DettaglioDemolitore() {
           )}
         </div>
       </div>
+
+      {/* MODALE PRATICHE ANNULLATE DEL DEMOLITORE */}
+      {annullateOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setAnnullateOpen(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[85vh] overflow-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white">
+              <div>
+                <p className="text-[15px] font-bold text-gray-900">Pratiche annullate</p>
+                <p className="text-xs" style={{ color: '#64748b' }}>{demolitore.ragione_sociale} · {praticheAnnullate.length} {praticheAnnullate.length === 1 ? 'pratica' : 'pratiche'}</p>
+              </div>
+              <button onClick={() => setAnnullateOpen(false)} className="text-gray-400 hover:text-gray-700 text-xl">×</button>
+            </div>
+            <div className="p-4 flex flex-col gap-2.5">
+              {praticheAnnullate.map(p => (
+                <button
+                  key={p.id}
+                  onClick={() => router.push(`/admin/pratiche/${p.id}`)}
+                  className="text-left rounded-xl p-3.5 transition-all hover:shadow-md"
+                  style={{ border: '1.5px solid #E5E7EB', borderLeft: '4px solid #C0C7D1', background: '#fff' }}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="text-[13.5px] font-bold text-gray-900 truncate">{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}</div>
+                    {p.aggiornato_il && <span className="text-[10.5px] font-semibold uppercase flex-shrink-0" style={{ color: '#94A3B8' }}>{fmtDataOra(p.aggiornato_il)}</span>}
+                  </div>
+                  {p.nome_richiedente && <div className="text-[12px] mt-0.5" style={{ color: '#4B5563' }}>{p.nome_richiedente}</div>}
+                  <div className="text-[12.5px] rounded-[9px] px-2.5 py-2 mt-2" style={{ background: '#F3F4F7', color: '#3E4C63', lineHeight: 1.45 }}>
+                    {p.motivo_annullamento || 'Motivo non registrato.'}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
@@ -695,13 +729,26 @@ function Freccina() {
   return <span style={{ color: '#94A3B8', fontSize: 10 }}>›</span>
 }
 
-function StatVetro({ valore, label }: { valore: string; label: string }) {
-  return (
-    <div style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 12, padding: '10px 14px' }}>
-      <div style={{ fontSize: 21, fontWeight: 800 }}>{valore}</div>
-      <div style={{ fontSize: 10.5, fontWeight: 600, color: '#BFDBFE', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
-    </div>
+function StatVetro({ valore, label, allerta = false, onClick }: { valore: string; label: string; allerta?: boolean; onClick?: () => void }) {
+  const stile: React.CSSProperties = {
+    background: allerta ? 'rgba(255,214,214,0.22)' : 'rgba(255,255,255,0.14)',
+    border: `1px solid ${allerta ? 'rgba(255,190,190,0.45)' : 'rgba(255,255,255,0.18)'}`,
+    borderRadius: 12,
+    padding: '10px 14px',
+    textAlign: 'left',
+    cursor: onClick ? 'pointer' : 'default',
+  }
+  const contenuto = (
+    <>
+      <div style={{ fontSize: 21, fontWeight: 800, color: allerta ? '#FFD9D9' : '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+        {valore}
+        {onClick && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={allerta ? '#FFC9C9' : '#BFDBFE'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>}
+      </div>
+      <div style={{ fontSize: 10.5, fontWeight: 600, color: allerta ? '#FFC9C9' : '#BFDBFE', textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</div>
+    </>
   )
+  if (onClick) return <button onClick={onClick} className="transition-all hover:opacity-90 active:scale-[0.98]" style={stile}>{contenuto}</button>
+  return <div style={stile}>{contenuto}</div>
 }
 
 function SezioneAna({ icona, titolo, children }: { icona: React.ReactNode; titolo: string; children: React.ReactNode }) {
