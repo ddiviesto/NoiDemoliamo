@@ -814,6 +814,11 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ✅ **Seconda pratica per cliente registrato** (bottone dashboard + /inizia consapevole della sessione) — collaudata
 - ✅ **Pagina cliente rifinita**: banner demolitore (8 ore lavorative), box smeraldo "Documenti originali da portare al ritiro" con lista numerata, messaggi senza esclamativi, icone nuove
 - ✅ **Note e cronologia demolitore** (`demolitori_note`), copertura a tendina con salva-se-modificato
+- ✅ **Pipeline CRM a 7 fasi** (il flusso di Davide, vedi 4.6) — via il generico "In corso"
+- ✅ **Annullamento a due binari** (motivo obbligatorio, traccia demolitore, statistica "Annullate" cliccabile con elenco motivi) — collaudato
+- ✅ **Modali dell'app** al posto dei popup del browser + spiegazioni sotto i bottoni di eliminazione (solo pratica / pratica+account)
+- ✅ **Chiavi server su Vercel** (`SUPABASE_SERVICE_ROLE_KEY` + `GOOGLE_MAPS_SERVER_KEY`) aggiunte da Davide + redeploy → **l'admin e l'assegnazione automatica funzionano anche ONLINE** (verificato)
+- ✅ **Leggibilità /inizia** (da test utente reale): keyword blu nei titoli, opzioni solide, avviso anti-confusione CDC, niente frecce, WhatsApp ripulito con etichetta ciclica (vedi 5.2)
 - 🔔 Deciso: **sistema notifiche email+SMS** come task prioritario futuro (lista eventi in 8.2)
 
 ### ⭐⭐⭐ SESSIONE 6 luglio 2026 — AREA ADMIN (CRM) + ASSEGNAZIONE AUTOMATICA
@@ -868,11 +873,25 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 
 ## 8.2 ⏳ PENDING — In ordine di priorità
 
-### 🔥🔥🔥 STEP 0 — DA FARE SUBITO (emersi 6/07/2026)
-- **`GOOGLE_MAPS_SERVER_KEY` su Vercel**: senza, l'assegnazione automatica ONLINE non calcola le distanze (in locale funziona).
-- **Assegnazione MANUALE ("Scegli io")**: da testare fino in fondo (il flusso c'è).
-- **Dashboard/pagina DEMOLITORE**: il demolitore deve vedere le pratiche assegnate, proporre data ritiro, segnare **ritiro effettivo** (`data_ritiro_effettuato` → fa partire la fatturazione), caricare certificati (rottamazione con spunta "consegnato a mano al ritiro" in alternativa all'upload; radiazione PRA obbligatoria per completare), e vedere ANCHE le proprie **pratiche annullate** (trasparenza/deterrente). ANCORA DA COSTRUIRE.
-- ✅ ~~STEP 1 — Pagina admin approvazione documenti~~ FATTA (vedi 8.1 sessione 6/07).
+### ▶️🔥🔥🔥 STEP 0 — PUNTO DI RIPARTENZA (aggiornato 7/07/2026)
+
+**PROSSIMO GRANDE TASK: DASHBOARD DEMOLITORE.** È il pezzo che chiude il cerchio della pipeline (fasi 5→6→7). Il demolitore deve poter:
+1. Accedere (da decidere: invito email + `/imposta-password`, login con la sua email — il campo `email_assegnazione` è pronto)
+2. Vedere le **pratiche assegnate** (dati ritiro, documenti approvati del cliente, chat)
+3. **Proporre data/ora ritiro** entro le 8 ore lavorative (il cliente conferma)
+4. Segnare il **ritiro effettivo** (`data_ritiro_effettuato`) → fase "Ritirate" → **parte la fatturazione**
+5. Caricare il **certificato di rottamazione** oppure spuntare "consegnato a mano al ritiro"
+6. Caricare il **certificato di radiazione PRA** → pratica "Completata"
+7. Vedere anche le proprie **pratiche annullate** (trasparenza/deterrente)
+
+**In sospeso (nessun codice a metà: sono test o decisioni aperte):**
+- 🟡 **Test dell'amico** sul flusso /inizia migliorato — in attesa dell'esito
+- 🟡 **Assegnazione MANUALE ("Scegli io")**: il flusso c'è, da testare fino in fondo
+- 🟡 **Caso 7 (non intestatario)**: manca l'avviso di stop nel flusso (vedi STEP 1-bis)
+- 🟡 **Denunce smarrimento CI/CF**: decisione di Davide ancora aperta (vedi STEP 1-bis)
+- 🟡 **Template PDF moduli**: in attesa dei file da Davide (STEP 2)
+- ✅ ~~GOOGLE_MAPS_SERVER_KEY su Vercel~~ FATTO (7/07): chiavi server aggiunte da Davide + redeploy → admin e assegnazione automatica funzionano ONLINE
+- ✅ ~~Pagina admin approvazione documenti~~ FATTA (6/07)
 
 ### 🔥🔥 STEP 1-bis — FIX EMERSI DALLA VERIFICA CASISTICHE (3/07/2026)
 - **Caso 7 (non intestatario)**: nel flusso `/inizia`, libretto e CDC sono OBBLIGATORI ("se non ha non può procedere" da file casistiche). Oggi il modulo lascia comunque scegliere "smarrito/non ce l'ho" e crea la pratica. → aggiungere avviso di stop.
@@ -983,7 +1002,7 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 > Istruzioni per Claude dopo aver letto questo file.
 
 1. **Leggi TUTTO questo file**, poi conferma a Davide di aver capito (breve riassunto: dove siamo + prossimo task)
-2. **Riprendi dal punto 8.2 STEP 1**: la **pagina admin di approvazione documenti** sul nuovo sistema checklist. Prima esplora `/admin/pratiche/[id]` esistente, poi PROPONI l'approccio (con anteprima visiva) e attendi conferma.
+2. **Riprendi dal punto 8.2 STEP 0**: il prossimo grande task è la **DASHBOARD DEMOLITORE** (7 punti elencati lì). Prima chiarisci con Davide il login del demolitore (invito email + /imposta-password), poi PROPONI l'approccio con anteprima visiva e attendi conferma. Design: segui la sezione 6.8 (per l'area demolitore valutare con Davide se stile CRM o stile cliente mobile — i demolitori potrebbero usare il telefono).
 3. ⭐ **REGOLA FONDAMENTALE**: prima di modificare o rigenerare codice, SEMPRE proporre la modifica e attendere conferma esplicita di Davide
 4. **Rispetta il design system** (parte 6) — in particolare il pattern card /inizia (6.2) e le regole d'oro (6.7)
 5. **Stile comunicazione** (parte 7): passo-passo, linguaggio semplicissimo, zero gergo, anteprime visive prima dei cambi design
