@@ -439,6 +439,26 @@ annullata
 
 ⭐ **Le transizioni di stato pratica passano dal SERVER** (service role), non dal browser admin: endpoint `/api/pratica-stato` ricalcola lo stato dai documenti (tutti approvati → `da_assegnare`, ecc.). La pagina admin si **auto-sincronizza all'apertura** (self-heal: se i documenti sono a posto ma la pratica è indietro, la sblocca da sola).
 
+### ⭐ PIPELINE CRM — IL FLUSSO IN 7 FASI (voluto da Davide, 7/07/2026)
+Nel CRM ogni pratica appartiene a UN SOLO riquadro della pipeline (funzione `bucketDi` in `/admin`):
+1. **Moduli inseriti** = `in_attesa_documenti` + `documenti_parzialmente_approvati` (in mano al cliente, con conteggio "da rifare")
+2. **Da contattare** = fase documenti con libretto='no' o CDC='nessuno'
+3. **Documenti da approvare** = `in_attesa_approvazione_admin`
+4. **Da assegnare** = `da_assegnare` + `in_assegnazione_manuale` + `in_attesa_assegnazione`
+5. **Assegnate** = `assegnata` + `in_attesa_conferma_cliente` + `ritiro_confermato`
+6. **Ritirate (in fatturazione)** = `ritirata` + recensione + attesa certificati — il ritiro effettivo fa partire la fatturazione
+7. **Completate** = `completata` — **SOLO col certificato di cancellazione targhe PRA**
+Le annullate stanno FUORI dalla pipeline (filtro a parte). "Tutte" = pipeline senza annullate.
+
+⭐ **Regola certificati**: il certificato di ROTTAMAZIONE può essere caricato dal demolitore (il cliente lo scarica) **oppure consegnato a mano al ritiro** (nella futura dashboard demolitore ci sarà la spunta "consegnato a mano" per non bloccare la pratica). Ciò che completa la pratica è SEMPRE e solo il **certificato di cancellazione targhe (radiazione PRA)**.
+
+### ⭐ ANNULLAMENTO PRATICA — DUE BINARI (7/07/2026)
+Endpoint `/api/pratica-annulla` (server, motivo OBBLIGATORIO → `pratiche.motivo_annullamento`, cronologia consultabile).
+- **Prima dell'assegnazione** (cliente ci ripensa, ecc.): stato annullata + motivo, fine.
+- **Dopo l'assegnazione** (demolitore si tira indietro): il **`demolitore_id` NON viene azzerato** — resta come traccia per il controllo qualità. La scheda demolitore mostra la statistica **"Annullate"** (rossa, cliccabile → elenco con motivi). Se un demolitore accumula troppe annullate in un mese, Davide lo chiama/cambia. Anche il demolitore vedrà le sue annullate nella futura dashboard (deterrente).
+- La pratica annullata non conta tra le "aperte" del demolitore (tutti i conteggi escludono completata/annullata).
+- Eliminazione definitiva ≠ annullamento: la modale avvisa se la pratica è assegnata.
+
 ## 4.7 Algoritmo di assegnazione AUTOMATICA — ✅ COLLAUDATO (6 luglio 2026)
 
 Implementato in `lib/assegnazione.ts` + endpoint `/api/assegna-pratica/route.ts`.
@@ -850,7 +870,7 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 ### 🔥🔥🔥 STEP 0 — DA FARE SUBITO (emersi 6/07/2026)
 - **`GOOGLE_MAPS_SERVER_KEY` su Vercel**: senza, l'assegnazione automatica ONLINE non calcola le distanze (in locale funziona).
 - **Assegnazione MANUALE ("Scegli io")**: da testare fino in fondo (il flusso c'è).
-- **Dashboard/pagina DEMOLITORE**: il demolitore deve vedere le pratiche assegnate, proporre data ritiro, segnare **ritiro effettivo** (`data_ritiro_effettuato` → fa partire la fatturazione), caricare certificati. ANCORA DA COSTRUIRE.
+- **Dashboard/pagina DEMOLITORE**: il demolitore deve vedere le pratiche assegnate, proporre data ritiro, segnare **ritiro effettivo** (`data_ritiro_effettuato` → fa partire la fatturazione), caricare certificati (rottamazione con spunta "consegnato a mano al ritiro" in alternativa all'upload; radiazione PRA obbligatoria per completare), e vedere ANCHE le proprie **pratiche annullate** (trasparenza/deterrente). ANCORA DA COSTRUIRE.
 - ✅ ~~STEP 1 — Pagina admin approvazione documenti~~ FATTA (vedi 8.1 sessione 6/07).
 
 ### 🔥🔥 STEP 1-bis — FIX EMERSI DALLA VERIFICA CASISTICHE (3/07/2026)
