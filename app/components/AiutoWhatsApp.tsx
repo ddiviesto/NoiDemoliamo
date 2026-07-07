@@ -5,8 +5,9 @@ import { useEffect, useState } from 'react'
 // ============================================================
 // PULSANTE AIUTO WHATSAPP
 // Cerchio verde fisso in basso a destra, presente su tutte le
-// pagine del cliente. L'etichetta "Serve aiuto?" sparisce da
-// sola dopo qualche secondo per non disturbare.
+// pagine del cliente. L'etichetta "Serve aiuto?" appare per
+// qualche secondo e poi RIAPPARE ciclicamente ogni 15 secondi,
+// per richiamare l'attenzione senza essere invadente.
 // ============================================================
 
 const WHATSAPP_URL = 'https://wa.me/393518280493'
@@ -15,8 +16,14 @@ export default function AiutoWhatsApp() {
   const [mostraEtichetta, setMostraEtichetta] = useState(true)
 
   useEffect(() => {
-    const t = setTimeout(() => setMostraEtichetta(false), 6000)
-    return () => clearTimeout(t)
+    let nascondi: ReturnType<typeof setTimeout>
+    const mostra = () => {
+      setMostraEtichetta(true)
+      nascondi = setTimeout(() => setMostraEtichetta(false), 4000)
+    }
+    mostra() // subito all'apertura della pagina
+    const ciclo = setInterval(mostra, 15000) // e poi ogni 15 secondi
+    return () => { clearInterval(ciclo); clearTimeout(nascondi) }
   }, [])
 
   return (

@@ -350,7 +350,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     return {
       icona: Icona,
       titoloBanner: tipo ? `Veicolo: ${nomeVeicolo(tipo, tipoAltro)}` : 'Tipo di veicolo',
-      titoloPagina: 'Che tipo di veicolo è?',
+      titoloPagina: 'Che tipo di *veicolo* è?',
       sottoPagina: 'Seleziona il tipo di mezzo per iniziare.',
     }
   }
@@ -359,7 +359,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     return {
       icona: Icona,
       titoloBanner: `Identifica: ${nomeVeicolo(tipo, tipoAltro)}`,
-      titoloPagina: `Identifica ${articolo(tipo, tipoAltro)}`,
+      titoloPagina: `Identifica *${articolo(tipo, tipoAltro)}*`,
       sottoPagina: 'Anno, km, marca e modello.',
     }
   }
@@ -367,7 +367,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     return {
       icona: IconaCambio,
       titoloBanner: `Cambio: ${nomeVeicolo(tipo, tipoAltro)}`,
-      titoloPagina: `Che tipo di cambio ha ${articolo(tipo, tipoAltro)}?`,
+      titoloPagina: `Che tipo di *cambio* ha ${articolo(tipo, tipoAltro)}?`,
       sottoPagina: 'Questa info aiuta il demolitore a scegliere il carro attrezzi giusto.',
     }
   }
@@ -375,7 +375,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     return {
       icona: IconaCondizioni,
       titoloBanner: `Condizioni: ${nomeVeicolo(tipo, tipoAltro)}`,
-      titoloPagina: `In che condizioni è ${articolo(tipo, tipoAltro)}?`,
+      titoloPagina: `In che *condizioni* è ${articolo(tipo, tipoAltro)}?`,
       sottoPagina: 'Rispondi alle 4 domande, ti bastano pochi secondi.',
     }
   }
@@ -387,14 +387,14 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
       return {
         icona: Icona,
         titoloBanner: `Indirizzo: ${nomeVeicolo(tipo, tipoAltro)}`,
-        titoloPagina: `Dove si trova ${articolo(tipo, tipoAltro)}?`,
+        titoloPagina: `*Dove si trova* ${articolo(tipo, tipoAltro)}?`,
         sottoPagina: `Inserisci l'indirizzo esatto dove si trova fisicamente ${articolo(tipo, tipoAltro)}: il demolitore verrà lì a ritirarlo.`,
       }
     case 'targa':
       return {
         icona: Icona,
         titoloBanner: `Targa: ${nomeVeicolo(tipo, tipoAltro)}`,
-        titoloPagina: `Qual è la targa ${articoloDel(tipo, tipoAltro)}?`,
+        titoloPagina: `Qual è la *targa* ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: intestazione === 'targhe_straniere'
           ? 'Inserisci la targa estera così come appare sul mezzo.'
           : 'Ci serve per verificare eventuali fermi amministrativi.',
@@ -404,7 +404,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         return {
           icona: IconaCF,
           titoloBanner: 'Partita IVA',
-          titoloPagina: 'Partita IVA della società intestataria',
+          titoloPagina: '*Partita IVA* della società intestataria',
           sottoPagina: 'La trovi sul libretto di circolazione o in visura camerale. Va bene anche il codice fiscale numerico della società.',
         }
       }
@@ -412,7 +412,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         return {
           icona: IconaCF,
           titoloBanner: 'Codice fiscale',
-          titoloPagina: "Codice fiscale dell'associazione",
+          titoloPagina: "*Codice fiscale* dell'associazione",
           sottoPagina: "Quello dell'ente intestatario del mezzo: lo trovi sul certificato di attribuzione del codice fiscale.",
         }
       }
@@ -420,7 +420,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         return {
           icona: IconaCF,
           titoloBanner: 'Codice fiscale',
-          titoloPagina: "Codice fiscale dell'intestatario deceduto",
+          titoloPagina: "*Codice fiscale* dell'intestatario deceduto",
           sottoPagina: 'Lo trovi sul libretto di circolazione o sui documenti del defunto.',
         }
       }
@@ -428,14 +428,14 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         return {
           icona: IconaCF,
           titoloBanner: 'Codice fiscale',
-          titoloPagina: 'Codice fiscale di chi risulta intestatario al PRA',
+          titoloPagina: '*Codice fiscale* di chi risulta intestatario al PRA',
           sottoPagina: 'Lo trovi sul libretto di circolazione o sul certificato di proprietà.',
         }
       }
       return {
         icona: IconaCF,
         titoloBanner: 'Codice fiscale',
-        titoloPagina: 'Il tuo codice fiscale',
+        titoloPagina: 'Il tuo *codice fiscale*',
         sottoPagina: 'Ci serve per verificare eventuali fermi amministrativi al PRA.',
       }
     }
@@ -443,49 +443,49 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
       return {
         icona: IconaFoto,
         titoloBanner: `Foto: ${nomeVeicolo(tipo, tipoAltro)}`,
-        titoloPagina: `Foto ${articoloDel(tipo, tipoAltro)}`,
+        titoloPagina: `*Foto* ${articoloDel(tipo, tipoAltro)}`,
         sottoPagina: `Le foto ci aiutano a capire le condizioni ${articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto più adatto per il ritiro.`,
       }
     case 'intestazione':
       return {
         icona: IconaIntestazione,
         titoloBanner: 'Intestazione',
-        titoloPagina: `A chi è intestat${isFemminile(tipo) ? 'a' : 'o'} ${articolo(tipo, tipoAltro)}?`,
+        titoloPagina: `A chi è *intestat${isFemminile(tipo) ? 'a' : 'o'}* ${articolo(tipo, tipoAltro)}?`,
         sottoPagina: 'Scegli in base a chi risulta proprietario sui documenti.',
       }
     case 'eredi':
       return {
         icona: IconaCuoreMini,
         titoloBanner: 'Eredità',
-        titoloPagina: "Qualcuno degli eredi ha rinunciato all'eredità?",
+        titoloPagina: "Qualcuno degli eredi ha *rinunciato all'eredità*?",
         sottoPagina: 'Parliamo di rinuncia formale, fatta da un Notaio o in Tribunale.',
       }
     case 'societa-fallita':
       return {
         icona: IconaIntestazione,
         titoloBanner: 'Società',
-        titoloPagina: 'La società è fallita o in liquidazione giudiziale?',
+        titoloPagina: 'La società è *fallita o in liquidazione giudiziale*?',
         sottoPagina: 'Ci serve per preparare i documenti corretti.',
       }
     case 'fermo':
       return {
         icona: IconaFermo,
         titoloBanner: 'Fermo amministrativo',
-        titoloPagina: 'Ci sono fermi amministrativi sul mezzo?',
+        titoloPagina: 'Ci sono *fermi amministrativi* sul mezzo?',
         sottoPagina: 'Il fermo non blocca la demolizione: serve solo una dichiarazione in più che prepariamo noi.',
       }
     case 'consegna':
       return {
         icona: IconaConsegna,
         titoloBanner: 'Consegna del mezzo',
-        titoloPagina: `Chi consegnerà ${articolo(tipo, tipoAltro)} al demolitore?`,
+        titoloPagina: `Chi *consegnerà* ${articolo(tipo, tipoAltro)} al demolitore?`,
         sottoPagina: 'La persona presente al ritiro che firma la consegna.',
       }
     case 'libretto':
       return {
         icona: IconaLibretto,
         titoloBanner: `Libretto: ${nomeVeicolo(tipo, tipoAltro)}`,
-        titoloPagina: `Hai il libretto di circolazione ${articoloDel(tipo, tipoAltro)}?`,
+        titoloPagina: `Hai il *libretto di circolazione* ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: 'Il libretto originale va consegnato al demolitore al momento del ritiro. Così riceverai il primo documento per bloccare o spostare l\'assicurazione.',
       }
     case 'cdc':
@@ -509,24 +509,34 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
 
 // ============================================================
 
+// Evidenzia in blu le parti del titolo racchiuse tra *asterischi*.
+// Es. "Hai il *libretto di circolazione*?" → "libretto di circolazione" in blu.
+function evidenzia(testo: string): React.ReactNode {
+  const parti = testo.split('*')
+  return parti.map((p, i) => (i % 2 === 1 ? <span key={i} style={{ color: '#1D4ED8' }}>{p}</span> : p))
+}
+
 function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder }: { iconSvg: React.ReactNode; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean }) {
-  const baseBorder = selected
-    ? 'border-blue-600 bg-blue-50'
+  // Opzione più "solida" e leggibile: bordo netto, icona grande, titolo scuro protagonista.
+  // La selezionata è inconfondibile: bordo blu pieno, sfondo azzurro, icona blu piena.
+  const baseBg = selected ? 'bg-[#EFF6FF]' : errorBorder ? 'bg-white' : 'bg-white hover:bg-blue-50/40'
+  const borderStyle: React.CSSProperties = selected
+    ? { border: '2px solid #1D4ED8', boxShadow: '0 2px 8px rgba(37,99,235,0.12)' }
     : errorBorder
-      ? 'border-red-300 bg-red-50/30 hover:border-red-400'
-      : 'border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50'
+      ? { border: '2px solid #FCA5A5' }
+      : { border: '2px solid #D7DCE5' }
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] text-left transition-all ${baseBorder}`}>
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? 'bg-blue-200 text-blue-700' : 'bg-blue-100 text-blue-600'}`}>
+    <button onClick={onClick} className={`w-full flex items-center gap-3 p-3.5 rounded-[13px] text-left transition-all active:scale-[0.995] ${baseBg}`} style={borderStyle}>
+      <div className={`w-[42px] h-[42px] rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? 'bg-blue-600 text-white' : 'bg-[#DBEAFE] text-blue-600'}`}>
         {iconSvg}
       </div>
       <div className="flex-1 min-w-0">
-        <div className={`font-semibold text-sm ${selected ? 'text-blue-900' : 'text-gray-900'}`}>{label}</div>
-        <div className={`text-xs mt-0.5 ${selected ? 'text-blue-700' : 'text-gray-500'}`}>{sub}</div>
+        <div className="font-bold text-[15px] leading-snug" style={{ color: '#0F172A' }}>{label}</div>
+        <div className="text-[12.5px] mt-0.5" style={{ color: selected ? '#1E4E8C' : '#4B5563' }}>{sub}</div>
       </div>
-      <div className={`w-5 h-5 rounded-full border-[1.5px] flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300'}`}>
+      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'}`}>
         {selected && (
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
         )}
@@ -537,8 +547,8 @@ function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder }: { 
 
 function InfoBadge({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-blue-800">
-      <span className="flex-shrink-0 mt-0.5">ℹ️</span>
+    <div className="flex items-start gap-2.5 rounded-xl p-3 text-[13.5px] leading-relaxed" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1E3A8A' }}>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
       <span>{children}</span>
     </div>
   )
@@ -546,8 +556,8 @@ function InfoBadge({ children }: { children: React.ReactNode }) {
 
 function ErrorBadge({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-800">
-      <span className="text-base flex-shrink-0 mt-0.5">⚠️</span>
+    <div className="flex items-start gap-2.5 rounded-xl p-3 text-[13.5px] leading-relaxed" style={{ background: '#FEF6F6', border: '1.5px solid #F3C8C8', color: '#9B1C1C' }}>
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
       <span>{children}</span>
     </div>
   )
@@ -1030,8 +1040,8 @@ export default function IniziaPage() {
                 </div>
               </div>
             </div>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
             <StepTipoVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -1042,8 +1052,8 @@ export default function IniziaPage() {
 
         {curStep === 'identifica-veicolo' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
             <StepIdentificaVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -1054,8 +1064,8 @@ export default function IniziaPage() {
 
         {curStep === 'cambio-veicolo' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
             <StepCambioVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -1066,8 +1076,8 @@ export default function IniziaPage() {
 
         {curStep === 'condizioni-veicolo' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            {meta.sottoPagina && <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>}
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
             <StepCondizioniVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -1078,8 +1088,8 @@ export default function IniziaPage() {
 
         {curStep === 'indirizzo' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-4">
               {indirizzoConfermato ? (
                 <>
@@ -1153,7 +1163,7 @@ export default function IniziaPage() {
                     onClick={handleContinuaIndirizzo}
                     className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
                   >
-                    Continua →
+                    Continua
                   </button>
                 </>
               ) : (
@@ -1176,8 +1186,8 @@ export default function IniziaPage() {
 
         {curStep === 'targa' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-3">
               {erroreTarga && <ErrorBadge>Inserisci la targa per continuare.</ErrorBadge>}
               <input
@@ -1229,7 +1239,7 @@ export default function IniziaPage() {
                 onClick={handleContinuaTarga}
                 className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
               >
-                Continua →
+                Continua
               </button>
             </div>
           </>
@@ -1237,8 +1247,8 @@ export default function IniziaPage() {
 
         {curStep === 'cf' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             <div className="flex flex-col gap-3">
               {erroreCf && <ErrorBadge>{cfAccetta11 ? 'Inserisci una partita IVA (11 cifre) o un codice fiscale valido (16 caratteri).' : 'Inserisci un codice fiscale valido di 16 caratteri.'}</ErrorBadge>}
               <div>
@@ -1289,7 +1299,7 @@ export default function IniziaPage() {
                 onClick={handleContinuaCf}
                 className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
               >
-                Continua →
+                Continua
               </button>
             </div>
           </>
@@ -1297,8 +1307,8 @@ export default function IniziaPage() {
 
         {curStep === 'foto' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto corretto.</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto corretto.</p>
             <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-sm text-blue-800 mb-4">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
                 <circle cx="12" cy="12" r="10"/>
@@ -1414,20 +1424,20 @@ export default function IniziaPage() {
               )}
 
               {foto.length === 0 && (
-                <button onClick={next} className="w-full py-3 mt-3 rounded-xl font-medium text-sm bg-white text-gray-600 border-[1.5px] border-gray-200 hover:border-gray-300 hover:bg-gray-50 transition-all">
-                  Continua senza foto · le aggiungo dopo
+                <button onClick={next} className="w-full py-3.5 mt-3 rounded-xl font-semibold text-sm active:scale-[0.99] transition-all hover:opacity-90" style={{ border: '1.5px solid #93C5FD', background: '#DBEAFE', color: '#1D4ED8' }}>
+                  Continua senza foto, le aggiungo dopo
                 </button>
               )}
 
               {foto.length > 0 && foto.length < 4 && (
                 <button onClick={next} className="w-full py-3.5 mt-2 rounded-xl font-semibold text-sm bg-white text-blue-700 border-[1.5px] border-blue-300 hover:border-blue-400 hover:bg-blue-50 active:scale-[0.99] transition-all">
-                  Continua comunque con {foto.length} {foto.length === 1 ? 'foto' : 'foto'} →
+                  Continua comunque con {foto.length} {foto.length === 1 ? 'foto' : 'foto'}
                 </button>
               )}
 
               {foto.length >= 4 && (
                 <button onClick={next} className="w-full py-4 mt-2 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">
-                  Continua con {foto.length} foto →
+                  Continua con {foto.length} foto
                 </button>
               )}
             </div>
@@ -1493,8 +1503,8 @@ export default function IniziaPage() {
 
         {curStep === 'intestazione' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             {erroreIntestazione && <div className="mb-3"><ErrorBadge>Seleziona a chi è intestato il mezzo per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1546,14 +1556,14 @@ export default function IniziaPage() {
                 errorBorder={erroreIntestazione}
               />
             </div>
-            <button onClick={handleContinuaIntestazione} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaIntestazione} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>
         )}
 
         {curStep === 'eredi' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             {erroreEredi && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1607,14 +1617,14 @@ export default function IniziaPage() {
             </div>
             <p className="text-xs text-gray-500 mt-2 px-1">Per ogni erede ti chiederemo carta d&apos;identità e codice fiscale nella tua area personale. Massimo 10.</p>
 
-            <button onClick={handleContinuaEredi} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaEredi} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>
         )}
 
         {curStep === 'societa-fallita' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             {erroreSocietaFallita && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1634,14 +1644,14 @@ export default function IniziaPage() {
                 errorBorder={erroreSocietaFallita}
               />
             </div>
-            <button onClick={handleContinuaSocietaFallita} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaSocietaFallita} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>
         )}
 
         {curStep === 'fermo' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             {erroreFermo && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1679,14 +1689,14 @@ export default function IniziaPage() {
                 <span>La demolizione toglie il veicolo dalla circolazione, ma <strong>il debito che ha causato il fermo non si cancella</strong> e resta legato al codice fiscale del proprietario.</span>
               </div>
             )}
-            <button onClick={handleContinuaFermo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaFermo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>
         )}
 
         {curStep === 'consegna' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             {erroreConsegna && <div className="mb-3"><ErrorBadge>Seleziona chi consegnerà il mezzo per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1740,14 +1750,14 @@ export default function IniziaPage() {
               </div>
             )}
 
-            <button onClick={handleContinuaConsegna} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaConsegna} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>
         )}
 
         {curStep === 'libretto' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{meta.titoloPagina}</h1>
-            <p className="text-sm text-gray-500 mb-4">{meta.sottoPagina}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             {erroreLibretto && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1761,7 +1771,7 @@ export default function IniziaPage() {
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 14v-4c0-3.771 0-5.657 1.172-6.828S7.229 2 11 2h2c3.771 0 5.657 0 6.828 1.172S21 6.229 21 10v4c0 3.771 0 5.657-1.172 6.828S16.771 22 13 22h-2c-3.771 0-5.657 0-6.828-1.172S3 17.771 3 14Z"/><path strokeLinecap="round" strokeLinejoin="round" d="M11.333 10.667c1.055 1.055 2.445 2.127 2.445 2.127l1.904-1.905s-1.072-1.39-2.126-2.445C12.5 7.39 11.11 6.317 11.11 6.317L9.206 8.222s1.072 1.39 2.127 2.445m0 0L8 14m8-3.429l-2.54 2.54M11.43 6L8.89 8.54"/><path strokeLinecap="round" d="M8 18h8"/></svg>}
                 label="Ho la denuncia di smarrimento in originale"
-                sub="Emessa da autorità pubblica"
+                sub="Emessa da Carabinieri o Polizia"
                 selected={dati.libretto === 'denuncia'}
                 onClick={() => { update({ libretto: 'denuncia' }); setErroreLibretto(false) }}
                 errorBorder={erroreLibretto}
@@ -1776,25 +1786,38 @@ export default function IniziaPage() {
               />
             </div>
             {dati.libretto === 'no' && (
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="mt-3">
                 <InfoBadge>Nessun problema: <strong>ti chiamiamo noi</strong> per capire la situazione e dirti esattamente come fare. Intanto puoi completare la richiesta e caricare gli altri documenti.</InfoBadge>
-                <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.99]" style={{ background: '#16A34A' }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.58 15.13L2 22l4.97-1.38A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.19-1.19l-.3-.18-2.95.82.8-2.87-.2-.31A8 8 0 1 1 12 20zm4.42-5.9c-.24-.12-1.43-.7-1.65-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.19 7.24 7.24 0 0 1-1.33-1.66c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.64 1.64 0 0 0 .24-.4.44.44 0 0 0-.02-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.88.88 0 0 0-.64.3 2.68 2.68 0 0 0-.84 2 4.65 4.65 0 0 0 .98 2.47 10.66 10.66 0 0 0 4.08 3.6 13.68 13.68 0 0 0 1.36.5 3.27 3.27 0 0 0 1.5.1 2.46 2.46 0 0 0 1.61-1.14 2 2 0 0 0 .14-1.14c-.06-.1-.22-.16-.46-.28z"/></svg>
-                  Preferisci scriverci? Chatta su WhatsApp
-                </a>
               </div>
             )}
-            <button onClick={handleContinuaLibretto} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaLibretto} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>
         )}
 
         {curStep === 'cdc' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">Hai il Certificato di Proprietà?</h1>
-            <p className="text-sm text-gray-500 mb-3">È il documento che dimostra chi è il proprietario del mezzo. Attenzione: non è il libretto, è un documento separato.</p>
-            <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-blue-800 mb-4">
-              <span className="flex-shrink-0 mt-0.5">💡</span>
-              <span className="text-xs leading-relaxed"><strong>Come capire quale hai:</strong> se l&apos;ultimo passaggio di proprietà è stato fatto <strong>prima di ottobre 2015</strong> hai quello <strong>cartaceo</strong>, un foglio con lo stemma ACI in alto. Se è stato fatto <strong>dopo</strong>, il tuo è <strong>digitale</strong>: non esiste un foglio da conservare.</span>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">Hai il <span style={{ color: '#1D4ED8' }}>Certificato di Proprietà</span>?</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-3">È il documento che dimostra chi è il proprietario del mezzo.</p>
+
+            {/* Avviso anti-confusione: molti lo scambiano per il libretto */}
+            <div className="flex items-start gap-2.5 rounded-xl py-2.5 px-3 mb-3" style={{ background: '#FDF4E0', border: '1.5px solid #EFD9A7' }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+              <span className="text-[13px] leading-relaxed" style={{ color: '#6B4A0A' }}><strong>Attenzione: NON è il libretto.</strong> È un documento separato.</span>
+            </div>
+
+            <div className="rounded-xl py-3 px-3.5 mb-4" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                <span className="text-[13px] font-bold" style={{ color: '#1E3A8A' }}>Come capire quale hai</span>
+              </div>
+              <div className="flex items-start gap-2 mb-1.5">
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 7 }} />
+                <span className="text-[13px] leading-relaxed" style={{ color: '#1E3A8A' }}>Passaggio di proprietà <strong>prima di ottobre 2015</strong>: foglio <strong>cartaceo</strong> con stemma ACI in alto.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 7 }} />
+                <span className="text-[13px] leading-relaxed" style={{ color: '#1E3A8A' }}>Passaggio <strong>dopo ottobre 2015</strong>: è <strong>digitale</strong>, non esiste un foglio da conservare.</span>
+              </div>
             </div>
             {erroreCdc && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
@@ -1832,22 +1855,18 @@ export default function IniziaPage() {
               />
             </div>
             {dati.cdc === 'nessuno' && (
-              <div className="mt-3 flex flex-col gap-2">
+              <div className="mt-3">
                 <InfoBadge>Lo verifichiamo noi gratuitamente e <strong>ti chiamiamo</strong> per dirti come procedere. Intanto puoi completare la richiesta e caricare gli altri documenti.</InfoBadge>
-                <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm text-white transition-all active:scale-[0.99]" style={{ background: '#16A34A' }}>
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.58 15.13L2 22l4.97-1.38A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.19-1.19l-.3-.18-2.95.82.8-2.87-.2-.31A8 8 0 1 1 12 20zm4.42-5.9c-.24-.12-1.43-.7-1.65-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.19 7.24 7.24 0 0 1-1.33-1.66c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.64 1.64 0 0 0 .24-.4.44.44 0 0 0-.02-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.88.88 0 0 0-.64.3 2.68 2.68 0 0 0-.84 2 4.65 4.65 0 0 0 .98 2.47 10.66 10.66 0 0 0 4.08 3.6 13.68 13.68 0 0 0 1.36.5 3.27 3.27 0 0 0 1.5.1 2.46 2.46 0 0 0 1.61-1.14 2 2 0 0 0 .14-1.14c-.06-.1-.22-.16-.46-.28z"/></svg>
-                  Preferisci scriverci? Chatta su WhatsApp
-                </a>
               </div>
             )}
-            <button onClick={handleContinuaCdc} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua →</button>
+            <button onClick={handleContinuaCdc} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>
         )}
 
         {curStep === 'account' && (
           <>
-            <h1 className="text-xl font-semibold text-gray-900 mb-1">{utenteLoggato ? 'Conferma e invia' : 'Ultimo passo!'}</h1>
-            <p className="text-sm text-gray-500 mb-4">{utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.'}</p>
+            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{utenteLoggato ? 'Conferma e invia' : 'Ultimo passo!'}</h1>
+            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.'}</p>
 
             {utenteLoggato && (
               <div className="flex items-start gap-2.5 bg-sky-50 border border-sky-200 rounded-xl p-3 mb-4 text-xs text-sky-800">
@@ -1896,7 +1915,7 @@ export default function IniziaPage() {
                       <circle cx="17.5" cy="17.5" r="2.5"/>
                     </svg>
                   </div>
-                  <span className="mt-0.5">Documenti ok → fissiamo insieme il <strong>ritiro gratuito a domicilio</strong></span>
+                  <span className="mt-0.5">Documenti ok: fissiamo insieme il <strong>ritiro gratuito a domicilio</strong></span>
                 </div>
               </div>
             </div>

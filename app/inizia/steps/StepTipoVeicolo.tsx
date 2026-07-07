@@ -304,7 +304,7 @@ export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
             : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'
           }`}
       >
-        Continua →
+        Continua
       </button>
     </div>
   )

@@ -131,7 +131,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
         onClick={handleContinua}
         className="w-full py-4 mt-2 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
       >
-        Continua →
+        Continua
       </button>
     </div>
   )
