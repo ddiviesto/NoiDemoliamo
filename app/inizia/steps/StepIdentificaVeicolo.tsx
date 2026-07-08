@@ -228,10 +228,10 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
                       key={v}
                       type="button"
                       onClick={() => setCambio(v)}
-                      className={`flex-1 py-2.5 rounded-[10px] text-[14px] font-semibold transition-all active:scale-[0.99] ${
+                      className={`flex-1 py-2.5 rounded-[10px] text-[14px] font-semibold transition-all active:scale-[0.99] border-[1.5px] ${
                         selected
-                          ? 'bg-blue-600 text-white shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
-                          : 'bg-white text-gray-700 border-[1.5px] border-gray-300 hover:border-blue-400'
+                          ? 'bg-blue-50 text-blue-700 border-blue-600 shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
+                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
                       }`}
                     >
                       {v === 'manuale' ? 'Manuale' : 'Automatico'}
