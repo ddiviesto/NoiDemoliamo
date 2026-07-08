@@ -1885,29 +1885,32 @@ export default function IniziaPage() {
             <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.'}</p>
 
             {utenteLoggato && (
-              <div className="flex items-start gap-2.5 rounded-2xl p-3.5 mb-4 text-[12.5px] leading-relaxed" style={{ background: '#EFF6FF', border: '1.5px solid #93C5FD', color: '#1F2937' }}>
+              <div className="flex items-start gap-2.5 rounded-2xl p-3.5 mb-4 text-[13px] leading-relaxed bg-white" style={{ border: '1.5px solid #E5E7EB', color: '#374151' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                <span>La troverai subito nella tua <strong style={{ color: '#0C447C' }}>area personale</strong>, accanto alle altre pratiche, pronta per il caricamento dei documenti.</span>
+                <span>La troverai subito nella tua <strong style={{ color: '#111827' }}>area personale</strong>, accanto alle altre pratiche, pronta per il caricamento dei documenti.</span>
               </div>
             )}
 
-            {/* Cosa succede dopo - passi numerati (solo per chi si registra ora).
-                Azzurro rinforzato: bordo deciso, testo scuro, numeri blu pieni. */}
+            {/* Cosa succede dopo (solo per chi si registra ora).
+                Variante E: testata blu piena, corpo bianco ad alto contrasto —
+                il blu vive solo nella testata e nei numeri, il testo è scuro. */}
             {!utenteLoggato && (
-            <div className="rounded-2xl p-3.5 mb-4" style={{ background: '#EFF6FF', border: '1.5px solid #93C5FD' }}>
-              <div className="text-[13.5px] font-bold mb-2.5" style={{ color: '#0C447C' }}>Cosa succede dopo</div>
-              <div className="flex flex-col gap-2.5">
+            <div className="rounded-2xl mb-4 overflow-hidden bg-white" style={{ border: '1.5px solid #E5E7EB' }}>
+              <div className="px-3.5 py-2.5" style={{ background: '#1D4ED8' }}>
+                <div className="text-[13px] font-bold text-white">Cosa succede dopo</div>
+              </div>
+              <div className="flex flex-col gap-2.5 p-3.5">
                 {[
-                  <>Entri <strong style={{ color: '#0C447C' }}>subito</strong> nella tua <strong style={{ color: '#0C447C' }}>area personale</strong>, senza attese</>,
-                  <>Carichi i documenti richiesti: <strong style={{ color: '#0C447C' }}>basta una foto fatta col telefono</strong></>,
-                  <>I moduli da firmare? <strong style={{ color: '#0C447C' }}>Te li prepariamo noi già compilati</strong>: li stampi, li firmi e basta</>,
-                  <>Documenti ok: fissiamo insieme il <strong style={{ color: '#0C447C' }}>ritiro gratuito a domicilio</strong></>,
+                  <>Entri <strong style={{ color: '#111827' }}>subito nella tua area personale</strong>, senza attese</>,
+                  <>Carichi i documenti richiesti: <strong style={{ color: '#111827' }}>basta una foto fatta col telefono</strong></>,
+                  <>I moduli da firmare? <strong style={{ color: '#111827' }}>Te li prepariamo noi già compilati</strong>: li stampi, li firmi e basta</>,
+                  <>Documenti ok: fissiamo insieme il <strong style={{ color: '#111827' }}>ritiro gratuito a domicilio</strong></>,
                 ].map((testo, i) => (
                   <div key={i} className="flex items-start gap-2.5">
-                    <div className="rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-[11.5px] font-bold" style={{ width: 22, height: 22 }}>
+                    <div className="rounded-full flex items-center justify-center flex-shrink-0 text-[11.5px] font-bold" style={{ width: 22, height: 22, background: '#EFF6FF', border: '1.5px solid #93C5FD', color: '#1D4ED8' }}>
                       {i + 1}
                     </div>
-                    <span className="mt-0.5 text-[12.5px] leading-relaxed" style={{ color: '#1F2937' }}>{testo}</span>
+                    <span className="mt-0.5 text-[13px] leading-relaxed" style={{ color: '#374151' }}>{testo}</span>
                   </div>
                 ))}
               </div>
