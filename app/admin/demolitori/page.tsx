@@ -135,6 +135,62 @@ export default function GestioneDemolitori() {
   const attivi = demolitori.filter(d => d.stato === 'attivo').length
   const q = ricerca.trim().toLowerCase()
   const filtrati = q ? demolitori.filter(d => [d.ragione_sociale, d.citta, d.provincia].filter(Boolean).join(' ').toLowerCase().includes(q)) : demolitori
+  // Non attivi in una sezione a parte: si individuano al volo e il "perché"
+  // si legge nelle note della loro scheda.
+  const filtratiAttivi = filtrati.filter(d => d.stato === 'attivo')
+  const filtratiNonAttivi = filtrati.filter(d => d.stato !== 'attivo')
+
+  // Card demolitore, identica nelle due sezioni (attivi / non attivi)
+  function cardDemolitore(d: Demolitore) {
+    const s = metaStato(d.stato)
+    const cop = riassuntoCopertura(coperture[d.id] || [])
+    const barColor = d.stato === 'attivo' ? '#97C459' : '#C0C7D1'
+    const nAperte = aperte[d.id] || 0
+    return (
+      <div
+        key={d.id}
+        onClick={() => router.push(`/admin/demolitori/${d.id}`)}
+        className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
+        style={{ border: '1.5px solid #E5E7EB', borderLeft: `4px solid ${barColor}`, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}
+      >
+        {/* Quadratino iniziali */}
+        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#DBEAFE', color: '#1E4E8C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
+          {iniziali(d.ragione_sociale)}
+        </div>
+
+        {/* Nome + città */}
+        <div style={{ flex: 1.6, minWidth: 0 }}>
+          <div className="text-[15px] font-bold text-gray-900 truncate">{d.ragione_sociale}</div>
+          <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>{d.citta ? `${d.citta}${d.provincia ? ` (${d.provincia})` : ''}` : 'Sede non impostata'}</div>
+        </div>
+
+        {/* Stato */}
+        <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+          <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: s.bg, color: s.text, padding: '4px 12px' }}>{s.label}</span>
+        </div>
+
+        {/* Copertura */}
+        <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+          <div className="text-[10.5px] font-bold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Copertura</div>
+          {cop
+            ? <div className="text-[13px] font-semibold truncate" style={{ color: '#111827', marginTop: 2 }}>{cop}</div>
+            : <div className="text-[13px] truncate" style={{ color: '#94A3B8', marginTop: 2 }}>Da impostare</div>}
+        </div>
+
+        {/* Fee */}
+        <div style={{ flexShrink: 0, minWidth: 70, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+          <div className="text-[10.5px] font-bold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Fee</div>
+          <div className="text-[13.5px] font-bold" style={{ color: '#111827', marginTop: 2 }}>{d.fee_per_pratica ? `${d.fee_per_pratica} €` : '—'}</div>
+        </div>
+
+        {/* Pratiche aperte */}
+        <div style={{ flexShrink: 0, textAlign: 'center', background: nAperte > 0 ? '#E0EDFB' : '#F3F5F9', borderRadius: 10, padding: '6px 14px', minWidth: 70 }}>
+          <div className="text-[15px] font-bold" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>{nAperte}</div>
+          <div className="text-[10px] font-semibold uppercase" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>aperte</div>
+        </div>
+      </div>
+    )
+  }
 
   if (loading) return (
     <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
@@ -169,58 +225,27 @@ export default function GestioneDemolitori() {
               {demolitori.length === 0 ? 'Nessun demolitore. Aggiungi il primo per iniziare.' : 'Nessun demolitore trovato.'}
             </div>
           ) : (
-            <div className="flex flex-col gap-2.5">
-              {filtrati.map(d => {
-                const s = metaStato(d.stato)
-                const cop = riassuntoCopertura(coperture[d.id] || [])
-                const barColor = d.stato === 'attivo' ? '#97C459' : '#C0C7D1'
-                const nAperte = aperte[d.id] || 0
-                return (
-                  <div
-                    key={d.id}
-                    onClick={() => router.push(`/admin/demolitori/${d.id}`)}
-                    className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
-                    style={{ border: '1.5px solid #E5E7EB', borderLeft: `4px solid ${barColor}`, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}
-                  >
-                    {/* Quadratino iniziali */}
-                    <div style={{ width: 46, height: 46, borderRadius: 12, background: '#DBEAFE', color: '#1E4E8C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
-                      {iniziali(d.ragione_sociale)}
-                    </div>
+            <>
+              {filtratiAttivi.length > 0 && (
+                <div className="flex flex-col gap-2.5">
+                  {filtratiAttivi.map(cardDemolitore)}
+                </div>
+              )}
 
-                    {/* Nome + città */}
-                    <div style={{ flex: 1.6, minWidth: 0 }}>
-                      <div className="text-[15px] font-bold text-gray-900 truncate">{d.ragione_sociale}</div>
-                      <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>{d.citta ? `${d.citta}${d.provincia ? ` (${d.provincia})` : ''}` : 'Sede non impostata'}</div>
-                    </div>
-
-                    {/* Stato */}
-                    <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: s.bg, color: s.text, padding: '4px 12px' }}>{s.label}</span>
-                    </div>
-
-                    {/* Copertura */}
-                    <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-                      <div className="text-[10.5px] font-bold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Copertura</div>
-                      {cop
-                        ? <div className="text-[13px] font-semibold truncate" style={{ color: '#111827', marginTop: 2 }}>{cop}</div>
-                        : <div className="text-[13px] truncate" style={{ color: '#94A3B8', marginTop: 2 }}>Da impostare</div>}
-                    </div>
-
-                    {/* Fee */}
-                    <div style={{ flexShrink: 0, minWidth: 70, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-                      <div className="text-[10.5px] font-bold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Fee</div>
-                      <div className="text-[13.5px] font-bold" style={{ color: '#111827', marginTop: 2 }}>{d.fee_per_pratica ? `${d.fee_per_pratica} €` : '—'}</div>
-                    </div>
-
-                    {/* Pratiche aperte */}
-                    <div style={{ flexShrink: 0, textAlign: 'center', background: nAperte > 0 ? '#E0EDFB' : '#F3F5F9', borderRadius: 10, padding: '6px 14px', minWidth: 70 }}>
-                      <div className="text-[15px] font-bold" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>{nAperte}</div>
-                      <div className="text-[10px] font-semibold uppercase" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>aperte</div>
-                    </div>
+              {/* NON ATTIVI: sezione a parte per individuarli al volo */}
+              {filtratiNonAttivi.length > 0 && (
+                <div className={filtratiAttivi.length > 0 ? 'mt-7' : ''}>
+                  <div className="flex items-center gap-2.5 mb-2.5">
+                    <p className="text-[12px] font-bold uppercase m-0" style={{ color: '#64748b', letterSpacing: 0.5 }}>Non attivi</p>
+                    <span className="text-[11px] font-bold rounded-full px-2 py-0.5" style={{ background: '#E7EAEE', color: '#4B5563' }}>{filtratiNonAttivi.length}</span>
+                    <span className="text-[11.5px]" style={{ color: '#94A3B8' }}>Non ricevono nuove pratiche · il perché è nelle note della scheda</span>
                   </div>
-                )
-              })}
-            </div>
+                  <div className="flex flex-col gap-2.5" style={{ opacity: 0.85 }}>
+                    {filtratiNonAttivi.map(cardDemolitore)}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
