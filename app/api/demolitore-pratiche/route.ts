@@ -126,10 +126,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Documenti che il cliente NON ha caricato: consegnerà la FOTOCOPIA
-    // a mano al ritiro (il demolitore deve farsela dare).
+    // a mano al ritiro (il demolitore deve farsela dare). Esclusi quelli
+    // che arrivano comunque in ORIGINALE al ritiro: lì la fotocopia non serve.
     const consegnaAMano: string[] = []
     for (const riga of checklist) {
       if (riga.stato !== 'consegna_a_mano' || !riga.casistiche_documenti) continue
+      if (riga.casistiche_documenti.richiede_consegna) continue
       const suffisso = riga.indice_erede != null && riga.indice_erede > 0 ? ` (erede ${riga.indice_erede})` : ''
       consegnaAMano.push(`${riga.casistiche_documenti.nome}${suffisso}`)
     }

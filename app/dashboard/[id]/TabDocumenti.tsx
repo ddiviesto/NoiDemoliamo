@@ -467,6 +467,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         .update({ stato: 'consegna_a_mano', nota_admin: null })
         .eq('id', doc.id)
       await carica()
+      // Apri il box del ritiro: è lì che il documento è appena "andato"
+      setRitiroAperto(true)
     } catch (err) {
       console.error('Errore consegna a mano:', err)
       alert('Errore nel salvataggio. Riprova.')
@@ -586,11 +588,24 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   const daFareModuli = daFare.filter(d => !d.per_erede && d.template_pdf)
   const daFareEredi = daFare.filter(d => d.per_erede)
   const indiciEredi = Array.from(new Set(daFareEredi.map(d => d.indice_erede ?? 0))).sort((a, b) => a - b)
-  // Lista del ritiro: originali richiesti + fotocopie scelte "a mano"
+  // Lista del ritiro: UNICO posto dove vive tutto ciò che va consegnato.
+  // - originali richiesti dalla casistica (se non caricati e scelti "a mano",
+  //   restano UNA voce sola: porti l'originale, la fotocopia non serve)
+  // - fotocopie dei documenti scelti "a mano" che NON vanno consegnati in originale
   const daConsegnare = docsAttivi.filter(d => d.richiede_consegna)
-  const vociRitiro: { chiave: string; testo: string; aMano: boolean }[] = [
-    ...daConsegnare.map(d => ({ chiave: d.id, testo: nomeRitiro(d), aMano: false })),
-    ...aMano.map(d => ({ chiave: `mano-${d.id}`, testo: `Fotocopia fronte e retro — ${nomeRitiro(d)}`, aMano: true })),
+  const vociRitiro: { chiave: string; testo: string; badge: 'fotocopia' | 'non caricato' | null; docAnnulla: DocChecklist | null }[] = [
+    ...daConsegnare.map(d => ({
+      chiave: d.id,
+      testo: nomeRitiro(d),
+      badge: d.stato === 'consegna_a_mano' ? 'non caricato' as const : null,
+      docAnnulla: d.stato === 'consegna_a_mano' ? d : null,
+    })),
+    ...aMano.filter(d => !d.richiede_consegna).map(d => ({
+      chiave: `mano-${d.id}`,
+      testo: `Fotocopia fronte e retro — ${nomeRitiro(d)}`,
+      badge: 'fotocopia' as const,
+      docAnnulla: d,
+    })),
   ]
 
   const totale = docsAttivi.length
@@ -750,31 +765,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
-      {/* ====== CONSEGNERAI IN FOTOCOPIA (scelta "a mano") ====== */}
-      {aMano.length > 0 && (
-        <div>
-          <SezioneTitolo testo="Consegnerai in fotocopia al ritiro" />
-          <div className="flex flex-col gap-2.5">
-            {aMano.map(d => (
-              <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '1.5px solid #FAC775', borderRadius: 14, background: '#FFFBEB' }}>
-                <span style={{ width: 34, height: 34, borderRadius: 10, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <IcoMano size={17} color="#B45309" />
-                </span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 600, fontSize: 13.5, color: '#633806' }}>{d.nome}</div>
-                  <div style={{ fontSize: 11.5, color: '#854F0B', marginTop: 1, lineHeight: 1.4 }}>Prepara la fotocopia fronte e retro: la darai al demolitore</div>
-                </div>
-                {puoEliminare && (
-                  <button onClick={() => annullaAMano(d)} disabled={inviandoId === d.id} style={{ flexShrink: 0, background: 'none', border: 'none', fontSize: 11.5, fontWeight: 600, color: '#B45309', textDecoration: 'underline', cursor: 'pointer', padding: '4px 2px' }}>
-                    {inviandoId === d.id ? '…' : 'Annulla'}
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* ====== DOCUMENTI ORIGINALI DA PORTARE AL RITIRO ====== */}
       {vociRitiro.length > 0 && (
         <div style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', borderRadius: 16, padding: 16, boxShadow: '0 4px 14px rgba(20,184,166,0.3)' }}>
@@ -799,10 +789,15 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
               <div style={{ background: '#fff', borderRadius: 12, padding: '4px 14px' }}>
                 {vociRitiro.map((v, i) => (
                   <div key={v.chiave} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < vociRitiro.length - 1 ? '1px solid #EEF1F5' : 'none' }}>
-                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: v.aMano ? '#FEF3C7' : '#CCFBF1', color: v.aMano ? '#B45309' : '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: v.badge ? '#FEF3C7' : '#CCFBF1', color: v.badge ? '#B45309' : '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
                     <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{v.testo}</span>
-                    {v.aMano && (
-                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: '#B45309', background: '#FEF3C7', borderRadius: 999, padding: '2px 8px' }}>fotocopia</span>
+                    {v.badge && (
+                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: '#B45309', background: '#FEF3C7', borderRadius: 999, padding: '2px 8px' }}>{v.badge}</span>
+                    )}
+                    {v.docAnnulla && puoEliminare && (
+                      <button onClick={() => annullaAMano(v.docAnnulla!)} disabled={inviandoId === v.docAnnulla.id} style={{ flexShrink: 0, background: 'none', border: 'none', fontSize: 11, fontWeight: 600, color: '#B45309', textDecoration: 'underline', cursor: 'pointer', padding: '2px 0' }}>
+                        {inviandoId === v.docAnnulla.id ? '…' : 'Annulla'}
+                      </button>
                     )}
                   </div>
                 ))}
@@ -810,7 +805,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, padding: '0 2px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CCFBF1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
                 <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>
-                  I documenti servono <b style={{ color: '#fff' }}>in originale</b>{vociRitiro.some(v => v.aMano) ? ', le voci segnate in fotocopia' : ''}: senza, il veicolo non può essere ritirato.
+                  I documenti servono <b style={{ color: '#fff' }}>in originale</b>{vociRitiro.some(v => v.badge === 'fotocopia') ? ', le voci segnate in fotocopia' : ''}: senza, il veicolo non può essere ritirato.
                 </span>
               </div>
             </div>
