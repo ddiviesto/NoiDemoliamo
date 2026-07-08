@@ -1896,8 +1896,8 @@ export default function IniziaPage() {
                 il blu vive solo nella testata e nei numeri, il testo è scuro. */}
             {!utenteLoggato && (
             <div className="rounded-2xl mb-4 overflow-hidden bg-white" style={{ border: '1.5px solid #E5E7EB' }}>
-              <div className="px-3.5 py-2.5" style={{ background: '#1D4ED8' }}>
-                <div className="text-[13px] font-bold text-white">Cosa succede dopo</div>
+              <div className="px-3.5 py-2.5" style={{ background: '#DBEAFE' }}>
+                <div className="text-[13px] font-bold" style={{ color: '#1E40AF' }}>Cosa succede dopo</div>
               </div>
               <div className="flex flex-col gap-2.5 p-3.5">
                 {[
