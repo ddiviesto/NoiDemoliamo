@@ -610,6 +610,9 @@ function SpazioPill({ label, color, selected, onClick, icon }: { label: string; 
 
 // ============================================================
 
+// Chiave della bozza del modulo in sessionStorage (vive finché la scheda è aperta)
+const BOZZA_KEY = 'noidemoliamo-bozza-inizia'
+
 export default function IniziaPage() {
   const router = useRouter()
   const [dati, setDati] = useState<DatiPratica>(datiPraticaIniziali)
@@ -661,10 +664,53 @@ export default function IniziaPage() {
     rilevaSessione()
   }, [])
 
+  // ============================================================
+  // BOZZA PERSISTENTE del modulo (sessionStorage).
+  // Se l'utente naviga altrove (es. pagine privacy/termini) o ricarica,
+  // al ritorno riparte ESATTAMENTE dal passo dov'era, con i dati inseriti.
+  // La password NON viene mai salvata. Le foto vivono solo in memoria:
+  // dopo un reload vanno riselezionate.
+  // ============================================================
+  const bozzaRipristinata = useRef(false)
+  useEffect(() => {
+    if (bozzaRipristinata.current) return
+    try {
+      const raw = sessionStorage.getItem(BOZZA_KEY)
+      if (raw) {
+        const bozza = JSON.parse(raw)
+        if (bozza?.dati) setDati({ ...datiPraticaIniziali, ...bozza.dati, password: '' })
+        if (typeof bozza?.curIdx === 'number' && bozza.curIdx >= 0) setCurIdx(bozza.curIdx)
+        if (bozza?.indirizzoConfermato) setIndirizzoConfermato(true)
+        if (bozza?.datiIndirizzoExtra) setDatiIndirizzoExtra(bozza.datiIndirizzoExtra)
+      }
+    } catch {
+      // Bozza corrotta o storage non disponibile: si riparte da capo
+    }
+    bozzaRipristinata.current = true
+  }, [])
+
+  // Salva la bozza a ogni modifica (mai la password)
+  useEffect(() => {
+    if (!bozzaRipristinata.current) return
+    try {
+      sessionStorage.setItem(BOZZA_KEY, JSON.stringify({
+        dati: { ...dati, password: '' },
+        curIdx,
+        indirizzoConfermato,
+        datiIndirizzoExtra,
+      }))
+    } catch {
+      // Storage pieno o bloccato: il modulo continua a funzionare senza bozza
+    }
+  }, [dati, curIdx, indirizzoConfermato, datiIndirizzoExtra])
+
   const steps = getSteps(dati)
-  const curStep = steps[curIdx]
   const total = steps.length
-  const pct = Math.round((curIdx / (total - 1)) * 100)
+  // Clamp difensivo: una bozza salvata quando il flusso aveva più passi
+  // non deve puntare fuori dalla lista attuale.
+  const idxCorrente = Math.min(curIdx, total - 1)
+  const curStep = steps[idxCorrente]
+  const pct = Math.round((idxCorrente / (total - 1)) * 100)
   const tipo = dati.veicolo.tipo
   const tipoAltro = dati.veicolo.tipoAltro
   const cfAccetta11 = dati.intestazione === 'societa' || dati.intestazione === 'associazione'
@@ -675,12 +721,12 @@ export default function IniziaPage() {
   }
 
   function next() {
-    if (curIdx < steps.length - 1) setCurIdx(i => i + 1)
+    if (idxCorrente < steps.length - 1) setCurIdx(idxCorrente + 1)
     else handleSubmit()
   }
 
   function back() {
-    if (curIdx > 0) setCurIdx(i => i - 1)
+    if (idxCorrente > 0) setCurIdx(idxCorrente - 1)
   }
 
   function onSelezioneIndirizzo(d: DatiIndirizzo) {
@@ -966,6 +1012,9 @@ export default function IniziaPage() {
         })
       }
 
+      // Pratica inviata: la bozza del modulo non serve più
+      try { sessionStorage.removeItem(BOZZA_KEY) } catch { /* non bloccante */ }
+
       router.push('/dashboard')
     } catch (e: unknown) {
       console.error('Errore invio pratica:', e)
@@ -984,12 +1033,12 @@ export default function IniziaPage() {
 
         <BannerStep
           stepKey={curStep}
-          curIdx={curIdx}
+          curIdx={idxCorrente}
           total={total}
           tipo={tipo}
           tipoAltro={tipoAltro}
           intestazione={dati.intestazione}
-          onBack={curIdx > 0 ? back : () => router.push('/')}
+          onBack={idxCorrente > 0 ? back : () => router.push('/')}
         />
 
         <div className="flex items-center gap-2.5 mb-4">

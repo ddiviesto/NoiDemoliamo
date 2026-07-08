@@ -604,6 +604,8 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - **Home `/`**: ✅ stile app (lavanda, logo, spunte SVG, bottoni app, riga rassicurazione, WhatsApp)
 - **Login `/login`**: ✅ stile app (header blu, campi con icona, mostra/nascondi password); NO "Registrati" (ruoli diversi); redirect per ruolo admin/demolitore/cliente (commerciante DA AGGIUNGERE)
 - **Flusso `/inizia`**: COMPLETO E COLLAUDATO ⭐⭐⭐ (+ errori in italiano)
+- ⭐ **Bozza persistente `/inizia`** (8/07/2026): dati e passo corrente salvati in sessionStorage a ogni modifica → navigare via (es. pagine legali) o ricaricare NON fa perdere il modulo. La password NON viene mai salvata; le foto vivono solo in memoria (dopo un reload vanno riselezionate). Bozza cancellata a invio riuscito. Clamp difensivo sull'indice del passo (bozze salvate con flussi più lunghi).
+- **Pagine `/privacy` e `/termini`** (8/07/2026): bozze complete in stile app, linkate dallo step account (si aprono in nuova scheda). Contengono segnaposto **[DA COMPLETARE]** (ragione sociale, P.IVA, sede, email di contatto): da riempire quando dominio/email aziendale saranno pronti — Davide vuole farlo "quando sarà tutto pronto".
 - **`/dashboard`**: ✅ RISTILIZZATA (07/2026) — sfondo lavanda, card bianca, header blu con saluto + Esci, card pratiche stile /inizia con icona veicolo per tipo, badge stato a pillola chiara, empty state con SVG
 - **`/dashboard/[id]`**: ✅ RISTILIZZATA (07/2026) — header blu con "← Pratiche" + "Marca Modello · Targa" + badge stato, banner dinamico per stato con icone SVG, tab a pillole (attiva blu piena). Tab Documenti = sistema checklist completo (vedi 5.6), Tab Stato = timeline + condizioni a pillole, Tab Chat invariata
 - **AREA ADMIN = CRM da PC** ✅ (rifatta 6/07/2026, stile app in versione dashboard densa; NON mobile). **Sidebar condivisa** `app/admin/_components/AdminSidebar.tsx` (Pratiche · Demolitori · Copertura) su tutte le pagine.
@@ -891,6 +893,7 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 7. Vedere anche le proprie **pratiche annullate** (trasparenza/deterrente)
 
 **In sospeso (nessun codice a metà: sono test o decisioni aperte):**
+- 🟡 **Pagine legali /privacy e /termini**: completare i [DA COMPLETARE] (ragione sociale, P.IVA, sede, email contatto — idealmente info@noidemoliamo.it) quando dominio ed email aziendale saranno attivi
 - 🟡 **Test dell'amico** sul flusso /inizia migliorato — in attesa dell'esito
 - 🟡 **Assegnazione MANUALE ("Scegli io")**: il flusso c'è, da testare fino in fondo
 - 🟡 **Caso 7 (non intestatario)**: manca l'avviso di stop nel flusso (vedi STEP 1-bis)
