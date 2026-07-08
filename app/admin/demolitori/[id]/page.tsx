@@ -97,6 +97,12 @@ export default function DettaglioDemolitore() {
   const [messaggioInvito, setMessaggioInvito] = useState<{ ok: boolean; testo: string } | null>(null)
   const [linkInvito, setLinkInvito] = useState<string | null>(null)
 
+  // Accesso all'area: LED verde (può entrare) / rosso (login inesistente)
+  const [accesso, setAccesso] = useState<boolean | null>(null)
+  const [revocaOpen, setRevocaOpen] = useState(false)
+  const [revocando, setRevocando] = useState(false)
+  const [erroreRevoca, setErroreRevoca] = useState('')
+
   // Eliminazione definitiva
   const [eliminaOpen, setEliminaOpen] = useState(false)
   const [confermaNome, setConfermaNome] = useState('')
@@ -277,6 +283,7 @@ export default function DettaglioDemolitore() {
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || "Errore durante l'invito")
       setDemolitore(prev => prev ? { ...prev, invito_inviato_il: new Date().toISOString() } : prev)
+      setAccesso(true)
       if (json.email_inviata) {
         setMessaggioInvito({ ok: true, testo: `Invito inviato a ${json.email}` })
       } else {
@@ -289,6 +296,52 @@ export default function DettaglioDemolitore() {
       setTimeout(() => setMessaggioInvito(null), 8000)
     } finally {
       setInvitando(false)
+    }
+  }
+
+  // LED accesso: chiede al server se esiste un account di login collegato
+  // (il client admin non può leggere utenti per RLS)
+  useEffect(() => {
+    async function caricaAccesso() {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch('/api/accesso-demolitore', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ demolitore_id: id, azione: 'stato' }),
+        })
+        const json = await res.json()
+        if (res.ok) setAccesso(!!json.accesso)
+      } catch {
+        // LED resta nascosto se lo stato non è determinabile
+      }
+    }
+    caricaAccesso()
+  }, [id])
+
+  // Revoca SOLO il login: scheda, note e pratiche storiche restano intatte.
+  async function revocaAccesso() {
+    if (revocando) return
+    setRevocando(true)
+    setErroreRevoca('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/accesso-demolitore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ demolitore_id: id, azione: 'revoca' }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Errore durante la revoca')
+      setAccesso(false)
+      setDemolitore(prev => prev ? { ...prev, invito_inviato_il: null } : prev)
+      setRevocaOpen(false)
+      setMessaggioInvito({ ok: true, testo: 'Accesso revocato' })
+      setTimeout(() => setMessaggioInvito(null), 5000)
+    } catch (err) {
+      setErroreRevoca(err instanceof Error ? err.message : 'Errore durante la revoca')
+    } finally {
+      setRevocando(false)
     }
   }
 
@@ -393,9 +446,22 @@ export default function DettaglioDemolitore() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[20px] font-extrabold leading-tight truncate" style={{ letterSpacing: '-0.3px' }}>{demolitore.ragione_sociale}</div>
-              {demolitore.invito_inviato_il && (
-                <div className="text-[10.5px] mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>Invito area inviato il {fmtDataOra(demolitore.invito_inviato_il)}</div>
-              )}
+              <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                {accesso !== null && (
+                  <span className="inline-flex items-center gap-1.5 text-[10.5px] font-bold rounded-full px-2.5 py-1" style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.25)', color: '#fff' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: '50%', background: accesso ? '#4ADE80' : '#F87171', boxShadow: accesso ? '0 0 6px rgba(74,222,128,0.9)' : '0 0 6px rgba(248,113,113,0.9)', flexShrink: 0 }} />
+                    {accesso ? 'Può accedere alla sua area' : 'Login disattivato'}
+                  </span>
+                )}
+                {accesso && (
+                  <button onClick={() => { setRevocaOpen(true); setErroreRevoca('') }} className="text-[10.5px] font-bold underline hover:opacity-100" style={{ color: 'rgba(255,255,255,0.85)' }}>
+                    Revoca accesso
+                  </button>
+                )}
+                {demolitore.invito_inviato_il && (
+                  <span className="text-[10.5px]" style={{ color: 'rgba(255,255,255,0.75)' }}>Invito del {fmtDataOra(demolitore.invito_inviato_il)}</span>
+                )}
+              </div>
             </div>
             {/* Invito all'area riservata del demolitore */}
             <div className="flex flex-col items-end gap-1 flex-shrink-0">
@@ -813,6 +879,28 @@ export default function DettaglioDemolitore() {
                 className="text-xs font-bold text-white px-4 py-2.5 rounded-xl transition-colors disabled:opacity-40 bg-red-600 hover:bg-red-700"
               >
                 {eliminando ? 'Eliminazione…' : 'Elimina per sempre'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODALE REVOCA ACCESSO */}
+      {revocaOpen && demolitore && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !revocando && setRevocaOpen(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5" onClick={e => e.stopPropagation()}>
+            <p className="text-[15px] font-bold text-gray-900 m-0 mb-1">Revocare l&apos;accesso a {demolitore.ragione_sociale}?</p>
+            <p className="text-xs m-0 mb-4 leading-relaxed" style={{ color: '#64748b' }}>
+              Non potrà più entrare nella sua area (LED rosso). La scheda, le note e le pratiche storiche restano intatte:
+              continuerai a vedere che le sue pratiche erano sue. Potrai ridargli l&apos;accesso in qualsiasi momento con &quot;Invita all&apos;area&quot;.
+            </p>
+            {erroreRevoca && (
+              <div className="rounded-xl px-3 py-2.5 mb-3 text-xs" style={{ background: '#FEF6F6', border: '1.5px solid #F3C8C8', color: '#9B1C1C' }}>{erroreRevoca}</div>
+            )}
+            <div className="flex gap-2">
+              <button onClick={() => setRevocaOpen(false)} disabled={revocando} className="flex-1 text-xs font-semibold text-gray-500 hover:text-gray-700 py-2.5 rounded-xl hover:bg-gray-100 transition-colors">Annulla</button>
+              <button onClick={revocaAccesso} disabled={revocando} className="flex-1 text-xs font-bold text-white py-2.5 rounded-xl transition-colors disabled:opacity-50" style={{ background: '#D97706' }}>
+                {revocando ? 'Revoca in corso…' : 'Revoca accesso'}
               </button>
             </div>
           </div>
