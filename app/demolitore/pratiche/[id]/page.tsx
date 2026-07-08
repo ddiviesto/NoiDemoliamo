@@ -73,6 +73,7 @@ export default function SchedaPraticaDemolitore() {
   const [foto, setFoto] = useState<string[]>([])
   const [documenti, setDocumenti] = useState<DocApprovato[]>([])
   const [daConsegnare, setDaConsegnare] = useState<string[]>([])
+  const [consegnaAMano, setConsegnaAMano] = useState<string[]>([])
 
   // Azioni
   const [dataRitiro, setDataRitiro] = useState('')
@@ -92,11 +93,13 @@ export default function SchedaPraticaDemolitore() {
         foto: string[]
         documenti_approvati: DocApprovato[]
         da_consegnare: string[]
+        consegna_a_mano: string[]
       }>('/api/demolitore-pratiche', { pratica_id: praticaId })
       setPratica(json.pratica)
       setFoto(json.foto || [])
       setDocumenti(json.documenti_approvati || [])
       setDaConsegnare(json.da_consegnare || [])
+      setConsegnaAMano(json.consegna_a_mano || [])
       if (json.pratica.data_ritiro_prevista) {
         const d = new Date(json.pratica.data_ritiro_prevista)
         setDataRitiro(d.toISOString().slice(0, 10))
@@ -402,20 +405,40 @@ export default function SchedaPraticaDemolitore() {
               )}
             </Sezione>
 
-            {/* DA FARTI CONSEGNARE */}
-            {daConsegnare.length > 0 && !annullata && (
+            {/* DA FARTI CONSEGNARE (originali + fotocopie scelte dal cliente) */}
+            {(daConsegnare.length > 0 || consegnaAMano.length > 0) && !annullata && (
               <div className="rounded-2xl p-4" style={{ background: '#064E3B', color: '#fff' }}>
                 <p className="text-[11px] font-bold uppercase m-0 mb-2" style={{ color: '#6EE7B7', letterSpacing: 0.5 }}>Da farti consegnare al ritiro</p>
                 <ol className="m-0 pl-5 flex flex-col gap-1">
                   {daConsegnare.map((d, i) => (
                     <li key={i} className="text-[13px]" style={{ lineHeight: 1.5 }}>{d}</li>
                   ))}
+                  {consegnaAMano.map((d, i) => (
+                    <li key={`mano-${i}`} className="text-[13px]" style={{ lineHeight: 1.5 }}>
+                      Fotocopia fronte e retro — {d}
+                      <span className="text-[10px] font-bold rounded-full px-2 py-0.5 ml-1.5" style={{ background: 'rgba(255,255,255,0.18)', color: '#FDE68A' }}>non caricata</span>
+                    </li>
+                  ))}
                 </ol>
+                {consegnaAMano.length > 0 && (
+                  <p className="text-[11.5px] m-0 mt-2 rounded-lg px-2.5 py-2" style={{ background: 'rgba(255,255,255,0.1)', color: '#D1FAE5', lineHeight: 1.5 }}>
+                    Il cliente ha scelto di NON caricare {consegnaAMano.length === 1 ? 'questo documento' : 'questi documenti'}: fatti consegnare le fotocopie al ritiro.
+                  </p>
+                )}
               </div>
             )}
 
             {/* DOCUMENTI APPROVATI */}
             <Sezione titolo="Documenti del cliente (approvati)" icona={<><path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></>}>
+              {consegnaAMano.length > 0 && (
+                <div className="flex flex-col gap-1 mb-2">
+                  {consegnaAMano.map((d, i) => (
+                    <p key={i} className="text-[13px] m-0" style={{ color: '#854F0B' }}>
+                      <span style={{ fontWeight: 700 }}>✋</span> {d} · <b>copia consegnata a mano al ritiro</b>
+                    </p>
+                  ))}
+                </div>
+              )}
               {documenti.length === 0 ? (
                 <p className="text-[12.5px] m-0" style={{ color: '#94A3B8' }}>Nessun documento approvato al momento.</p>
               ) : (

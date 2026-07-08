@@ -13,7 +13,7 @@ interface DocChecklist {
   pratica_id: string
   documento_id: string
   indice_erede: number | null
-  stato: 'da_fare' | 'caricato' | 'approvato' | 'rifiutato'
+  stato: 'da_fare' | 'caricato' | 'approvato' | 'rifiutato' | 'consegna_a_mano'
   file_url: string | null
   scaricato_il: string | null
   caricato_il: string | null
@@ -456,6 +456,39 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
     setInviandoId(null)
   }
 
+  // Il cliente sceglie di consegnare la FOTOCOPIA a mano al ritiro:
+  // il documento è "pronto" senza caricamento e finisce nella lista
+  // delle cose da consegnare al demolitore. Reversibile con "Annulla".
+  async function segnaAMano(doc: DocChecklist) {
+    setInviandoId(doc.id)
+    try {
+      await supabase
+        .from('pratica_documenti_checklist')
+        .update({ stato: 'consegna_a_mano', nota_admin: null })
+        .eq('id', doc.id)
+      await carica()
+    } catch (err) {
+      console.error('Errore consegna a mano:', err)
+      alert('Errore nel salvataggio. Riprova.')
+    }
+    setInviandoId(null)
+  }
+
+  async function annullaAMano(doc: DocChecklist) {
+    setInviandoId(doc.id)
+    try {
+      await supabase
+        .from('pratica_documenti_checklist')
+        .update({ stato: 'da_fare' })
+        .eq('id', doc.id)
+      await carica()
+    } catch (err) {
+      console.error('Errore annullo consegna a mano:', err)
+      alert('Errore nel salvataggio. Riprova.')
+    }
+    setInviandoId(null)
+  }
+
   async function eliminaFileConfermato() {
     if (!confermaElimina) return
     setEliminazioneInCorso(true)
@@ -543,16 +576,26 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   const docsAttivi = librettoDaChiarire ? docs.filter(d => !isDocLibretto(d)) : docs
 
   const sistemati = docsAttivi.filter(d => d.stato === 'caricato' || d.stato === 'approvato')
+  const aMano = docsAttivi.filter(d => d.stato === 'consegna_a_mano')
   const daFare = docsAttivi.filter(d => d.stato === 'da_fare' || d.stato === 'rifiutato')
-  const daFareGenerali = daFare.filter(d => !d.per_erede && !d.template_pdf)
+  // Fisarmonica: i rifiutati hanno la precedenza, poi l'ordine del catalogo
+  const daFareGenerali = [
+    ...daFare.filter(d => !d.per_erede && !d.template_pdf && d.stato === 'rifiutato'),
+    ...daFare.filter(d => !d.per_erede && !d.template_pdf && d.stato !== 'rifiutato'),
+  ]
   const daFareModuli = daFare.filter(d => !d.per_erede && d.template_pdf)
   const daFareEredi = daFare.filter(d => d.per_erede)
   const indiciEredi = Array.from(new Set(daFareEredi.map(d => d.indice_erede ?? 0))).sort((a, b) => a - b)
+  // Lista del ritiro: originali richiesti + fotocopie scelte "a mano"
   const daConsegnare = docsAttivi.filter(d => d.richiede_consegna)
+  const vociRitiro: { chiave: string; testo: string; aMano: boolean }[] = [
+    ...daConsegnare.map(d => ({ chiave: d.id, testo: nomeRitiro(d), aMano: false })),
+    ...aMano.map(d => ({ chiave: `mano-${d.id}`, testo: `Fotocopia fronte e retro — ${nomeRitiro(d)}`, aMano: true })),
+  ]
 
   const totale = docsAttivi.length
-  const pronti = sistemati.length
-  const tuttoApprovato = totale > 0 && docsAttivi.every(d => d.stato === 'approvato') && !librettoDaChiarire && !cdcDaChiarire
+  const pronti = sistemati.length + aMano.length
+  const tuttoApprovato = totale > 0 && docsAttivi.every(d => d.stato === 'approvato' || d.stato === 'consegna_a_mano') && !librettoDaChiarire && !cdcDaChiarire
 
   return (
     <div className="flex flex-col gap-3">
@@ -563,8 +606,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
           <div style={{ width: 54, height: 54, margin: '0 auto 12px', background: '#1D9E75', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </div>
-          <p style={{ fontWeight: 600, fontSize: 16, color: '#0F6E56', margin: 0 }}>Documenti tutti approvati</p>
-          <p style={{ fontSize: 12.5, color: '#3c7a60', marginTop: 4, lineHeight: 1.5 }}>È tutto in ordine. Tieni gli originali a portata di mano: ti serviranno il giorno del ritiro.</p>
+          <p style={{ fontWeight: 600, fontSize: 16, color: '#0F6E56', margin: 0 }}>Documenti tutti a posto</p>
+          <p style={{ fontSize: 12.5, color: '#3c7a60', marginTop: 4, lineHeight: 1.5 }}>
+            È tutto in ordine. Tieni gli originali{aMano.length > 0 ? ' e le fotocopie scelte' : ''} a portata di mano: ti serviranno il giorno del ritiro.
+          </p>
         </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '6px 6px 2px' }}>
@@ -613,15 +658,31 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
-      {/* ====== DA PREPARARE: GENERALI + MODULI ====== */}
+      {/* ====== DA PREPARARE: GENERALI + MODULI ======
+          Fisarmonica: si lavora UN documento alla volta. Aperto solo il
+          primo della fila (i rifiutati passano avanti), i prossimi sono
+          righe chiuse che si sbloccano da sole. */}
       {(daFareGenerali.length > 0 || daFareModuli.length > 0) && (
         <div>
           <SezioneTitolo testo="Da preparare" />
           <div className="flex flex-col gap-2.5">
-            {daFareGenerali.map(d => (
+            {daFareGenerali.slice(0, 1).map(d => (
               <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
-                onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
+                onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })}
+                onAMano={puoConsegnareAMano(d) ? () => segnaAMano(d) : undefined} />
             ))}
+            {daFareGenerali.length > 1 && (
+              <div style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, background: '#fff', overflow: 'hidden' }}>
+                <div style={{ padding: '9px 14px', fontSize: 10.5, fontWeight: 600, color: '#94A3B8', letterSpacing: 0.4, textTransform: 'uppercase', borderBottom: '1px solid #F3F4F6' }}>Dopo questo</div>
+                {daFareGenerali.slice(1).map((d, i) => (
+                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '11px 14px', borderBottom: i < daFareGenerali.length - 2 ? '1px solid #F3F4F6' : 'none', opacity: 0.75 }}>
+                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', fontSize: 11.5, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 2}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6B7280' }}>{d.nome}</span>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#C0C7D1" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                  </div>
+                ))}
+              </div>
+            )}
             {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
           </div>
         </div>
@@ -649,7 +710,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
                     <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {docsErede.map(d => (
                         <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
-                          onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })} />
+                          onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })}
+                          onAMano={puoConsegnareAMano(d) ? () => segnaAMano(d) : undefined} />
                       ))}
                     </div>
                   )}
@@ -688,8 +750,33 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
+      {/* ====== CONSEGNERAI IN FOTOCOPIA (scelta "a mano") ====== */}
+      {aMano.length > 0 && (
+        <div>
+          <SezioneTitolo testo="Consegnerai in fotocopia al ritiro" />
+          <div className="flex flex-col gap-2.5">
+            {aMano.map(d => (
+              <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '1.5px solid #FAC775', borderRadius: 14, background: '#FFFBEB' }}>
+                <span style={{ width: 34, height: 34, borderRadius: 10, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <IcoMano size={17} color="#B45309" />
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13.5, color: '#633806' }}>{d.nome}</div>
+                  <div style={{ fontSize: 11.5, color: '#854F0B', marginTop: 1, lineHeight: 1.4 }}>Prepara la fotocopia fronte e retro: la darai al demolitore</div>
+                </div>
+                {puoEliminare && (
+                  <button onClick={() => annullaAMano(d)} disabled={inviandoId === d.id} style={{ flexShrink: 0, background: 'none', border: 'none', fontSize: 11.5, fontWeight: 600, color: '#B45309', textDecoration: 'underline', cursor: 'pointer', padding: '4px 2px' }}>
+                    {inviandoId === d.id ? '…' : 'Annulla'}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ====== DOCUMENTI ORIGINALI DA PORTARE AL RITIRO ====== */}
-      {daConsegnare.length > 0 && (
+      {vociRitiro.length > 0 && (
         <div style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', borderRadius: 16, padding: 16, boxShadow: '0 4px 14px rgba(20,184,166,0.3)' }}>
           <button onClick={() => setRitiroAperto(a => !a)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
             <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -701,25 +788,30 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
               </svg>
             </span>
             <div style={{ flex: 1, textAlign: 'left' }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 14.5, lineHeight: 1.3 }}>Documenti originali da portare al ritiro</div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: 14.5, lineHeight: 1.3 }}>Documenti da portare al ritiro</div>
               <div style={{ color: '#CCFBF1', fontSize: 11.5, marginTop: 2 }}>Consegnali al demolitore il giorno del ritiro</div>
             </div>
-            <span style={{ background: '#fff', color: '#0F766E', fontSize: 12.5, fontWeight: 800, borderRadius: 999, padding: '3px 11px', flexShrink: 0 }}>{daConsegnare.length}</span>
+            <span style={{ background: '#fff', color: '#0F766E', fontSize: 12.5, fontWeight: 800, borderRadius: 999, padding: '3px 11px', flexShrink: 0 }}>{vociRitiro.length}</span>
             <span style={{ transform: ritiroAperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><IcoChevronDown color="#CCFBF1" /></span>
           </button>
           {ritiroAperto && (
             <div style={{ marginTop: 14 }}>
               <div style={{ background: '#fff', borderRadius: 12, padding: '4px 14px' }}>
-                {daConsegnare.map((d, i) => (
-                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < daConsegnare.length - 1 ? '1px solid #EEF1F5' : 'none' }}>
-                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#CCFBF1', color: '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-                    <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
+                {vociRitiro.map((v, i) => (
+                  <div key={v.chiave} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < vociRitiro.length - 1 ? '1px solid #EEF1F5' : 'none' }}>
+                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: v.aMano ? '#FEF3C7' : '#CCFBF1', color: v.aMano ? '#B45309' : '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{v.testo}</span>
+                    {v.aMano && (
+                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, color: '#B45309', background: '#FEF3C7', borderRadius: 999, padding: '2px 8px' }}>fotocopia</span>
+                    )}
                   </div>
                 ))}
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, padding: '0 2px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CCFBF1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>Servono <b style={{ color: '#fff' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.</span>
+                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>
+                  I documenti servono <b style={{ color: '#fff' }}>in originale</b>{vociRitiro.some(v => v.aMano) ? ', le voci segnate in fotocopia' : ''}: senza, il veicolo non può essere ritirato.
+                </span>
               </div>
             </div>
           )}
@@ -897,6 +989,31 @@ function richiedeFronteRetro(codice: string): boolean {
 }
 
 // ============================================================
+// CONSEGNA A MANO
+// Il cliente può scegliere di NON caricare un documento e consegnarne
+// la fotocopia al demolitore il giorno del ritiro. Escluso il LIBRETTO:
+// serve caricato per verificare la casistica prima dell'assegnazione.
+// Esclusi anche i moduli PDF (vanno firmati, non fotocopiati).
+// ============================================================
+
+function puoConsegnareAMano(doc: DocChecklist): boolean {
+  if (doc.codice === 'LIBRETTO_CIRCOLAZIONE' || doc.codice === 'LIBRETTO_ESTERO') return false
+  if (doc.template_pdf) return false
+  return doc.richiede_upload
+}
+
+function IcoMano({ size = 15, color = '#B45309' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8 13V5.5a1.5 1.5 0 0 1 3 0V12" />
+      <path d="M11 11.5v-2a1.5 1.5 0 0 1 3 0V12" />
+      <path d="M14 10.5a1.5 1.5 0 0 1 3 0V12" />
+      <path d="M17 11.5a1.5 1.5 0 0 1 3 0V16a6 6 0 0 1-6 6h-2a6 6 0 0 1-5-2.7l-3.3-5.8a1.5 1.5 0 0 1 .5-2a1.87 1.87 0 0 1 2.3.3L8 13" />
+    </svg>
+  )
+}
+
+// ============================================================
 // BOLLINO AZIONE (Scatta / File)
 // ============================================================
 
@@ -934,6 +1051,8 @@ function DocCard(props: {
   onInvia: () => void
   onApri: (url: string, titolo: string) => void
   onElimina: (fileIdx: number) => void
+  // Presente solo per i documenti che ammettono la fotocopia a mano al ritiro
+  onAMano?: () => void
 }) {
   const inputCamFronte = useRef<HTMLInputElement>(null)
   const inputFilFronte = useRef<HTMLInputElement>(null)
@@ -1081,6 +1200,25 @@ function DocCard(props: {
           ) : (
             <button onClick={() => setToggleUnico(false)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#8a98a8', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Torna a fronte e retro separati</button>
           )}
+        </div>
+      )}
+
+      {/* OPPURE: consegna della fotocopia a mano al ritiro (variante C).
+          Appare solo finché non è stato caricato nulla. */}
+      {props.onAMano && props.eliminabile && files.length === 0 && (
+        <div style={{ marginTop: 11, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#9AA7B5', marginBottom: 8 }}>oppure</div>
+          <button
+            onClick={props.onAMano}
+            disabled={props.invio}
+            style={{ width: '100%', padding: '11px 0', borderRadius: 11, background: '#fff', border: '1.5px solid #D7DCE5', fontSize: 13, fontWeight: 600, color: '#374151', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: 'pointer' }}
+          >
+            <IcoMano size={15} color="#B45309" />
+            Consegno la fotocopia a mano al ritiro
+          </button>
+          <p style={{ margin: '7px 0 0', textAlign: 'center', fontSize: 10.5, color: '#9AA7B5', lineHeight: 1.4 }}>
+            Caricare le foto ora è più veloce: verifichiamo tutto prima del ritiro.
+          </p>
         </div>
       )}
 

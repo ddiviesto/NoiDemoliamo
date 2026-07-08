@@ -125,12 +125,22 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Documenti che il cliente NON ha caricato: consegnerà la FOTOCOPIA
+    // a mano al ritiro (il demolitore deve farsela dare).
+    const consegnaAMano: string[] = []
+    for (const riga of checklist) {
+      if (riga.stato !== 'consegna_a_mano' || !riga.casistiche_documenti) continue
+      const suffisso = riga.indice_erede != null && riga.indice_erede > 0 ? ` (erede ${riga.indice_erede})` : ''
+      consegnaAMano.push(`${riga.casistiche_documenti.nome}${suffisso}`)
+    }
+
     return NextResponse.json({
       success: true,
       pratica,
       foto: (foto || []).map(f => f.url),
       documenti_approvati: documentiApprovati,
       da_consegnare: daConsegnare,
+      consegna_a_mano: consegnaAMano,
     })
   } catch (err) {
     console.error('Errore endpoint demolitore-pratiche:', err)

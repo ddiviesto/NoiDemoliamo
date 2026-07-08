@@ -21,7 +21,7 @@ interface DocRiga {
   id: string
   documento_id: string
   indice_erede: number | null
-  stato: 'da_fare' | 'caricato' | 'approvato' | 'rifiutato'
+  stato: 'da_fare' | 'caricato' | 'approvato' | 'rifiutato' | 'consegna_a_mano'
   file_url: string | null
   nota_admin: string | null
   codice: string
@@ -140,7 +140,8 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
   useEffect(() => {
     const daApprovare = docs.filter(d => d.richiede_upload)
     const totale = daApprovare.length
-    const approvati = daApprovare.filter(d => d.stato === 'approvato').length
+    // 'consegna_a_mano' vale come pronto: fotocopia consegnata al ritiro
+    const approvati = daApprovare.filter(d => d.stato === 'approvato' || d.stato === 'consegna_a_mano').length
     const tutti = totale > 0 && approvati === totale
     onStatoRef.current?.(tutti, totale, approvati)
   }, [docs])
@@ -288,12 +289,12 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
   }
 
   const daApprovare = docs.filter(d => d.richiede_upload)
-  const approvatiCount = daApprovare.filter(d => d.stato === 'approvato').length
+  const approvatiCount = daApprovare.filter(d => d.stato === 'approvato' || d.stato === 'consegna_a_mano').length
   const daVerificareCount = daApprovare.filter(d => d.stato === 'caricato').length
   const daContattare = dati?.libretto === 'no' || dati?.certificato_proprieta === 'nessuno'
 
-  // Documenti da mostrare: quelli che richiedono upload, ordinati per fase (da verificare → rifiutati → approvati → in attesa)
-  const peso = (s: DocRiga['stato']) => ({ caricato: 0, rifiutato: 1, approvato: 2, da_fare: 3 }[s])
+  // Documenti da mostrare: quelli che richiedono upload, ordinati per fase (da verificare → rifiutati → a mano → approvati → in attesa)
+  const peso = (s: DocRiga['stato']) => ({ caricato: 0, rifiutato: 1, consegna_a_mano: 2, approvato: 3, da_fare: 4 }[s])
   const righeVisibili = [...daApprovare].sort((a, b) => peso(a.stato) - peso(b.stato) || a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
 
   return (
@@ -439,8 +440,8 @@ function RigaDoc(props: {
   const files = leggiFile(doc.file_url)
   const titolo = doc.per_erede && doc.indice_erede ? `${doc.nome} (${ordinaleErede(doc.indice_erede)} erede)` : doc.nome
 
-  const bordo = doc.stato === 'approvato' ? '#C8E6D5' : doc.stato === 'rifiutato' ? '#F3C8C8' : '#E5E7EB'
-  const bg = doc.stato === 'approvato' ? '#F1FAF4' : doc.stato === 'rifiutato' ? '#FEF6F6' : '#fff'
+  const bordo = doc.stato === 'approvato' ? '#C8E6D5' : doc.stato === 'rifiutato' ? '#F3C8C8' : doc.stato === 'consegna_a_mano' ? '#FAC775' : '#E5E7EB'
+  const bg = doc.stato === 'approvato' ? '#F1FAF4' : doc.stato === 'rifiutato' ? '#FEF6F6' : doc.stato === 'consegna_a_mano' ? '#FFFBEB' : '#fff'
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 12, border: `1.5px solid ${bordo}`, borderRadius: 12, padding: '10px 12px', background: bg }}>
@@ -479,6 +480,11 @@ function RigaDoc(props: {
           </div>
         )}
         {doc.stato === 'da_fare' && <span style={{ display: 'inline-block', fontSize: 11, color: '#8a98a8', marginTop: 3 }}>In attesa dal cliente</span>}
+        {doc.stato === 'consegna_a_mano' && (
+          <span style={{ display: 'inline-block', fontSize: 11, color: '#854F0B', background: '#FEF3C7', padding: '2px 8px', borderRadius: 20, marginTop: 3, fontWeight: 600 }}>
+            Fotocopia consegnata a mano al ritiro
+          </span>
+        )}
       </div>
 
       {/* Azioni */}
