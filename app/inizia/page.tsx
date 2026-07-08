@@ -5,7 +5,6 @@ import Image from 'next/image'
 import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi, Intestazione, derivaCasistica, delegaAmmessa, fermoApplicabile } from '../../types/pratica'
 import { StepTipoVeicolo } from './steps/StepTipoVeicolo'
 import { StepIdentificaVeicolo } from './steps/StepIdentificaVeicolo'
-import { StepCambioVeicolo } from './steps/StepCambioVeicolo'
 import { StepCondizioniVeicolo } from './steps/StepCondizioniVeicolo'
 import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
@@ -109,18 +108,6 @@ function IconaAccount() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="11" width="18" height="11" rx="2"/>
       <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-    </svg>
-  )
-}
-
-function IconaCambio() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="6" r="2"/>
-      <path d="M12 8v8"/>
-      <circle cx="8" cy="16" r="1"/>
-      <circle cx="16" cy="16" r="1"/>
-      <path d="M8 16h8"/>
     </svg>
   )
 }
@@ -360,15 +347,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
       icona: Icona,
       titoloBanner: `Identifica: ${nomeVeicolo(tipo, tipoAltro)}`,
       titoloPagina: `Identifica *${articolo(tipo, tipoAltro)}*`,
-      sottoPagina: 'Anno, km, marca e modello.',
-    }
-  }
-  if (stepKey === 'cambio-veicolo') {
-    return {
-      icona: IconaCambio,
-      titoloBanner: `Cambio: ${nomeVeicolo(tipo, tipoAltro)}`,
-      titoloPagina: `Che tipo di *cambio* ha ${articolo(tipo, tipoAltro)}?`,
-      sottoPagina: 'Questa info aiuta il demolitore a scegliere il carro attrezzi giusto.',
+      sottoPagina: veicoloHaCambio(tipo) ? 'Anno, km, marca, modello e cambio.' : 'Anno, km, marca e modello.',
     }
   }
   if (stepKey === 'condizioni-veicolo') {
@@ -567,10 +546,9 @@ function getSteps(dati: DatiPratica) {
   const base = ['tipo-veicolo', 'intestazione']
   if (dati.intestazione === 'deceduto') base.push('eredi')
   if (dati.intestazione === 'societa') base.push('societa-fallita')
+  // Il tipo di cambio è chiesto DENTRO lo step identifica-veicolo
+  // (tessera visibile solo per i mezzi che hanno il cambio).
   base.push('identifica-veicolo')
-  if (veicoloHaCambio(dati.veicolo.tipo)) {
-    base.push('cambio-veicolo')
-  }
   base.push('condizioni-veicolo', 'indirizzo', 'targa')
   if (dati.intestazione !== 'targhe_straniere') base.push('cf')
   base.push('foto')
@@ -1055,18 +1033,6 @@ export default function IniziaPage() {
             <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
             {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
             <StepIdentificaVeicolo
-              dati={dati.veicolo}
-              onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
-              onNext={next}
-            />
-          </>
-        )}
-
-        {curStep === 'cambio-veicolo' && (
-          <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
-            <StepCambioVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
               onNext={next}

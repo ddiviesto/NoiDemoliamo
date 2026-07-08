@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DatiVeicolo } from '../../../types/pratica'
+import { DatiVeicolo, TipoCambio, TipoMezzo } from '../../../types/pratica'
 
 interface Props {
   dati: DatiVeicolo
@@ -14,7 +14,12 @@ interface Errors {
   km?: string
   marca?: string
   modello?: string
+  cambio?: string
 }
+
+// Mezzi per cui ha senso chiedere il tipo di cambio (per gli altri —
+// moto, ciclomotori, imbarcazioni, velivoli — la tessera non appare).
+const MEZZI_CON_CAMBIO: TipoMezzo[] = ['autovettura', 'minicar', 'furgone', 'pullman', 'camion', 'altro']
 
 // ============================================================
 // ICONE CAMPI (stroke currentColor, colorate in blu dal parent)
@@ -48,6 +53,18 @@ function IconaMarca() {
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" />
       <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6" />
+    </svg>
+  )
+}
+
+function IconaCambio() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="6" r="2" />
+      <path d="M12 8v8" />
+      <circle cx="8" cy="16" r="1" />
+      <circle cx="16" cy="16" r="1" />
+      <path d="M8 16h8" />
     </svg>
   )
 }
@@ -104,6 +121,14 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
     setErrors(prev => ({ ...prev, [field]: undefined }))
   }
 
+  // La tessera cambio appare solo per i mezzi che ce l'hanno
+  const haCambio = dati.tipo == null || MEZZI_CON_CAMBIO.includes(dati.tipo)
+
+  function setCambio(v: TipoCambio) {
+    onUpdate({ tipoCambio: v })
+    setErrors(prev => ({ ...prev, cambio: undefined }))
+  }
+
   // Formatta numero con separatore migliaia: 180000 → "180.000"
   function formatKm(value: string): string {
     const onlyDigits = value.replace(/\D/g, '')
@@ -122,6 +147,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
     if (!dati.km.trim()) e.km = 'Inserisci i km'
     if (!dati.marca.trim()) e.marca = 'Inserisci la marca'
     if (!dati.modello.trim()) e.modello = 'Inserisci il modello'
+    if (haCambio && !dati.tipoCambio) e.cambio = 'Scegli il tipo di cambio'
     return e
   }
 
@@ -147,7 +173,8 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             type="number"
             inputMode="numeric"
             value={dati.anno}
-            onChange={e => update('anno', e.target.value)}            placeholder="Es. 2008"
+            onChange={e => update('anno', e.target.value)}
+            placeholder="Es. 2008"
             min={1950} max={2026}
             className={`${inputClass} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
           />
@@ -157,7 +184,8 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             type="text"
             inputMode="numeric"
             value={formatKm(dati.km)}
-            onChange={e => handleKmChange(e.target.value)}            placeholder="Es. 85.000"
+            onChange={e => handleKmChange(e.target.value)}
+            placeholder="Es. 85.000"
             className={inputClass}
           />
         </CampoTessera>
@@ -165,7 +193,8 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
           <input
             type="text"
             value={dati.marca}
-            onChange={e => update('marca', e.target.value)}            placeholder="Es. Fiat"
+            onChange={e => update('marca', e.target.value)}
+            placeholder="Es. Fiat"
             className={inputClass}
           />
         </CampoTessera>
@@ -173,10 +202,47 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
           <input
             type="text"
             value={dati.modello}
-            onChange={e => update('modello', e.target.value)}            placeholder="Es. Panda"
+            onChange={e => update('modello', e.target.value)}
+            placeholder="Es. Panda"
             className={inputClass}
           />
         </CampoTessera>
+
+        {/* Tipo di cambio: tessera con due opzioni (solo mezzi che ce l'hanno) */}
+        {haCambio && (
+          <div id="field-cambio" className="col-span-2">
+            <div
+              className={`flex flex-col gap-2 rounded-xl border-[1.5px] px-3 py-2.5 transition-all ${
+                errors.cambio ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-gray-50'
+              }`}
+            >
+              <span className={`flex items-center gap-1.5 text-[13px] font-semibold leading-tight ${errors.cambio ? 'text-red-600' : 'text-gray-800'}`}>
+                <span className={`flex-shrink-0 ${errors.cambio ? 'text-red-500' : 'text-blue-600'}`}><IconaCambio /></span>
+                Tipo di cambio
+              </span>
+              <div className="flex gap-2">
+                {(['manuale', 'automatico'] as const).map(v => {
+                  const selected = dati.tipoCambio === v
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setCambio(v)}
+                      className={`flex-1 py-2.5 rounded-[10px] text-[14px] font-semibold transition-all active:scale-[0.99] ${
+                        selected
+                          ? 'bg-blue-600 text-white shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
+                          : 'bg-white text-gray-700 border-[1.5px] border-gray-300 hover:border-blue-400'
+                      }`}
+                    >
+                      {v === 'manuale' ? 'Manuale' : 'Automatico'}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {errors.cambio && <p className="text-xs text-red-600 mt-1">{errors.cambio}</p>}
+          </div>
+        )}
       </div>
 
       <button
