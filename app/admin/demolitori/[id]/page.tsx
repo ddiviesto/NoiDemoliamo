@@ -45,6 +45,7 @@ interface Demolitore {
   stato: string
   fee_per_pratica: number
   velocita_media_giorni: number
+  invito_inviato_il: string | null
 }
 
 // Stile card condiviso (identico alle card della lista pratiche)
@@ -90,6 +91,11 @@ export default function DettaglioDemolitore() {
   const [messaggio, setMessaggio] = useState<{ ok: boolean; testo: string } | null>(null)
   const [coperturaAperta, setCoperturaAperta] = useState(false)
   const [modificaAnagrafica, setModificaAnagrafica] = useState(false)
+
+  // Invito all'area demolitore
+  const [invitando, setInvitando] = useState(false)
+  const [messaggioInvito, setMessaggioInvito] = useState<{ ok: boolean; testo: string } | null>(null)
+  const [linkInvito, setLinkInvito] = useState<string | null>(null)
 
   // Form anagrafica (con snapshot originale per capire se ci sono modifiche)
   const [form, setForm] = useState({ ...FORM_VUOTO })
@@ -248,6 +254,38 @@ export default function DettaglioDemolitore() {
     setNote(prev => prev.filter(n => n.id !== nid))
   }
 
+  // Invita il demolitore alla sua area riservata: il server genera il link
+  // e manda l'email; se l'email non è configurata riceviamo il link da
+  // inviare a mano (es. WhatsApp).
+  async function invitaDemolitore() {
+    if (!demolitore || invitando) return
+    setInvitando(true)
+    setMessaggioInvito(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/invita-demolitore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ demolitore_id: id }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Errore durante l'invito")
+      setDemolitore(prev => prev ? { ...prev, invito_inviato_il: new Date().toISOString() } : prev)
+      if (json.email_inviata) {
+        setMessaggioInvito({ ok: true, testo: `Invito inviato a ${json.email}` })
+      } else {
+        setLinkInvito(json.link || null)
+        setMessaggioInvito({ ok: true, testo: 'Invito creato — invia il link a mano' })
+      }
+      setTimeout(() => setMessaggioInvito(null), 6000)
+    } catch (err) {
+      setMessaggioInvito({ ok: false, testo: err instanceof Error ? err.message : "Errore durante l'invito" })
+      setTimeout(() => setMessaggioInvito(null), 8000)
+    } finally {
+      setInvitando(false)
+    }
+  }
+
   // Salva la copertura (cancella i vecchi record e reinserisce i nuovi).
   async function salvaCopertura(records: CoperturaRecord[]) {
     setSalvando(true)
@@ -327,6 +365,24 @@ export default function DettaglioDemolitore() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-[20px] font-extrabold leading-tight truncate" style={{ letterSpacing: '-0.3px' }}>{demolitore.ragione_sociale}</div>
+              {demolitore.invito_inviato_il && (
+                <div className="text-[10.5px] mt-0.5" style={{ color: 'rgba(255,255,255,0.75)' }}>Invito area inviato il {fmtDataOra(demolitore.invito_inviato_il)}</div>
+              )}
+            </div>
+            {/* Invito all'area riservata del demolitore */}
+            <div className="flex flex-col items-end gap-1 flex-shrink-0">
+              <button
+                onClick={invitaDemolitore}
+                disabled={invitando}
+                className="flex items-center gap-1.5 text-[12px] font-bold rounded-full transition-all disabled:opacity-60"
+                style={{ padding: '7px 15px', background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff' }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="3" /><path d="m2 7 10 6 10-6" /></svg>
+                {invitando ? 'Invio…' : demolitore.invito_inviato_il ? "Reinvita all'area" : "Invita all'area"}
+              </button>
+              {messaggioInvito && (
+                <span className="text-[10.5px] font-semibold" style={{ color: messaggioInvito.ok ? '#BBF7D0' : '#FECACA' }}>{messaggioInvito.testo}</span>
+              )}
             </div>
             {/* Stato: Attivo / Non attivo, un clic per cambiare */}
             <div className="flex gap-1 flex-shrink-0" style={{ background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 999, padding: 4 }}>
@@ -681,6 +737,26 @@ export default function DettaglioDemolitore() {
           )}
         </div>
       </div>
+
+      {/* MODALE LINK INVITO (fallback quando l'email non è configurata) */}
+      {linkInvito && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setLinkInvito(null)}>
+          <div className="bg-white rounded-2xl w-full max-w-lg p-5" onClick={e => e.stopPropagation()}>
+            <p className="text-[15px] font-bold text-gray-900 mb-1">Link di invito</p>
+            <p className="text-xs mb-3" style={{ color: '#64748b' }}>
+              L&apos;email automatica non è ancora configurata: copia questo link e invialo tu al demolitore (es. su WhatsApp).
+              Il link vale una volta sola e fa impostare la password della sua area.
+            </p>
+            <div className="flex gap-2">
+              <input readOnly value={linkInvito} onFocus={e => e.target.select()} className="flex-1 min-w-0 border border-gray-200 rounded-xl px-3 py-2 text-xs text-gray-700 bg-gray-50 outline-none" />
+              <button onClick={() => navigator.clipboard.writeText(linkInvito)} className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 rounded-xl transition-colors">Copia</button>
+            </div>
+            <div className="flex justify-end mt-3">
+              <button onClick={() => setLinkInvito(null)} className="text-xs font-semibold text-gray-500 hover:text-gray-700 px-4 py-2">Chiudi</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODALE PRATICHE ANNULLATE DEL DEMOLITORE */}
       {annullateOpen && (

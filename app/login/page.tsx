@@ -35,6 +35,8 @@ export default function Login() {
 
     if (utenteData?.tipo === 'admin') {
       router.push('/admin')
+    } else if (utenteData?.tipo === 'demolitore') {
+      router.push('/demolitore')
     } else {
       router.push('/dashboard')
     }
