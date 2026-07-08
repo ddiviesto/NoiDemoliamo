@@ -106,7 +106,8 @@ export async function POST(req: NextRequest) {
     }, { onConflict: 'id' })
     if (errUp) {
       console.error('Errore upsert utenti:', errUp)
-      return NextResponse.json({ error: 'Errore nel collegamento account-demolitore (colonna demolitore_id presente?)' }, { status: 500 })
+      // Endpoint solo-admin: mostriamo il dettaglio vero del DB per diagnosi
+      return NextResponse.json({ error: `Collegamento account-demolitore fallito: ${errUp.message}${errUp.details ? ` — ${errUp.details}` : ''}` }, { status: 500 })
     }
 
     // Traccia dell'invito sulla scheda demolitore

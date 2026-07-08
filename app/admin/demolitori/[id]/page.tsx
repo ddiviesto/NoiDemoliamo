@@ -97,6 +97,12 @@ export default function DettaglioDemolitore() {
   const [messaggioInvito, setMessaggioInvito] = useState<{ ok: boolean; testo: string } | null>(null)
   const [linkInvito, setLinkInvito] = useState<string | null>(null)
 
+  // Eliminazione definitiva
+  const [eliminaOpen, setEliminaOpen] = useState(false)
+  const [confermaNome, setConfermaNome] = useState('')
+  const [eliminando, setEliminando] = useState(false)
+  const [erroreElimina, setErroreElimina] = useState('')
+
   // Form anagrafica (con snapshot originale per capire se ci sono modifiche)
   const [form, setForm] = useState({ ...FORM_VUOTO })
   const [originale, setOriginale] = useState({ ...FORM_VUOTO })
@@ -283,6 +289,28 @@ export default function DettaglioDemolitore() {
       setTimeout(() => setMessaggioInvito(null), 8000)
     } finally {
       setInvitando(false)
+    }
+  }
+
+  // Eliminazione DEFINITIVA del demolitore (server-side, service role).
+  // Il server blocca se ci sono pratiche aperte assegnate a lui.
+  async function eliminaDemolitore() {
+    if (!demolitore || eliminando) return
+    setEliminando(true)
+    setErroreElimina('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/elimina-demolitore', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ demolitore_id: id }),
+      })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || "Errore durante l'eliminazione")
+      router.push('/admin/demolitori')
+    } catch (err) {
+      setErroreElimina(err instanceof Error ? err.message : "Errore durante l'eliminazione")
+      setEliminando(false)
     }
   }
 
@@ -736,7 +764,60 @@ export default function DettaglioDemolitore() {
             </div>
           )}
         </div>
+
+        {/* ===== ZONA PERICOLOSA ===== */}
+        <div className="p-5 flex items-center justify-between gap-4 flex-wrap" style={{ ...STILE_CARD, border: '1.5px solid #FECACA' }}>
+          <div>
+            <p className="text-[13.5px] font-bold m-0" style={{ color: '#9B1C1C' }}>Elimina demolitore</p>
+            <p className="text-xs mt-0.5 m-0" style={{ color: '#64748b' }}>Cancella per sempre anagrafica, copertura, tariffe, note e accesso. Le pratiche storiche restano ma perdono il riferimento.</p>
+          </div>
+          <button
+            onClick={() => { setEliminaOpen(true); setConfermaNome(''); setErroreElimina('') }}
+            className="flex items-center gap-1.5 text-xs font-bold rounded-xl px-4 py-2.5 transition-colors bg-white text-red-600 hover:bg-red-50 flex-shrink-0"
+            style={{ border: '1.5px solid #FCA5A5' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+            Elimina definitivamente
+          </button>
+        </div>
       </div>
+
+      {/* MODALE CONFERMA ELIMINAZIONE DEFINITIVA */}
+      {eliminaOpen && demolitore && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => !eliminando && setEliminaOpen(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-5" onClick={e => e.stopPropagation()}>
+            <p className="text-[15px] font-bold text-gray-900 mb-1">Eliminare {demolitore.ragione_sociale}?</p>
+            <p className="text-xs mb-3 leading-relaxed" style={{ color: '#64748b' }}>
+              Questa azione è <b>irreversibile</b>: spariscono per sempre anagrafica, copertura, tariffe, note e l&apos;accesso all&apos;area demolitore.
+              Non è possibile se ha pratiche aperte assegnate.
+            </p>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">Per conferma scrivi: <span style={{ color: '#9B1C1C' }}>{demolitore.ragione_sociale}</span></label>
+            <input
+              value={confermaNome}
+              onChange={e => { setConfermaNome(e.target.value); setErroreElimina('') }}
+              placeholder={demolitore.ragione_sociale}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-gray-50 outline-none focus:border-red-400"
+            />
+            {erroreElimina && (
+              <div className="flex items-start gap-2 mt-3 px-3 py-2.5 rounded-xl text-xs leading-relaxed" style={{ background: '#FEF6F6', border: '1.5px solid #F3C8C8', color: '#9B1C1C' }}>
+                {erroreElimina}
+              </div>
+            )}
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setEliminaOpen(false)} disabled={eliminando} className="text-xs font-semibold text-gray-500 hover:text-gray-700 px-4 py-2.5 rounded-xl hover:bg-gray-100 transition-colors">
+                Annulla
+              </button>
+              <button
+                onClick={eliminaDemolitore}
+                disabled={eliminando || confermaNome.trim() !== demolitore.ragione_sociale}
+                className="text-xs font-bold text-white px-4 py-2.5 rounded-xl transition-colors disabled:opacity-40 bg-red-600 hover:bg-red-700"
+              >
+                {eliminando ? 'Eliminazione…' : 'Elimina per sempre'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODALE LINK INVITO (fallback quando l'email non è configurata) */}
       {linkInvito && (
