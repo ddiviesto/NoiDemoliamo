@@ -1,4 +1,4 @@
-import Link from 'next/link'
+import TornaIndietro from '../components/TornaIndietro'
 
 /**
  * INFORMATIVA PRIVACY — bozza operativa.
@@ -23,9 +23,7 @@ export default function Privacy() {
     <main className="min-h-screen flex justify-center p-4 pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
       <div className="w-full max-w-2xl bg-white rounded-3xl shadow-lg overflow-hidden" style={{ alignSelf: 'flex-start' }}>
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
-          <Link href="/" className="w-9 h-9 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors" aria-label="Torna alla home">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 12H5" /><path d="M12 19l-7-7 7-7" /></svg>
-          </Link>
+          <TornaIndietro />
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
             <div className="text-sm font-semibold leading-tight">Informativa privacy</div>

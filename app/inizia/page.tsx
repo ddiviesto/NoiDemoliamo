@@ -2028,8 +2028,8 @@ export default function IniziaPage() {
 
               <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">
                 Continuando accetti i{' '}
-                <a href="/termini" target="_blank" rel="noreferrer" className="underline text-gray-500 hover:text-gray-700">termini di servizio</a>
-                {' '}e l&apos;<a href="/privacy" target="_blank" rel="noreferrer" className="underline text-gray-500 hover:text-gray-700">informativa privacy</a>.
+                <a href="/termini" className="underline text-gray-500 hover:text-gray-700">termini di servizio</a>
+                {' '}e l&apos;<a href="/privacy" className="underline text-gray-500 hover:text-gray-700">informativa privacy</a>.
               </p>
             </div>
           </>
