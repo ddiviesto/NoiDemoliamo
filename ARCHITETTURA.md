@@ -602,7 +602,7 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 ## 5.3 Pagine FATTE ✅
 
 - **Home `/`**: ✅ stile app (lavanda, logo, spunte SVG, bottoni app, riga rassicurazione, WhatsApp)
-- **Login `/login`**: ✅ stile app (header blu, campi con icona, mostra/nascondi password); NO "Registrati" (ruoli diversi); redirect admin/cliente (demolitore/commerciante DA AGGIUNGERE)
+- **Login `/login`**: ✅ stile app (header blu, campi con icona, mostra/nascondi password); NO "Registrati" (ruoli diversi); redirect per ruolo admin/demolitore/cliente (commerciante DA AGGIUNGERE)
 - **Flusso `/inizia`**: COMPLETO E COLLAUDATO ⭐⭐⭐ (+ errori in italiano)
 - **`/dashboard`**: ✅ RISTILIZZATA (07/2026) — sfondo lavanda, card bianca, header blu con saluto + Esci, card pratiche stile /inizia con icona veicolo per tipo, badge stato a pillola chiara, empty state con SVG
 - **`/dashboard/[id]`**: ✅ RISTILIZZATA (07/2026) — header blu con "← Pratiche" + "Marca Modello · Targa" + badge stato, banner dinamico per stato con icone SVG, tab a pillole (attiva blu piena). Tab Documenti = sistema checklist completo (vedi 5.6), Tab Stato = timeline + condizioni a pillole, Tab Chat invariata
@@ -612,6 +612,8 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - **`/admin/demolitori` + [id]**: ✅ RIFATTA — lista a card; scheda "profilo CRM" (7/07/2026): testata blu con statistiche e toggle Attivo/Non attivo, anagrafica in LETTURA con modifica a tasto, tariffe per zona, **Note e cronologia** (timeline), **copertura a tendina** (zone a pillole sempre visibili, mappa solo premendo Modifica, "Salva copertura" solo se modificata — logica `MappaComuni` intatta).
 - ⭐ **Convenzioni mappa copertura** (8/07/2026): il pannello mostra SOLO le zone coperte, MAI la lista dei comuni esclusi (le esclusioni restano nella logica/DB come `comune_escluso`, visibili sulla mappa come "buchi" non colorati). Province/regioni con esclusioni interne hanno badge giallo **"parziale"**: nel pannello mappa è live, nelle pillole della card "Area di copertura" riflette il DB (appare dopo "Salva copertura"). Tooltip gerarchico: zoom province → mostra la regione; zoom comuni → mostra provincia · regione.
 - ~~`/admin/copertura`~~: ELIMINATA (7/07/2026) — la copertura si gestisce solo dentro la scheda demolitore.
+- ⭐ **ACCESSO DEMOLITORE — FASE 1 dashboard demolitore** ✅ COLLAUDATA end-to-end (8/07/2026): bottone "Invita all'area" nella testata della scheda demolitore → `/api/invita-demolitore` genera il link Supabase (invite, o recovery se già registrato), collega `utenti.demolitore_id`, manda l'email via Resend (`lib/email.ts`) **oppure mostra il link da inviare a mano** finché Resend non è configurato → il demolitore sceglie la password su `/imposta-password` → area `/demolitore` (guscio: benvenuto + anteprima funzioni; la dashboard vera è la fase 2). Login multi-ruolo: tipo 'demolitore' → `/demolitore`.
+- ⭐ **Eliminazione definitiva demolitore** (8/07/2026): zona pericolosa in fondo alla scheda, conferma riscrivendo la ragione sociale → `/api/elimina-demolitore` (blocca se ha pratiche APERTE; le storiche perdono solo il riferimento `demolitore_id`; cancella copertura, tariffe, note, account e riga).
 
 ## 5.4 Backend / API
 
@@ -619,6 +621,9 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role).
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
 - **`/api/pulisci-utenti`** — cancella account clienti senza pratiche (mai admin/operatori).
+- **`/api/invita-demolitore`** — invito all'area demolitore (link Supabase + email Resend o link manuale).
+- **`/api/elimina-demolitore`** — eliminazione definitiva demolitore (blocca con pratiche aperte).
+- ⭐ **Email transazionali**: `lib/email.ts` (Resend). Env: `RESEND_API_KEY` + `EMAIL_FROM` (finché mancano, gli inviti danno il link da mandare a mano). Dominio noidemoliamo.it GIÀ COMPRATO da Davide: da collegare a Vercel e verificare su Resend (SPF/DKIM/DMARC).
 - ⭐ **Google Maps**: caricatore condiviso `lib/googleMaps.ts` — carica lo script UNA volta per pagina (autocomplete indirizzo + mappa copertura convivono senza conflitto).
 
 ## 5.5 Verifica PRA ACI — ABBANDONATA per ora
@@ -877,7 +882,7 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 ### ▶️🔥🔥🔥 STEP 0 — PUNTO DI RIPARTENZA (aggiornato 7/07/2026)
 
 **PROSSIMO GRANDE TASK: DASHBOARD DEMOLITORE.** È il pezzo che chiude il cerchio della pipeline (fasi 5→6→7). Il demolitore deve poter:
-1. Accedere (da decidere: invito email + `/imposta-password`, login con la sua email — il campo `email_assegnazione` è pronto)
+1. ✅ ~~Accedere~~ FATTO E COLLAUDATO (8/07/2026): invito email + `/imposta-password` + area `/demolitore` (guscio). Colonne nuove: `utenti.demolitore_id`, `demolitori.invito_inviato_il`; constraint `utenti_tipo_check` esteso con demolitore/commerciante (migrazione in `docs/sql/`).
 2. Vedere le **pratiche assegnate** (dati ritiro, documenti approvati del cliente, chat)
 3. **Proporre data/ora ritiro** entro le 8 ore lavorative (il cliente conferma)
 4. Segnare il **ritiro effettivo** (`data_ritiro_effettuato`) → fase "Ritirate" → **parte la fatturazione**
@@ -941,7 +946,7 @@ Oggi le comunicazioni al cliente vivono SOLO nel banner della sua area personale
 Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/`notifiche_sms_inviate` già progettate (3.12, ricordare i GRANT post 30/10).
 
 ### 🔜 STEP SUCCESSIVI
-- Verifica PRA ACI (bookmarklet o Openapi ~6€), pagina Polizia Locale veicoli abbandonati, invito email demolitore + /imposta-password, login multi-ruolo completo, dashboard demolitore, messaggi preimpostati admin, PWA
+- Verifica PRA ACI (bookmarklet o Openapi ~6€), pagina Polizia Locale veicoli abbandonati, dashboard demolitore (fasi 2-4: pratiche/azioni, solleciti/notifiche, proforma), messaggi preimpostati admin, PWA, landing vetrina su noidemoliamo.it
 
 ### 🔮 PROSSIMI FLUSSI
 - Flusso B (asta demolitori), Flusso C (commercianti), acquisto NoiDemoliamo, Flusso D (/vendi-auto), area commercianti, fatturazione, statistiche
@@ -987,7 +992,7 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 67. ⭐ **L'algoritmo suggerisce, l'admin decide**: l'assegnazione automatica calcola la classifica ma assegna solo dopo conferma dell'admin (che può scegliere un altro demolitore). L'admin deve poter assegnare sempre anche a mano.
 68. ⭐ **Fee del demolitore per ZONA, fatturazione automatica**: tariffa base + tariffe per regione/provincia/comune; il veicolo viene fatturato con la **tariffa più specifica** in base al luogo di ritiro. Il **ritiro effettivo** fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore.
 69. **Eliminazione pratica ≠ eliminazione account**: due azioni distinte e consapevoli (scelta doppia nel dettaglio) + pulizia account senza pratiche separata. Mai orfani, mai admin/operatori.
-70. ⚙️ **Gotcha da ricordare**: (a) i nuovi stati pratica vanno aggiunti al constraint `pratiche_stato_check` o falliscono in silenzio; (b) la provincia è **sigla** nelle pratiche e **nome** nella copertura → convertire (`lib/province.ts`); (c) Google Maps si carica una volta sola per pagina (`lib/googleMaps.ts`); (d) MAI `scrollIntoView` sull'onFocus degli input del flusso /inizia: su iPhone la schermata "sobbalza" quando si apre la tastiera (lo scroll è ammesso solo al click su Continua con errore).
+70. ⚙️ **Gotcha da ricordare**: (a) i nuovi stati pratica vanno aggiunti al constraint `pratiche_stato_check` o falliscono in silenzio — vale per TUTTI i CHECK (8/07: `utenti_tipo_check` non includeva 'demolitore' e l'invito falliva); (b) la provincia è **sigla** nelle pratiche e **nome** nella copertura → convertire (`lib/province.ts`); (c) Google Maps si carica una volta sola per pagina (`lib/googleMaps.ts`); (d) MAI `scrollIntoView` sull'onFocus degli input del flusso /inizia: su iPhone la schermata "sobbalza" quando si apre la tastiera (lo scroll è ammesso solo al click su Continua con errore).
 
 **Nuove decisioni 7 luglio 2026:**
 
