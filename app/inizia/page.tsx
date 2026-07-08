@@ -1885,54 +1885,31 @@ export default function IniziaPage() {
             <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.'}</p>
 
             {utenteLoggato && (
-              <div className="flex items-start gap-2.5 bg-sky-50 border border-sky-200 rounded-xl p-3 mb-4 text-xs text-sky-800">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5 text-sky-600"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                <span>La troverai subito nella tua <strong>area personale</strong>, accanto alle altre pratiche, pronta per il caricamento dei documenti.</span>
+              <div className="flex items-start gap-2.5 rounded-2xl p-3.5 mb-4 text-[12.5px] leading-relaxed" style={{ background: '#EFF6FF', border: '1.5px solid #93C5FD', color: '#1F2937' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                <span>La troverai subito nella tua <strong style={{ color: '#0C447C' }}>area personale</strong>, accanto alle altre pratiche, pronta per il caricamento dei documenti.</span>
               </div>
             )}
 
-            {/* Cosa succede dopo - timeline guida (solo per chi si registra ora) */}
+            {/* Cosa succede dopo - passi numerati (solo per chi si registra ora).
+                Azzurro rinforzato: bordo deciso, testo scuro, numeri blu pieni. */}
             {!utenteLoggato && (
-            <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-4">
-              <div className="text-xs font-bold text-sky-900 mb-2">Cosa succede dopo:</div>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-start gap-2.5 text-xs text-sky-800">
-                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="2" y="4" width="20" height="16" rx="2"/>
-                      <path d="m2 7 10 6 10-6"/>
-                    </svg>
+            <div className="rounded-2xl p-3.5 mb-4" style={{ background: '#EFF6FF', border: '1.5px solid #93C5FD' }}>
+              <div className="text-[13.5px] font-bold mb-2.5" style={{ color: '#0C447C' }}>Cosa succede dopo</div>
+              <div className="flex flex-col gap-2.5">
+                {[
+                  <>Entri <strong style={{ color: '#0C447C' }}>subito</strong> nella tua <strong style={{ color: '#0C447C' }}>area personale</strong>, senza attese</>,
+                  <>Carichi i documenti richiesti: <strong style={{ color: '#0C447C' }}>basta una foto fatta col telefono</strong></>,
+                  <>I moduli da firmare? <strong style={{ color: '#0C447C' }}>Te li prepariamo noi già compilati</strong>: li stampi, li firmi e basta</>,
+                  <>Documenti ok: fissiamo insieme il <strong style={{ color: '#0C447C' }}>ritiro gratuito a domicilio</strong></>,
+                ].map((testo, i) => (
+                  <div key={i} className="flex items-start gap-2.5">
+                    <div className="rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 text-[11.5px] font-bold" style={{ width: 22, height: 22 }}>
+                      {i + 1}
+                    </div>
+                    <span className="mt-0.5 text-[12.5px] leading-relaxed" style={{ color: '#1F2937' }}>{testo}</span>
                   </div>
-                  <span className="mt-0.5">Entri <strong>subito</strong> nella tua <strong>area personale</strong>, senza attese</span>
-                </div>
-                <div className="flex items-start gap-2.5 text-xs text-sky-800">
-                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                      <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                  </div>
-                  <span className="mt-0.5">Carichi i documenti richiesti: <strong>basta una foto fatta col telefono</strong></span>
-                </div>
-                <div className="flex items-start gap-2.5 text-xs text-sky-800">
-                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
-                    </svg>
-                  </div>
-                  <span className="mt-0.5">I moduli da firmare? <strong>Te li prepariamo noi già compilati</strong>: li stampi, li firmi e basta</span>
-                </div>
-                <div className="flex items-start gap-2.5 text-xs text-sky-800">
-                  <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M10 17h4V5H2v12h3"/>
-                      <path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"/>
-                      <circle cx="7.5" cy="17.5" r="2.5"/>
-                      <circle cx="17.5" cy="17.5" r="2.5"/>
-                    </svg>
-                  </div>
-                  <span className="mt-0.5">Documenti ok: fissiamo insieme il <strong>ritiro gratuito a domicilio</strong></span>
-                </div>
+                ))}
               </div>
             </div>
             )}
@@ -1946,11 +1923,17 @@ export default function IniziaPage() {
 
             <div className="flex flex-col gap-3">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Il tuo nome e cognome</label>
+                <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                  Il tuo nome e cognome
+                </label>
                 <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAccount(prev => ({ ...prev, nome: false })) }} placeholder="Mario Rossi" className={inputClass(erroreAccount.nome)} />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">Il tuo numero di telefono</label>
+                <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+                  Il tuo numero di telefono
+                </label>
                 <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAccount(prev => ({ ...prev, telefono: false })) }} placeholder="+39 333 1234567" className={inputClass(erroreAccount.telefono)} />
                 <p className="flex items-start gap-1.5 text-[11px] text-gray-500 mt-1.5 px-1 leading-relaxed">
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5 text-blue-500">
@@ -1962,11 +1945,17 @@ export default function IniziaPage() {
               {!utenteLoggato && (
                 <>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">La tua email</label>
+                    <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><rect x="2" y="4" width="20" height="16" rx="3" /><path d="m2 7 10 6 10-6" /></svg>
+                      La tua email
+                    </label>
                     <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
+                    <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                      Scegli una password
+                    </label>
                     <div className="relative">
                       <input
                         type={mostraPasswordAccount ? 'text' : 'password'}
