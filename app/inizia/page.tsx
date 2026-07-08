@@ -639,6 +639,7 @@ export default function IniziaPage() {
   const [erroreLibretto, setErroreLibretto] = useState(false)
   const [erroreCdc, setErroreCdc] = useState(false)
   const [erroreAccount, setErroreAccount] = useState<{nome?: boolean; telefono?: boolean; email?: boolean; password?: boolean}>({})
+  const [mostraPasswordAccount, setMostraPasswordAccount] = useState(false)
 
   // Cliente GIÀ registrato e loggato: la nuova pratica si aggancia al suo account
   // (niente creazione account allo step finale, le pratiche si mettono in fila).
@@ -809,7 +810,7 @@ export default function IniziaPage() {
     // Cliente già loggato: email e password non servono
     if (!utenteLoggato) {
       if (!dati.email) e.email = true
-      if (!dati.password) e.password = true
+      if (!dati.password || dati.password.length < 6) e.password = true
     }
     if (e.nome || e.telefono || e.email || e.password) {
       setErroreAccount(e)
@@ -1853,7 +1854,7 @@ export default function IniziaPage() {
                       <path d="m2 7 10 6 10-6"/>
                     </svg>
                   </div>
-                  <span className="mt-0.5">Ricevi l&apos;<strong>email di conferma</strong> ed entri nella tua <strong>area personale</strong></span>
+                  <span className="mt-0.5">Entri <strong>subito</strong> nella tua <strong>area personale</strong>, senza attese</span>
                 </div>
                 <div className="flex items-start gap-2.5 text-xs text-sky-800">
                   <div className="w-6 h-6 rounded-lg bg-white text-sky-600 flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -1917,7 +1918,29 @@ export default function IniziaPage() {
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-600 mb-1">Scegli una password</label>
-                    <input type="password" defaultValue={dati.password} onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }} placeholder="••••••••" className={inputClass(erroreAccount.password)} />
+                    <div className="relative">
+                      <input
+                        type={mostraPasswordAccount ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        defaultValue={dati.password}
+                        onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }}
+                        placeholder="••••••••"
+                        className={`${inputClass(erroreAccount.password)} pr-11`}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setMostraPasswordAccount(v => !v)}
+                        aria-label={mostraPasswordAccount ? 'Nascondi password' : 'Mostra password'}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        {mostraPasswordAccount ? (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.12 9.12 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /><path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" /></svg>
+                        ) : (
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg>
+                        )}
+                      </button>
+                    </div>
+                    <p className={`text-[11px] mt-1.5 px-1 ${erroreAccount.password ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>Almeno 6 caratteri.</p>
                   </div>
                 </>
               )}
@@ -1948,14 +1971,16 @@ export default function IniziaPage() {
                       <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                       <polyline points="9 15 11 17 15 13"/>
                     </svg>
-                    Certificato di Rottamazione
+                    Certificato di rottamazione
                   </div>
                 </div>
               </div>
               )}
 
               <p className="text-[10px] text-gray-400 text-center mt-1 leading-relaxed">
-                Continuando accetti termini di servizio e informativa privacy.
+                Continuando accetti i{' '}
+                <a href="/termini" target="_blank" rel="noreferrer" className="underline text-gray-500 hover:text-gray-700">termini di servizio</a>
+                {' '}e l&apos;<a href="/privacy" target="_blank" rel="noreferrer" className="underline text-gray-500 hover:text-gray-700">informativa privacy</a>.
               </p>
             </div>
           </>
