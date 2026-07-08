@@ -13,9 +13,17 @@ alter table utenti
 alter table demolitori
   add column if not exists invito_inviato_il timestamptz;
 
--- NOTA: se la tabella utenti ha un CHECK constraint sui valori di "tipo"
--- che non include 'demolitore', l'invito fallirà con un errore di constraint.
--- In quel caso eseguire (adattando il nome del constraint):
---   select conname, pg_get_constraintdef(oid) from pg_constraint
---   where conrelid = 'utenti'::regclass and contype = 'c';
--- e ricreare il constraint includendo 'demolitore'.
+-- 3. Il CHECK su utenti.tipo ammetteva solo cliente/collaboratore/
+--    ente_pubblico/admin: si aggiungono i ruoli demolitore e commerciante.
+--    (Verificato l'8/07/2026: senza questo l'invito fallisce sul constraint.)
+alter table utenti drop constraint if exists utenti_tipo_check;
+
+alter table utenti add constraint utenti_tipo_check
+  check (tipo = any (array[
+    'cliente'::text,
+    'collaboratore'::text,
+    'ente_pubblico'::text,
+    'admin'::text,
+    'demolitore'::text,
+    'commerciante'::text
+  ]));
