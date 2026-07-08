@@ -110,8 +110,9 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
   const [comuniEsclusi, setComuniEsclusi] = useState<Set<string>>(new Set())
   const [layerCorrente, setLayerCorrente] = useState<Layer>('regioni')
 
-  // Tooltip: nome dell'unità sotto il mouse + posizione (in pixel relativi al container mappa)
-  const [tooltip, setTooltip] = useState<{ name: string; x: number; y: number } | null>(null)
+  // Tooltip: nome dell'unità sotto il mouse + posizione (in pixel relativi al container mappa).
+  // "sub" è la riga secondaria opzionale (es. provincia · regione per i comuni).
+  const [tooltip, setTooltip] = useState<{ name: string; sub?: string; x: number; y: number } | null>(null)
 
   // --- Ref-mirror dello stato (per usarlo dentro i listener di Google Maps) ---
   const regioniSelRef = useRef<Set<string>>(new Set())
@@ -309,11 +310,12 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
   // del container della mappa). domEvent ci dà clientX/clientY relativi
   // alla finestra, sottraiamo il bounding del container per ottenere il
   // posizionamento corretto dentro al div della mappa.
-  function aggiornaTooltip(nome: string, domEvent?: MouseEvent) {
+  function aggiornaTooltip(nome: string, domEvent?: MouseEvent, sub?: string) {
     if (!domEvent || !mapRef.current) return
     const rect = mapRef.current.getBoundingClientRect()
     setTooltip({
       name: nome,
+      sub,
       x: domEvent.clientX - rect.left,
       y: domEvent.clientY - rect.top,
     })
@@ -473,7 +475,11 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
           })
           polygon.addListener('mousemove', (e: google.maps.MapMouseEvent & { domEvent?: MouseEvent }) => {
             if (layerCorrenteRef.current !== 'comuni') return
-            aggiornaTooltip(nomeCom, e.domEvent)
+            // Riga secondaria: provincia · regione (dati già in memoria)
+            const prov = comuneToProvincia.current.get(nomeCom)
+            const reg = prov ? provinciaToRegione.current.get(prov) : undefined
+            const sub = [prov, reg].filter(Boolean).join(' · ')
+            aggiornaTooltip(nomeCom, e.domEvent, sub || undefined)
           })
           polygon.addListener('mouseout', () => {
             stilizzaComune(nomeCom)
@@ -764,7 +770,9 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
           })
           polygon.addListener('mousemove', (e: google.maps.MapMouseEvent & { domEvent?: MouseEvent }) => {
             if (layerCorrenteRef.current !== 'province') return
-            aggiornaTooltip(nomeProv, e.domEvent)
+            // Riga secondaria: regione di appartenenza
+            const reg = provinciaToRegione.current.get(nomeProv)
+            aggiornaTooltip(nomeProv, e.domEvent, reg || undefined)
           })
           polygon.addListener('mouseout', () => {
             stilizzaProvincia(nomeProv)
@@ -889,6 +897,38 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
     firmaSets(regioniSelezionate, provinceSelezionate, provinceEscluse, comuniInclusi, comuniEsclusi) !==
     firmaSets(setsIniziali.r, setsIniziali.p, setsIniziali.pe, setsIniziali.ci, setsIniziali.ce)
 
+  // --- Copertura parziale (SOLO visualizzazione pannello) ---
+  // Una provincia è "parziale" se al suo interno ci sono comuni esclusi;
+  // una regione se ha province escluse o comuni esclusi. Il calcolo legge
+  // i dati già in memoria: la logica di esclusione e il salvataggio non
+  // vengono toccati in alcun modo.
+  function provinciaDiComuneEscluso(nomeCom: string): string {
+    const daMappa = comuneToProvincia.current.get(nomeCom)
+    if (daMappa) return daMappa
+    // Fallback per esclusi appena ripristinati dal DB, quando il geojson
+    // dei comuni non è ancora stato scaricato: la provincia è salvata nel record.
+    const rec = (coperturaIniziale || []).find(r => r.comune === nomeCom && r.tipo === 'comune_escluso')
+    return rec?.provincia || ''
+  }
+  function provinciaParziale(nomeProv: string): boolean {
+    return Array.from(comuniEsclusi).some(c => provinciaDiComuneEscluso(c) === nomeProv)
+  }
+  function regioneParziale(nomeReg: string): boolean {
+    const haProvEsclusa = Array.from(provinceEscluse).some(p => provinciaToRegione.current.get(p) === nomeReg)
+    if (haProvEsclusa) return true
+    return Array.from(comuniEsclusi).some(c => {
+      const prov = provinciaDiComuneEscluso(c)
+      return prov ? provinciaToRegione.current.get(prov) === nomeReg : false
+    })
+  }
+  function BadgeParziale() {
+    return (
+      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0" style={{ background: '#FEF3C7', color: '#854F0B' }}>
+        parziale
+      </span>
+    )
+  }
+
   return (
     <div style={{ display: 'flex', gap: '12px', height: '600px' }}>
       <div style={{ width: '240px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -917,6 +957,7 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
                     <div key={r} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#E0EDFB' }}>
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
                       <span className="text-xs font-bold flex-1 truncate" style={{ color: '#1E4E8C' }}>{r}</span>
+                      {regioneParziale(r) && <BadgeParziale />}
                     </div>
                   ))}
                 </>
@@ -928,6 +969,7 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
                     <div key={p} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#E0EDFB' }}>
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
                       <span className="text-xs font-bold flex-1 truncate" style={{ color: '#1E4E8C' }}>{p}</span>
+                      {provinciaParziale(p) && <BadgeParziale />}
                     </div>
                   ))}
                 </>
@@ -939,17 +981,6 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
                     <div key={c} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#E0EDFB' }}>
                       <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#2563eb', flexShrink: 0 }} />
                       <span className="text-xs font-bold flex-1 truncate" style={{ color: '#1E4E8C' }}>{c}</span>
-                    </div>
-                  ))}
-                </>
-              )}
-              {comuniEsclusi.size > 0 && (
-                <>
-                  <p className="text-[10px] font-bold uppercase mt-1" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>Esclusi</p>
-                  {Array.from(comuniEsclusi).sort().map(c => (
-                    <div key={c} className="flex items-center gap-2 rounded-full px-3 py-1.5" style={{ background: '#FBE2E2' }}>
-                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#E24B4A', flexShrink: 0 }} />
-                      <span className="text-xs font-bold flex-1 truncate" style={{ color: '#9B1C1C' }}>{c}</span>
                     </div>
                   ))}
                 </>
@@ -1014,6 +1045,11 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
             }}
           >
             {tooltip.name}
+            {tooltip.sub && (
+              <div style={{ fontSize: '10.5px', fontWeight: 400, color: '#CBD5E1', marginTop: 1 }}>
+                {tooltip.sub}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -280,11 +280,26 @@ export default function DettaglioDemolitore() {
   )
   if (!demolitore) return null
 
-  // Riassunto copertura per le pilloline nella card mappa
+  // Riassunto copertura per le pilloline nella card mappa.
+  // "parziale" = la zona ha esclusioni interne salvate nel DB (comuni o
+  // province escluse): il demolitore non la copre tutta. Solo visualizzazione.
+  const normalizzaZona = (s: string) => s.toLowerCase().replace(/[^a-zà-ù]+/g, '')
+  const provinceEscluseDb = copertura.filter(r => r.tipo === 'provincia_esclusa')
+  const comuniEsclusiDb = copertura.filter(r => r.tipo === 'comune_escluso')
+  const provinciaParziale = (nomeProv: string) => comuniEsclusiDb.some(r => r.provincia === nomeProv)
+  const regioneParziale = (nomeReg: string) => {
+    // I nomi regione del geojson possono differire leggermente da quelli di
+    // PROVINCIA_A_REGIONE (es. "Valle d'Aosta/Vallée d'Aoste"): confronto normalizzato.
+    const inRegione = (prov: string) => {
+      const reg = PROVINCIA_A_REGIONE[prov]
+      return !!reg && normalizzaZona(nomeReg).startsWith(normalizzaZona(reg))
+    }
+    return provinceEscluseDb.some(r => inRegione(r.comune)) || comuniEsclusiDb.some(r => inRegione(r.provincia))
+  }
   const zoneCoperte = [
-    ...copertura.filter(r => r.tipo === 'regione').map(r => ({ nome: r.comune, tipo: 'Regione' })),
-    ...copertura.filter(r => r.tipo === 'provincia').map(r => ({ nome: r.comune, tipo: 'Provincia' })),
-    ...copertura.filter(r => r.tipo === 'comune_incluso').map(r => ({ nome: r.comune, tipo: 'Comune' })),
+    ...copertura.filter(r => r.tipo === 'regione').map(r => ({ nome: r.comune, tipo: 'Regione', parziale: regioneParziale(r.comune) })),
+    ...copertura.filter(r => r.tipo === 'provincia').map(r => ({ nome: r.comune, tipo: 'Provincia', parziale: provinciaParziale(r.comune) })),
+    ...copertura.filter(r => r.tipo === 'comune_incluso').map(r => ({ nome: r.comune, tipo: 'Comune', parziale: false })),
   ]
 
   return (
@@ -650,6 +665,7 @@ export default function DettaglioDemolitore() {
                   <span key={`${z.tipo}:${z.nome}`} className="text-[11.5px] font-bold rounded-full flex items-center gap-1.5" style={{ background: '#E0EDFB', color: '#1E4E8C', padding: '5px 12px' }}>
                     <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb' }} />
                     {z.nome} <span style={{ fontWeight: 500, color: '#5B87BE' }}>· {z.tipo}</span>
+                    {z.parziale && <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full" style={{ background: '#FEF3C7', color: '#854F0B' }}>parziale</span>}
                   </span>
                 ))}
                 {zoneCoperte.length > 10 && <span className="text-[11.5px] font-bold rounded-full" style={{ background: '#EEF1F7', color: '#64748b', padding: '5px 12px' }}>+{zoneCoperte.length - 10}</span>}

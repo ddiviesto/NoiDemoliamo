@@ -137,12 +137,6 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
     onNext()
   }
 
-  function handleFocus(e: React.FocusEvent<HTMLInputElement>) {
-    setTimeout(() => {
-      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    }, 300)
-  }
-
   const inputClass = 'w-full bg-transparent outline-none text-[15px] text-gray-900 placeholder:text-gray-400'
 
   return (
@@ -153,9 +147,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             type="number"
             inputMode="numeric"
             value={dati.anno}
-            onChange={e => update('anno', e.target.value)}
-            onFocus={handleFocus}
-            placeholder="Es. 2008"
+            onChange={e => update('anno', e.target.value)}            placeholder="Es. 2008"
             min={1950} max={2026}
             className={`${inputClass} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
           />
@@ -165,9 +157,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
             type="text"
             inputMode="numeric"
             value={formatKm(dati.km)}
-            onChange={e => handleKmChange(e.target.value)}
-            onFocus={handleFocus}
-            placeholder="Es. 85.000"
+            onChange={e => handleKmChange(e.target.value)}            placeholder="Es. 85.000"
             className={inputClass}
           />
         </CampoTessera>
@@ -175,9 +165,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
           <input
             type="text"
             value={dati.marca}
-            onChange={e => update('marca', e.target.value)}
-            onFocus={handleFocus}
-            placeholder="Es. Fiat"
+            onChange={e => update('marca', e.target.value)}            placeholder="Es. Fiat"
             className={inputClass}
           />
         </CampoTessera>
@@ -185,9 +173,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
           <input
             type="text"
             value={dati.modello}
-            onChange={e => update('modello', e.target.value)}
-            onFocus={handleFocus}
-            placeholder="Es. Panda"
+            onChange={e => update('modello', e.target.value)}            placeholder="Es. Panda"
             className={inputClass}
           />
         </CampoTessera>
