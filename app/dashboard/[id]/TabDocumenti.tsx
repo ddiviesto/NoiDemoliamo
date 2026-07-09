@@ -687,7 +687,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
                 transition: 'all 0.2s',
               }}
             >
-              {inviandoId === docAttivo.id ? 'Invio…' : 'Continua'}
+              {inviandoId === docAttivo.id ? 'Invio…' : codaWizard.length > 1 ? 'Vai al prossimo documento' : 'Vai alle foto del veicolo'}
             </button>
           )}
         </div>
