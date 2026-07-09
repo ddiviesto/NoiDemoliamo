@@ -621,6 +621,21 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
+      {/* ====== INVIATI: striscia richiudibile IN CIMA al filo logico ======
+          Chiusa: una riga sottile col conteggio. Aperta (al tocco): una riga
+          per documento con la sua pillola e TUTTE le miniature. */}
+      {sistemati.length > 0 && !tuttoApprovato && (
+        <StrisciaInviati
+          docs={sistemati}
+          signedMap={signedMap}
+          aperta={sistematiAperti}
+          onToggle={() => setSistematiAperti(a => !a)}
+          eliminabile={puoEliminare}
+          onApri={(url, titolo) => setAnteprima({ url, titolo })}
+          onElimina={(doc, idx) => setConfermaElimina({ doc, fileIdx: idx })}
+        />
+      )}
+
       {/* ====== WIZARD: UN DOCUMENTO ALLA VOLTA ======
           Solo foto (niente file), rifiutati per primi, coda "Dopo questo",
           bottone di pagina "Continua" (stile /inizia) che invia e apre il
@@ -698,34 +713,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
       {daFareModuli.length > 0 && (
         <div className="flex flex-col gap-2.5">
           {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
-        </div>
-      )}
-
-      {/* ====== GIA' SISTEMATI ====== */}
-      {sistemati.length > 0 && (
-        <div>
-          <SezioneTitolo testo="Già sistemati" />
-          {!sistematiAperti ? (
-            <button onClick={() => setSistematiAperti(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '1.5px solid #E5E7EB', borderRadius: 14, background: '#fff' }}>
-              <IcoCheck size={21} color="#1D9E75" />
-              <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>
-                  {sistemati.every(d => d.stato === 'approvato')
-                    ? `${sistemati.length} ${sistemati.length === 1 ? 'Documento approvato' : 'Documenti approvati'}`
-                    : contaPerStato(sistemati)}
-                </div>
-              </div>
-              <IcoChevronDown color="#8a98a8" />
-            </button>
-          ) : (
-            <div className="flex flex-col gap-2.5">
-              {sistemati.map(d => (
-                <CardSistemato key={d.id} doc={d} signedMap={signedMap} eliminabile={puoEliminare}
-                  onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
-              ))}
-              <button onClick={() => setSistematiAperti(false)} style={{ alignSelf: 'center', fontSize: 12, color: '#8a98a8', fontWeight: 500, background: 'none', border: 'none', padding: '4px 8px' }}>Nascondi</button>
-            </div>
-          )}
         </div>
       )}
 
@@ -861,15 +848,6 @@ function SezioneTitolo({ testo }: { testo: string }) {
 function ordinaleErede(n: number): string {
   const o = ['', 'Primo', 'Secondo', 'Terzo', 'Quarto', 'Quinto', 'Sesto', 'Settimo', 'Ottavo', 'Nono', 'Decimo']
   return o[n] || `${n}°`
-}
-
-function contaPerStato(docs: DocChecklist[]): string {
-  const appr = docs.filter(d => d.stato === 'approvato').length
-  const inVer = docs.filter(d => d.stato === 'caricato').length
-  const parti: string[] = []
-  if (appr > 0) parti.push(`${appr} approvat${appr === 1 ? 'o' : 'i'}`)
-  if (inVer > 0) parti.push(`${inVer} in verifica`)
-  return parti.join(' · ')
 }
 
 function nomeRitiro(d: DocChecklist): string {
@@ -1169,46 +1147,82 @@ function DocCard(props: {
 }
 
 // ============================================================
-// RIGA DOCUMENTO GIA' SISTEMATO (inviato in verifica o approvato)
+// STRISCIA DOCUMENTI INVIATI — in cima al filo logico del wizard.
+// Chiusa: una riga sottile col conteggio e la pillola riassuntiva.
+// Aperta: una riga per documento con la sua pillola (blu "In verifica" /
+// verde "Approvato") e TUTTE le miniature; la ✕ per eliminare c'è solo
+// finché il documento è in verifica.
 // ============================================================
 
-function CardSistemato(props: {
-  doc: DocChecklist
+function StrisciaInviati(props: {
+  docs: DocChecklist[]
   signedMap: Record<string, string>
+  aperta: boolean
+  onToggle: () => void
   eliminabile: boolean
   onApri: (url: string, titolo: string) => void
-  onElimina: (fileIdx: number) => void
+  onElimina: (doc: DocChecklist, fileIdx: number) => void
 }) {
-  const { doc } = props
-  const files = leggiFile(doc.file_url)
-  const approvato = doc.stato === 'approvato'
-  const primo = files[0]
-  const url = primo ? (props.signedMap[primo.url] || primo.url) : null
+  const { docs } = props
+  const inVerifica = docs.some(d => d.stato === 'caricato')
+
+  function Pillola({ approvato }: { approvato: boolean }) {
+    return (
+      <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: approvato ? '#1F7A43' : '#1E4E8C', background: approvato ? '#DCF3E4' : '#E0EDFB', borderRadius: 20, padding: '2px 9px' }}>
+        {approvato ? 'Approvato' : 'In verifica'}
+      </span>
+    )
+  }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', border: '1.5px solid #E5E7EB', borderRadius: 14, background: '#fff' }}>
-      <span style={{ flexShrink: 0 }}>{approvato ? <IcoCheck size={21} color="#1D9E75" /> : <IcoClock size={21} color="#d99412" />}</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{doc.nome}</div>
-        {!approvato && <div style={{ fontSize: 11, color: '#d99412', marginTop: 1 }}>La stiamo verificando{files.length > 1 ? ` · ${files.length} file` : ''}</div>}
-      </div>
-      {approvato ? (
-        <span style={{ fontSize: 11.5, color: '#1D9E75', fontWeight: 600, flexShrink: 0 }}>Approvato</span>
-      ) : url ? (
-        <div style={{ position: 'relative', width: 36, height: 36, flexShrink: 0 }}>
-          <button onClick={() => props.onApri(url, doc.nome)} style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8', display: 'block' }}>
-            {isPdfUrl(primo?.nome) || isPdfUrl(primo?.url) ? (
-              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            )}
-          </button>
-          {props.eliminabile && (
-            <button onClick={() => props.onElimina(0)} aria-label="Elimina file" style={{ position: 'absolute', top: -6, right: -6, width: 18, height: 18, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
-          )}
-        </div>
-      ) : null}
+    <div style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden' }}>
+      <button onClick={props.onToggle} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer' }}>
+        <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#DCF3E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+        </span>
+        <span style={{ flex: 1, minWidth: 0, textAlign: 'left', fontSize: 12.5, fontWeight: 600, color: '#374151' }}>
+          {docs.length === 1 ? '1 documento inviato' : `${docs.length} documenti inviati`}
+        </span>
+        {!props.aperta && (
+          <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: inVerifica ? '#1E4E8C' : '#1F7A43', background: inVerifica ? '#E0EDFB' : '#DCF3E4', borderRadius: 20, padding: '2px 9px', flexShrink: 0 }}>
+            {inVerifica ? 'In verifica' : docs.length === 1 ? 'Approvato' : 'Approvati'}
+          </span>
+        )}
+        <span style={{ transform: props.aperta ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><IcoChevronDown size={16} color="#9AA7B5" /></span>
+      </button>
+
+      {props.aperta && props.docs.map(d => {
+        const files = leggiFile(d.file_url)
+        const approvato = d.stato === 'approvato'
+        return (
+          <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderTop: '1px solid #F3F4F6' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: '#111827', lineHeight: 1.3 }}>{nomeRitiro(d)}</div>
+              <div style={{ marginTop: 3 }}><Pillola approvato={approvato} /></div>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {files.map((f, idx) => {
+                const url = props.signedMap[f.url] || f.url
+                return (
+                  <div key={idx} style={{ position: 'relative', width: 34, height: 34 }}>
+                    <button onClick={() => props.onApri(url, nomeRitiro(d))} style={{ width: 34, height: 34, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8', display: 'block' }}>
+                      {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
+                        <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+                      ) : (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      )}
+                    </button>
+                    {props.eliminabile && !approvato && (
+                      <button onClick={() => props.onElimina(d, idx)} aria-label="Elimina file" style={{ position: 'absolute', top: -5, right: -5, width: 16, height: 16, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 10, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
