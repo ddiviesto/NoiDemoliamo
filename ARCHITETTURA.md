@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **6 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **9 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -314,7 +314,7 @@ Chiave-valore. Es: `max_pratiche_aperte_demolitore=15`
 # 🔄 PARTE 4 — I 4 FLUSSI DELLA PRATICA
 
 ### ⭐ Regola "TI CHIAMIAMO NOI" (documenti da chiarire — luglio 2026)
-Se il cliente nel flusso `/inizia` dichiara di **non avere né libretto né denuncia** ("Non ho nessuno dei due", `libretto='no'`) oppure **non sa che certificato di proprietà ha** ("Non lo trovo o non so cosa sia", `certificato_proprieta='nessuno'`), NON si procede in automatico: **prima NoiDemoliamo lo contatta** (telefono/WhatsApp) per capire la situazione. In `/inizia` compare un box rassicurante + bottone WhatsApp; nella pagina documenti il libretto viene tolto dalla lista da caricare e sostituito dal box "**Da chiarire insieme — Ti chiamiamo noi al più presto**" (giallo/ambra) con WhatsApp. Il cliente intanto può caricare gli altri documenti. ⏳ Da integrare nella pagina admin: evidenziare queste pratiche come "Da contattare".
+Se il cliente nel flusso `/inizia` dichiara di **non avere né libretto né denuncia** ("Non ho nessuno dei due", `libretto='no'`) oppure **non sa che certificato di proprietà ha** ("Non lo trovo o non so cosa sia", `certificato_proprieta='nessuno'`), NON si procede in automatico: **prima NoiDemoliamo lo contatta** (telefono) per capire la situazione. In `/inizia` compare un box rassicurante + bottone WhatsApp; nella pagina documenti il libretto viene semplicemente **tolto dalla lista da caricare**. ⭐ **9/07: il box giallo "Da chiarire insieme" lato CLIENTE è stato RIMOSSO** (decisione Davide): il cliente non vede nessun avviso di chiamata — queste pratiche stanno nel riquadro "**Da contattare**" della pipeline CRM e **chiama l'admin**.
 
 ## 4.1 Flusso A — Demolizione standard ✅ FUNZIONANTE
 
@@ -624,7 +624,7 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 ## 5.4 Backend / API
 
 - **`/api/assegna-pratica`** — algoritmo assegnazione ✅ (modalità dry-run / assegna demolitore scelto / auto). Converte sigla→nome provincia (`lib/province.ts`).
-- **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role).
+- **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role). ⭐ 9/07: autorizzato anche il **cliente proprietario** (non solo admin) — il TabDocumenti lo chiama dopo ogni invio/eliminazione, così il banner del cliente si aggiorna da solo. Regola corretta: `in_attesa_approvazione_admin` SOLO quando **TUTTI** i documenti sono inviati (prima bastava il primo) → nel CRM una pratica entra in "Documenti da approvare" solo a invio completo.
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
 - **`/api/pulisci-utenti`** — cancella account clienti senza pratiche (mai admin/operatori).
 - **`/api/invita-demolitore`** — invito all'area demolitore (link Supabase + email Resend o link manuale).
@@ -651,6 +651,17 @@ Il componente più importante dell'area cliente. **Design a WIZARD approvato da 
 - **Moduli PDF** (template_pdf): card informativa con badge "Modulo", fuori dalla fila.
 - **"Da portare al ritiro"**: box smeraldo collassabile con la lista dei `richiede_consegna=true` — INTATTO, logica casistiche.
 - **Dati**: due query separate (checklist + catalogo) unite in JS — NIENTE join `!inner` PostgREST (manca la FK dichiarata). Signed URL 1h per il bucket privato.
+
+### ⭐ AGGIORNAMENTI 9/07/2026 (rifiniture wizard, tutte approvate da Davide su mockup)
+
+- **Card "Hai fatto tutto"** (blu, aeroplanino): quando TUTTI i documenti sono inviati E c'è almeno una foto del veicolo — "NoiDemoliamo sta controllando i tuoi documenti, non devi fare altro". Se i documenti sono inviati ma mancano le foto: card blu ridotta "Documenti inviati". Verde ("Documenti tutti approvati") resta per l'approvazione admin. L'anello di progresso appare solo mentre il wizard è in corso.
+- **Pannello inviati col FLIP**: righe SENZA miniature (nome + pillola + freccetta blu); tocco sulla riga → **tutto il pannello si gira** (rotateY) e sul retro mostra quel documento in grande (miniature a mezza larghezza con etichetta Fronte/Retro, ✕ per eliminare, tocco = anteprima); "Torna ai documenti inviati" lo rigira. Tendina apri/chiudi sull'intestazione. Le **foto del veicolo sono l'ultima riga** del pannello (col "+ Aggiungi" sul retro). Altezza animata via ref; componente `PannelloInviati`.
+- **Foto a tutta casella (fronte/retro)**: la foto caricata RIEMPIE la casella (aspect 4:3, cover), etichetta FRONTE/RETRO a pillola sopra la foto, casella vuota della stessa altezza. Via le miniature piccole nel riquadro mezzo vuoto.
+- **Eliminazione "sul posto" (A+D)**: ✕ **scura trasparente** `rgba(15,23,42,0.55)` al posto della rossa, e conferma **SULLA foto stessa** (overlay "Eliminare questa foto?" Annulla/Elimina) — o **in riga** per allegati e miniature piccole. NIENTE più modali a schermo intero per eliminare. Componenti `XElimina`, `ConfermaSullaFoto`, `ConfermaInRiga`. Identico in tutta l'area cliente.
+- **Aggiornamenti fluidi**: la rotellina a schermo pieno appare SOLO al primo caricamento; upload/invii/eliminazioni aggiornano in silenzio (`carica()` senza spinner) e i **signed URL vengono riusati** (niente lampeggi). Il pannello girato resta girato dopo un'eliminazione.
+- **Bottone di pagina SOPRA la coda**: ordine = card documento → "Vai al prossimo documento" → "Dopo questo" → box ritiro. Sull'ultimo documento il bottone dice "Invia l'ultimo documento" (il passo foto NON è più nella fila del wizard).
+- **FOTO DEL VEICOLO: banner giallo → card senza limiti** (chiude il buco "Continua senza foto" di /inizia): con 0 foto appare il **banner giallo compatto** "Mancano le foto del veicolo — ci servono per capire che tipo di carro attrezzi mandare ed evitare viaggi a vuoto…" (TUTTA la card è il bottone, bollino tondo "Aggiungi" a destra). Tocco → card di caricamento: spiegazione carro attrezzi, Scatta/Galleria, griglia foto. **NESSUN limite né soglia** (1 o 6 foto vanno bene), niente riquadri-guida con etichette: il completamento lo dichiara il cliente con "**Ho finito con le foto**" (acceso dalla prima foto) → card chiusa, "Hai fatto tutto", foto come riga nel pannello.
+- **Box giallo "Da chiarire insieme" RIMOSSO** lato cliente (e col box anche il suo bottone WhatsApp): vede tutto solo l'admin ("Da contattare") e chiama lui. Il libretto resta fuori dalla lista da caricare.
 
 ---
 
@@ -813,9 +824,17 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ---
 
-# 📋 PARTE 8 — STATO ATTUALE (6 luglio 2026)
+# 📋 PARTE 8 — STATO ATTUALE (9 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐⭐ SESSIONE 9 luglio 2026 (sera) — RIFINITURE WIZARD DOCUMENTI + FLUSSO FOTO
+
+- ✅ **Wizard documenti rifinito** (tutti i dettagli in 5.6 "Aggiornamenti 9/07"): card "Hai fatto tutto"/"Documenti inviati", pannello inviati col flip dell'intero riquadro, foto a tutta casella fronte/retro, eliminazione "sul posto" senza modali, aggiornamenti fluidi senza spinner, bottone di pagina sopra la coda "Dopo questo"
+- ✅ **Banner cliente sincronizzato**: il cliente può chiedere il ricalcolo stato (`/api/pratica-stato` autorizza anche il proprietario); "in verifica" scatta SOLO quando tutti i documenti sono inviati → banner "Stiamo verificando i tuoi documenti" automatico (prima restava fermo su "Carica i tuoi documenti")
+- ✅ **Flusso foto veicolo per chi salta le foto in /inizia**: banner giallo (spiegazione carro attrezzi / viaggi a vuoto) → card di caricamento senza limiti → "Ho finito con le foto" deciso dal cliente
+- ✅ **Box "Da chiarire insieme" rimosso** lato cliente (chiama l'admin, che vede le pratiche in "Da contattare")
+- Metodo confermato: ogni modifica UI passata prima da **mockup interattivo** con scelta di Davide (flip, eliminazione A+D, banner foto, bottone B)
 
 ### ⭐⭐⭐ SESSIONE 6-7 luglio 2026 (seconda parte) — RIFINITURE E FLUSSI OPERATIVI
 
@@ -898,7 +917,7 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 
 **FASE 3 — MOTORE SCADENZE E NOTIFICHE (prossima):** campanella in-app demolitore, email di sollecito oltre le 8 ore lavorative, promemoria del giorno di ritiro a demolitore E cliente ("auto ritirata?"), "cliente dice no" → segnalazione all'admin, bottone cliente "Non posso quel giorno". Richiede: **Resend attivo** (Davide ha GIÀ il dominio noidemoliamo.it: va collegato a Vercel + verificato su Resend con SPF/DKIM/DMARC) e un cron Vercel per i controlli periodici. Decisione: canali v1 = email + campanella (push → PWA futura).
 **FASE 4 — PROFORMA FATTURA:** al "ritirata" la pratica entra nel giro fatturazione (da progettare con Davide).
-**IN CODA:** migliorie TabDocumenti wizard (Davide: "ci sono delle cose da migliorare" — riprendere da lì), landing vetrina su noidemoliamo.it, chat nella scheda demolitore, completare /privacy e /termini.
+**IN CODA:** landing vetrina su noidemoliamo.it, chat nella scheda demolitore, completare /privacy e /termini. (~~Migliorie TabDocumenti wizard~~: FATTE il 9/07, vedi 5.6.)
 
 **In sospeso (nessun codice a metà: sono test o decisioni aperte):**
 - 🟡 **Pagine legali /privacy e /termini**: completare i [DA COMPLETARE] (ragione sociale, P.IVA, sede, email contatto — idealmente info@noidemoliamo.it) quando dominio ed email aziendale saranno attivi
@@ -1013,6 +1032,15 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - **Notifiche v1**: email + campanella in-app. Push vere solo con la futura PWA.
 - **Metodo di lavoro consolidato**: per le modifiche UI Davide vuole SEMPRE vedere prima mockup/varianti visive e sceglie lui; poi si implementa. Commit e push a ogni passo approvato (testa su Vercel dal telefono).
 
+**Nuove decisioni 9 luglio 2026 (sera):**
+
+- ⭐ **Eliminazione "sul posto"**: ✕ scura trasparente sull'angolo della foto e conferma SULLA foto stessa (o in riga) — niente modali a schermo intero per eliminare. Vale in tutta l'area cliente.
+- ⭐ **Il pannello inviati si gira** (flip dell'intero riquadro): righe pulite senza miniature, i file si vedono in grande sul retro. Tendina apri/chiudi al tocco.
+- ⭐ **Foto del veicolo: nessun limite e nessun obbligo** — 1 o 6 foto vanno bene; il completamento lo dichiara il cliente ("Ho finito con le foto"). Chi non ne ha vede solo il banner giallo col PERCHÉ servono (carro attrezzi giusto, niente viaggi a vuoto). Bocciati: riquadri-guida con etichette (Davanti/Dietro/…), contatori, soglia minima 3, chiusura automatica.
+- ⭐ **"In verifica" = tutto inviato**: lo stato `in_attesa_approvazione_admin` scatta solo quando il cliente ha inviato TUTTI i documenti; finché ne manca uno la pratica è "in mano al cliente" (impatta i riquadri della pipeline CRM).
+- **Niente avvisi di chiamata lato cliente**: il box "Da chiarire insieme" è stato rimosso; i casi da chiarire li vede solo l'admin ("Da contattare") e chiama lui.
+- **Aggiornamenti silenziosi**: mai smontare la schermata per un refresh dati (spinner solo al primo caricamento; riusare i signed URL). I "sobbalzi" sono bug, non dettagli.
+
 **Nuove decisioni 7 luglio 2026:**
 
 71. ⭐ **Il design admin è FISSATO** (vedi 6.8): lavanda + card con ombra, liste a card (non tabelle), profili con testata blu e statistiche in vetro, valori mai nero pieno. Ogni nuova pagina admin segue quegli input senza reinventare.
@@ -1051,4 +1079,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 6 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 9 luglio 2026.**

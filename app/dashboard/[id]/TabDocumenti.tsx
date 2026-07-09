@@ -62,6 +62,10 @@ const STATI_MODIFICABILI_DA_CLIENTE = [
   'in_assegnazione_manuale',
 ]
 
+// Foto del veicolo: NESSUN limite né soglia (1 o 6 foto vanno bene).
+// Chi arriva senza foto vede il banner giallo; la card di caricamento
+// si apre solo al tocco e la chiude il cliente con "Ho finito con le foto".
+
 function clientePuoEliminare(stato: string | null | undefined): boolean {
   if (!stato) return true
   return STATI_MODIFICABILI_DA_CLIENTE.includes(stato)
@@ -296,6 +300,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
   const [sistematiAperti, setSistematiAperti] = useState(false)
   const [ritiroAperto, setRitiroAperto] = useState(false)
+  // Card di caricamento foto: si apre toccando il banner giallo, la chiude
+  // il cliente con "Ho finito con le foto"
+  const [cardFotoAperta, setCardFotoAperta] = useState(false)
 
   const puoEliminare = clientePuoEliminare(pratica.stato)
 
@@ -580,9 +587,14 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const totale = docsAttivi.length
   const pronti = sistemati.length
   const tuttoApprovato = totale > 0 && docsAttivi.every(d => d.stato === 'approvato') && !librettoDaChiarire && !cdcDaChiarire
-  // Tutti i documenti della fila sono stati inviati: il cliente ha finito,
-  // ora la palla è di NoiDemoliamo (verifica).
-  const tuttoInviato = !tuttoApprovato && !docAttivo && totaleDocWizard > 0 && inviatiCount === totaleDocWizard
+  // Documenti tutti inviati (la fila del wizard è vuota)
+  const docsInviati = !tuttoApprovato && !docAttivo && totaleDocWizard > 0 && inviatiCount === totaleDocWizard
+  // Banner giallo: nessuna foto del veicolo (e card non aperta)
+  const bannerFotoVisibile = !docAttivo && foto.length === 0 && !cardFotoAperta && !tuttoApprovato && puoEliminare
+  // Card di caricamento foto aperta dal banner
+  const cardFotoVisibile = !docAttivo && cardFotoAperta && !tuttoApprovato && puoEliminare
+  // "Hai fatto tutto": documenti inviati, almeno una foto, card chiusa
+  const tuttoInviato = docsInviati && foto.length > 0 && !cardFotoAperta
 
   return (
     <div className="flex flex-col gap-3">
@@ -604,6 +616,14 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           <p style={{ fontWeight: 600, fontSize: 16, color: '#1E4E8C', margin: 0 }}>Hai fatto tutto</p>
           <p style={{ fontSize: 12.5, color: '#4A6FA5', marginTop: 4, lineHeight: 1.5 }}>È tutto in ordine. NoiDemoliamo sta controllando i tuoi documenti: ti avvisiamo al più presto, non devi fare altro.</p>
         </div>
+      ) : docsInviati ? (
+        <div style={{ background: '#EDF4FC', border: '1.5px solid #C7DCF5', borderRadius: 18, padding: 16, textAlign: 'center' }}>
+          <div style={{ width: 44, height: 44, margin: '0 auto 8px', background: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </div>
+          <p style={{ fontWeight: 600, fontSize: 15, color: '#1E4E8C', margin: 0 }}>Documenti inviati</p>
+          <p style={{ fontSize: 12, color: '#4A6FA5', marginTop: 4, lineHeight: 1.5 }}>NoiDemoliamo li sta controllando: ti avvisiamo al più presto.</p>
+        </div>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '6px 6px 2px' }}>
           <AnelloProgresso pronti={pronti} totale={totale} />
@@ -618,38 +638,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
         </div>
       )}
 
-      {/* ====== DA CHIARIRE INSIEME (libretto mancante / CDC sconosciuto) ====== */}
-      {(librettoDaChiarire || cdcDaChiarire) && (
-        <div style={{ background: '#FDF7EA', border: '1.5px solid #F0DFB8', borderRadius: 14, padding: 14 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 12, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
-              </svg>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontWeight: 600, fontSize: 14.5, color: '#111827' }}>Da chiarire insieme</div>
-              <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>Ti chiamiamo noi al più presto</div>
-            </div>
-          </div>
-          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {librettoDaChiarire && (
-              <div style={{ fontSize: 12.5, color: '#854F0B', lineHeight: 1.5 }}>
-                <strong>Libretto di circolazione</strong>: ci hai detto che non hai né il libretto né la denuncia. Ti spiegheremo come fare, intanto puoi preparare gli altri documenti.
-              </div>
-            )}
-            {cdcDaChiarire && (
-              <div style={{ fontSize: 12.5, color: '#854F0B', lineHeight: 1.5 }}>
-                <strong>Certificato di proprietà</strong>: lo verifichiamo noi gratuitamente e ti diremo se serve qualcosa.
-              </div>
-            )}
-          </div>
-          <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" style={{ marginTop: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, width: '100%', padding: '11px 0', borderRadius: 11, background: '#16A34A', color: '#fff', fontWeight: 600, fontSize: 13.5, textDecoration: 'none' }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.58 15.13L2 22l4.97-1.38A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.19-1.19l-.3-.18-2.95.82.8-2.87-.2-.31A8 8 0 1 1 12 20zm4.42-5.9c-.24-.12-1.43-.7-1.65-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.19 7.24 7.24 0 0 1-1.33-1.66c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.64 1.64 0 0 0 .24-.4.44.44 0 0 0-.02-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.88.88 0 0 0-.64.3 2.68 2.68 0 0 0-.84 2 4.65 4.65 0 0 0 .98 2.47 10.66 10.66 0 0 0 4.08 3.6 13.68 13.68 0 0 0 1.36.5 3.27 3.27 0 0 0 1.5.1 2.46 2.46 0 0 0 1.61-1.14 2 2 0 0 0 .14-1.14c-.06-.1-.22-.16-.46-.28z"/></svg>
-            Preferisci scriverci? Chatta su WhatsApp
-          </a>
-        </div>
-      )}
+      {/* Nota: il box giallo "Da chiarire insieme" è stato RIMOSSO (9/07):
+          i casi libretto mancante / CDC sconosciuto li vede solo l'admin
+          nella sua pagina ("Da contattare") e chiama lui il cliente.
+          Il libretto resta comunque FUORI dalla lista da caricare. */}
 
       {/* ====== INVIATI: pannello richiudibile IN CIMA al filo logico ======
           Chiuso: una riga sottile col conteggio. Aperto (al tocco): una riga per
@@ -660,7 +652,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
         <PannelloInviati
           docs={sistemati}
           foto={foto}
-          mostraFoto={!docAttivo}
+          mostraFoto={!docAttivo && !cardFotoAperta}
           signedMap={signedMap}
           aperta={sistematiAperti}
           onToggle={() => setSistematiAperti(a => !a)}
@@ -692,20 +684,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
             onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => eliminaFile(docAttivo, idx)} />
 
-          {/* Coda: i prossimi passi, in fila chiusa */}
-          {codaWizard.length > 1 && (
-            <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff', marginTop: 10 }}>
-              <div style={{ padding: '7px 12px', fontSize: 10, fontWeight: 600, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', borderBottom: '1px solid #F3F4F6' }}>Dopo questo</div>
-              {codaWizard.slice(1).map((d, i) => (
-                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderBottom: i < codaWizard.length - 2 ? '1px solid #F3F4F6' : 'none' }}>
-                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
-                  <span style={{ fontSize: 12.5, color: '#6B7280' }}>{nomeRitiro(d)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* CONTINUA di pagina: grigio finché le foto non sono complete */}
+          {/* CONTINUA di pagina SUBITO SOTTO la card (l'azione è attaccata a
+              ciò che hai appena completato); grigio finché le foto non sono complete */}
           {puoEliminare && (
             <button
               onClick={() => inviaInVerifica(docAttivo)}
@@ -724,14 +704,50 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
               {inviandoId === docAttivo.id ? 'Invio…' : codaWizard.length > 1 ? 'Vai al prossimo documento' : "Invia l'ultimo documento"}
             </button>
           )}
+
+          {/* Coda: i prossimi passi, in fila chiusa (informazione secondaria, sotto) */}
+          {codaWizard.length > 1 && (
+            <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff', marginTop: 12 }}>
+              <div style={{ padding: '7px 12px', fontSize: 10, fontWeight: 600, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', borderBottom: '1px solid #F3F4F6' }}>Dopo questo</div>
+              {codaWizard.slice(1).map((d, i) => (
+                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderBottom: i < codaWizard.length - 2 ? '1px solid #F3F4F6' : 'none' }}>
+                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
+                  <span style={{ fontSize: 12.5, color: '#6B7280' }}>{nomeRitiro(d)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
-      {/* ====== FOTO DEL VEICOLO (fallback): solo se non c'è il pannello inviati
-          che le ospita come riga (es. nessun documento ancora inviato) ====== */}
-      {!docAttivo && sistemati.length === 0 && (
+      {/* ====== BANNER FOTO (nessuna foto del veicolo) ======
+          Riga compatta col bollino tondo "Aggiungi": tutta la card è il
+          bottone che apre la card di caricamento. */}
+      {bannerFotoVisibile && (
+        <button onClick={() => setCardFotoAperta(true)} className="active:scale-[0.99]" style={{ width: '100%', background: '#FDF7EA', border: '1.5px solid #F0DFB8', borderRadius: 14, padding: 13, display: 'flex', alignItems: 'flex-start', gap: 11, cursor: 'pointer', textAlign: 'left', transition: 'transform 0.1s' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 600, fontSize: 13.5, color: '#111827' }}>Mancano le foto del veicolo</div>
+            <div style={{ fontSize: 11.5, color: '#854F0B', marginTop: 2, lineHeight: 1.45 }}>Ci servono per capire che tipo di carro attrezzi mandare ed evitare viaggi a vuoto. Puoi farle anche in un secondo momento, direttamente davanti al veicolo.</div>
+          </div>
+          <div style={{ textAlign: 'center', flexShrink: 0, alignSelf: 'center' }}>
+            <span style={{ width: 40, height: 40, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: '0 3px 9px rgba(37,99,235,0.25)' }}>
+              <IcoCamera size={17} color="#fff" />
+            </span>
+            <div style={{ fontSize: 10, fontWeight: 600, color: '#2563eb', marginTop: 3 }}>Aggiungi</div>
+          </div>
+        </button>
+      )}
+
+      {/* ====== CARD CARICAMENTO FOTO (aperta dal banner) ======
+          Nessun limite: 1 o 6 foto vanno bene. La chiude il cliente
+          con "Ho finito con le foto". */}
+      {cardFotoVisibile && (
         <CardFotoVeicolo foto={foto} eliminabile={puoEliminare} onUpload={uploadFotoExtra}
-          onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={eliminaFoto} />
+          onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={eliminaFoto}
+          onFinito={() => setCardFotoAperta(false)} />
       )}
 
       {/* ====== MODULI PDF (informativi, fuori dalla fila) ====== */}
@@ -1486,22 +1502,26 @@ function ModuloCard({ doc }: { doc: DocChecklist }) {
 }
 
 // ============================================================
-// CARD FOTO DEL VEICOLO — ultimo passo del wizard documenti.
-// Stesso vestito delle card documento: griglia foto + Scatta/Galleria.
+// CARD FOTO DEL VEICOLO — si apre dal banner giallo.
+// Spiega PERCHÉ servono le foto (carro attrezzi giusto, niente
+// viaggi a vuoto). NESSUN limite: 1 o 6 foto vanno bene; il
+// completamento lo dichiara il cliente con "Ho finito con le foto".
 // ============================================================
 
-function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina }: {
+function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina, onFinito }: {
   foto: FotoPratica[]
   eliminabile: boolean
   onUpload: (files: File[]) => void
   onApri: (url: string, titolo: string) => void
   onElimina: (f: FotoPratica) => void | Promise<void>
+  onFinito: () => void
 }) {
   // Foto per cui si sta chiedendo "Eliminare?" (conferma sul posto)
   const [conferma, setConferma] = useState<string | null>(null)
+  const haFoto = foto.length > 0
   return (
     <div style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" />
@@ -1510,37 +1530,59 @@ function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina }: {
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontWeight: 600, fontSize: 14.5, color: '#111827' }}>Foto del veicolo</div>
-          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>
-            {foto.length > 0 ? `${foto.length} foto caricate: controlla o aggiungine` : 'Aggiungi qualche foto del veicolo'}
-          </div>
+          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>Falle direttamente davanti al veicolo</div>
         </div>
       </div>
-      {foto.length > 0 && (
-        <div className="grid grid-cols-3 gap-2 mb-3">
+
+      {/* PERCHÉ servono: il carro attrezzi giusto, niente viaggi a vuoto */}
+      <div style={{ display: 'flex', gap: 9, marginTop: 12, background: '#F0F7FF', border: '1px solid #CFE3F8', borderRadius: 11, padding: '10px 12px' }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#1E4E8C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10 17h4V5H2v12h3"/><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>
+        <span style={{ fontSize: 12, color: '#1E4E8C', lineHeight: 1.5 }}>Dalle foto capiamo <b>che tipo di carro attrezzi mandare</b>: così il ritiro riesce al primo colpo, senza viaggi a vuoto.</span>
+      </div>
+
+      {/* GRIGLIA delle foto caricate (nessun riquadro guida, nessun limite) */}
+      {haFoto && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
           {foto.map((f, idx) => (
-            <div key={f.id} style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
-              <button onClick={() => onApri(f.url, `Foto ${idx + 1}`)} style={{ width: '100%', height: '100%', background: '#fff', display: 'block', padding: 0, border: 'none', cursor: 'pointer' }}>
-                {isPdfUrl(f.url) ? (
-                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-                ) : (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                )}
+            <div key={f.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 11, overflow: 'hidden', border: '1.5px solid #C7D6EC', background: '#f3f5f8' }}>
+              <button onClick={() => onApri(f.url, `Foto ${idx + 1}`)} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </button>
-              {eliminabile && <XElimina size={22} onClick={() => setConferma(f.id)} />}
+              {eliminabile && <XElimina size={20} onClick={() => setConferma(f.id)} />}
               {conferma === f.id && (
-                <ConfermaSullaFoto
-                  compatta
-                  cosa="questa foto"
-                  onAnnulla={() => setConferma(null)}
-                  onConferma={() => onElimina(f)}
-                />
+                <ConfermaSullaFoto compatta cosa="questa foto" onAnnulla={() => setConferma(null)} onConferma={() => onElimina(f)} />
               )}
             </div>
           ))}
         </div>
       )}
-      {eliminabile && <UploadFoto onUpload={onUpload} />}
+
+      {eliminabile && (
+        <div style={{ marginTop: 12 }}>
+          <UploadFoto onUpload={onUpload} />
+        </div>
+      )}
+
+      {/* Il completamento lo dichiara il cliente: acceso dalla prima foto */}
+      <button
+        onClick={onFinito}
+        disabled={!haFoto}
+        className="active:scale-[0.99]"
+        style={{
+          width: '100%', marginTop: 10, padding: '12px 0', border: 'none', borderRadius: 11,
+          background: haFoto ? '#2563eb' : '#E5E7EB', color: haFoto ? '#fff' : '#9CA3AF',
+          fontSize: 13.5, fontWeight: 600, cursor: haFoto ? 'pointer' : 'default',
+          boxShadow: haFoto ? '0 4px 12px rgba(37,99,235,0.25)' : 'none', transition: 'all 0.2s',
+        }}
+      >
+        Ho finito con le foto
+      </button>
+      <p style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 600, color: '#9AA7B5', margin: '9px 0 0' }}>
+        {haFoto
+          ? (foto.length === 1 ? '1 foto caricata: aggiungine altre o premi Ho finito' : `${foto.length} foto caricate: aggiungine altre o premi Ho finito`)
+          : 'Carica quante foto vuoi: anche una sola va bene'}
+      </p>
     </div>
   )
 }
