@@ -297,7 +297,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
   const [confermaEliminaFoto, setConfermaEliminaFoto] = useState<FotoPratica | null>(null)
   const [eliminazioneInCorso, setEliminazioneInCorso] = useState(false)
   const [sistematiAperti, setSistematiAperti] = useState(false)
-  const [erediAperti, setErediAperti] = useState<Record<number, boolean>>({})
   const [ritiroAperto, setRitiroAperto] = useState(false)
 
   const puoEliminare = clientePuoEliminare(pratica.stato)
@@ -544,10 +543,19 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
 
   const sistemati = docsAttivi.filter(d => d.stato === 'caricato' || d.stato === 'approvato')
   const daFare = docsAttivi.filter(d => d.stato === 'da_fare' || d.stato === 'rifiutato')
-  const daFareGenerali = daFare.filter(d => !d.per_erede && !d.template_pdf)
-  const daFareModuli = daFare.filter(d => !d.per_erede && d.template_pdf)
-  const daFareEredi = daFare.filter(d => d.per_erede)
-  const indiciEredi = Array.from(new Set(daFareEredi.map(d => d.indice_erede ?? 0))).sort((a, b) => a - b)
+  // WIZARD: tutti i documenti da fotografare in UN'UNICA fila (anche quelli
+  // per erede), i rifiutati passano davanti. Moduli PDF e documenti senza
+  // caricamento restano fuori dalla fila.
+  const codaWizard = [
+    ...daFare.filter(d => d.richiede_upload && !d.template_pdf && d.stato === 'rifiutato'),
+    ...daFare.filter(d => d.richiede_upload && !d.template_pdf && d.stato !== 'rifiutato'),
+  ]
+  const docAttivo: DocChecklist | undefined = codaWizard[0]
+  const daFareModuli = daFare.filter(d => d.template_pdf)
+  const docUpload = docsAttivi.filter(d => d.richiede_upload && !d.template_pdf)
+  const inviatiCount = docUpload.filter(d => d.stato === 'caricato' || d.stato === 'approvato').length
+  const totaleDocWizard = docUpload.length
+  const passiTotali = totaleDocWizard + 1 // ultimo passo della fila: foto del veicolo
   const daConsegnare = docsAttivi.filter(d => d.richiede_consegna)
 
   const totale = docsAttivi.length
@@ -574,7 +582,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
               {pronti === 0 ? 'Iniziamo!' : 'Stai andando bene!'}
             </div>
             <div style={{ fontSize: 12.5, color: '#7a8a9a', marginTop: 2, lineHeight: 1.4 }}>
-              {daFare.length === 0 ? 'Documenti inviati, in attesa di verifica.' : `Ti restano ${daFare.length} ${daFare.length === 1 ? 'documento' : 'documenti'} da preparare.`}
+              {daFare.length === 0 ? 'Documenti inviati, in attesa di verifica.' : 'Un documento alla volta: bastano le foto.'}
             </div>
           </div>
         </div>
@@ -613,50 +621,83 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
-      {/* ====== DA PREPARARE: GENERALI + MODULI ====== */}
-      {(daFareGenerali.length > 0 || daFareModuli.length > 0) && (
+      {/* ====== WIZARD: UN DOCUMENTO ALLA VOLTA ======
+          Solo foto (niente file), rifiutati per primi, coda "Dopo questo",
+          bottone di pagina "Continua" (stile /inizia) che invia e apre il
+          prossimo. Ultimo passo della fila: le foto del veicolo. */}
+      {docAttivo && (
         <div>
           <SezioneTitolo testo="Da preparare" />
-          <div className="flex flex-col gap-2.5">
-            {daFareGenerali.map(d => (
-              <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
-                onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: d, fileIdx: idx })} />
-            ))}
-            {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 2px 10px' }}>
+            <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, color: '#2563eb', flexShrink: 0 }}>
+              DOCUMENTO {Math.min(inviatiCount + 1, totaleDocWizard)} DI {totaleDocWizard}
+            </span>
+            <div style={{ flex: 1, height: 5, background: '#EAF0F7', borderRadius: 999, overflow: 'hidden' }}>
+              <div style={{ width: `${Math.max(6, Math.round((inviatiCount / passiTotali) * 100))}%`, height: '100%', background: '#2563eb', transition: 'width 0.4s ease' }} />
+            </div>
           </div>
+
+          <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
+            onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: docAttivo, fileIdx: idx })} />
+
+          {/* Coda: i prossimi passi, in fila chiusa */}
+          <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff', marginTop: 10 }}>
+            <div style={{ padding: '7px 12px', fontSize: 10, fontWeight: 600, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', borderBottom: '1px solid #F3F4F6' }}>Dopo questo</div>
+            {codaWizard.slice(1).map((d, i) => (
+              <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderBottom: '1px solid #F3F4F6' }}>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
+                <span style={{ fontSize: 12.5, color: '#6B7280' }}>{nomeRitiro(d)}</span>
+              </div>
+            ))}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px' }}>
+              <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{passiTotali}</span>
+              <span style={{ fontSize: 12.5, color: '#6B7280' }}>Foto del veicolo</span>
+            </div>
+          </div>
+
+          {/* CONTINUA di pagina: grigio finché le foto non sono complete */}
+          {puoEliminare && (
+            <button
+              onClick={() => inviaInVerifica(docAttivo)}
+              disabled={inviandoId === docAttivo.id || !docCompleto(docAttivo)}
+              className="active:scale-[0.99]"
+              style={{
+                width: '100%', marginTop: 12, padding: '14px 0', border: 'none', borderRadius: 13,
+                background: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? '#E5E7EB' : '#2563eb',
+                color: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? '#9CA3AF' : '#fff',
+                fontSize: 15, fontWeight: 600,
+                cursor: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? 'default' : 'pointer',
+                boxShadow: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? 'none' : '0 4px 12px rgba(37,99,235,0.25)',
+                transition: 'all 0.2s',
+              }}
+            >
+              {inviandoId === docAttivo.id ? 'Invio…' : 'Continua'}
+            </button>
+          )}
         </div>
       )}
 
-      {/* ====== DA PREPARARE: PER EREDE ====== */}
-      {indiciEredi.length > 0 && (
+      {/* ====== ULTIMO PASSO: FOTO DEL VEICOLO (quando i documenti sono inviati) ====== */}
+      {!docAttivo && (
         <div>
-          <SezioneTitolo testo="Documenti per ogni erede" />
-          <div className="flex flex-col gap-2.5">
-            {indiciEredi.map(idx => {
-              const docsErede = daFareEredi.filter(d => (d.indice_erede ?? 0) === idx)
-              const aperto = erediAperti[idx] ?? (indiciEredi.length === 1)
-              return (
-                <div key={idx} style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, overflow: 'hidden', background: '#fff' }}>
-                  <button onClick={() => setErediAperti(s => ({ ...s, [idx]: !aperto }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: 13, background: '#F9FAFB' }}>
-                    <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#DBEAFE', color: '#2563eb', fontWeight: 600, fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{idx}</div>
-                    <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-                      <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>{ordinaleErede(idx)} erede</div>
-                      <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>{docsErede.length} {docsErede.length === 1 ? 'documento' : 'documenti'}</div>
-                    </div>
-                    <span style={{ transform: aperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><IcoChevronDown color="#8a98a8" /></span>
-                  </button>
-                  {aperto && (
-                    <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {docsErede.map(d => (
-                        <DocCard key={d.id} doc={d} signedMap={signedMap} caricamento={caricandoId === d.id} invio={inviandoId === d.id} eliminabile={puoEliminare}
-                          onCarica={(files, lato) => caricaFile(d, files, lato)} onInvia={() => inviaInVerifica(d)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(i) => setConfermaElimina({ doc: d, fileIdx: i })} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+          {!tuttoApprovato && totaleDocWizard > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 2px 10px' }}>
+              <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, color: '#2563eb', flexShrink: 0 }}>ULTIMO PASSO · FOTO DEL VEICOLO</span>
+              <div style={{ flex: 1, height: 5, background: '#EAF0F7', borderRadius: 999, overflow: 'hidden' }}>
+                <div style={{ width: `${Math.round((totaleDocWizard / passiTotali) * 100)}%`, height: '100%', background: '#2563eb' }} />
+              </div>
+            </div>
+          )}
+          <CardFotoVeicolo foto={foto} eliminabile={puoEliminare} onUpload={uploadFotoExtra}
+            onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={f => setConfermaEliminaFoto(f)} />
+        </div>
+      )}
+
+      {/* ====== MODULI PDF (informativi, fuori dalla fila) ====== */}
+      {daFareModuli.length > 0 && (
+        <div className="flex flex-col gap-2.5">
+          {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
         </div>
       )}
 
@@ -726,33 +767,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
         </div>
       )}
 
-      {/* ====== FOTO DEL VEICOLO ====== */}
-      <div style={{ border: '1.5px solid #E5E7EB', borderRadius: 16, padding: 16, background: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: foto.length > 0 ? 12 : 10 }}>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>Foto del veicolo</span>
-          <span style={{ fontSize: 12, color: '#9aa7b5' }}>{foto.length} {foto.length === 1 ? 'foto' : 'foto'}</span>
-        </div>
-        {foto.length > 0 && (
-          <div className="grid grid-cols-3 gap-2 mb-3">
-            {foto.map((f, idx) => (
-              <div key={f.id} style={{ position: 'relative', width: '100%', aspectRatio: '1' }}>
-                <button onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8', display: 'block' }}>
-                  {isPdfUrl(f.url) ? (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-                  ) : (
-                    /* eslint-disable-next-line @next/next/no-img-element */
-                    <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  )}
-                </button>
-                {puoEliminare && (
-                  <button onClick={() => setConfermaEliminaFoto(f)} aria-label="Elimina foto" style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 13, fontWeight: 700, lineHeight: 1, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>×</button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-        <UploadFoto onUpload={uploadFotoExtra} />
-      </div>
 
       {/* ====== MODALE ANTEPRIMA ====== */}
       {anteprima && (
@@ -896,6 +910,17 @@ function richiedeFronteRetro(codice: string): boolean {
   return false
 }
 
+// Le foto del documento sono complete? Governa l'accensione del "Continua".
+// Fronte/retro: servono entrambi i lati (un file senza lato = unico, da
+// pratiche vecchie: vale come completo). Altri documenti: basta una foto.
+function docCompleto(d: DocChecklist): boolean {
+  const files = leggiFile(d.file_url)
+  if (files.length === 0) return false
+  if (!richiedeFronteRetro(d.codice)) return true
+  if (files.some(f => !f.lato)) return true
+  return files.some(f => f.lato === 'fronte') && files.some(f => f.lato === 'retro')
+}
+
 // ============================================================
 // BOLLINO AZIONE (Scatta / File)
 // ============================================================
@@ -928,35 +953,25 @@ function DocCard(props: {
   doc: DocChecklist
   signedMap: Record<string, string>
   caricamento: boolean
-  invio: boolean
   eliminabile: boolean
   onCarica: (files: File[], lato?: 'fronte' | 'retro') => void
-  onInvia: () => void
   onApri: (url: string, titolo: string) => void
   onElimina: (fileIdx: number) => void
 }) {
   const inputCamFronte = useRef<HTMLInputElement>(null)
-  const inputFilFronte = useRef<HTMLInputElement>(null)
   const inputCamRetro = useRef<HTMLInputElement>(null)
-  const inputFilRetro = useRef<HTMLInputElement>(null)
   const inputCamLibero = useRef<HTMLInputElement>(null)
-  const inputFilLibero = useRef<HTMLInputElement>(null)
-  const [toggleUnico, setToggleUnico] = useState(false)
 
   const { doc } = props
   const files = leggiFile(doc.file_url)
   const rifiutato = doc.stato === 'rifiutato'
   const frDoc = richiedeFronteRetro(doc.codice)
-
-  const haLato = files.some(f => f.lato)
-  const senzaLato = files.some(f => !f.lato)
-  // Modalità "due caselle": solo documenti fronte/retro, salvo che il cliente scelga
-  // "file unico" (o abbia già caricato un file senza lato, es. pratiche vecchie).
-  const modoSlot = frDoc && !senzaLato && (haLato || !toggleUnico)
+  // File senza lato = caricamento unico di pratiche vecchie: niente caselle
+  const modoSlot = frDoc && !files.some(f => !f.lato)
 
   const fronteFile = files.find(f => f.lato === 'fronte')
   const retroFile = files.find(f => f.lato === 'retro')
-  const puoInviare = modoSlot ? (!!fronteFile && !!retroFile) : files.length > 0
+  const completo = docCompleto(doc)
 
   // Palette: blu di default, rosso se rifiutato (come /inizia con errore)
   const bordo = rifiutato ? '#F3C8C8' : '#E5E7EB'
@@ -973,11 +988,17 @@ function DocCard(props: {
   const subtitle = rifiutato && doc.nota_admin
     ? doc.nota_admin
     : modoSlot
-      ? 'Servono due foto: fronte e retro'
-      : frDoc
-        ? 'Un unico file con fronte e retro'
-        : (doc.descrizione || '')
+      ? 'Scatta due foto: fronte e retro'
+      : (doc.descrizione || 'Scatta una foto del documento')
   const subColor = rifiutato && doc.nota_admin ? '#B03A2E' : '#6B7280'
+
+  const hint = props.caricamento
+    ? 'Caricamento…'
+    : completo
+      ? 'Foto complete'
+      : modoSlot
+        ? (!fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
+        : 'Scatta una foto per continuare'
 
   // Miniatura di un file (con ✕ di eliminazione)
   function renderMini(f: FileCaricato, idx: number, size = 56) {
@@ -999,8 +1020,8 @@ function DocCard(props: {
     )
   }
 
-  // Casella singola FRONTE o RETRO
-  function renderSlot(lato: 'fronte' | 'retro', file: FileCaricato | undefined, camRef: React.RefObject<HTMLInputElement | null>, filRef: React.RefObject<HTMLInputElement | null>) {
+  // Casella FRONTE o RETRO: un solo gesto possibile, Scatta
+  function renderSlot(lato: 'fronte' | 'retro', file: FileCaricato | undefined, camRef: React.RefObject<HTMLInputElement | null>) {
     const idx = file ? files.indexOf(file) : -1
     return (
       <div style={{ flex: 1, minWidth: 0, border: `1.5px ${file ? 'solid #C7D6EC' : 'dashed #B5C6E0'}`, borderRadius: 11, background: '#fff', padding: 10, textAlign: 'center' }}>
@@ -1008,10 +1029,12 @@ function DocCard(props: {
         {file ? (
           <div style={{ display: 'flex', justifyContent: 'center' }}>{renderMini(file, idx, 52)}</div>
         ) : props.eliminabile ? (
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
-            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} style={{ width: 34, height: 34, borderRadius: '50%', background: bgTile, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><IcoCamera size={16} color={colTile} /></button>
-            <button onClick={() => filRef.current?.click()} aria-label={`Scegli file per il ${lato}`} style={{ width: 34, height: 34, borderRadius: '50%', background: bgTile, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}><IcoFile size={15} color={colTile} /></button>
-          </div>
+          <>
+            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} className="active:scale-[0.96]" style={{ width: 42, height: 42, borderRadius: '50%', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', margin: '0 auto', boxShadow: '0 3px 9px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
+              <IcoCamera size={18} color="#fff" />
+            </button>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb', marginTop: 5 }}>Scatta</div>
+          </>
         ) : null}
       </div>
     )
@@ -1019,13 +1042,10 @@ function DocCard(props: {
 
   return (
     <div style={{ background: bgCard, border: `1.5px solid ${bordo}`, borderRadius: 14, padding: 14 }}>
-      {/* input nascosti: due per le caselle, due per il caricamento libero */}
+      {/* input nascosti: solo fotocamera (su PC il browser apre la scelta immagine) */}
       <input ref={inputCamFronte} type="file" accept="image/*" capture="environment" onChange={e => props.onCarica(fileFromEvent(e), 'fronte')} className="hidden" />
-      <input ref={inputFilFronte} type="file" accept="image/*,application/pdf" onChange={e => props.onCarica(fileFromEvent(e), 'fronte')} className="hidden" />
       <input ref={inputCamRetro} type="file" accept="image/*" capture="environment" onChange={e => props.onCarica(fileFromEvent(e), 'retro')} className="hidden" />
-      <input ref={inputFilRetro} type="file" accept="image/*,application/pdf" onChange={e => props.onCarica(fileFromEvent(e), 'retro')} className="hidden" />
       <input ref={inputCamLibero} type="file" accept="image/*" capture="environment" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
-      <input ref={inputFilLibero} type="file" accept="image/*,application/pdf" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
 
       {/* HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1035,7 +1055,7 @@ function DocCard(props: {
 
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 600, fontSize: 14.5, color: '#111827', lineHeight: 1.3 }}>{doc.nome}</span>
+            <span style={{ fontWeight: 600, fontSize: 14.5, color: '#111827', lineHeight: 1.3 }}>{nomeRitiro(doc)}</span>
             {rifiutato && (
               <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: '#C0392B', background: '#FBDADA', padding: '2px 9px', borderRadius: 20 }}>Da rifare</span>
             )}
@@ -1046,12 +1066,9 @@ function DocCard(props: {
         {props.caricamento ? (
           <div style={{ flexShrink: 0 }}><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
         ) : (!modoSlot && props.eliminabile) ? (
-          <div style={{ display: 'flex', gap: 10, flexShrink: 0, alignItems: 'flex-start' }}>
-            <BollinoAzione etichetta="Scatta" bg={bgTile} colore={colTile} onClick={() => inputCamLibero.current?.click()}>
-              <IcoCamera size={18} color={colTile} />
-            </BollinoAzione>
-            <BollinoAzione etichetta="File" bg={bgTile} colore={colTile} onClick={() => inputFilLibero.current?.click()}>
-              <IcoFile size={18} color={colTile} />
+          <div style={{ flexShrink: 0 }}>
+            <BollinoAzione etichetta="Scatta" bg="#2563eb" colore="#2563eb" onClick={() => inputCamLibero.current?.click()}>
+              <IcoCamera size={18} color="#fff" />
             </BollinoAzione>
           </div>
         ) : null}
@@ -1060,50 +1077,24 @@ function DocCard(props: {
       {/* CASELLE FRONTE / RETRO */}
       {modoSlot && (
         <div style={{ display: 'flex', gap: 10, marginTop: 12 }}>
-          {renderSlot('fronte', fronteFile, inputCamFronte, inputFilFronte)}
-          {renderSlot('retro', retroFile, inputCamRetro, inputFilRetro)}
+          {renderSlot('fronte', fronteFile, inputCamFronte)}
+          {renderSlot('retro', retroFile, inputCamRetro)}
         </div>
       )}
 
-      {/* MINIATURE (caricamento libero / file unico) */}
+      {/* MINIATURE (caricamento libero / file unico di pratiche vecchie) */}
       {!modoSlot && files.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
           {files.map((f, idx) => renderMini(f, idx))}
-          <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 file caricato' : `${files.length} file caricati`}</span>
+          <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 foto' : `${files.length} foto`}</span>
         </div>
       )}
 
-      {/* LINK cambia modalità: solo documenti fronte/retro e solo finché non c'è nulla di caricato */}
-      {frDoc && props.eliminabile && files.length === 0 && (
-        <div style={{ textAlign: 'center', marginTop: 11, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
-          {modoSlot ? (
-            <button onClick={() => setToggleUnico(true)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#2563eb', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Ho un unico file con fronte e retro</button>
-          ) : (
-            <button onClick={() => setToggleUnico(false)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#8a98a8', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Torna a fronte e retro separati</button>
-          )}
-        </div>
-      )}
-
-      {/* INVIO */}
-      {props.eliminabile && files.length > 0 && (
-        <>
-          <button
-            onClick={props.onInvia}
-            disabled={props.invio || !puoInviare}
-            style={{ width: '100%', marginTop: 12, padding: '11px 0', border: 'none', borderRadius: 11, background: (props.invio || !puoInviare) ? '#B8D9C6' : '#16A34A', color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, cursor: (props.invio || !puoInviare) ? 'default' : 'pointer' }}
-          >
-            {props.invio ? (
-              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Invio...</>
-            ) : (
-              <><IcoSend size={15} color="#fff" />Ho finito, invia in verifica</>
-            )}
-          </button>
-          <p style={{ margin: '7px 0 0', textAlign: 'center', fontSize: 10.5, color: '#9AA7B5' }}>
-            {modoSlot && !puoInviare
-              ? (!fronteFile ? 'Carica il fronte per inviare' : 'Carica il retro per inviare')
-              : 'Aggiungi tutte le foto necessarie, poi invia'}
-          </p>
-        </>
+      {/* SUGGERIMENTO: cosa manca per accendere il Continua */}
+      {props.eliminabile && (
+        <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: 11.5, fontWeight: 600, color: completo ? '#1D9E75' : '#9AA7B5' }}>
+          {hint}
+        </p>
       )}
     </div>
   )
@@ -1177,6 +1168,58 @@ function ModuloCard({ doc }: { doc: DocChecklist }) {
         <span style={{ flexShrink: 0 }}><IcoClock size={15} color="#b5820f" /></span>
         <span style={{ fontSize: 11.5, color: '#9a6c0c', fontWeight: 500 }}>Questo modulo sarà disponibile a breve. Ti avviseremo.</span>
       </div>
+    </div>
+  )
+}
+
+// ============================================================
+// CARD FOTO DEL VEICOLO — ultimo passo del wizard documenti.
+// Stesso vestito delle card documento: griglia foto + Scatta/Galleria.
+// ============================================================
+
+function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina }: {
+  foto: FotoPratica[]
+  eliminabile: boolean
+  onUpload: (files: File[]) => void
+  onApri: (url: string, titolo: string) => void
+  onElimina: (f: FotoPratica) => void
+}) {
+  return (
+    <div style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" />
+            <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6" />
+          </svg>
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontWeight: 600, fontSize: 14.5, color: '#111827' }}>Foto del veicolo</div>
+          <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>
+            {foto.length > 0 ? `${foto.length} foto caricate: controlla o aggiungine` : 'Aggiungi qualche foto del veicolo'}
+          </div>
+        </div>
+      </div>
+      {foto.length > 0 && (
+        <div className="grid grid-cols-3 gap-2 mb-3">
+          {foto.map((f, idx) => (
+            <div key={f.id} style={{ position: 'relative', width: '100%', aspectRatio: '1' }}>
+              <button onClick={() => onApri(f.url, `Foto ${idx + 1}`)} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', display: 'block' }}>
+                {isPdfUrl(f.url) ? (
+                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </button>
+              {eliminabile && (
+                <button onClick={() => onElimina(f)} aria-label="Elimina foto" style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 13, fontWeight: 700, lineHeight: 1, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>×</button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+      {eliminabile && <UploadFoto onUpload={onUpload} />}
     </div>
   )
 }
