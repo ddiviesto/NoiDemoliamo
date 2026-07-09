@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import DocumentiApprovazione from './DocumentiApprovazione'
+import AutocompleteIndirizzo from '../../../inizia/steps/AutocompleteIndirizzo'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -118,6 +119,74 @@ const CDC_LABEL: Record<string, string> = { digitale: 'Digitale', cartaceo: 'Car
 function lbl(map: Record<string, string>, v: string | null) { return v ? (map[v] || v) : null }
 
 // ============================================================
+// MODIFICA DATI PRATICA (regola "modifica a tasto", solo admin)
+// Il salvataggio passa dal server: il browser non scrive su `pratiche`.
+// ============================================================
+
+async function salvaDatiPratica(praticaId: string, dati: Record<string, unknown>) {
+  const { data: { session } } = await supabase.auth.getSession()
+  const res = await fetch('/api/pratica-dati', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+    body: JSON.stringify({ pratica_id: praticaId, dati }),
+  })
+  const json = await res.json().catch(() => null)
+  if (!res.ok) throw new Error(json?.error || 'Errore nel salvataggio')
+}
+
+// Stesso stile dei campi della scheda demolitore (versione compatta admin)
+const INPUT_CLS = 'w-full border-[1.5px] border-gray-200 rounded-[10px] px-3 py-2 text-[13.5px] font-medium text-gray-900 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-gray-400'
+
+function CampoEdit({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="text-[10.5px] font-bold uppercase mb-1" style={{ color: '#5B6779', letterSpacing: 0.4 }}>{label}</div>
+      {children}
+    </div>
+  )
+}
+
+function BtnModifica({ onClick }: { onClick: () => void }) {
+  return (
+    <button onClick={onClick} className="flex items-center gap-1.5 text-[11.5px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg px-2.5 py-1.5 transition-colors flex-shrink-0">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+      Modifica
+    </button>
+  )
+}
+
+function BarraSalva({ modificato, salvando, onSalva, onAnnulla }: { modificato: boolean; salvando: boolean; onSalva: () => void; onAnnulla: () => void }) {
+  return (
+    <div className="mt-3">
+      {modificato && (
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold rounded-lg px-2.5 py-1.5 mb-2" style={{ background: '#FDF7EA', border: '1px solid #F0DFB8', color: '#854F0B' }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
+          Modifiche non salvate
+        </div>
+      )}
+      <div className="flex gap-2">
+        <button
+          onClick={onSalva}
+          disabled={!modificato || salvando}
+          className="flex-1 text-xs font-bold text-white rounded-[10px] px-3 py-2 transition-colors disabled:opacity-40"
+          style={{ background: '#2563eb' }}
+        >
+          {salvando ? 'Salvo…' : 'Salva'}
+        </button>
+        <button
+          onClick={onAnnulla}
+          disabled={salvando}
+          className="flex-1 text-xs font-bold text-gray-700 bg-white hover:bg-gray-50 rounded-[10px] px-3 py-2 transition-colors disabled:opacity-40"
+          style={{ border: '1.5px solid #E5E7EB' }}
+        >
+          Annulla
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 // PAGINA
 // ============================================================
 
@@ -136,6 +205,8 @@ export default function DettaglioPraticaAdmin() {
   const [annullando, setAnnullando] = useState(false)
   const [motivoAnnulla, setMotivoAnnulla] = useState('')
   const [erroreAnnulla, setErroreAnnulla] = useState<string | null>(null)
+  // Quando una modifica cambia la checklist (es. fermo) si ricarica la colonna documenti
+  const [docsVersion, setDocsVersion] = useState(0)
 
   useEffect(() => {
     async function carica() {
@@ -249,6 +320,7 @@ export default function DettaglioPraticaAdmin() {
           {/* COLONNA SINISTRA: documenti + foto */}
           <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
             <DocumentiApprovazione
+              key={`docs-${docsVersion}`}
               praticaId={pratica.id}
               statoPratica={pratica.stato}
               onRicaricaPratica={ricaricaPratica}
@@ -286,54 +358,13 @@ export default function DettaglioPraticaAdmin() {
 
             <FeePraticaCard pratica={pratica} onAggiornata={ricaricaPratica} />
 
-            <CardInfo titolo="Cliente">
-              <Riga label="Nome" value={pratica.nome_richiedente} />
-              <Riga label="Telefono" value={pratica.telefono} />
-              <Riga label="Codice fiscale" value={pratica.codice_fiscale} mono />
-            </CardInfo>
+            <CardCliente pratica={pratica} onSalvata={ricaricaPratica} />
 
-            <CardInfo titolo="Veicolo">
-              <Riga label="Targa" value={pratica.targa} />
-              <Riga label="Tipo" value={pratica.tipo_mezzo === 'altro' && pratica.tipo_mezzo_altro ? `Altro: ${pratica.tipo_mezzo_altro}` : pratica.tipo_mezzo} />
-              <Riga label="Marca / modello" value={`${pratica.marca || ''} ${pratica.modello || ''}`.trim() || null} />
-              <Riga label="Anno · km" value={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
-              {pratica.tipo_cambio && <Riga label="Cambio" value={lbl(CAMBIO_LABEL, pratica.tipo_cambio)} />}
-              {/* Condizioni dichiarate dal cliente */}
-              <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-gray-100">
-                <CondPill valore={pratica.incidentato} buonoSe={false} testoSi="Incidentata" testoNo="Non incidentata" />
-                <CondPill valore={pratica.marciante} buonoSe={true} testoSi="Cammina" testoNo="Non cammina" />
-                <CondPill valore={pratica.va_in_moto} buonoSe={true} testoSi="Si avvia" testoNo="Non si avvia" />
-                <CondPill valore={pratica.parti_mancanti} buonoSe={false} testoSi="Parti mancanti" testoNo="Completo" />
-              </div>
-              {pratica.note_veicolo && <div className="text-xs text-gray-600 italic mt-2 pt-2 border-t border-gray-100">“{pratica.note_veicolo}”</div>}
-            </CardInfo>
+            <CardVeicolo pratica={pratica} onSalvata={ricaricaPratica} />
 
-            <CardInfo titolo="Ritiro">
-              {/* L'indirizzo di Google contiene già comune/CAP/provincia:
-                  si aggiungono solo se non ci sono già (niente doppioni) */}
-              <p className="text-sm text-gray-700">
-                {pratica.indirizzo_ritiro || '—'}
-                {pratica.comune_ritiro && !(pratica.indirizzo_ritiro || '').toLowerCase().includes(pratica.comune_ritiro.toLowerCase()) && ` · ${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`}
-                {pratica.cap_ritiro && !(pratica.indirizzo_ritiro || '').includes(pratica.cap_ritiro) && ` · ${pratica.cap_ritiro}`}
-              </p>
-              {pratica.spazio_carro_attrezzi && (
-                <div className="mt-2 pt-2 border-t border-gray-100">
-                  <Riga label="Spazio carro attrezzi" value={lbl(SPAZIO_LABEL, pratica.spazio_carro_attrezzi)} />
-                  {pratica.spazio_carro_attrezzi_note && <div className="text-xs text-gray-600 italic mt-1">“{pratica.spazio_carro_attrezzi_note}”</div>}
-                </div>
-              )}
-            </CardInfo>
+            <CardRitiro pratica={pratica} onSalvata={ricaricaPratica} />
 
-            <CardInfo titolo="Dichiarazioni e casistica">
-              {pratica.casistica && <Riga label="Casistica" value={NOMI_CASISTICHE[pratica.casistica] || pratica.casistica} />}
-              {pratica.libretto && <Riga label="Libretto" value={lbl(LIBRETTO_LABEL, pratica.libretto)} />}
-              {pratica.certificato_proprieta && <Riga label="Cert. proprietà" value={lbl(CDC_LABEL, pratica.certificato_proprieta)} />}
-              {pratica.fermo_amministrativo && <Riga label="Fermo amministrativo" value={lbl(FERMO_LABEL, pratica.fermo_amministrativo)} />}
-              {pratica.targhe_presenti != null && <Riga label="Targhe" value={pratica.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite'} />}
-              {pratica.delegato_nome && <Riga label="Delegato" value={`${pratica.delegato_nome}${pratica.delegato_telefono ? ` · ${pratica.delegato_telefono}` : ''}`} />}
-              {pratica.numero_eredi != null && (pratica.casistica === 'eredi_accettato' || pratica.casistica === 'eredi_rinuncia') && <Riga label="Numero eredi" value={String(pratica.numero_eredi)} />}
-              {pratica.nomi_rinunciatari && <Riga label="Rinunciatari" value={pratica.nomi_rinunciatari} />}
-            </CardInfo>
+            <CardDichiarazioni pratica={pratica} onSalvata={async () => { await ricaricaPratica(); setDocsVersion(v => v + 1) }} />
 
             <div className="flex gap-2 pt-1">
               {pratica.stato !== 'annullata' && (
@@ -794,12 +825,300 @@ function FeePraticaCard({ pratica, onAggiornata }: { pratica: Pratica; onAggiorn
 // SOTTOCOMPONENTI DATI
 // ============================================================
 
-function CardInfo({ titolo, children }: { titolo: string; children: React.ReactNode }) {
+function CardInfo({ titolo, azione, children }: { titolo: string; azione?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="p-4" style={STILE_CARD}>
-      <div className="mb-3"><TitoloCard>{titolo}</TitoloCard></div>
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <TitoloCard>{titolo}</TitoloCard>
+        {azione}
+      </div>
       {children}
     </div>
+  )
+}
+
+// ============================================================
+// CARD DATI MODIFICABILI (Cliente / Veicolo / Ritiro / Dichiarazioni)
+// Lettura di default; "Modifica" → campi editabili; "Salva" solo se
+// qualcosa è cambiato. Salvataggio via /api/pratica-dati (solo admin).
+// ============================================================
+
+function CardCliente({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () => Promise<void> | void }) {
+  const [edit, setEdit] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  const [nome, setNome] = useState('')
+  const [telefono, setTelefono] = useState('')
+  const [cf, setCf] = useState('')
+
+  function apri() {
+    setNome(pratica.nome_richiedente || '')
+    setTelefono(pratica.telefono || '')
+    setCf(pratica.codice_fiscale || '')
+    setEdit(true)
+  }
+  const modificato = edit && (
+    nome.trim() !== (pratica.nome_richiedente || '') ||
+    telefono.trim() !== (pratica.telefono || '') ||
+    cf.toUpperCase().replace(/\s+/g, '') !== (pratica.codice_fiscale || '')
+  )
+
+  async function salva() {
+    setSalvando(true)
+    try {
+      await salvaDatiPratica(pratica.id, { nome_richiedente: nome, telefono, codice_fiscale: cf })
+      await onSalvata()
+      setEdit(false)
+    } catch (e) {
+      console.error(e)
+      alert('Errore nel salvataggio. Riprova.')
+    }
+    setSalvando(false)
+  }
+
+  return (
+    <CardInfo titolo="Cliente" azione={!edit ? <BtnModifica onClick={apri} /> : undefined}>
+      {!edit ? (
+        <>
+          <Riga label="Nome" value={pratica.nome_richiedente} />
+          <Riga label="Telefono" value={pratica.telefono} />
+          <Riga label="Codice fiscale" value={pratica.codice_fiscale} mono />
+        </>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          <CampoEdit label="Nome"><input className={INPUT_CLS} value={nome} onChange={e => setNome(e.target.value)} /></CampoEdit>
+          <CampoEdit label="Telefono"><input className={INPUT_CLS} value={telefono} onChange={e => setTelefono(e.target.value)} inputMode="tel" /></CampoEdit>
+          <CampoEdit label="Codice fiscale (o P.IVA)"><input className={INPUT_CLS + ' uppercase'} value={cf} onChange={e => setCf(e.target.value)} /></CampoEdit>
+          <BarraSalva modificato={modificato} salvando={salvando} onSalva={salva} onAnnulla={() => setEdit(false)} />
+        </div>
+      )}
+    </CardInfo>
+  )
+}
+
+function CardVeicolo({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () => Promise<void> | void }) {
+  const [edit, setEdit] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  const [targa, setTarga] = useState('')
+  const [marca, setMarca] = useState('')
+  const [modello, setModello] = useState('')
+  const [anno, setAnno] = useState('')
+  const [km, setKm] = useState('')
+
+  function apri() {
+    setTarga(pratica.targa || '')
+    setMarca(pratica.marca || '')
+    setModello(pratica.modello || '')
+    setAnno(pratica.anno != null ? String(pratica.anno) : '')
+    setKm(pratica.km != null ? String(pratica.km) : '')
+    setEdit(true)
+  }
+  const modificato = edit && (
+    targa.toUpperCase().replace(/\s+/g, '') !== (pratica.targa || '') ||
+    marca.trim() !== (pratica.marca || '') ||
+    modello.trim() !== (pratica.modello || '') ||
+    anno.trim() !== (pratica.anno != null ? String(pratica.anno) : '') ||
+    km.trim() !== (pratica.km != null ? String(pratica.km) : '')
+  )
+
+  async function salva() {
+    setSalvando(true)
+    try {
+      await salvaDatiPratica(pratica.id, { targa, marca, modello, anno: anno.trim() || null, km: km.trim() || null })
+      await onSalvata()
+      setEdit(false)
+    } catch (e) {
+      console.error(e)
+      alert('Errore nel salvataggio. Riprova.')
+    }
+    setSalvando(false)
+  }
+
+  return (
+    <CardInfo titolo="Veicolo" azione={!edit ? <BtnModifica onClick={apri} /> : undefined}>
+      {!edit ? (
+        <>
+          <Riga label="Targa" value={pratica.targa} />
+          <Riga label="Tipo" value={pratica.tipo_mezzo === 'altro' && pratica.tipo_mezzo_altro ? `Altro: ${pratica.tipo_mezzo_altro}` : pratica.tipo_mezzo} />
+          <Riga label="Marca / modello" value={`${pratica.marca || ''} ${pratica.modello || ''}`.trim() || null} />
+          <Riga label="Anno · km" value={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
+          {pratica.tipo_cambio && <Riga label="Cambio" value={lbl(CAMBIO_LABEL, pratica.tipo_cambio)} />}
+        </>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          <CampoEdit label="Targa"><input className={INPUT_CLS + ' uppercase'} value={targa} onChange={e => setTarga(e.target.value)} /></CampoEdit>
+          <div className="grid grid-cols-2 gap-2">
+            <CampoEdit label="Marca"><input className={INPUT_CLS} value={marca} onChange={e => setMarca(e.target.value)} /></CampoEdit>
+            <CampoEdit label="Modello"><input className={INPUT_CLS} value={modello} onChange={e => setModello(e.target.value)} /></CampoEdit>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <CampoEdit label="Anno"><input className={INPUT_CLS} value={anno} onChange={e => setAnno(e.target.value.replace(/\D/g, ''))} inputMode="numeric" /></CampoEdit>
+            <CampoEdit label="Km"><input className={INPUT_CLS} value={km} onChange={e => setKm(e.target.value.replace(/\D/g, ''))} inputMode="numeric" /></CampoEdit>
+          </div>
+          <BarraSalva modificato={modificato} salvando={salvando} onSalva={salva} onAnnulla={() => setEdit(false)} />
+        </div>
+      )}
+      {/* Condizioni dichiarate dal cliente (non modificabili: sono dichiarazioni sue) */}
+      <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-gray-100">
+        <CondPill valore={pratica.incidentato} buonoSe={false} testoSi="Incidentata" testoNo="Non incidentata" />
+        <CondPill valore={pratica.marciante} buonoSe={true} testoSi="Cammina" testoNo="Non cammina" />
+        <CondPill valore={pratica.va_in_moto} buonoSe={true} testoSi="Si avvia" testoNo="Non si avvia" />
+        <CondPill valore={pratica.parti_mancanti} buonoSe={false} testoSi="Parti mancanti" testoNo="Completo" />
+      </div>
+      {pratica.note_veicolo && <div className="text-xs text-gray-600 italic mt-2 pt-2 border-t border-gray-100">“{pratica.note_veicolo}”</div>}
+    </CardInfo>
+  )
+}
+
+interface IndirizzoScelto {
+  indirizzo: string
+  comune?: string
+  provincia?: string
+  cap?: string
+  lat?: number
+  lng?: number
+}
+
+function CardRitiro({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () => Promise<void> | void }) {
+  const [edit, setEdit] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  // Indirizzo nuovo SOLO se scelto dai suggerimenti (servono comune e coordinate)
+  const [scelto, setScelto] = useState<IndirizzoScelto | null>(null)
+  const [spazio, setSpazio] = useState('')
+  const [noteSpazio, setNoteSpazio] = useState('')
+
+  function apri() {
+    setScelto(null)
+    setSpazio(pratica.spazio_carro_attrezzi || '')
+    setNoteSpazio(pratica.spazio_carro_attrezzi_note || '')
+    setEdit(true)
+  }
+  const modificato = edit && (
+    scelto != null ||
+    spazio !== (pratica.spazio_carro_attrezzi || '') ||
+    noteSpazio.trim() !== (pratica.spazio_carro_attrezzi_note || '')
+  )
+
+  async function salva() {
+    setSalvando(true)
+    try {
+      const dati: Record<string, unknown> = {
+        spazio_carro_attrezzi: spazio || null,
+        spazio_carro_attrezzi_note: noteSpazio || null,
+      }
+      if (scelto) {
+        dati.indirizzo_ritiro = scelto.indirizzo
+        dati.comune_ritiro = scelto.comune || null
+        dati.provincia_ritiro = scelto.provincia || null
+        dati.cap_ritiro = scelto.cap || null
+        dati.lat = scelto.lat ?? null
+        dati.lng = scelto.lng ?? null
+      }
+      await salvaDatiPratica(pratica.id, dati)
+      await onSalvata()
+      setEdit(false)
+    } catch (e) {
+      console.error(e)
+      alert('Errore nel salvataggio. Riprova.')
+    }
+    setSalvando(false)
+  }
+
+  return (
+    <CardInfo titolo="Ritiro" azione={!edit ? <BtnModifica onClick={apri} /> : undefined}>
+      {!edit ? (
+        <>
+          {/* L'indirizzo di Google contiene già comune/CAP/provincia:
+              si aggiungono solo se non ci sono già (niente doppioni) */}
+          <p className="text-sm text-gray-700">
+            {pratica.indirizzo_ritiro || '—'}
+            {pratica.comune_ritiro && !(pratica.indirizzo_ritiro || '').toLowerCase().includes(pratica.comune_ritiro.toLowerCase()) && ` · ${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`}
+            {pratica.cap_ritiro && !(pratica.indirizzo_ritiro || '').includes(pratica.cap_ritiro) && ` · ${pratica.cap_ritiro}`}
+          </p>
+          {pratica.spazio_carro_attrezzi && (
+            <div className="mt-2 pt-2 border-t border-gray-100">
+              <Riga label="Spazio carro attrezzi" value={lbl(SPAZIO_LABEL, pratica.spazio_carro_attrezzi)} />
+              {pratica.spazio_carro_attrezzi_note && <div className="text-xs text-gray-600 italic mt-1">“{pratica.spazio_carro_attrezzi_note}”</div>}
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          <CampoEdit label="Indirizzo dove si trova il veicolo">
+            <AutocompleteIndirizzo compatto valoreIniziale={pratica.indirizzo_ritiro || ''} placeholder="Cerca il nuovo indirizzo…" onSelezione={d => setScelto(d)} />
+            <p className="text-[11px] mt-1" style={{ color: '#64748b' }}>
+              Scegli dai suggerimenti: si aggiornano anche comune, CAP e coordinate (usati da assegnazione e tariffe).
+            </p>
+          </CampoEdit>
+          <CampoEdit label="Spazio carro attrezzi">
+            <select className={INPUT_CLS} value={spazio} onChange={e => setSpazio(e.target.value)}>
+              <option value="">—</option>
+              <option value="libero">Libero, comodo</option>
+              <option value="stretto">Stretto</option>
+              <option value="no">No, difficile</option>
+            </select>
+          </CampoEdit>
+          <CampoEdit label="Note sullo spazio"><input className={INPUT_CLS} value={noteSpazio} onChange={e => setNoteSpazio(e.target.value)} placeholder="Es. cortile interno, strada chiusa…" /></CampoEdit>
+          <BarraSalva modificato={modificato} salvando={salvando} onSalva={salva} onAnnulla={() => setEdit(false)} />
+        </div>
+      )}
+    </CardInfo>
+  )
+}
+
+function CardDichiarazioni({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () => Promise<void> | void }) {
+  const [edit, setEdit] = useState(false)
+  const [salvando, setSalvando] = useState(false)
+  const [fermo, setFermo] = useState('')
+
+  function apri() {
+    setFermo(pratica.fermo_amministrativo || '')
+    setEdit(true)
+  }
+  const modificato = edit && fermo !== (pratica.fermo_amministrativo || '')
+
+  async function salva() {
+    setSalvando(true)
+    try {
+      await salvaDatiPratica(pratica.id, { fermo_amministrativo: fermo || null })
+      await onSalvata()
+      setEdit(false)
+    } catch (e) {
+      console.error(e)
+      alert('Errore nel salvataggio. Riprova.')
+    }
+    setSalvando(false)
+  }
+
+  // Il fermo non esiste per le targhe straniere (non è al PRA italiano)
+  const fermoModificabile = pratica.casistica !== 'targhe_straniere'
+
+  return (
+    <CardInfo titolo="Dichiarazioni e casistica" azione={!edit && fermoModificabile ? <BtnModifica onClick={apri} /> : undefined}>
+      {pratica.casistica && <Riga label="Casistica" value={NOMI_CASISTICHE[pratica.casistica] || pratica.casistica} />}
+      {pratica.libretto && <Riga label="Libretto" value={lbl(LIBRETTO_LABEL, pratica.libretto)} />}
+      {pratica.certificato_proprieta && <Riga label="Cert. proprietà" value={lbl(CDC_LABEL, pratica.certificato_proprieta)} />}
+      {!edit && pratica.fermo_amministrativo && <Riga label="Fermo amministrativo" value={lbl(FERMO_LABEL, pratica.fermo_amministrativo)} />}
+      {edit && (
+        <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-2.5">
+          <CampoEdit label="Fermo amministrativo (dopo la verifica)">
+            <select className={INPUT_CLS} value={fermo} onChange={e => setFermo(e.target.value)}>
+              <option value="">—</option>
+              <option value="si">Sì</option>
+              <option value="no">No</option>
+              <option value="non_so">Non lo sa</option>
+            </select>
+            <p className="text-[11px] mt-1" style={{ color: '#64748b' }}>
+              Con &quot;Sì&quot; al cliente appare la dichiarazione del fermo da fotografare (e da portare in originale al ritiro); con &quot;No&quot; viene tolta se non l&apos;ha ancora caricata.
+            </p>
+          </CampoEdit>
+          <BarraSalva modificato={modificato} salvando={salvando} onSalva={salva} onAnnulla={() => setEdit(false)} />
+        </div>
+      )}
+      {pratica.targhe_presenti != null && <Riga label="Targhe" value={pratica.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite'} />}
+      {pratica.delegato_nome && <Riga label="Delegato" value={`${pratica.delegato_nome}${pratica.delegato_telefono ? ` · ${pratica.delegato_telefono}` : ''}`} />}
+      {pratica.numero_eredi != null && (pratica.casistica === 'eredi_accettato' || pratica.casistica === 'eredi_rinuncia') && <Riga label="Numero eredi" value={String(pratica.numero_eredi)} />}
+      {pratica.nomi_rinunciatari && <Riga label="Rinunciatari" value={pratica.nomi_rinunciatari} />}
+    </CardInfo>
   )
 }
 
