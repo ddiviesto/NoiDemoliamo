@@ -761,10 +761,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati }: Props)
           <div className="bg-white rounded-2xl p-3 max-w-4xl w-full h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-3 px-2 flex-shrink-0">
               <p className="font-semibold text-gray-800 text-sm truncate">{anteprima.titolo}</p>
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <a href={anteprima.url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 font-medium">Apri in nuova scheda</a>
-                <button onClick={() => setAnteprima(null)} className="text-gray-400 text-2xl leading-none">×</button>
-              </div>
+              <button onClick={() => setAnteprima(null)} className="text-gray-400 text-2xl leading-none flex-shrink-0" aria-label="Chiudi anteprima">×</button>
             </div>
             <div className="flex-1 overflow-auto">
               {isPdfUrl(anteprima.url) ? (
