@@ -238,6 +238,13 @@ export default function DettaglioPraticaCliente() {
     setDocRifiutati(prev => prev === numero ? prev : numero)
   }, [])
 
+  // Quando il cliente invia/elimina documenti lo stato pratica può cambiare
+  // (ricalcolato dal server): ricarico la pratica così banner e badge si aggiornano.
+  const ricaricaPratica = useCallback(async () => {
+    const { data } = await supabase.from('pratiche').select('*').eq('id', id).single()
+    if (data) setPratica(data)
+  }, [id])
+
   useEffect(() => {
     async function carica() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -327,7 +334,7 @@ export default function DettaglioPraticaCliente() {
 
           {/* CONTENUTO TAB */}
           {tab === 'documenti' && (
-            <TabDocumenti pratica={pratica} onDocRifiutatiCambiati={handleDocRifiutatiCambiati} />
+            <TabDocumenti pratica={pratica} onDocRifiutatiCambiati={handleDocRifiutatiCambiati} onStatoCambiato={ricaricaPratica} />
           )}
           {tab === 'stato' && <TabStato pratica={pratica} />}
           {tab === 'chat' && (

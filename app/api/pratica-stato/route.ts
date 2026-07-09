@@ -1,15 +1,15 @@
 /**
  * Endpoint server-side che RICALCOLA lo stato di una pratica in base ai documenti.
  *
- * Usato dopo che l'admin approva/rifiuta i documenti: il browser dell'admin riesce
- * a modificare la checklist dei documenti ma NON lo stato della pratica (permessi DB),
- * quindi il ricalcolo dello stato va fatto qui col service role.
+ * Chiamato dall'admin (dopo approva/rifiuta) e dal CLIENTE proprietario (dopo
+ * l'invio in verifica di un documento): il browser non può modificare lo stato
+ * della pratica (permessi DB), quindi il ricalcolo va fatto qui col service role.
  *
  * Regole (solo se la pratica è ancora nella fase documenti):
- *   - tutti i documenti da caricare APPROVATI  → 'da_assegnare'
- *   - almeno uno RIFIUTATO                      → 'documenti_parzialmente_approvati'
- *   - almeno uno CARICATO (in verifica)         → 'in_attesa_approvazione_admin'
- *   - altrimenti (tutti ancora da fare)         → 'in_attesa_documenti'
+ *   - tutti i documenti da caricare APPROVATI    → 'da_assegnare'
+ *   - almeno uno RIFIUTATO                        → 'documenti_parzialmente_approvati'
+ *   - TUTTI inviati (nessuno più in mano cliente) → 'in_attesa_approvazione_admin'
+ *   - altrimenti (il cliente sta ancora caricando)→ 'in_attesa_documenti'
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
     const praticaId: string | undefined = body.pratica_id
     if (!praticaId) return NextResponse.json({ error: 'Manca pratica_id' }, { status: 400 })
 
-    // Verifica admin
+    // Verifica utente: admin oppure cliente proprietario della pratica
     const authHeader = req.headers.get('authorization')
     if (!authHeader?.startsWith('Bearer ')) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
     const token = authHeader.substring(7)
@@ -32,14 +32,16 @@ export async function POST(req: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     const supabaseUser = createClient(supabaseUrl, supabaseAnonKey)
     const { data: { user } } = await supabaseUser.auth.getUser(token)
-    if (!user || user.email !== ADMIN_EMAIL) return NextResponse.json({ error: 'Solo admin' }, { status: 403 })
+    if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
 
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, serviceKey)
 
     // Stato attuale
-    const { data: pratica } = await supabase.from('pratiche').select('stato').eq('id', praticaId).single()
+    const { data: pratica } = await supabase.from('pratiche').select('stato, user_id').eq('id', praticaId).single()
     if (!pratica) return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
+    const isAdmin = user.email === ADMIN_EMAIL
+    if (!isAdmin && pratica.user_id !== user.id) return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
     if (!STATI_FASE_DOCUMENTI.includes(pratica.stato)) {
       return NextResponse.json({ success: true, stato: pratica.stato, cambiato: false })
     }
@@ -58,10 +60,12 @@ export async function POST(req: NextRequest) {
     if (daApprovare.length > 0) {
       const approvati = daApprovare.filter(r => r.stato === 'approvato').length
       const rifiutati = daApprovare.filter(r => r.stato === 'rifiutato').length
-      const caricati = daApprovare.filter(r => r.stato === 'caricato').length
+      const daFare = daApprovare.filter(r => r.stato === 'da_fare').length
       if (approvati === daApprovare.length) nuovo = 'da_assegnare'
       else if (rifiutati > 0) nuovo = 'documenti_parzialmente_approvati'
-      else if (caricati > 0) nuovo = 'in_attesa_approvazione_admin'
+      // "In verifica" solo quando il cliente ha inviato TUTTO: finché resta
+      // anche un solo documento da fare, la pratica è ancora in mano sua.
+      else if (daFare === 0) nuovo = 'in_attesa_approvazione_admin'
       else nuovo = 'in_attesa_documenti'
     }
 
