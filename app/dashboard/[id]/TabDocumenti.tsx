@@ -1030,15 +1030,15 @@ function DocCard(props: {
         : (doc.descrizione || 'Scatta una foto del documento')
   const subColor = rifiutato && doc.nota_admin ? '#B03A2E' : '#6B7280'
 
-  // Con le FOTO il sistema sa contare (fronte+retro); con i FILE no:
-  // da 1 file in poi è l'utente che dichiara di aver finito col Continua.
+  // Suggerimento solo quando manca qualcosa: a documento completo il bottone
+  // blu acceso parla da solo (niente "premi Continua").
   const hint = props.caricamento
     ? 'Caricamento…'
     : inModoFile
-      ? (files.length > 0 ? 'Hai allegato tutto? Premi Continua' : 'Allega almeno un file per continuare')
+      ? (files.length > 0 ? '' : 'Allega almeno un file per continuare')
       : modoSlot
         ? (completo ? 'Foto complete' : !fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
-        : (completo ? 'Hai caricato tutto? Premi Continua' : 'Scatta una foto per continuare')
+        : (completo ? '' : 'Scatta una foto per continuare')
 
   // Miniatura di un file (✕ scura; la conferma appare in riga sotto le miniature)
   function renderMini(f: FileCaricato, idx: number, size = 56) {
@@ -1192,12 +1192,18 @@ function DocCard(props: {
         </div>
       )}
 
-      {/* MINIATURE (documenti a caricamento libero: denunce, visure…) */}
+      {/* MINIATURE (documenti a caricamento libero: denunce, visure…)
+          + riquadro tratteggiato "Aggiungi": si capisce che può scattarne altre */}
       {!frDoc && files.length > 0 && (
         <>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
             {files.map((f, idx) => renderMini(f, idx))}
-            <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 elemento' : `${files.length} elementi`}</span>
+            {props.eliminabile && (
+              <button onClick={() => inputCamLibero.current?.click()} aria-label="Aggiungi un'altra foto" style={{ width: 56, height: 56, borderRadius: 10, border: '1.5px dashed #B5C6E0', background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, color: '#2563eb', cursor: 'pointer' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                <span style={{ fontSize: 9, fontWeight: 600 }}>Aggiungi</span>
+              </button>
+            )}
           </div>
           {confermaIdx !== null && files[confermaIdx] && (
             <div style={{ marginTop: 8 }}>
@@ -1211,8 +1217,8 @@ function DocCard(props: {
         </>
       )}
 
-      {/* SUGGERIMENTO: cosa manca per accendere il Continua */}
-      {props.eliminabile && (
+      {/* SUGGERIMENTO: solo quando manca qualcosa */}
+      {props.eliminabile && hint && (
         <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: 11.5, fontWeight: 600, color: completo ? '#1D9E75' : '#9AA7B5' }}>
           {hint}
         </p>

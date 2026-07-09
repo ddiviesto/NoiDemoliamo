@@ -264,7 +264,13 @@ export default function TabStato({ pratica }: Props) {
               <DataRiga
                 label="Indirizzo ritiro"
                 valore={
-                  [pratica.indirizzo_ritiro, pratica.comune_ritiro && `${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`]
+                  // L'indirizzo di Google contiene già il comune: si aggiunge solo se manca
+                  [
+                    pratica.indirizzo_ritiro,
+                    pratica.comune_ritiro && !(pratica.indirizzo_ritiro || '').toLowerCase().includes(pratica.comune_ritiro.toLowerCase())
+                      ? `${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`
+                      : null,
+                  ]
                     .filter(Boolean)
                     .join(' · ')
                 }

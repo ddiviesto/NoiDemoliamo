@@ -96,6 +96,11 @@ const NOMI_CASISTICHE: Record<string, string> = {
   targhe_straniere: 'Targhe straniere',
 }
 
+const CDC_LABEL: Record<string, string> = { digitale: 'Digitale', cartaceo: 'Cartaceo', smarrito: 'Smarrito (denuncia)', nessuno: 'Non lo sa', documento_unico: 'Documento unico' }
+
+// Finché la pratica è in queste fasi l'esito CDC si può ancora cambiare
+const STATI_FASE_DOCUMENTI = ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati', 'da_assegnare']
+
 // Stile card condiviso (identico alle card della lista pratiche)
 const STILE_CARD: React.CSSProperties = {
   background: '#fff',
@@ -113,11 +118,23 @@ function TitoloCard({ children }: { children: React.ReactNode }) {
   )
 }
 
+// I tre esiti della verifica del certificato di proprietà (telefonata al cliente)
+function BottoniCdc({ azione, onScegli }: { azione: boolean; onScegli: (cdc: 'cartaceo' | 'digitale' | 'smarrito') => void }) {
+  const stile: React.CSSProperties = { background: '#fff', border: '1.5px solid #E5E7EB', color: '#1E293B' }
+  return (
+    <>
+      <button onClick={() => onScegli('cartaceo')} disabled={azione} className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={stile}>Cartaceo</button>
+      <button onClick={() => onScegli('digitale')} disabled={azione} className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={stile}>Digitale</button>
+      <button onClick={() => onScegli('smarrito')} disabled={azione} className="rounded-lg px-3 py-1.5 text-xs font-semibold disabled:opacity-50" style={stile}>Smarrito</button>
+    </>
+  )
+}
+
 // ============================================================
 // COMPONENTE
 // ============================================================
 
-export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRicaricaPratica }: Props) {
+export default function DocumentiApprovazione({ praticaId, statoPratica, onStatoCambiato, onRicaricaPratica }: Props) {
   const [docs, setDocs] = useState<DocRiga[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [dati, setDati] = useState<DatiPratica | null>(null)
@@ -127,6 +144,8 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
   const [modalRifiuto, setModalRifiuto] = useState<{ id: string; titolo: string } | null>(null)
   const [notaRifiuto, setNotaRifiuto] = useState('')
+  // "Cambia" sull'esito CDC: riapre i tre bottoni per correggere un errore
+  const [cambiaCdc, setCambiaCdc] = useState(false)
 
   const onStatoRef = useRef(onStatoCambiato)
   useEffect(() => { onStatoRef.current = onStatoCambiato }, [onStatoCambiato])
@@ -262,6 +281,30 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
     setAzione(false)
   }
 
+  // Esito della telefonata "non sa che certificato ha": l'endpoint aggiorna
+  // la pratica e sincronizza la checklist (cartaceo → documento da caricare
+  // e da consegnare al ritiro; digitale → non serve nulla).
+  async function impostaCdc(cdc: 'cartaceo' | 'digitale' | 'smarrito') {
+    setAzione(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pratica-cdc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: praticaId, cdc }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(data?.error || 'Errore')
+      await carica()
+      onRicaricaPratica?.()
+      setCambiaCdc(false)
+    } catch (e) {
+      console.error('Errore impostazione certificato:', e)
+      alert('Errore nel salvataggio. Riprova.')
+    }
+    setAzione(false)
+  }
+
   async function approvaTutti() {
     const daVerificare = docs.filter(d => d.richiede_upload && d.stato === 'caricato')
     if (daVerificare.length === 0) return
@@ -315,23 +358,53 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
         {daContattare && (
           <div className="flex items-start gap-2.5 mt-3 rounded-xl px-3 py-2.5" style={{ background: '#FDF7EA', border: '1.5px solid #F0DFB8' }}>
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            <span className="text-xs" style={{ color: '#854F0B' }}>
-              <span className="font-semibold">Da contattare: </span>
-              {dati?.libretto === 'no' && 'il cliente non ha il libretto (né denuncia). '}
-              {dati?.certificato_proprieta === 'nessuno' && 'il cliente non sa che certificato di proprietà ha. '}
-              Chiamalo per capire la situazione prima di procedere.
-            </span>
+            <div className="flex-1 min-w-0">
+              <span className="text-xs" style={{ color: '#854F0B' }}>
+                <span className="font-semibold">Da contattare: </span>
+                {dati?.libretto === 'no' && 'il cliente non ha il libretto (né denuncia). '}
+                {dati?.certificato_proprieta === 'nessuno' && 'il cliente non sa che certificato di proprietà ha. '}
+                Chiamalo per capire la situazione prima di procedere.
+              </span>
+              {/* Esito verifica CDC: aggiorna pratica + checklist del cliente */}
+              {dati?.certificato_proprieta === 'nessuno' && (
+                <div className="flex items-center flex-wrap gap-2 mt-2">
+                  <span className="text-[11px] font-semibold" style={{ color: '#854F0B' }}>Dopo la verifica, che certificato ha?</span>
+                  <BottoniCdc azione={azione} onScegli={impostaCdc} />
+                </div>
+              )}
+            </div>
           </div>
         )}
 
         {/* DATI CASISTICA */}
         {dati && (
-          <div className="flex flex-wrap gap-1.5 mt-3">
+          <div className="flex flex-wrap items-center gap-1.5 mt-3">
             {dati.casistica && <PillDato label="Casistica" valore={NOMI_CASISTICHE[dati.casistica] || dati.casistica} />}
+            {dati.certificato_proprieta && dati.certificato_proprieta !== 'nessuno' && (
+              <>
+                <PillDato label="Cert. proprietà" valore={CDC_LABEL[dati.certificato_proprieta] || dati.certificato_proprieta} />
+                {STATI_FASE_DOCUMENTI.includes(statoPratica) && !cambiaCdc && (
+                  <button onClick={() => setCambiaCdc(true)} className="text-[11px] font-semibold underline" style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>
+                    Cambia
+                  </button>
+                )}
+              </>
+            )}
             {dati.fermo_amministrativo && dati.fermo_amministrativo !== 'no' && <PillDato label="Fermo" valore={dati.fermo_amministrativo === 'si' ? 'Sì' : 'Non so'} allerta />}
             {dati.delegato_nome && <PillDato label="Delegato" valore={dati.delegato_nome + (dati.delegato_telefono ? ` · ${dati.delegato_telefono}` : '')} />}
             {dati.numero_eredi != null && dati.numero_eredi > 0 && (dati.casistica === 'eredi_accettato' || dati.casistica === 'eredi_rinuncia') && <PillDato label="Eredi" valore={String(dati.numero_eredi)} />}
             {dati.targhe_presenti === false && <PillDato label="Targhe" valore="Smarrite" allerta />}
+          </div>
+        )}
+
+        {/* Correzione esito CDC (es. premuto Cartaceo invece di Smarrito) */}
+        {cambiaCdc && (
+          <div className="flex items-center flex-wrap gap-2 mt-2">
+            <span className="text-[11px] font-semibold" style={{ color: '#5B6779' }}>Che certificato ha?</span>
+            <BottoniCdc azione={azione} onScegli={impostaCdc} />
+            <button onClick={() => setCambiaCdc(false)} disabled={azione} className="text-[11px] font-semibold underline" style={{ color: '#5B6779', background: 'none', border: 'none', cursor: 'pointer' }}>
+              Annulla
+            </button>
           </div>
         )}
 

@@ -174,7 +174,17 @@ export default function SchedaPraticaDemolitore() {
   const daCertificare = STATI_CERTIFICARE.includes(p.stato)
   const cd = daFissare ? countdownScadenza(p.scadenza_proposta_ritiro) : null
 
-  const indirizzoCompleto = [p.indirizzo_ritiro, [p.cap_ritiro, p.comune_ritiro].filter(Boolean).join(' '), p.provincia_ritiro ? `(${p.provincia_ritiro})` : ''].filter(Boolean).join(', ')
+  // L'indirizzo di Google contiene già comune/CAP: si aggiungono solo se mancano (niente doppioni)
+  const indirizzoContiene = (testo: string | null | undefined) =>
+    !!testo && (p.indirizzo_ritiro || '').toLowerCase().includes(testo.toLowerCase())
+  const indirizzoCompleto = [
+    p.indirizzo_ritiro,
+    [
+      !indirizzoContiene(p.cap_ritiro) ? p.cap_ritiro : null,
+      !indirizzoContiene(p.comune_ritiro) ? p.comune_ritiro : null,
+    ].filter(Boolean).join(' '),
+    p.provincia_ritiro && !indirizzoContiene(p.comune_ritiro) ? `(${p.provincia_ritiro})` : '',
+  ].filter(Boolean).join(', ')
   const mapsUrl = p.lat && p.lng
     ? `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}`
     : `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(indirizzoCompleto)}`

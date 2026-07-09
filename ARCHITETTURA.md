@@ -625,6 +625,7 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 
 - **`/api/assegna-pratica`** — algoritmo assegnazione ✅ (modalità dry-run / assegna demolitore scelto / auto). Converte sigla→nome provincia (`lib/province.ts`).
 - **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role). ⭐ 9/07: autorizzato anche il **cliente proprietario** (non solo admin) — il TabDocumenti lo chiama dopo ogni invio/eliminazione, così il banner del cliente si aggiorna da solo. Regola corretta: `in_attesa_approvazione_admin` SOLO quando **TUTTI** i documenti sono inviati (prima bastava il primo) → nel CRM una pratica entra in "Documenti da approvare" solo a invio completo.
+- ⭐ **`/api/pratica-cdc`** (nuovo 9/07) — esito della telefonata "non sa che certificato ha": l'admin preme **Cartaceo / Digitale / Smarrito** nel banner "Da contattare" → aggiorna `pratiche.certificato_proprieta` e **sincronizza la checklist** col catalogo (cartaceo → aggiunge il CDC cartaceo da fotografare + originale al ritiro; smarrito → denuncia di smarrimento, come da file casistiche; digitale → nulla), poi ricalcola lo stato. Le righe con file già caricati dal cliente NON si toccano mai. Dopo la scelta, pillola "Cert. proprietà" + link **"Cambia"** per correggere (finché la pratica è in fase documenti). Solo admin.
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
 - **`/api/pulisci-utenti`** — cancella account clienti senza pratiche (mai admin/operatori).
 - **`/api/invita-demolitore`** — invito all'area demolitore (link Supabase + email Resend o link manuale).
@@ -834,6 +835,9 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ✅ **Banner cliente sincronizzato**: il cliente può chiedere il ricalcolo stato (`/api/pratica-stato` autorizza anche il proprietario); "in verifica" scatta SOLO quando tutti i documenti sono inviati → banner "Stiamo verificando i tuoi documenti" automatico (prima restava fermo su "Carica i tuoi documenti")
 - ✅ **Flusso foto veicolo per chi salta le foto in /inizia**: banner giallo (spiegazione carro attrezzi / viaggi a vuoto) → card di caricamento senza limiti → "Ho finito con le foto" deciso dal cliente
 - ✅ **Box "Da chiarire insieme" rimosso** lato cliente (chiama l'admin, che vede le pratiche in "Da contattare")
+- ✅ **Esito verifica CDC dall'admin** (`/api/pratica-cdc`, vedi 5.4): bottoni Cartaceo/Digitale/Smarrito nel banner "Da contattare" → la checklist del cliente si aggiorna da sola (documento nel wizard + lista originali al ritiro); link "Cambia" per correggere gli errori
+- ✅ **Card documenti a caricamento libero**: riquadro tratteggiato "+ Aggiungi" accanto alle miniature (si capisce che può scattarne altre); rimossi i suggerimenti "premi Continua" (il bottone acceso basta)
+- ✅ **Indirizzo ritiro senza doppioni** (admin, tab Stato cliente, scheda demolitore): comune/CAP/provincia aggiunti solo se non già dentro l'indirizzo di Google
 - Metodo confermato: ogni modifica UI passata prima da **mockup interattivo** con scelta di Davide (flip, eliminazione A+D, banner foto, bottone B)
 
 ### ⭐⭐⭐ SESSIONE 6-7 luglio 2026 (seconda parte) — RIFINITURE E FLUSSI OPERATIVI
@@ -932,7 +936,7 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 ### 🔥🔥 STEP 1-bis — FIX EMERSI DALLA VERIFICA CASISTICHE (3/07/2026)
 - **Caso 7 (non intestatario)**: nel flusso `/inizia`, libretto e CDC sono OBBLIGATORI ("se non ha non può procedere" da file casistiche). Oggi il modulo lascia comunque scegliere "smarrito/non ce l'ho" e crea la pratica. → aggiungere avviso di stop.
 - **Denunce di smarrimento Carta d'Identità / Codice Fiscale**: previste dal file casistiche per ogni persona, ma NON presenti nel catalogo DB e senza domanda nel flusso. → decidere se aggiungerle.
-- **Pagina admin**: gestire i casi "Da chiarire insieme" (evidenziare pratiche da contattare) e i casi "non so" su fermo/CDC.
+- **Pagina admin**: ✅ ~~casi "Da chiarire insieme" e "non so" sul CDC~~ FATTO (banner "Da contattare" + bottoni Cartaceo/Digitale/Smarrito, 9/07). Resta il caso "non so" sul **fermo amministrativo** (oggi solo pillola di allerta).
 
 ### 🔥🔥 STEP 2 — TEMPLATE PDF MODULI
 - Davide fornisce i template (DELEGA_*, DICHIARAZIONI_*) → attivare download precompilato (tracciando `scaricato_il`) al posto dell'avviso "a breve"

@@ -309,11 +309,12 @@ export default function DettaglioPraticaAdmin() {
             </CardInfo>
 
             <CardInfo titolo="Ritiro">
+              {/* L'indirizzo di Google contiene già comune/CAP/provincia:
+                  si aggiungono solo se non ci sono già (niente doppioni) */}
               <p className="text-sm text-gray-700">
                 {pratica.indirizzo_ritiro || '—'}
-                {pratica.comune_ritiro && ` · ${pratica.comune_ritiro}`}
-                {pratica.provincia_ritiro && ` (${pratica.provincia_ritiro})`}
-                {pratica.cap_ritiro && ` · ${pratica.cap_ritiro}`}
+                {pratica.comune_ritiro && !(pratica.indirizzo_ritiro || '').toLowerCase().includes(pratica.comune_ritiro.toLowerCase()) && ` · ${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`}
+                {pratica.cap_ritiro && !(pratica.indirizzo_ritiro || '').includes(pratica.cap_ritiro) && ` · ${pratica.cap_ritiro}`}
               </p>
               {pratica.spazio_carro_attrezzi && (
                 <div className="mt-2 pt-2 border-t border-gray-100">
