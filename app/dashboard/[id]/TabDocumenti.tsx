@@ -294,21 +294,26 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const [caricandoId, setCaricandoId] = useState<string | null>(null)
   const [inviandoId, setInviandoId] = useState<string | null>(null)
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
-  const [confermaElimina, setConfermaElimina] = useState<{ doc: DocChecklist; fileIdx: number } | null>(null)
-  const [confermaEliminaFoto, setConfermaEliminaFoto] = useState<FotoPratica | null>(null)
-  const [eliminazioneInCorso, setEliminazioneInCorso] = useState(false)
   const [sistematiAperti, setSistematiAperti] = useState(false)
   const [ritiroAperto, setRitiroAperto] = useState(false)
 
   const puoEliminare = clientePuoEliminare(pratica.stato)
 
+  // Link firmati già generati: si riusano tra un aggiornamento e l'altro,
+  // altrimenti le immagini cambiano URL a ogni ricarica e "lampeggiano".
+  const signedRef = useRef<Record<string, string>>({})
+
   useEffect(() => {
-    carica()
+    carica(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pratica.id])
 
-  async function carica() {
-    setLoading(true)
+  // La rotellina a schermo pieno appare SOLO al primo caricamento: gli
+  // aggiornamenti successivi (upload, invio, eliminazione) avvengono in
+  // silenzio, senza smontare la schermata (niente "sobbalzi", e il pannello
+  // girato resta girato dov'era).
+  async function carica(spinnerIniziale = false) {
+    if (spinnerIniziale) setLoading(true)
 
     const { data: righe } = await supabase
       .from('pratica_documenti_checklist')
@@ -351,15 +356,17 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
     })
     lista.sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
 
-    const sm: Record<string, string> = {}
+    const sm: Record<string, string> = { ...signedRef.current }
     for (const d of lista) {
       for (const f of leggiFile(d.file_url)) {
+        if (sm[f.url]) continue // link già pronto: riusalo (niente lampeggi)
         const path = estraiPathBucket(f.url, 'documenti-pratiche')
         if (!path) continue
         const { data } = await supabase.storage.from('documenti-pratiche').createSignedUrl(path, 3600)
         if (data?.signedUrl) sm[f.url] = data.signedUrl
       }
     }
+    signedRef.current = sm
     setSignedMap(sm)
 
     const { data: fotos } = await supabase
@@ -475,11 +482,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
     setInviandoId(null)
   }
 
-  async function eliminaFileConfermato() {
-    if (!confermaElimina) return
-    setEliminazioneInCorso(true)
+  // Eliminazione diretta: la conferma la gestisce la ✕ sulla foto (niente modali)
+  async function eliminaFile(doc: DocChecklist, fileIdx: number) {
     try {
-      const { doc, fileIdx } = confermaElimina
       const files = leggiFile(doc.file_url)
       const daRimuovere = files[fileIdx]
       const rimanenti = files.filter((_, i) => i !== fileIdx)
@@ -505,15 +510,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       console.error('Errore eliminazione:', err)
       alert('Errore nell\'eliminazione. Riprova.')
     }
-    setEliminazioneInCorso(false)
-    setConfermaElimina(null)
   }
 
-  async function eliminaFotoConfermato() {
-    if (!confermaEliminaFoto) return
-    setEliminazioneInCorso(true)
+  async function eliminaFoto(f: FotoPratica) {
     try {
-      const f = confermaEliminaFoto
       const path = estraiPathBucket(f.url, 'foto-pratiche')
       if (path) await supabase.storage.from('foto-pratiche').remove([path])
       await supabase.from('foto_pratiche').delete().eq('id', f.id)
@@ -522,8 +522,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       console.error('Errore eliminazione foto:', err)
       alert('Errore nell\'eliminazione. Riprova.')
     }
-    setEliminazioneInCorso(false)
-    setConfermaEliminaFoto(null)
   }
 
   async function uploadFotoExtra(files: File[]) {
@@ -668,8 +666,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           onToggle={() => setSistematiAperti(a => !a)}
           eliminabile={puoEliminare}
           onApri={(url, titolo) => setAnteprima({ url, titolo })}
-          onElimina={(doc, idx) => setConfermaElimina({ doc, fileIdx: idx })}
-          onEliminaFoto={f => setConfermaEliminaFoto(f)}
+          onElimina={eliminaFile}
+          onEliminaFoto={eliminaFoto}
           onUploadFoto={uploadFotoExtra}
         />
       )}
@@ -692,7 +690,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           </div>
 
           <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
-            onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => setConfermaElimina({ doc: docAttivo, fileIdx: idx })} />
+            onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => eliminaFile(docAttivo, idx)} />
 
           {/* Coda: i prossimi passi, in fila chiusa */}
           {codaWizard.length > 1 && (
@@ -733,7 +731,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           che le ospita come riga (es. nessun documento ancora inviato) ====== */}
       {!docAttivo && sistemati.length === 0 && (
         <CardFotoVeicolo foto={foto} eliminabile={puoEliminare} onUpload={uploadFotoExtra}
-          onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={f => setConfermaEliminaFoto(f)} />
+          onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={eliminaFoto} />
       )}
 
       {/* ====== MODULI PDF (informativi, fuori dalla fila) ====== */}
@@ -802,55 +800,62 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
         </div>
       )}
 
-      {/* ====== MODALE CONFERMA ELIMINAZIONE DOCUMENTO ====== */}
-      {confermaElimina && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => !eliminazioneInCorso && setConfermaElimina(null)}>
-          <div className="bg-white rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900 text-sm">Eliminare questo file?</p>
-                <p className="text-xs text-gray-500 mt-0.5">L&apos;azione non può essere annullata.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setConfermaElimina(null)} disabled={eliminazioneInCorso} className="bg-white border-2 border-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-xs disabled:opacity-50">Annulla</button>
-              <button onClick={eliminaFileConfermato} disabled={eliminazioneInCorso} className="bg-red-600 text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
-                {eliminazioneInCorso ? <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino...</> : 'Sì, elimina'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    </div>
+  )
+}
 
-      {/* ====== MODALE CONFERMA ELIMINAZIONE FOTO ====== */}
-      {confermaEliminaFoto && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => !eliminazioneInCorso && setConfermaEliminaFoto(null)}>
-          <div className="bg-white rounded-2xl p-5 max-w-sm w-full flex flex-col gap-4" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/>
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-gray-900 text-sm">Eliminare questa foto?</p>
-                <p className="text-xs text-gray-500 mt-0.5">L&apos;azione non può essere annullata.</p>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button onClick={() => setConfermaEliminaFoto(null)} disabled={eliminazioneInCorso} className="bg-white border-2 border-gray-200 text-gray-700 py-2.5 rounded-lg font-semibold text-xs disabled:opacity-50">Annulla</button>
-              <button onClick={eliminaFotoConfermato} disabled={eliminazioneInCorso} className="bg-red-600 text-white py-2.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
-                {eliminazioneInCorso ? <><div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />Elimino...</> : 'Sì, elimina'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+// ============================================================
+// ELIMINAZIONE "SUL POSTO" (decisione 9/07): ✕ scura trasparente
+// nell'angolo della foto; la conferma appare SULLA foto stessa
+// (o in riga, dove non c'è una foto grande). Niente finestre.
+// ============================================================
+
+function XElimina({ onClick, size = 24 }: { onClick: () => void; size?: number }) {
+  return (
+    <button onClick={onClick} aria-label="Elimina" style={{ position: 'absolute', top: 5, right: 5, width: size, height: size, background: 'rgba(15,23,42,0.55)', border: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, zIndex: 1 }}>
+      <svg width={Math.round(size * 0.5)} height={Math.round(size * 0.5)} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+    </button>
+  )
+}
+
+function ConfermaSullaFoto({ cosa, compatta, onAnnulla, onConferma }: {
+  cosa: string
+  compatta?: boolean   // per le foto piccole: bottoni impilati e testi ridotti
+  onAnnulla: () => void
+  onConferma: () => void | Promise<void>
+}) {
+  const [inCorso, setInCorso] = useState(false)
+  const stileBtn: React.CSSProperties = { border: 'none', borderRadius: 8, padding: compatta ? '5px 0' : '7px 13px', fontSize: compatta ? 11 : 11.5, fontWeight: 600, cursor: 'pointer' }
+  return (
+    <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.74)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: compatta ? 5 : 9, padding: 6, zIndex: 2 }}>
+      <span style={{ color: '#fff', fontSize: compatta ? 10.5 : 12.5, fontWeight: 600, textAlign: 'center', lineHeight: 1.3 }}>Eliminare {cosa}?</span>
+      <div style={{ display: 'flex', flexDirection: compatta ? 'column' : 'row', gap: 5, width: compatta ? '82%' : 'auto' }}>
+        <button onClick={onAnnulla} disabled={inCorso} style={{ ...stileBtn, background: 'rgba(255,255,255,0.22)', color: '#fff' }}>Annulla</button>
+        <button
+          onClick={async () => { setInCorso(true); try { await onConferma() } finally { setInCorso(false) } }}
+          disabled={inCorso}
+          style={{ ...stileBtn, background: '#DC2626', color: '#fff', opacity: inCorso ? 0.75 : 1 }}
+        >{inCorso ? 'Elimino…' : 'Elimina'}</button>
+      </div>
+    </div>
+  )
+}
+
+function ConfermaInRiga({ cosa, onAnnulla, onConferma }: {
+  cosa: string
+  onAnnulla: () => void
+  onConferma: () => void | Promise<void>
+}) {
+  const [inCorso, setInCorso] = useState(false)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF6F6', border: '1px solid #F3C8C8', borderRadius: 10, padding: '8px 11px' }}>
+      <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: '#9B1C1C' }}>Eliminare {cosa}?</span>
+      <button onClick={onAnnulla} disabled={inCorso} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '6px 11px', fontSize: 11.5, fontWeight: 600, color: '#374151', cursor: 'pointer', flexShrink: 0 }}>Annulla</button>
+      <button
+        onClick={async () => { setInCorso(true); try { await onConferma() } finally { setInCorso(false) } }}
+        disabled={inCorso}
+        style={{ background: '#DC2626', border: 'none', borderRadius: 8, padding: '6px 11px', fontSize: 11.5, fontWeight: 600, color: '#fff', cursor: 'pointer', flexShrink: 0, opacity: inCorso ? 0.75 : 1 }}
+      >{inCorso ? 'Elimino…' : 'Elimina'}</button>
     </div>
   )
 }
@@ -958,7 +963,7 @@ function DocCard(props: {
   eliminabile: boolean
   onCarica: (files: File[], lato?: 'fronte' | 'retro') => void
   onApri: (url: string, titolo: string) => void
-  onElimina: (fileIdx: number) => void
+  onElimina: (fileIdx: number) => void | Promise<void>
 }) {
   const inputCamFronte = useRef<HTMLInputElement>(null)
   const inputCamRetro = useRef<HTMLInputElement>(null)
@@ -970,8 +975,13 @@ function DocCard(props: {
   // finito premendo Continua (il sistema non può sapere se un file basta).
   const [modoFile, setModoFile] = useState(false)
 
+  // Indice del file per cui si sta chiedendo "Eliminare?" (conferma sul posto)
+  const [confermaIdx, setConfermaIdx] = useState<number | null>(null)
+
   const { doc } = props
   const files = leggiFile(doc.file_url)
+
+  useEffect(() => { setConfermaIdx(null) }, [doc.id, doc.file_url])
   const rifiutato = doc.stato === 'rifiutato'
   const frDoc = richiedeFronteRetro(doc.codice)
   // File senza lato presenti (allegati ora o pratiche vecchie) → modalità file
@@ -1014,12 +1024,13 @@ function DocCard(props: {
         ? (completo ? 'Foto complete' : !fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
         : (completo ? 'Hai caricato tutto? Premi Continua' : 'Scatta una foto per continuare')
 
-  // Miniatura di un file (con ✕ di eliminazione)
+  // Miniatura di un file (✕ scura; la conferma appare in riga sotto le miniature)
   function renderMini(f: FileCaricato, idx: number, size = 56) {
     const url = props.signedMap[f.url] || f.url
+    const selezionata = confermaIdx === idx
     return (
-      <div key={idx} style={{ position: 'relative', width: size, height: size }}>
-        <button onClick={() => props.onApri(url, doc.nome)} style={{ width: size, height: size, borderRadius: 10, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', display: 'block' }}>
+      <div key={idx} style={{ position: 'relative', width: size, height: size, borderRadius: 10, overflow: 'hidden', border: selezionata ? '2px solid #DC2626' : '1px solid #E5E7EB' }}>
+        <button onClick={() => props.onApri(url, doc.nome)} style={{ width: '100%', height: '100%', background: '#fff', display: 'block', padding: 0, border: 'none', cursor: 'pointer' }}>
           {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
             <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#c0392b' }}>PDF</div>
           ) : (
@@ -1028,28 +1039,55 @@ function DocCard(props: {
           )}
         </button>
         {props.eliminabile && (
-          <button onClick={() => props.onElimina(idx)} aria-label="Elimina file" style={{ position: 'absolute', top: -6, right: -6, width: 19, height: 19, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: `2px solid ${bgCard}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+          <XElimina size={18} onClick={() => setConfermaIdx(selezionata ? null : idx)} />
         )}
       </div>
     )
   }
 
-  // Casella FRONTE o RETRO: un solo gesto possibile, Scatta
+  // Casella FRONTE o RETRO: un solo gesto possibile, Scatta.
+  // Quando la foto c'è, riempie TUTTA la casella (niente spazio sprecato):
+  // etichetta a pillola sopra la foto, ✕ nell'angolo, tocco = anteprima.
   function renderSlot(lato: 'fronte' | 'retro', file: FileCaricato | undefined, camRef: React.RefObject<HTMLInputElement | null>) {
     const idx = file ? files.indexOf(file) : -1
+
+    if (file) {
+      const url = props.signedMap[file.url] || file.url
+      const pdf = isPdfUrl(file.nome) || isPdfUrl(file.url)
+      return (
+        <div style={{ flex: 1, minWidth: 0, position: 'relative', border: '1.5px solid #C7D6EC', borderRadius: 11, overflow: 'hidden', background: '#f3f5f8', aspectRatio: '4 / 3' }}>
+          <button onClick={() => props.onApri(url, doc.nome)} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+            {pdf ? (
+              <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+            ) : (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
+          </button>
+          <span style={{ position: 'absolute', top: 6, left: 6, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.5, color: colTile, background: 'rgba(255,255,255,0.92)', borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', pointerEvents: 'none' }}>{lato}</span>
+          {props.eliminabile && <XElimina onClick={() => setConfermaIdx(idx)} />}
+          {confermaIdx === idx && (
+            <ConfermaSullaFoto
+              cosa={pdf ? 'questo file' : 'questa foto'}
+              onAnnulla={() => setConfermaIdx(null)}
+              onConferma={() => props.onElimina(idx)}
+            />
+          )}
+        </div>
+      )
+    }
+
     return (
-      <div style={{ flex: 1, minWidth: 0, border: `1.5px ${file ? 'solid #C7D6EC' : 'dashed #B5C6E0'}`, borderRadius: 11, background: '#fff', padding: 10, textAlign: 'center' }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: colTile, letterSpacing: 0.5, marginBottom: 8, textTransform: 'uppercase' }}>{lato}</div>
-        {file ? (
-          <div style={{ display: 'flex', justifyContent: 'center' }}>{renderMini(file, idx, 52)}</div>
-        ) : props.eliminabile ? (
+      <div style={{ flex: 1, minWidth: 0, border: '1.5px dashed #B5C6E0', borderRadius: 11, background: '#fff', aspectRatio: '4 / 3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, color: colTile, letterSpacing: 0.5, textTransform: 'uppercase' }}>{lato}</div>
+        {props.eliminabile && (
           <>
-            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} className="active:scale-[0.96]" style={{ width: 42, height: 42, borderRadius: '50%', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', margin: '0 auto', boxShadow: '0 3px 9px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
+            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} className="active:scale-[0.96]" style={{ width: 42, height: 42, borderRadius: '50%', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
               <IcoCamera size={18} color="#fff" />
             </button>
-            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb', marginTop: 5 }}>Scatta</div>
+            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb' }}>Scatta</div>
           </>
-        ) : null}
+        )}
       </div>
     )
   }
@@ -1103,6 +1141,14 @@ function DocCard(props: {
       {inModoFile && (
         <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 7 }}>
           {files.map((f, idx) => (
+            confermaIdx === idx ? (
+              <ConfermaInRiga
+                key={idx}
+                cosa="questo file"
+                onAnnulla={() => setConfermaIdx(null)}
+                onConferma={() => props.onElimina(idx)}
+              />
+            ) : (
             <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '8px 11px' }}>
               <button onClick={() => props.onApri(props.signedMap[f.url] || f.url, doc.nome)} style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: isPdfUrl(f.nome) || isPdfUrl(f.url) ? '#FBEAEA' : '#f3f5f8', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
@@ -1114,9 +1160,12 @@ function DocCard(props: {
               </button>
               <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nome || 'File'}</span>
               {props.eliminabile && (
-                <button onClick={() => props.onElimina(idx)} aria-label="Elimina file" style={{ width: 19, height: 19, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+                <button onClick={() => setConfermaIdx(idx)} aria-label="Elimina file" style={{ width: 22, height: 22, background: 'rgba(15,23,42,0.55)', borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', padding: 0 }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                </button>
               )}
             </div>
+            )
           ))}
           {props.eliminabile && (
             <button onClick={() => inputAllega.current?.click()} style={{ border: '1.5px dashed #B5C6E0', borderRadius: 10, background: '#fff', padding: '11px 0', fontSize: 12.5, fontWeight: 600, color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -1129,10 +1178,21 @@ function DocCard(props: {
 
       {/* MINIATURE (documenti a caricamento libero: denunce, visure…) */}
       {!frDoc && files.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-          {files.map((f, idx) => renderMini(f, idx))}
-          <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 elemento' : `${files.length} elementi`}</span>
-        </div>
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
+            {files.map((f, idx) => renderMini(f, idx))}
+            <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 elemento' : `${files.length} elementi`}</span>
+          </div>
+          {confermaIdx !== null && files[confermaIdx] && (
+            <div style={{ marginTop: 8 }}>
+              <ConfermaInRiga
+                cosa={isPdfUrl(files[confermaIdx].nome) || isPdfUrl(files[confermaIdx].url) ? 'questo file' : 'questa foto'}
+                onAnnulla={() => setConfermaIdx(null)}
+                onConferma={() => props.onElimina(confermaIdx)}
+              />
+            </div>
+          )}
+        </>
       )}
 
       {/* SUGGERIMENTO: cosa manca per accendere il Continua */}
@@ -1197,13 +1257,15 @@ function PannelloInviati(props: {
   onToggle: () => void
   eliminabile: boolean
   onApri: (url: string, titolo: string) => void
-  onElimina: (doc: DocChecklist, fileIdx: number) => void
-  onEliminaFoto: (f: FotoPratica) => void
+  onElimina: (doc: DocChecklist, fileIdx: number) => void | Promise<void>
+  onEliminaFoto: (f: FotoPratica) => void | Promise<void>
   onUploadFoto: (files: File[]) => void
 }) {
   const { docs, foto, mostraFoto } = props
   // Cosa c'è sul retro: 'foto', l'id di un documento, o null (lista davanti)
   const [girata, setGirata] = useState<string | null>(null)
+  // File/foto per cui si sta chiedendo "Eliminare?" (conferma sul posto)
+  const [conferma, setConferma] = useState<string | null>(null)
   const frontRef = useRef<HTMLDivElement>(null)
   const backRef = useRef<HTMLDivElement>(null)
   const inputFoto = useRef<HTMLInputElement>(null)
@@ -1216,6 +1278,9 @@ function PannelloInviati(props: {
     if (girata && girata !== 'foto' && !docs.some(d => d.id === girata)) setGirata(null)
     if (girata === 'foto' && !mostraFoto) setGirata(null)
   }, [girata, docs, mostraFoto])
+
+  // Cambiando lato o dati, la domanda "Eliminare?" si chiude da sola
+  useEffect(() => { setConferma(null) }, [girata, docs, foto])
 
   // Le due facce sono sovrapposte: l'altezza del pannello segue quella visibile
   useLayoutEffect(() => {
@@ -1254,10 +1319,6 @@ function PannelloInviati(props: {
       </button>
     )
   }
-
-  const cellaX = (onClick: () => void) => (
-    <button onClick={onClick} aria-label="Elimina file" style={{ position: 'absolute', top: -7, right: -7, width: 21, height: 21, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 13, fontWeight: 700, lineHeight: 1, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>×</button>
-  )
 
   return (
     <div style={{ perspective: 1100 }}>
@@ -1311,19 +1372,28 @@ function PannelloInviati(props: {
                     const url = props.signedMap[f.url] || f.url
                     const pdf = isPdfUrl(f.nome) || isPdfUrl(f.url)
                     return (
-                      <div key={idx} style={{ position: 'relative', width: 'calc(50% - 5px)' }}>
-                        <button onClick={() => props.onApri(url, nomeRitiro(docGirato))} style={{ width: '100%', aspectRatio: '4 / 3', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8', display: 'block', padding: 0, cursor: 'pointer' }}>
-                          {pdf ? (
-                            <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-                          ) : (
-                            /* eslint-disable-next-line @next/next/no-img-element */
-                            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <div key={idx} style={{ width: 'calc(50% - 5px)' }}>
+                        <div style={{ position: 'relative', aspectRatio: '4 / 3', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8' }}>
+                          <button onClick={() => props.onApri(url, nomeRitiro(docGirato))} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+                            {pdf ? (
+                              <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+                            ) : (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            )}
+                          </button>
+                          {props.eliminabile && !approvato && <XElimina onClick={() => setConferma(`f${idx}`)} />}
+                          {conferma === `f${idx}` && (
+                            <ConfermaSullaFoto
+                              cosa={pdf ? 'questo file' : 'questa foto'}
+                              onAnnulla={() => setConferma(null)}
+                              onConferma={() => props.onElimina(docGirato, idx)}
+                            />
                           )}
-                        </button>
+                        </div>
                         {f.lato && (
                           <div style={{ fontSize: 10.5, fontWeight: 600, color: '#6B7280', textAlign: 'center', marginTop: 3, textTransform: 'capitalize' }}>{f.lato}</div>
                         )}
-                        {props.eliminabile && !approvato && cellaX(() => props.onElimina(docGirato, idx))}
                       </div>
                     )
                   })}
@@ -1343,12 +1413,19 @@ function PannelloInviati(props: {
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {foto.map((f, idx) => (
-                  <div key={f.id} style={{ position: 'relative', width: 'calc(50% - 5px)' }}>
-                    <button onClick={() => props.onApri(f.url, `Foto ${idx + 1}`)} style={{ width: '100%', aspectRatio: '4 / 3', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8', display: 'block', padding: 0, cursor: 'pointer' }}>
+                  <div key={f.id} style={{ position: 'relative', width: 'calc(50% - 5px)', aspectRatio: '4 / 3', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#f3f5f8' }}>
+                    <button onClick={() => props.onApri(f.url, `Foto ${idx + 1}`)} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     </button>
-                    {props.eliminabile && cellaX(() => props.onEliminaFoto(f))}
+                    {props.eliminabile && <XElimina onClick={() => setConferma(`p${f.id}`)} />}
+                    {conferma === `p${f.id}` && (
+                      <ConfermaSullaFoto
+                        cosa="questa foto"
+                        onAnnulla={() => setConferma(null)}
+                        onConferma={() => props.onEliminaFoto(f)}
+                      />
+                    )}
                   </div>
                 ))}
                 {props.eliminabile && (
@@ -1418,8 +1495,10 @@ function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina }: {
   eliminabile: boolean
   onUpload: (files: File[]) => void
   onApri: (url: string, titolo: string) => void
-  onElimina: (f: FotoPratica) => void
+  onElimina: (f: FotoPratica) => void | Promise<void>
 }) {
+  // Foto per cui si sta chiedendo "Eliminare?" (conferma sul posto)
+  const [conferma, setConferma] = useState<string | null>(null)
   return (
     <div style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -1439,8 +1518,8 @@ function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina }: {
       {foto.length > 0 && (
         <div className="grid grid-cols-3 gap-2 mb-3">
           {foto.map((f, idx) => (
-            <div key={f.id} style={{ position: 'relative', width: '100%', aspectRatio: '1' }}>
-              <button onClick={() => onApri(f.url, `Foto ${idx + 1}`)} style={{ width: '100%', height: '100%', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', display: 'block' }}>
+            <div key={f.id} style={{ position: 'relative', width: '100%', aspectRatio: '1', borderRadius: 12, overflow: 'hidden', border: '1px solid #E5E7EB' }}>
+              <button onClick={() => onApri(f.url, `Foto ${idx + 1}`)} style={{ width: '100%', height: '100%', background: '#fff', display: 'block', padding: 0, border: 'none', cursor: 'pointer' }}>
                 {isPdfUrl(f.url) ? (
                   <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 600, color: '#c0392b' }}>PDF</div>
                 ) : (
@@ -1448,8 +1527,14 @@ function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina }: {
                   <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 )}
               </button>
-              {eliminabile && (
-                <button onClick={() => onElimina(f)} aria-label="Elimina foto" style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, background: '#c0392b', color: '#fff', borderRadius: '50%', fontSize: 13, fontWeight: 700, lineHeight: 1, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>×</button>
+              {eliminabile && <XElimina size={22} onClick={() => setConferma(f.id)} />}
+              {conferma === f.id && (
+                <ConfermaSullaFoto
+                  compatta
+                  cosa="questa foto"
+                  onAnnulla={() => setConferma(null)}
+                  onConferma={() => onElimina(f)}
+                />
               )}
             </div>
           ))}
