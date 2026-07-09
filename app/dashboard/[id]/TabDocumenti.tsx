@@ -961,13 +961,21 @@ function DocCard(props: {
   const inputCamFronte = useRef<HTMLInputElement>(null)
   const inputCamRetro = useRef<HTMLInputElement>(null)
   const inputCamLibero = useRef<HTMLInputElement>(null)
+  const inputAllega = useRef<HTMLInputElement>(null)
+
+  // Modalità FILE (scansioni/PDF): scelta dall'utente col link "Allega file".
+  // Niente fronte/retro: allega quanti file vuole e decide LUI quando ha
+  // finito premendo Continua (il sistema non può sapere se un file basta).
+  const [modoFile, setModoFile] = useState(false)
 
   const { doc } = props
   const files = leggiFile(doc.file_url)
   const rifiutato = doc.stato === 'rifiutato'
   const frDoc = richiedeFronteRetro(doc.codice)
-  // File senza lato = caricamento unico di pratiche vecchie: niente caselle
-  const modoSlot = frDoc && !files.some(f => !f.lato)
+  // File senza lato presenti (allegati ora o pratiche vecchie) → modalità file
+  const haFileSenzaLato = files.some(f => !f.lato)
+  const inModoFile = frDoc && (modoFile || haFileSenzaLato)
+  const modoSlot = frDoc && !inModoFile
 
   const fronteFile = files.find(f => f.lato === 'fronte')
   const retroFile = files.find(f => f.lato === 'retro')
@@ -987,18 +995,22 @@ function DocCard(props: {
 
   const subtitle = rifiutato && doc.nota_admin
     ? doc.nota_admin
-    : modoSlot
-      ? 'Scatta due foto: fronte e retro'
-      : (doc.descrizione || 'Scatta una foto del documento')
+    : inModoFile
+      ? 'Allega uno o più file (PDF o immagini)'
+      : modoSlot
+        ? 'Scatta due foto: fronte e retro'
+        : (doc.descrizione || 'Scatta una foto del documento')
   const subColor = rifiutato && doc.nota_admin ? '#B03A2E' : '#6B7280'
 
+  // Con le FOTO il sistema sa contare (fronte+retro); con i FILE no:
+  // da 1 file in poi è l'utente che dichiara di aver finito col Continua.
   const hint = props.caricamento
     ? 'Caricamento…'
-    : completo
-      ? 'Foto complete'
+    : inModoFile
+      ? (files.length > 0 ? 'Hai allegato tutto? Premi Continua' : 'Allega almeno un file per continuare')
       : modoSlot
-        ? (!fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
-        : 'Scatta una foto per continuare'
+        ? (completo ? 'Foto complete' : !fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
+        : (completo ? 'Hai caricato tutto? Premi Continua' : 'Scatta una foto per continuare')
 
   // Miniatura di un file (con ✕ di eliminazione)
   function renderMini(f: FileCaricato, idx: number, size = 56) {
@@ -1042,10 +1054,12 @@ function DocCard(props: {
 
   return (
     <div style={{ background: bgCard, border: `1.5px solid ${bordo}`, borderRadius: 14, padding: 14 }}>
-      {/* input nascosti: solo fotocamera (su PC il browser apre la scelta immagine) */}
+      {/* input nascosti: fotocamera per gli scatti (su PC il browser apre la
+          scelta immagine) + allegati liberi per scansioni e PDF */}
       <input ref={inputCamFronte} type="file" accept="image/*" capture="environment" onChange={e => props.onCarica(fileFromEvent(e), 'fronte')} className="hidden" />
       <input ref={inputCamRetro} type="file" accept="image/*" capture="environment" onChange={e => props.onCarica(fileFromEvent(e), 'retro')} className="hidden" />
       <input ref={inputCamLibero} type="file" accept="image/*" capture="environment" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
+      <input ref={inputAllega} type="file" accept="image/*,application/pdf" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
 
       {/* HEADER */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -1065,7 +1079,7 @@ function DocCard(props: {
 
         {props.caricamento ? (
           <div style={{ flexShrink: 0 }}><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
-        ) : (!modoSlot && props.eliminabile) ? (
+        ) : (!frDoc && props.eliminabile) ? (
           <div style={{ flexShrink: 0 }}>
             <BollinoAzione etichetta="Scatta" bg="#2563eb" colore="#2563eb" onClick={() => inputCamLibero.current?.click()}>
               <IcoCamera size={18} color="#fff" />
@@ -1082,11 +1096,40 @@ function DocCard(props: {
         </div>
       )}
 
-      {/* MINIATURE (caricamento libero / file unico di pratiche vecchie) */}
-      {!modoSlot && files.length > 0 && (
+      {/* MODALITÀ FILE: lista allegati + "Allega un altro file" (quanti ne
+          vuole: quando ha finito lo dichiara lui col Continua) */}
+      {inModoFile && (
+        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 7 }}>
+          {files.map((f, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '8px 11px' }}>
+              <button onClick={() => props.onApri(props.signedMap[f.url] || f.url, doc.nome)} style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: isPdfUrl(f.nome) || isPdfUrl(f.url) ? '#FBEAEA' : '#f3f5f8', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
+                  <span style={{ fontSize: 8.5, fontWeight: 700, color: '#C0392B' }}>PDF</span>
+                ) : (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img src={props.signedMap[f.url] || f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                )}
+              </button>
+              <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nome || 'File'}</span>
+              {props.eliminabile && (
+                <button onClick={() => props.onElimina(idx)} aria-label="Elimina file" style={{ width: 19, height: 19, background: '#C0392B', color: '#fff', borderRadius: '50%', fontSize: 11, fontWeight: 700, lineHeight: 1, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>×</button>
+              )}
+            </div>
+          ))}
+          {props.eliminabile && (
+            <button onClick={() => inputAllega.current?.click()} style={{ border: '1.5px dashed #B5C6E0', borderRadius: 10, background: '#fff', padding: '11px 0', fontSize: 12.5, fontWeight: 600, color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+              {files.length === 0 ? 'Allega file' : 'Allega un altro file'}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* MINIATURE (documenti a caricamento libero: denunce, visure…) */}
+      {!frDoc && files.length > 0 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
           {files.map((f, idx) => renderMini(f, idx))}
-          <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 foto' : `${files.length} foto`}</span>
+          <span style={{ fontSize: 11.5, color: '#6B7280' }}>{files.length === 1 ? '1 elemento' : `${files.length} elementi`}</span>
         </div>
       )}
 
@@ -1095,6 +1138,31 @@ function DocCard(props: {
         <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: 11.5, fontWeight: 600, color: completo ? '#1D9E75' : '#9AA7B5' }}>
           {hint}
         </p>
+      )}
+
+      {/* POSTICINO ALLEGATI: per chi ha scansioni o PDF invece delle foto */}
+      {props.eliminabile && modoSlot && files.length === 0 && (
+        <div style={{ textAlign: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
+          <button onClick={() => setModoFile(true)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#6B7280', cursor: 'pointer' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+            Hai una scansione o un PDF? <span style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'underline' }}>Allega file</span>
+          </button>
+        </div>
+      )}
+      {props.eliminabile && inModoFile && files.length === 0 && (
+        <div style={{ textAlign: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
+          <button onClick={() => setModoFile(false)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#8a98a8', fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
+            Preferisco scattare le foto
+          </button>
+        </div>
+      )}
+      {props.eliminabile && !frDoc && (
+        <div style={{ textAlign: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
+          <button onClick={() => inputAllega.current?.click()} style={{ background: 'none', border: 'none', fontSize: 12, color: '#6B7280', cursor: 'pointer' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+            Hai una scansione o un PDF? <span style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'underline' }}>Allega file</span>
+          </button>
+        </div>
       )}
     </div>
   )
