@@ -604,6 +604,7 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - **Home `/`**: ✅ stile app (lavanda, logo, spunte SVG, bottoni app, riga rassicurazione, WhatsApp)
 - **Login `/login`**: ✅ stile app (header blu, campi con icona, mostra/nascondi password); NO "Registrati" (ruoli diversi); redirect per ruolo admin/demolitore/cliente (commerciante DA AGGIUNGERE)
 - **Flusso `/inizia`**: COMPLETO E COLLAUDATO ⭐⭐⭐ (+ errori in italiano)
+- ⭐ **Cambio dentro Identifica** (8-9/07/2026): lo step "cambio-veicolo" NON esiste più — il tipo di cambio è una tessera con due opzioni (Manuale/Automatico, niente "Non lo so") dentro lo step Identifica, visibile solo per i mezzi che hanno il cambio. Flusso a 13 passi per un'autovettura. Campi di Identifica come "tessere" (etichetta scura + icona blu, focus blu, errore rosso).
 - ⭐ **Bozza persistente `/inizia`** (8/07/2026): dati e passo corrente salvati in sessionStorage a ogni modifica → navigare via (es. pagine legali) o ricaricare NON fa perdere il modulo. La password NON viene mai salvata; le foto vivono solo in memoria (dopo un reload vanno riselezionate). Bozza cancellata a invio riuscito. Clamp difensivo sull'indice del passo (bozze salvate con flussi più lunghi).
 - **Pagine `/privacy` e `/termini`** (8/07/2026): bozze complete in stile app, linkate dallo step account (si aprono in nuova scheda). Contengono segnaposto **[DA COMPLETARE]** (ragione sociale, P.IVA, sede, email di contatto): da riempire quando dominio/email aziendale saranno pronti — Davide vuole farlo "quando sarà tutto pronto".
 - **`/dashboard`**: ✅ RISTILIZZATA (07/2026) — sfondo lavanda, card bianca, header blu con saluto + Esci, card pratiche stile /inizia con icona veicolo per tipo, badge stato a pillola chiara, empty state con SVG
@@ -616,6 +617,9 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - ~~`/admin/copertura`~~: ELIMINATA (7/07/2026) — la copertura si gestisce solo dentro la scheda demolitore.
 - ⭐ **ACCESSO DEMOLITORE — FASE 1 dashboard demolitore** ✅ COLLAUDATA end-to-end (8/07/2026): bottone "Invita all'area" nella testata della scheda demolitore → `/api/invita-demolitore` genera il link Supabase (invite, o recovery se già registrato), collega `utenti.demolitore_id`, manda l'email via Resend (`lib/email.ts`) **oppure mostra il link da inviare a mano** finché Resend non è configurato → il demolitore sceglie la password su `/imposta-password` → area `/demolitore` (guscio: benvenuto + anteprima funzioni; la dashboard vera è la fase 2). Login multi-ruolo: tipo 'demolitore' → `/demolitore`.
 - ⭐ **Eliminazione definitiva demolitore** (8/07/2026): zona pericolosa in fondo alla scheda, conferma riscrivendo la ragione sociale → `/api/elimina-demolitore` (blocca se ha pratiche APERTE; le storiche perdono solo il riferimento `demolitore_id`; cancella copertura, tariffe, note, account e riga).
+- ⭐ **LED accesso + revoca** (8/07/2026): nella testata della scheda demolitore un LED dice se può entrare (verde "Può accedere" / rosso "Login disattivato", stato letto dal server via `/api/accesso-demolitore`). "Revoca accesso" spegne SOLO il login (utenti+auth): scheda, note e pratiche storiche intatte, reinvitabile. Tre livelli: Non attivo (niente pratiche nuove, entra ancora) → Revoca (non entra, storico salvo) → Elimina (sparisce tutto).
+- **Lista demolitori**: i "Non attivi" stanno in una sezione separata sotto gli attivi (contatore + rimando alle note per il motivo).
+- ⭐⭐⭐ **AREA DEMOLITORE — FASE 2 (dashboard pratiche) FATTA** (8-9/07/2026): `/demolitore` = contatori + tab per fase (Da evadere con countdown 8 ore lavorative da `scadenza_proposta_ritiro`, Ritiri programmati, Da certificare, Completate, **Annullate SEMPRE visibili coi motivi** — deterrente voluto). Scheda `/demolitore/pratiche/[id]`: info complete (ritiro con Maps e spazio carro attrezzi, cliente con tel/CF/casistica/delegato, veicolo con badge e foto, box scuro "Da farti consegnare" dalla checklist `richiede_consegna`, documenti approvati con URL firmati 1h) + AZIONE contestuale per fase. Endpoint dedicati (il ruolo demolitore non tocca il DB): `/api/demolitore-pratiche` (lista+dettaglio), `/api/demolitore-azioni` (fissa/sposta ritiro → stato `ritiro_confermato`; segna ritirata → `data_ritiro_effettuato`+`ritirata`; rottamazione a mano), `/api/demolitore-certificato` (upload rottamazione → `in_attesa_cert_radiazione_pra`; upload PRA → `completata`). Colonne nuove: `pratiche.cert_rottamazione_url`, `cert_pra_url`, `cert_rottamazione_a_mano` (migrazione in docs/sql). Auth condivisa in `lib/demolitoreAuth.ts`.
 
 ## 5.4 Backend / API
 
@@ -632,20 +636,20 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 
 Bloccante: reCAPTCHA su `iservizi.aci.it`. Opzioni future: bookmarklet/estensione Chrome con captcha manuale, oppure Openapi.it Visura Targa PRA (~6€/chiamata). Riprendere quando il flusso cliente sarà stabile.
 
-## 5.6 ⭐ TabDocumenti — com'è fatto (riferimento per la pagina admin)
+## 5.6 ⭐ TabDocumenti — com'è fatto (RIFATTO A WIZARD 8-9/07/2026)
 
-Il componente più importante dell'area cliente. Design finale approvato dopo varie iterazioni ("Opzione A"):
+Il componente più importante dell'area cliente. **Design a WIZARD approvato da Davide dopo mockup** (il layout precedente "tutti i documenti in lista" è stato sostituito; un tentativo intermedio con "consegna a mano" è stato PROVATO E RIMOSSO — vedi decisioni 8-9/07):
 
-- **Anello di progresso SVG** "X su Y" + messaggio motivazionale ("Iniziamo!" / "Stai andando bene!")
-- **Card documento "Da preparare"** (stile /inizia): bordo 1,5px `#E5E7EB`, sfondo `#F9FAFB`, **quadratino blu 40px con icona per tipo di documento** (libretto→libro, carta identità/patente→tesserino, tessera sanitaria→croce, CDC→documento con timbro, denuncia→triangolo, delega→penna, visura→edificio, default→documento), nome semibold scuro protagonista, descrizione sotto
-- **Bollini "Scatta" e "File"**: due bottoni circolari sempre visibili che aprono DIRETTAMENTE fotocamera o selettore file (NIENTE popup intermedi — bocciati da Davide)
-- **Flusso fronte/retro** (vedi 3.4): miniature dei file in bozza con ✕ rosso, hint "manca il retro?" (solo se il catalogo lo prevede), bottone verde "Ho finito, invia in verifica"
-- **Documento rifiutato**: card in rosso (`#FEF6F6`/`#F3C8C8`), badge "Da rifare", `nota_admin` al posto della descrizione, bollini rossi
-- **"Già sistemati"**: collassato di default in una riga riassuntiva; espanso mostra righe compatte (spunta verde "Approvato" / orologio ambra "La stiamo verificando" + miniatura)
-- **Documenti per erede**: accordion per indice erede
-- **Moduli PDF** (template_pdf): card con badge "Modulo" e avviso "disponibile a breve" (finché non ci sono i template)
-- **"Da portare al ritiro"**: box navy scuro collassabile con la lista dei `richiede_consegna=true`
-- **Foto del veicolo**: griglia 3 colonne con ✕ rosso di eliminazione (conferma modale; elimina bucket + riga), due bottoni tratteggiati "Scatta foto"/"Scegli file"
+- **Filo logico dall'alto in basso**: striscia "inviati" ↑ → documento attivo → coda "Dopo questo" → bottone di pagina → box ritiro. Il cliente vede UNA cosa da fare alla volta.
+- **Striscia "N documenti inviati"** in cima, richiudibile (chiusa di default): aperta mostra una riga per documento con pillola blu "In verifica"/verde "Approvato" (stesse pillole dell'admin, NIENTE ambra) e TUTTE le miniature (✕ di eliminazione solo finché in verifica).
+- **Wizard**: barra "DOCUMENTO X DI Y" + card del SOLO documento attivo; fila unica per tutti i documenti `richiede_upload` (anche per erede, col suffisso "(primo erede)…" — l'accordion eredi non esiste più); i RIFIUTATI passano davanti (card rossa, badge "Da rifare", nota_admin).
+- **Solo foto**: nelle caselle fronte/retro un unico bottone tondo blu "Scatta" (`capture=environment`; su PC il browser apre la scelta immagine). Niente doppio input foto/file, niente "unico file".
+- **Modalità "Allega file"** (scansioni/PDF): link discreto in FONDO alla card ("Hai una scansione o un PDF? Allega file") — MAI sotto le caselle (suggerirebbe una quantità). Attivata: le caselle fronte/retro SPARISCONO, lista allegati con nome + ✕, riquadro tratteggiato "Allega un altro file" (uno o più). **Il completamento lo dichiara l'utente**: il Continua si accende dal primo file ("Hai allegato tutto? Premi Continua") perché il sistema non può sapere se un file basta. Con le foto invece il conteggio è automatico (fronte+retro).
+- **Bottone di pagina contestuale** (stile "Continua" di /inizia, fuori dalla card, tutta larghezza): "Vai al prossimo documento" / sull'ultimo "Vai alle foto del veicolo"; grigio finché non completo, "Invio…" durante l'invio; invia in verifica e apre da solo il prossimo. Suggerimento nella card ("Scatta il retro per continuare" / "Foto complete" verde).
+- **Foto del veicolo = ULTIMO PASSO della fila** ("ULTIMO PASSO · FOTO DEL VEICOLO"): stessa card dei documenti con griglia + Scatta/Galleria. Niente più sezione separata in fondo (era "un pugno in un occhio").
+- **Anteprima**: modale con solo titolo e ✕ (il link "Apri in nuova scheda" è stato RIMOSSO ovunque lato cliente).
+- **Moduli PDF** (template_pdf): card informativa con badge "Modulo", fuori dalla fila.
+- **"Da portare al ritiro"**: box smeraldo collassabile con la lista dei `richiede_consegna=true` — INTATTO, logica casistiche.
 - **Dati**: due query separate (checklist + catalogo) unite in JS — NIENTE join `!inner` PostgREST (manca la FK dichiarata). Signed URL 1h per il bucket privato.
 
 ---
@@ -883,14 +887,18 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 
 ### ▶️🔥🔥🔥 STEP 0 — PUNTO DI RIPARTENZA (aggiornato 7/07/2026)
 
-**PROSSIMO GRANDE TASK: DASHBOARD DEMOLITORE.** È il pezzo che chiude il cerchio della pipeline (fasi 5→6→7). Il demolitore deve poter:
-1. ✅ ~~Accedere~~ FATTO E COLLAUDATO (8/07/2026): invito email + `/imposta-password` + area `/demolitore` (guscio). Colonne nuove: `utenti.demolitore_id`, `demolitori.invito_inviato_il`; constraint `utenti_tipo_check` esteso con demolitore/commerciante (migrazione in `docs/sql/`).
-2. Vedere le **pratiche assegnate** (dati ritiro, documenti approvati del cliente, chat)
-3. **Proporre data/ora ritiro** entro le 8 ore lavorative (il cliente conferma)
-4. Segnare il **ritiro effettivo** (`data_ritiro_effettuato`) → fase "Ritirate" → **parte la fatturazione**
-5. Caricare il **certificato di rottamazione** oppure spuntare "consegnato a mano al ritiro"
-6. Caricare il **certificato di radiazione PRA** → pratica "Completata"
-7. Vedere anche le proprie **pratiche annullate** (trasparenza/deterrente)
+**DASHBOARD DEMOLITORE — FASI 1 e 2 FATTE (8-9/07/2026), PROSSIMO: FASE 3.**
+1. ✅ ~~Accedere~~ FATTO E COLLAUDATO: invito email + `/imposta-password` + login multi-ruolo. Colonne: `utenti.demolitore_id`, `demolitori.invito_inviato_il`; constraint `utenti_tipo_check` esteso (migrazione in `docs/sql/`). LED accesso + revoca nella scheda admin.
+2. ✅ ~~Pratiche assegnate~~ FATTO (fase 2, vedi 5.3): liste per fase, scheda completa, documenti approvati. (Chat demolitore↔cliente: DA FARE.)
+3. ✅ ~~Fissare data/ora ritiro~~ FATTO — decisione Davide: **la data vale subito, il cliente NON deve confermare** (la segretaria chiama prima). In fase 3: bottone "Non posso quel giorno" del cliente → segnale a demolitore+admin, senza bloccare.
+4. ✅ ~~Ritiro effettivo~~ FATTO (`data_ritiro_effettuato` + stato `ritirata`).
+5. ✅ ~~Certificato rottamazione~~ FATTO (upload o "consegnato a mano al ritiro").
+6. ✅ ~~Certificato PRA~~ FATTO (→ `completata`; regola: solo il PRA completa).
+7. ✅ ~~Annullate visibili~~ FATTO (tab dedicata coi motivi, sempre visibile).
+
+**FASE 3 — MOTORE SCADENZE E NOTIFICHE (prossima):** campanella in-app demolitore, email di sollecito oltre le 8 ore lavorative, promemoria del giorno di ritiro a demolitore E cliente ("auto ritirata?"), "cliente dice no" → segnalazione all'admin, bottone cliente "Non posso quel giorno". Richiede: **Resend attivo** (Davide ha GIÀ il dominio noidemoliamo.it: va collegato a Vercel + verificato su Resend con SPF/DKIM/DMARC) e un cron Vercel per i controlli periodici. Decisione: canali v1 = email + campanella (push → PWA futura).
+**FASE 4 — PROFORMA FATTURA:** al "ritirata" la pratica entra nel giro fatturazione (da progettare con Davide).
+**IN CODA:** migliorie TabDocumenti wizard (Davide: "ci sono delle cose da migliorare" — riprendere da lì), landing vetrina su noidemoliamo.it, chat nella scheda demolitore, completare /privacy e /termini.
 
 **In sospeso (nessun codice a metà: sono test o decisioni aperte):**
 - 🟡 **Pagine legali /privacy e /termini**: completare i [DA COMPLETARE] (ragione sociale, P.IVA, sede, email contatto — idealmente info@noidemoliamo.it) quando dominio ed email aziendale saranno attivi
@@ -996,6 +1004,14 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 68. ⭐ **Fee del demolitore per ZONA, fatturazione automatica**: tariffa base + tariffe per regione/provincia/comune; il veicolo viene fatturato con la **tariffa più specifica** in base al luogo di ritiro. Il **ritiro effettivo** fa entrare la pratica in fatturazione; a fine mese fattura automatica per demolitore.
 69. **Eliminazione pratica ≠ eliminazione account**: due azioni distinte e consapevoli (scelta doppia nel dettaglio) + pulizia account senza pratiche separata. Mai orfani, mai admin/operatori.
 70. ⚙️ **Gotcha da ricordare**: (a) i nuovi stati pratica vanno aggiunti al constraint `pratiche_stato_check` o falliscono in silenzio — vale per TUTTI i CHECK (8/07: `utenti_tipo_check` non includeva 'demolitore' e l'invito falliva); (b) la provincia è **sigla** nelle pratiche e **nome** nella copertura → convertire (`lib/province.ts`); (c) Google Maps si carica una volta sola per pagina (`lib/googleMaps.ts`); (d) MAI `scrollIntoView` sull'onFocus degli input del flusso /inizia: su iPhone la schermata "sobbalza" quando si apre la tastiera (lo scroll è ammesso solo al click su Continua con errore).
+
+**Nuove decisioni 8-9 luglio 2026:**
+- ⭐ **La data del ritiro vale subito** (niente conferma bloccante del cliente): la segretaria del demolitore chiama prima e fissa; in fase 3 il cliente avrà solo un "Non posso quel giorno" non bloccante che avvisa demolitore e admin.
+- ⭐ **"Consegna a mano" dei documenti: PROVATA E RIMOSSA.** L'opzione "non carico, consegno la fotocopia al ritiro" era stata costruita end-to-end ma creava confusione e si discostava dalla logica casistiche (richiede_upload = si fotografa, richiede_consegna = originale al ritiro). Revert completo (commit 85be70a). NON riproporla senza ripensarla da zero con Davide. (Nel DB il constraint checklist ammette ancora 'consegna_a_mano': innocuo, nessuno lo scrive.)
+- ⭐ **Documenti cliente = WIZARD** (vedi 5.6): un documento alla volta, solo foto + "Allega file" discreto, completamento dichiarato dall'utente per i file, bottone contestuale. Colori SOLO standard NoiDemoliamo (Davide ha bocciato ambra/celestini fuori palette).
+- **Accesso demolitore**: invito email (Resend, con fallback link da mandare a mano finché non è configurato) + tre livelli di controllo (Non attivo / Revoca accesso / Elimina).
+- **Notifiche v1**: email + campanella in-app. Push vere solo con la futura PWA.
+- **Metodo di lavoro consolidato**: per le modifiche UI Davide vuole SEMPRE vedere prima mockup/varianti visive e sceglie lui; poi si implementa. Commit e push a ogni passo approvato (testa su Vercel dal telefono).
 
 **Nuove decisioni 7 luglio 2026:**
 
