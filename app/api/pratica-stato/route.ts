@@ -56,9 +56,7 @@ export async function POST(req: NextRequest) {
     const daApprovare = (righe || []).filter(r => richiedeUpload.get(r.documento_id))
     let nuovo = pratica.stato
     if (daApprovare.length > 0) {
-      // 'consegna_a_mano' vale come pronto: il cliente consegnerà la
-      // fotocopia al demolitore al ritiro (scelta per chi non carica).
-      const approvati = daApprovare.filter(r => r.stato === 'approvato' || r.stato === 'consegna_a_mano').length
+      const approvati = daApprovare.filter(r => r.stato === 'approvato').length
       const rifiutati = daApprovare.filter(r => r.stato === 'rifiutato').length
       const caricati = daApprovare.filter(r => r.stato === 'caricato').length
       if (approvati === daApprovare.length) nuovo = 'da_assegnare'
