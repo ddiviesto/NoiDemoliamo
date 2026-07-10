@@ -17,6 +17,10 @@
 Compila la colonna "Ce l'ho?": `PDF` (pronto), `WORD` (vuoto, da rifare insieme), `NO` (da creare da zero).
 
 > ⭐ INVENTARIO VERIFICATO IL 10/07/2026 (rassegna Claude + Davide sui file in `originali/`)
+> ⭐ 10/07: i 4 PDF ACI sostituiti con le ULTIME versioni ufficiali (modulistica ACI ripubblicata a
+> maggio 2026, informative GDPR): eredità, eredità con rinuncia, legale rappresentante (2026/05) e
+> non intestatario (rev. 06/22, l'ultima pubblicata). Le versioni precedenti di Davide restano nella
+> storia git (commit 7f499a0). I file vuoti (6 deleghe 0 byte + fermo senza testo) sono stati rimossi.
 
 ### Deleghe consegna veicolo (solo se c'è un delegato)
 
@@ -38,12 +42,12 @@ NoiDemoliamo da scrivere (useremo il modello ACI come guida di impostazione).
 
 | # | Modulo | Casistica | Ce l'ho? | Stato |
 |---|--------|-----------|----------|-------|
-| 7 | DICHIARAZIONE_SOSTITUTIVA_EREDITA | Eredi (accettata) | PDF ACI ufficiale (GDPR ok, tabella eredi) | pronto, da rendere compilabile |
-| 8 | DICHIARAZIONE_SOSTITUTIVA_EREDITA_RINUNCIA | Eredi con rinuncia | PDF ACI ufficiale (GDPR ok, 2 tabelle: eredi + rinunciatari con estremi Tribunale) | pronto, da rendere compilabile |
-| 9 | DICHIARAZIONE_SOSTITUTIVA_LEGALE_RAPPRESENTANTE | Società | PDF ACI ufficiale ⚠️ informativa vecchia (D.lgs 196/2003, pre-GDPR) | da decidere: cercare versione ACI aggiornata o usare questa |
+| 7 | DICHIARAZIONE_SOSTITUTIVA_EREDITA | Eredi (accettata) | PDF ACI ufficiale 2026/05 (GDPR, tabella eredi) | pronto, da rendere compilabile |
+| 8 | DICHIARAZIONE_SOSTITUTIVA_EREDITA_RINUNCIA | Eredi con rinuncia | PDF ACI ufficiale 2026/05 (GDPR, 2 tabelle: eredi + rinunciatari con estremi Tribunale) | pronto, da rendere compilabile |
+| 9 | DICHIARAZIONE_SOSTITUTIVA_LEGALE_RAPPRESENTANTE | Società | PDF ACI ufficiale 2026/05 (GDPR) | pronto, da rendere compilabile |
 | 10 | DICHIARAZIONE_SOSTITUTIVA_CURATORE_FALLIMENTARE | Società fallita | PDF+Word FATTI DA DAVIDE sul modello ACI (informativa GDPR ok) | da rivedere insieme (wording "curatore/liquidatore giudiziale") |
-| 11 | DICHIARAZIONE_SOSTITUTIVA_PRESIDENTE_ASSOCIAZIONE | Associazione | NO — MA il modulo ACI del legale rappresentante (#9) dice già "società/associazione" | proposta: riusare il #9 anche per le associazioni |
-| 12 | DICHIARAZIONE_SOSTITUTIVA_RADIAZIONE_PROPRIETARIO_NON_INTESTATARIO | Non intestatario | PDF ACI ufficiale ⚠️ informativa vecchia (196/2003) | da decidere come il #9 |
+| 11 | DICHIARAZIONE_SOSTITUTIVA_PRESIDENTE_ASSOCIAZIONE | Associazione | ⭐ DECISO (10/07): si riusa il modulo #9 (dice "società/associazione") | coperto dal #9 |
+| 12 | DICHIARAZIONE_SOSTITUTIVA_RADIAZIONE_PROPRIETARIO_NON_INTESTATARIO | Non intestatario | PDF ACI ufficiale rev. 06/22 (GDPR, con campo CF) | pronto, da rendere compilabile |
 
 ### Integrazione fermo amministrativo (trasversale ai casi 1–7)
 
