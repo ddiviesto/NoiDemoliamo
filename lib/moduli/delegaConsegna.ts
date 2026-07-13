@@ -1,16 +1,21 @@
 /**
- * DELEGA ALLA CONSEGNA DEL VEICOLO PER DEMOLIZIONE — generatore PDF.
+ * DELEGA ALLA CONSEGNA DEL VEICOLO PER DEMOLIZIONE — generatore PDF (6 varianti).
  *
- * Testo approvato da Davide il 10/07/2026 (vedi docs/moduli/LEGGIMI.md):
+ * Testo base approvato da Davide il 10/07/2026 (vedi docs/moduli/LEGGIMI.md):
  * - il nome dell'autodemolitore resta IN BIANCO (si scrive a penna;
  *   in futuro valuteremo la precompilazione post-assegnazione)
  * - campi compilati dal sistema: nome delegante, CF, marca/modello, targa,
  *   nome del delegato; il resto si completa a penna
+ * - varianti per casistica: cambia la QUALIFICA del delegante; per gli eredi
+ *   ci sono righe firma aggiuntive (gli altri eredi accettanti firmano tutti;
+ *   chi ha rinunciato NON firma nulla)
  *
  * Stile impostato sui moduli ACI (Helvetica, righe con campo sottolineato).
  */
 
-import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from 'pdf-lib'
+import { PDFDocument, PDFFont, StandardFonts, rgb } from 'pdf-lib'
+
+export type VarianteDelega = 'privato' | 'eredi' | 'eredi_rinuncia' | 'societa' | 'fallimento' | 'associazione'
 
 export interface DatiDelegaConsegna {
   nomeDelegante?: string | null
@@ -35,7 +40,7 @@ interface Segmento {
   valore?: string | null
 }
 
-export async function generaDelegaConsegnaPrivato(dati: DatiDelegaConsegna): Promise<Uint8Array> {
+export async function generaDelegaConsegna(variante: VarianteDelega, dati: DatiDelegaConsegna): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
   doc.setTitle('Delega alla consegna del veicolo per demolizione')
   const page = doc.addPage([A4.larghezza, A4.altezza])
@@ -100,6 +105,20 @@ export async function generaDelegaConsegnaPrivato(dati: DatiDelegaConsegna): Pro
     }
   }
 
+  // Coppia di linee firma affiancate con didascalia sotto
+  function firme(sinistra: string, destra: string) {
+    const metaSx = MARGINE
+    const metaDx = A4.larghezza / 2 + 30
+    const larghezzaFirma = 200
+    page.drawLine({ start: { x: metaSx, y }, end: { x: metaSx + larghezzaFirma, y }, thickness: 0.7, color: NERO })
+    page.drawLine({ start: { x: metaDx, y }, end: { x: metaDx + larghezzaFirma, y }, thickness: 0.7, color: NERO })
+    y -= 13
+    const wSx = font.widthOfTextAtSize(sinistra, 9)
+    const wDx = font.widthOfTextAtSize(destra, 9)
+    page.drawText(sinistra, { x: metaSx + (larghezzaFirma - wSx) / 2, y, size: 9, font, color: GRIGIO })
+    page.drawText(destra, { x: metaDx + (larghezzaFirma - wDx) / 2, y, size: 9, font, color: GRIGIO })
+  }
+
   // ---------- TITOLO ----------
   testoCentrato('DELEGA ALLA CONSEGNA DEL VEICOLO PER DEMOLIZIONE', bold, 12.5)
   y -= 30
@@ -110,12 +129,55 @@ export async function generaDelegaConsegnaPrivato(dati: DatiDelegaConsegna): Pro
   riga([{ testo: 'nato/a a ' }, { linea: 210 }, { testo: '  ( ' }, { linea: 28 }, { testo: ' )  il ' }, { linea: 'resto' }]); y -= salto
   riga([{ testo: 'residente a ' }, { linea: 180 }, { testo: '  ( ' }, { linea: 28 }, { testo: ' )  in via ' }, { linea: 'resto' }]); y -= salto
   riga([{ testo: 'codice fiscale ' }, { linea: 250, valore: dati.codiceFiscale }]); y -= salto
-  riga([
-    { testo: 'in qualità di proprietario/a del veicolo ' },
-    { linea: 'resto', valore: dati.marcaModello },
-    { testo: '  targato ' },
-    { linea: 110, valore: dati.targa },
-  ]); y -= salto + 4
+
+  // QUALIFICA del delegante (cambia per casistica)
+  switch (variante) {
+    case 'privato':
+      riga([
+        { testo: 'in qualità di proprietario/a del veicolo ' },
+        { linea: 'resto', valore: dati.marcaModello },
+        { testo: '  targato ' },
+        { linea: 110, valore: dati.targa },
+      ]); y -= salto
+      break
+    case 'eredi':
+    case 'eredi_rinuncia':
+      riga([
+        { testo: "in qualità di erede dell'intestatario del veicolo " },
+        { linea: 'resto', valore: dati.marcaModello },
+        { testo: '  targato ' },
+        { linea: 110, valore: dati.targa },
+      ]); y -= salto
+      break
+    case 'societa':
+      riga([{ testo: 'in qualità di legale rappresentante della società/azienda ' }, { linea: 'resto' }]); y -= salto
+      riga([
+        { testo: 'intestataria del veicolo ' },
+        { linea: 'resto', valore: dati.marcaModello },
+        { testo: '  targato ' },
+        { linea: 110, valore: dati.targa },
+      ]); y -= salto
+      break
+    case 'fallimento':
+      riga([{ testo: 'in qualità di curatore della liquidazione giudiziale (curatore fallimentare) della società ' }, { linea: 'resto' }]); y -= salto
+      riga([
+        { testo: 'intestataria del veicolo ' },
+        { linea: 'resto', valore: dati.marcaModello },
+        { testo: '  targato ' },
+        { linea: 110, valore: dati.targa },
+      ]); y -= salto
+      break
+    case 'associazione':
+      riga([{ testo: "in qualità di presidente dell'associazione/ente " }, { linea: 'resto' }]); y -= salto
+      riga([
+        { testo: 'intestataria/o del veicolo ' },
+        { linea: 'resto', valore: dati.marcaModello },
+        { testo: '  targato ' },
+        { linea: 110, valore: dati.targa },
+      ]); y -= salto
+      break
+  }
+  y -= 4
 
   paragrafo("consapevole delle sanzioni penali previste in caso di dichiarazioni non veritiere dall'art. 76 del D.P.R. 28/12/2000 n. 445,", 9.5, bold)
   y -= 12
@@ -136,21 +198,21 @@ export async function generaDelegaConsegnaPrivato(dati: DatiDelegaConsegna): Pro
   y -= 10
 
   paragrafo('Il delegato dovrà presentarsi al ritiro con un documento di identità in corso di validità.', 9.5)
-  paragrafo('Si allega fotocopia del documento di identità del delegante.', 9.5)
+  paragrafo('Si allegano le fotocopie, fronte e retro, dei documenti di identità del delegante e del delegato.', 9.5)
   y -= 24
 
   // ---------- LUOGO, DATA E FIRME ----------
   riga([{ testo: '(luogo, data)  ' }, { linea: 190 }])
   y -= 52
 
-  const metaSx = MARGINE
-  const metaDx = A4.larghezza / 2 + 30
-  const larghezzaFirma = 200
-  page.drawLine({ start: { x: metaSx, y }, end: { x: metaSx + larghezzaFirma, y }, thickness: 0.7, color: NERO })
-  page.drawLine({ start: { x: metaDx, y }, end: { x: metaDx + larghezzaFirma, y }, thickness: 0.7, color: NERO })
-  y -= 13
-  page.drawText('Firma del Delegante', { x: metaSx + 48, y, size: 9, font, color: GRIGIO })
-  page.drawText('Firma del Delegato', { x: metaDx + 50, y, size: 9, font, color: GRIGIO })
+  // Firmano solo delegante e delegato (deciso da Davide il 10/07:
+  // niente righe firma extra per gli altri eredi)
+  firme('Firma del Delegante', 'Firma del Delegato')
 
   return doc.save()
+}
+
+// Compatibilità col primo modulo approvato (10/07/2026)
+export async function generaDelegaConsegnaPrivato(dati: DatiDelegaConsegna): Promise<Uint8Array> {
+  return generaDelegaConsegna('privato', dati)
 }

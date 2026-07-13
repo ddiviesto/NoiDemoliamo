@@ -28,12 +28,17 @@ Compila la colonna "Ce l'ho?": `PDF` (pronto), `WORD` (vuoto, da rifare insieme)
 
 | # | Modulo | Casistica | Ce l'ho? | Stato |
 |---|--------|-----------|----------|-------|
-| 1 | DELEGA_CONSEGNA_VEICOLO_PRIVATO | Persona fisica | ⭐ CREATA: testo approvato da Davide il 10/07, generatore in `lib/moduli/delegaConsegna.ts`, anteprima in `anteprime/` | ✅ APPROVATA (autodemolitore in bianco, da scrivere a penna) |
-| 2 | DELEGA_CONSEGNA_VEICOLO_EREDI | Eredi (accettata) | NO (docx 0 byte, vuoto) | da creare da zero |
-| 3 | DELEGA_CONSEGNA_VEICOLO_EREDI_RINUNCIA | Eredi con rinuncia | NO (docx 0 byte, vuoto) | da creare da zero |
-| 4 | DELEGA_CONSEGNA_VEICOLO_SOCIETA_AZIENDA | Società | NO (docx 0 byte, vuoto) | da creare da zero |
-| 5 | DELEGA_CONSEGNA_VEICOLO_FALLIMENTO | Società fallita (firma il curatore) | NO (docx 0 byte, vuoto) | da creare da zero |
-| 6 | DELEGA_CONSEGNA_VEICOLO_ASSOCIAZIONE | Associazione (firma il presidente) | NO (docx 0 byte, vuoto) | da creare da zero |
+| 1 | DELEGA_CONSEGNA_VEICOLO_PRIVATO | Persona fisica | ⭐ CREATA da noi (generatore `lib/moduli/delegaConsegna.ts`) | ✅ APPROVATA 10/07 |
+| 2 | DELEGA_CONSEGNA_VEICOLO_EREDI | Eredi (accettata) | ⭐ CREATA (variante 'eredi' del generatore) | ✅ APPROVATA 10/07 |
+| 3 | DELEGA_CONSEGNA_VEICOLO_EREDI_RINUNCIA | Eredi con rinuncia | ⭐ CREATA (variante 'eredi_rinuncia') | ✅ APPROVATA 10/07 |
+| 4 | DELEGA_CONSEGNA_VEICOLO_SOCIETA_AZIENDA | Società | ⭐ CREATA (variante 'societa', riga per la denominazione) | ✅ APPROVATA 10/07 |
+| 5 | DELEGA_CONSEGNA_VEICOLO_FALLIMENTO | Società fallita (firma il curatore) | ⭐ CREATA (variante 'fallimento', "curatore della liquidazione giudiziale") | ✅ APPROVATA 10/07 |
+| 6 | DELEGA_CONSEGNA_VEICOLO_ASSOCIAZIONE | Associazione (firma il presidente) | ⭐ CREATA (variante 'associazione') | ✅ APPROVATA 10/07 |
+
+Decisioni sul testo delle deleghe (10/07): autodemolitore IN BIANCO (a penna); firmano SOLO
+delegante e delegato (niente righe firma extra per gli altri eredi); si allegano le fotocopie
+FRONTE E RETRO dei documenti di identità di delegante E delegato; il delegato mostra il suo
+documento originale al ritiro. Anteprime con dati di prova in `anteprime/` (script `genera-anteprime.ts`).
 
 Nota: `MODELLO_DELEGA_PRESENTAZIONE_FORMALITÀ.pdf` (ACI, GDPR aggiornata) è un'ALTRA cosa: delega a
 presentare la pratica all'Unità Territoriale ACI/PRA — utile come riferimento di stile e forse al
