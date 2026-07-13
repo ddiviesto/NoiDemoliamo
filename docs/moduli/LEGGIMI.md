@@ -46,10 +46,10 @@ NoiDemoliamo da scrivere (useremo il modello ACI come guida di impostazione).
 |---|--------|-----------|----------|-------|
 | 7 | DICHIARAZIONE_SOSTITUTIVA_EREDITA | Eredi (accettata) | PDF ACI di Davide (GDPR ok, tabella eredi, layout pulito) | pronto, da rendere compilabile |
 | 8 | DICHIARAZIONE_SOSTITUTIVA_EREDITA_RINUNCIA | Eredi con rinuncia | PDF ACI di Davide (GDPR ok, 2 tabelle, layout pulito) | pronto, da rendere compilabile |
-| 9 | DICHIARAZIONE_SOSTITUTIVA_LEGALE_RAPPRESENTANTE | Società | PDF ACI di Davide (layout pulito, ⚠️ informativa 2003; la versione GDPR 2026 è impaginata male) | DA DECIDERE: tenere questa, o rifarla noi in bella copia col generatore + informativa GDPR |
+| 9 | DICHIARAZIONE_SOSTITUTIVA_LEGALE_RAPPRESENTANTE | Società | PDF ACI di Davide (logo ACI, layout pulito, informativa 2003) | ⭐ DECISO (10/07): si usa QUESTO — niente rifacimenti senza logo ACI; si aggiornerà quando ACI ripubblicherà versioni impaginate bene |
 | 10 | DICHIARAZIONE_SOSTITUTIVA_CURATORE_FALLIMENTARE | Società fallita | PDF+Word FATTI DA DAVIDE sul modello ACI (informativa GDPR ok) | da rivedere insieme (wording "curatore/liquidatore giudiziale") |
 | 11 | DICHIARAZIONE_SOSTITUTIVA_PRESIDENTE_ASSOCIAZIONE | Associazione | ⭐ DECISO (10/07): si riusa il modulo #9 (dice "società/associazione") | coperto dal #9 |
-| 12 | DICHIARAZIONE_SOSTITUTIVA_RADIAZIONE_PROPRIETARIO_NON_INTESTATARIO | Non intestatario | PDF ACI di Davide (layout pulito, ⚠️ informativa 2003; rev. 06/22 GDPR in `versioni-aci-2026/` da valutare a vista) | DA DECIDERE come il #9 |
+| 12 | DICHIARAZIONE_SOSTITUTIVA_RADIAZIONE_PROPRIETARIO_NON_INTESTATARIO | Non intestatario | PDF ACI di Davide (logo ACI, layout pulito, informativa 2003) | ⭐ DECISO (10/07): si usa QUESTO, come il #9 |
 
 ### Integrazione fermo amministrativo (trasversale ai casi 1–7)
 
