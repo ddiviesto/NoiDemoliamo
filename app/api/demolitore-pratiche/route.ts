@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
     // Checklist documenti + catalogo (per approvati e "da consegnare")
     const { data: righe } = await supabase
       .from('pratica_documenti_checklist')
-      .select('id, stato, file_url, indice_erede, casistiche_documenti (codice, nome, richiede_consegna, richiede_upload)')
+      .select('id, stato, file_url, indice_erede, casistiche_documenti (codice, nome, richiede_consegna, richiede_upload, template_pdf)')
       .eq('pratica_id', praticaId)
 
     type RigaChecklist = {
@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
       stato: string
       file_url: unknown
       indice_erede: number | null
-      casistiche_documenti: { codice: string; nome: string; richiede_consegna: boolean; richiede_upload: boolean } | null
+      casistiche_documenti: { codice: string; nome: string; richiede_consegna: boolean; richiede_upload: boolean; template_pdf: string | null } | null
     }
     const checklist = (righe || []) as unknown as RigaChecklist[]
 
@@ -116,13 +116,14 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // "Da farti consegnare al ritiro": documenti col flag richiede_consegna
+    // "Da farti consegnare al ritiro": documenti col flag richiede_consegna.
+    // I moduli PDF sono segnalati: il demolitore deve ritirare l'ORIGINALE FIRMATO.
     const daConsegnare: string[] = []
     for (const riga of checklist) {
       const doc = riga.casistiche_documenti
-      if (doc?.richiede_consegna && !daConsegnare.includes(doc.nome)) {
-        daConsegnare.push(doc.nome)
-      }
+      if (!doc?.richiede_consegna) continue
+      const nome = doc.template_pdf ? `${doc.nome} — modulo firmato in originale` : doc.nome
+      if (!daConsegnare.includes(nome)) daConsegnare.push(nome)
     }
 
     return NextResponse.json({

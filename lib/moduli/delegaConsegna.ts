@@ -74,11 +74,12 @@ export async function generaDelegaConsegna(variante: VarianteDelega, dati: DatiD
         const w = s.linea === 'resto' ? larghezzaResto : s.linea
         page.drawLine({ start: { x, y: y - 2.5 }, end: { x: x + w, y: y - 2.5 }, thickness: 0.7, color: NERO })
         if (s.valore) {
-          // Valore compilato dal sistema: in grassetto, centrato sulla linea
+          // Valore compilato dal sistema: grassetto e un punto più grande, centrato sulla linea
+          const sizeValore = size + 1
           let v = s.valore
-          let vw = bold.widthOfTextAtSize(v, size)
-          while (vw > w - 4 && v.length > 1) { v = v.slice(0, -1); vw = bold.widthOfTextAtSize(v, size) }
-          page.drawText(v, { x: x + (w - vw) / 2, y, size, font: bold, color: NERO })
+          let vw = bold.widthOfTextAtSize(v, sizeValore)
+          while (vw > w - 4 && v.length > 1) { v = v.slice(0, -1); vw = bold.widthOfTextAtSize(v, sizeValore) }
+          page.drawText(v, { x: x + (w - vw) / 2, y, size: sizeValore, font: bold, color: NERO })
         }
         x += w
       }

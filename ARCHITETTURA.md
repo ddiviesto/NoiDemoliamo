@@ -625,6 +625,7 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 
 - **`/api/assegna-pratica`** — algoritmo assegnazione ✅ (modalità dry-run / assegna demolitore scelto / auto). Converte sigla→nome provincia (`lib/province.ts`).
 - **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role). ⭐ 9/07: autorizzato anche il **cliente proprietario** (non solo admin) — il TabDocumenti lo chiama dopo ogni invio/eliminazione, così il banner del cliente si aggiorna da solo. Regola corretta: `in_attesa_approvazione_admin` SOLO quando **TUTTI** i documenti sono inviati (prima bastava il primo) → nel CRM una pratica entra in "Documenti da approvare" solo a invio completo.
+- ⭐ **`/api/modulo-pdf`** (nuovo 10/07) — download dei moduli PDF: `GET ?checklist_id=...` con Bearer token (cliente proprietario o admin). Genera al volo (deleghe autocompilate con pdf-lib; autodichiarazione in bianco per variante di casistica; curatore e ACI = PDF originali da `docs/moduli/originali/`, inclusi nel deploy via `outputFileTracingIncludes`), traccia `scaricato_il`. Bloccato per il cliente finché i documenti non sono verificati, TRANNE l'Autodichiarazione veicolo fuori uso (serve prima, per il Comune).
 - ⭐ **`/api/pratica-dati`** (nuovo 9/07) — modifica dei dati importanti della pratica dall'admin (regola "modifica a tasto" nelle card della pagina pratica): Cliente (nome/telefono/CF), Veicolo (targa/marca/modello/anno/km), Ritiro (indirizzo con **autocomplete Google** che aggiorna anche comune/provincia/CAP/lat/lng — quelli usati da assegnazione e tariffe — più spazio carro attrezzi e note), Fermo amministrativo. Campi in whitelist, targa/CF normalizzati maiuscoli. ⭐ Cambiare il FERMO sincronizza la checklist (condizione `fermo_si`: dichiarazione da fotografare + originale al ritiro) e ricalcola lo stato; le righe con file caricati non si toccano mai. Le condizioni dichiarate dal cliente (incidentata/cammina/…) restano di sola lettura. Solo admin.
 - ⭐ **`/api/pratica-cdc`** (nuovo 9/07) — esito della telefonata "non sa che certificato ha": l'admin preme **Cartaceo / Digitale / Smarrito** nel banner "Da contattare" → aggiorna `pratiche.certificato_proprieta` e **sincronizza la checklist** col catalogo (cartaceo → aggiunge il CDC cartaceo da fotografare + originale al ritiro; smarrito → denuncia di smarrimento, come da file casistiche; digitale → nulla), poi ricalcola lo stato. Le righe con file già caricati dal cliente NON si toccano mai. Dopo la scelta, pillola "Cert. proprietà" + link **"Cambia"** per correggere (finché la pratica è in fase documenti). Solo admin.
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
@@ -844,7 +845,15 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ✅ **Decisione di flusso moduli** (ha cambiato lo STEP 2): i moduli NON si caricano firmati (niente foto del firmato, troppo complesso) — il cliente li trova **già compilati** dal box verde "Documenti originali da portare al ritiro", li scarica/stampa/firma e li **consegna in originale al ritiro**; il demolitore li vede nel suo box "Da farti consegnare". I documenti finiscono alle agenzie pratiche auto dei demolitori per la radiazione.
 - ✅ `.gitattributes`: PDF/Word/immagini trattati come BINARI (un PDF rischiava la corruzione da conversione fine-riga).
 - ✅ `pdf-lib` aggiunta alle dipendenze.
-- ⏳ **RESTA LA PARTE TECNICA** (prossimo passo moduli): endpoint download con compilazione al volo e `scaricato_il`, scrittura dati sopra i 4 PDF ACI, bottone Scarica nel box verde (MOCKUP prima), SQL `richiede_upload=false` per i 19 documenti template del catalogo.
+- ✅ **INTEGRAZIONE TECNICA COMPLETATA (10/07 sera)** — i moduli sono IN MANO AI CLIENTI:
+  - **`/api/modulo-pdf`** (vedi 5.4): download del modulo per riga checklist, auth cliente proprietario/admin, traccia `scaricato_il`. I PDF originali viaggiano nel deploy via `outputFileTracingIncludes` (next.config).
+  - ⭐ **DECISIONE FINALE COMPILAZIONE** (dopo prova sul campo): autocompilate SOLO le 6 DELEGHE; l'**Autodichiarazione** esce IN BIANCO (il mezzo-compilato non piaceva), curatore = PDF originale di Davide, 4 ACI così come sono col logo. La scrittura dei dati sopra i PDF ACI è stata PROVATA E SCARTATA (resa non professionale).
+  - ⭐ **RINOMINE** (SQL): "Dichiarazione stato veicolo con fermo" → **"Autodichiarazione veicolo fuori uso"** (anche nel titolo del PDF); "Attestazione di inutilizzabilità" → **"Dichiarazione Inutilizzabilità Ente Pubblico"**.
+  - **Box verde cliente**: righe modulo con badge + bottone **Scarica**; **lucchetto "Dopo la verifica"** (i moduli si sbloccano quando l'admin approva i documenti — anche lato server). ⭐ ECCEZIONE: l'Autodichiarazione è scaricabile SUBITO — serve per farsi rilasciare la dichiarazione di inutilizzabilità dal Comune (senza eccezione il flusso era un circolo).
+  - **Card attestazione Ente Pubblico**: guida a passi "Come si ottiene" (1. scarica autodichiarazione — bottone integrato — 2. Comune/Polizia locale, 3. fotografa qui). Mockup A approvato.
+  - **SQL eseguiti**: `richiede_upload=false` sui 19 template (via dal wizard, solo box verde) + rinomine (file in `docs/sql/`).
+  - Via la card "Modulo a breve" dal wizard; contatori cliente basati solo sui documenti da fotografare; nel box del demolitore i moduli sono "— modulo firmato in originale".
+  - Cartella `versioni-aci-2026` eliminata (resta nella storia git).
 
 ### ⭐⭐ SESSIONE 9 luglio 2026 (sera) — RIFINITURE WIZARD DOCUMENTI + FLUSSO FOTO
 
@@ -956,9 +965,8 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 - **Denunce di smarrimento Carta d'Identità / Codice Fiscale**: previste dal file casistiche per ogni persona, ma NON presenti nel catalogo DB e senza domanda nel flusso. → decidere se aggiungerle.
 - **Pagina admin**: ✅ ~~casi "Da chiarire insieme" e "non so" sul CDC~~ FATTO (banner "Da contattare" + bottoni Cartaceo/Digitale/Smarrito, 9/07). Resta il caso "non so" sul **fermo amministrativo** (oggi solo pillola di allerta).
 
-### 🔥🔥 STEP 2 — TEMPLATE PDF MODULI — ⭐ MODULI DEFINITI (10/07), RESTA L'INTEGRAZIONE
-- ✅ Tutti e 13 i moduli decisi/creati/approvati (vedi sessione 10/07 in 8.1 e `docs/moduli/LEGGIMI.md`)
-- ⏳ Integrazione tecnica: endpoint `/api/modulo-pdf` (compila al volo coi dati pratica, traccia `scaricato_il`, auth cliente proprietario), scrittura dati sopra i 4 PDF ACI, bottone Scarica nel box verde del cliente (mockup prima) + badge nel box del demolitore, SQL `richiede_upload=false` sui documenti template (oggi risultano ancora "da caricare": vanno resi solo "da consegnare"). ⚠️ Ricontrollare anche `CODICI_FRONTE_RETRO` e il wizard: i moduli non devono più comparire tra i documenti da fotografare.
+### ✅ STEP 2 — TEMPLATE PDF MODULI — COMPLETATO (10/07)
+- ✅ Tutti e 13 i moduli decisi/creati/approvati E integrati end-to-end (endpoint download, box verde con Scarica e lucchetto, guida a passi per il fermo, SQL eseguiti). Dettagli nella sessione 10/07 in 8.1 e in `docs/moduli/LEGGIMI.md`.
 
 ### 🔥 STEP 3 — PULIZIA
 - Eliminare pratiche test: "ciccio", "Mario Verdi", "Sirio Valenti" (+ "EEEEE" quando non servirà più)

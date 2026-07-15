@@ -38,7 +38,7 @@ interface Segmento {
 
 export async function generaDichiarazioneFermo(variante: VarianteFermo, dati: DatiDichiarazioneFermo): Promise<Uint8Array> {
   const doc = await PDFDocument.create()
-  doc.setTitle('Dichiarazione di stato del veicolo con fermo amministrativo e richiesta di demolizione')
+  doc.setTitle('Autodichiarazione veicolo fuori uso e richiesta di demolizione')
   const page = doc.addPage([A4.larghezza, A4.altezza])
   const font = await doc.embedFont(StandardFonts.Helvetica)
   const bold = await doc.embedFont(StandardFonts.HelveticaBold)
@@ -68,10 +68,12 @@ export async function generaDichiarazioneFermo(variante: VarianteFermo, dati: Da
         const w = s.linea === 'resto' ? larghezzaResto : s.linea
         page.drawLine({ start: { x, y: y - 2.5 }, end: { x: x + w, y: y - 2.5 }, thickness: 0.7, color: NERO })
         if (s.valore) {
+          // Valore compilato dal sistema: grassetto e un punto più grande
+          const sizeValore = size + 1
           let v = s.valore
-          let vw = bold.widthOfTextAtSize(v, size)
-          while (vw > w - 4 && v.length > 1) { v = v.slice(0, -1); vw = bold.widthOfTextAtSize(v, size) }
-          page.drawText(v, { x: x + (w - vw) / 2, y, size, font: bold, color: NERO })
+          let vw = bold.widthOfTextAtSize(v, sizeValore)
+          while (vw > w - 4 && v.length > 1) { v = v.slice(0, -1); vw = bold.widthOfTextAtSize(v, sizeValore) }
+          page.drawText(v, { x: x + (w - vw) / 2, y, size: sizeValore, font: bold, color: NERO })
         }
         x += w
       }
@@ -106,8 +108,8 @@ export async function generaDichiarazioneFermo(variante: VarianteFermo, dati: Da
     y -= 4
   }
 
-  // ---------- TITOLO ----------
-  testoCentrato('DICHIARAZIONE DI STATO DEL VEICOLO CON FERMO AMMINISTRATIVO', bold, 11.5)
+  // ---------- TITOLO (nome deciso il 10/07 sera) ----------
+  testoCentrato('AUTODICHIARAZIONE VEICOLO FUORI USO', bold, 11.5)
   y -= 16
   testoCentrato('E RICHIESTA DI DEMOLIZIONE', bold, 11.5)
   y -= 15

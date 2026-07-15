@@ -10,7 +10,6 @@ import { mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { generaDelegaConsegna, VarianteDelega } from '../../lib/moduli/delegaConsegna'
 import { generaDichiarazioneFermo, VarianteFermo } from '../../lib/moduli/dichiarazioneFermo'
-import { generaDichiarazioneCuratore } from '../../lib/moduli/dichiarazioneCuratore'
 
 const CARTELLA = join(__dirname, 'anteprime')
 
@@ -41,25 +40,15 @@ async function main() {
     console.log(`OK: ${d.file}`)
   }
   for (const v of VARIANTI_FERMO) {
-    const pdf = await generaDichiarazioneFermo(v, {
-      nomeDichiarante: DATI_PROVA.nomeDelegante,
-      codiceFiscale: DATI_PROVA.codiceFiscale,
-      marcaModello: DATI_PROVA.marcaModello,
-      targa: DATI_PROVA.targa,
-    })
+    // IN BIANCO (deciso 10/07 sera): compila tutto il cliente a penna
+    const pdf = await generaDichiarazioneFermo(v, {})
     const file = `DICHIARAZIONE_FERMO_${v.toUpperCase()}_ANTEPRIMA.pdf`
     writeFileSync(join(CARTELLA, file), pdf)
     console.log(`OK: ${file}`)
   }
 
-  const curatore = await generaDichiarazioneCuratore({
-    nomeDichiarante: 'Mario Rossi',
-    partitaIva: '12345678901',
-    marcaModello: DATI_PROVA.marcaModello,
-    targa: DATI_PROVA.targa,
-  })
-  writeFileSync(join(CARTELLA, 'DICHIARAZIONE_CURATORE_ANTEPRIMA.pdf'), curatore)
-  console.log('OK: DICHIARAZIONE_CURATORE_ANTEPRIMA.pdf')
+  // Niente anteprime per curatore e moduli ACI: si scaricano i PDF
+  // originali così come sono, in bianco (decisione 10/07)
 }
 
 main().catch(err => { console.error(err); process.exit(1) })

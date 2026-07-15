@@ -134,15 +134,6 @@ function IcoCheck({ size = 21, color = '#1D9E75' }: { size?: number; color?: str
   )
 }
 
-function IcoClock({ size = 21, color = '#d99412' }: { size?: number; color?: string }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="9.5"/>
-      <polyline points="12 7 12 12 15.5 13.5"/>
-    </svg>
-  )
-}
-
 function IcoAlert({ size = 14, color = '#c0392b' }: { size?: number; color?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -300,6 +291,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
   const [sistematiAperti, setSistematiAperti] = useState(false)
   const [ritiroAperto, setRitiroAperto] = useState(false)
+  // Download di un modulo PDF compilato (box verde)
+  const [scaricandoId, setScaricandoId] = useState<string | null>(null)
   // Card di caricamento foto: si apre toccando il banner giallo, la chiude
   // il cliente con "Ho finito con le foto"
   const [cardFotoAperta, setCardFotoAperta] = useState(false)
@@ -531,6 +524,34 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
     }
   }
 
+  // Scarica un modulo PDF già compilato coi dati della pratica
+  // (l'endpoint traccia anche scaricato_il)
+  async function scaricaModulo(doc: DocChecklist) {
+    setScaricandoId(doc.id)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sessione scaduta')
+      const res = await fetch(`/api/modulo-pdf?checklist_id=${encodeURIComponent(doc.id)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      })
+      if (!res.ok) throw new Error('Download fallito')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${doc.nome}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+      await carica() // aggiorna scaricato_il nella lista
+    } catch (err) {
+      console.error('Errore download modulo:', err)
+      alert('Errore nel download del modulo. Riprova.')
+    }
+    setScaricandoId(null)
+  }
+
   async function uploadFotoExtra(files: File[]) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -578,15 +599,28 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
     ...daFare.filter(d => d.richiede_upload && !d.template_pdf && d.stato !== 'rifiutato'),
   ]
   const docAttivo: DocChecklist | undefined = codaWizard[0]
-  const daFareModuli = daFare.filter(d => d.template_pdf)
   const docUpload = docsAttivi.filter(d => d.richiede_upload && !d.template_pdf)
   const inviatiCount = docUpload.filter(d => d.stato === 'caricato' || d.stato === 'approvato').length
   const totaleDocWizard = docUpload.length
   const daConsegnare = docsAttivi.filter(d => d.richiede_consegna)
 
-  const totale = docsAttivi.length
-  const pronti = sistemati.length
-  const tuttoApprovato = totale > 0 && docsAttivi.every(d => d.stato === 'approvato') && !librettoDaChiarire && !cdcDaChiarire
+  // Contatori e stati basati SOLO sui documenti da fotografare: i moduli PDF
+  // non si caricano (si scaricano dal box verde, si firmano e si consegnano
+  // in originale al ritiro — deciso il 10/07)
+  const totale = totaleDocWizard
+  const pronti = inviatiCount
+  const tuttoApprovato = totaleDocWizard > 0 && docUpload.every(d => d.stato === 'approvato') && !librettoDaChiarire && !cdcDaChiarire
+  // I moduli PDF si sbloccano DOPO la verifica dei documenti da parte
+  // dell'admin (cintura di sicurezza sui dati compilati — stessa regola
+  // dell'endpoint /api/modulo-pdf).
+  // ⭐ ECCEZIONE: la DICHIARAZIONE DEL FERMO è scaricabile SUBITO — serve al
+  // cliente per chiedere l'Attestazione di inutilizzabilità al Comune (L. 14/2026).
+  const moduliSbloccati = !['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati'].includes(pratica.stato || '')
+  const TEMPLATE_FERMO = 'DICHIARAZIONE_SOSTITUTIVA_STATO_VEICOLO_CON_FERMO_AMMINISTRATIVO'
+  const moduloSbloccato = (d: DocChecklist) => moduliSbloccati || d.template_pdf === TEMPLATE_FERMO
+  // L'Autodichiarazione della pratica (se c'è il fermo): usata dalla guida
+  // a passi nella card dell'attestazione Ente Pubblico
+  const docFermo = docsAttivi.find(d => d.template_pdf === TEMPLATE_FERMO)
   // Documenti tutti inviati (la fila del wizard è vuota)
   const docsInviati = !tuttoApprovato && !docAttivo && totaleDocWizard > 0 && inviatiCount === totaleDocWizard
   // Banner giallo: nessuna foto del veicolo (e card non aperta)
@@ -682,7 +716,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           </div>
 
           <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
-            onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => eliminaFile(docAttivo, idx)} />
+            onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => eliminaFile(docAttivo, idx)}
+            guidaAttestazione={docAttivo.codice === 'ATTESTAZIONE_INUTILIZZABILITA' && docFermo
+              ? { onScarica: () => scaricaModulo(docFermo), scaricando: scaricandoId === docFermo.id }
+              : undefined} />
 
           {/* CONTINUA di pagina SUBITO SOTTO la card (l'azione è attaccata a
               ciò che hai appena completato); grigio finché le foto non sono complete */}
@@ -750,12 +787,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           onFinito={() => setCardFotoAperta(false)} />
       )}
 
-      {/* ====== MODULI PDF (informativi, fuori dalla fila) ====== */}
-      {daFareModuli.length > 0 && (
-        <div className="flex flex-col gap-2.5">
-          {daFareModuli.map(d => <ModuloCard key={d.id} doc={d} />)}
-        </div>
-      )}
+      {/* Nota: la card "Modulo — disponibile a breve" è stata RIMOSSA (10/07):
+          i moduli PDF si scaricano già compilati dal box verde qui sotto,
+          si firmano e si consegnano in originale al ritiro. */}
 
       {/* ====== DOCUMENTI ORIGINALI DA PORTARE AL RITIRO ====== */}
       {daConsegnare.length > 0 && (
@@ -782,13 +816,45 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
                 {daConsegnare.map((d, i) => (
                   <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < daConsegnare.length - 1 ? '1px solid #EEF1F5' : 'none' }}>
                     <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#CCFBF1', color: '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-                    <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
+                      {d.template_pdf && (
+                        <div style={{ marginTop: 3 }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, color: moduloSbloccato(d) ? '#0F766E' : '#4B5563', background: moduloSbloccato(d) ? '#CCFBF1' : '#E7EAEE', borderRadius: 20, padding: '2px 9px' }}>
+                            {!moduloSbloccato(d) ? 'Modulo · dopo la verifica dei documenti' : d.scaricato_il ? 'Modulo scaricato · compila e firma' : 'Modulo · scarica, compila e firma'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {/* Modulo PDF: scarica già compilato coi dati della pratica.
+                        Bloccato fino alla verifica — TRANNE la dichiarazione del
+                        fermo, che serve subito per l'attestazione del Comune. */}
+                    {d.template_pdf && (
+                      moduloSbloccato(d) ? (
+                        <button
+                          onClick={() => scaricaModulo(d)}
+                          disabled={scaricandoId === d.id}
+                          className="active:scale-[0.97]"
+                          style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, background: '#0F766E', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: scaricandoId === d.id ? 0.7 : 1, transition: 'all 0.15s' }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                          {scaricandoId === d.id ? 'Scarico…' : 'Scarica'}
+                        </button>
+                      ) : (
+                        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, background: '#F3F4F6', color: '#9CA3AF', borderRadius: 9, padding: '8px 13px', fontSize: 12, fontWeight: 600 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+                          Dopo la verifica
+                        </span>
+                      )
+                    )}
                   </div>
                 ))}
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, padding: '0 2px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CCFBF1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>Servono <b style={{ color: '#fff' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.</span>
+                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>Servono <b style={{ color: '#fff' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.{daConsegnare.some(d => d.template_pdf) && (moduliSbloccati
+                  ? <> Scarica i moduli, <b style={{ color: '#fff' }}>compilali e firmali</b>.</>
+                  : <> I moduli si sbloccano <b style={{ color: '#fff' }}>dopo la verifica dei documenti</b>.</>)}{!moduliSbloccati && daConsegnare.some(d => d.template_pdf === TEMPLATE_FERMO) && <> L&apos;<b style={{ color: '#fff' }}>autodichiarazione veicolo fuori uso è già scaricabile</b>: compilala, firmala e portala al Comune per farti rilasciare la dichiarazione di inutilizzabilità.</>}</span>
               </div>
             </div>
           )}
@@ -980,6 +1046,9 @@ function DocCard(props: {
   onCarica: (files: File[], lato?: 'fronte' | 'retro') => void
   onApri: (url: string, titolo: string) => void
   onElimina: (fileIdx: number) => void | Promise<void>
+  // Solo per la card "Dichiarazione Inutilizzabilità Ente Pubblico":
+  // guida a passi con il download dell'Autodichiarazione integrato
+  guidaAttestazione?: { onScarica: () => void; scaricando: boolean }
 }) {
   const inputCamFronte = useRef<HTMLInputElement>(null)
   const inputCamRetro = useRef<HTMLInputElement>(null)
@@ -1143,6 +1212,35 @@ function DocCard(props: {
           </div>
         ) : null}
       </div>
+
+      {/* GUIDA A PASSI (solo attestazione Ente Pubblico): il passo 1 scarica
+          l'Autodichiarazione veicolo fuori uso senza uscire dalla card */}
+      {props.guidaAttestazione && (
+        <div style={{ marginTop: 12, background: '#F0F7FF', border: '1px solid #CFE3F8', borderRadius: 11, padding: '11px 12px' }}>
+          <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, color: '#1E4E8C', textTransform: 'uppercase', marginBottom: 8 }}>Come si ottiene</div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 7 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#DBEAFE', color: '#1E4E8C', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</span>
+            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Scarica e firma l&apos;<b>Autodichiarazione veicolo fuori uso</b></span>
+            <button
+              onClick={props.guidaAttestazione.onScarica}
+              disabled={props.guidaAttestazione.scaricando}
+              className="active:scale-[0.97]"
+              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 11px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', opacity: props.guidaAttestazione.scaricando ? 0.7 : 1, transition: 'all 0.15s' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+              {props.guidaAttestazione.scaricando ? 'Scarico…' : 'Scarica'}
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 7 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#DBEAFE', color: '#1E4E8C', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</span>
+            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Portala al tuo <b>Comune o alla Polizia locale</b>: ti rilasciano la dichiarazione di inutilizzabilità</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+            <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#DBEAFE', color: '#1E4E8C', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</span>
+            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Fotografala qui — l&apos;<b>originale</b> va consegnato al ritiro</span>
+          </div>
+        </div>
+      )}
 
       {/* CASELLE FRONTE / RETRO */}
       {modoSlot && (
@@ -1476,33 +1574,6 @@ function PannelloInviati(props: {
           e.target.value = ''
         }}
       />
-    </div>
-  )
-}
-
-// ============================================================
-// CARD MODULO PDF (in preparazione)
-// ============================================================
-
-function ModuloCard({ doc }: { doc: DocChecklist }) {
-  return (
-    <div style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14, background: '#F9FAFB' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <IconaTipoDocumento nome={doc.nome} color="#2563eb" />
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <span style={{ fontWeight: 600, fontSize: 14.5, color: '#111827', lineHeight: 1.3 }}>{doc.nome}</span>
-            <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, color: '#2563eb', background: '#DBEAFE', padding: '2px 9px', borderRadius: 20 }}>Modulo</span>
-          </div>
-          {doc.descrizione && <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2, lineHeight: 1.4 }}>{doc.descrizione}</div>}
-        </div>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, background: '#fbf3e3', border: '1px solid #f2e2c0', borderRadius: 10, padding: '9px 11px' }}>
-        <span style={{ flexShrink: 0 }}><IcoClock size={15} color="#b5820f" /></span>
-        <span style={{ fontSize: 11.5, color: '#9a6c0c', fontWeight: 500 }}>Questo modulo sarà disponibile a breve. Ti avviseremo.</span>
-      </div>
     </div>
   )
 }

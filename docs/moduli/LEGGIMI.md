@@ -19,8 +19,8 @@ Compila la colonna "Ce l'ho?": `PDF` (pronto), `WORD` (vuoto, da rifare insieme)
 > ⭐ INVENTARIO VERIFICATO IL 10/07/2026 (rassegna Claude + Davide sui file in `originali/`)
 > ⚠️ 10/07: la sostituzione con le versioni ACI 2026 è stata ANNULLATA — ACI le ha ripubblicate con
 > un'impaginazione pessima (righe storte, firme che scivolano in seconda pagina). In `originali/`
-> ci sono di nuovo i file di Davide (impaginati bene); le versioni 2026 + la rev. 06/22 stanno in
-> `originali/versioni-aci-2026/` SOLO come riferimento per le informative GDPR.
+> ci sono i file di Davide (impaginati bene). La cartella di confronto `versioni-aci-2026/` è stata
+> poi ELIMINATA (10/07 sera, non serviva più: i file restano comunque nella storia git).
 > LEZIONE: prima di adottare un PDF va controllata anche la RESA GRAFICA, non solo il contenuto.
 > I file vuoti (6 deleghe 0 byte + fermo senza testo) restano rimossi.
 
@@ -52,7 +52,7 @@ NoiDemoliamo da scrivere (useremo il modello ACI come guida di impostazione).
 | 7 | DICHIARAZIONE_SOSTITUTIVA_EREDITA | Eredi (accettata) | PDF ACI di Davide (GDPR ok, tabella eredi, layout pulito) | pronto, da rendere compilabile |
 | 8 | DICHIARAZIONE_SOSTITUTIVA_EREDITA_RINUNCIA | Eredi con rinuncia | PDF ACI di Davide (GDPR ok, 2 tabelle, layout pulito) | pronto, da rendere compilabile |
 | 9 | DICHIARAZIONE_SOSTITUTIVA_LEGALE_RAPPRESENTANTE | Società | PDF ACI di Davide (logo ACI, layout pulito, informativa 2003) | ⭐ DECISO (10/07): si usa QUESTO — niente rifacimenti senza logo ACI; si aggiornerà quando ACI ripubblicherà versioni impaginate bene |
-| 10 | DICHIARAZIONE_SOSTITUTIVA_CURATORE_FALLIMENTARE | Società fallita | ⭐ RIFATTA da noi col generatore (`lib/moduli/dichiarazioneCuratore.ts`) sul documento di Davide: termine "curatore della liquidazione giudiziale", identificazione con firma + fotocopia (art. 38 DPR 445), auto-compilata (nome, P.IVA, veicolo, targa) | ✅ APPROVATA 10/07 |
+| 10 | DICHIARAZIONE_SOSTITUTIVA_CURATORE_FALLIMENTARE | Società fallita | ⭐ DECISO (10/07, seconda parte): si usa il PDF ORIGINALE di Davide così com'è, in bianco (il generatore era stato provato e poi rimosso) | ✅ si scarica in bianco, compila il curatore |
 | 11 | DICHIARAZIONE_SOSTITUTIVA_PRESIDENTE_ASSOCIAZIONE | Associazione | ⭐ DECISO (10/07): si riusa il modulo #9 (dice "società/associazione") | coperto dal #9 |
 | 12 | DICHIARAZIONE_SOSTITUTIVA_RADIAZIONE_PROPRIETARIO_NON_INTESTATARIO | Non intestatario | PDF ACI di Davide (logo ACI, layout pulito, informativa 2003) | ⭐ DECISO (10/07): si usa QUESTO, come il #9 |
 
@@ -72,8 +72,25 @@ Il file casistiche (sezione Integrazione 1) è stato aggiornato di conseguenza.
 
 ## Dati che il sistema compila da solo
 
-Targa, marca/modello, dati veicolo, nome e CF del richiedente, nome e telefono del delegato, date.
-⚠️ NON abbiamo nel sistema: nomi degli eredi, numero carta d'identità del delegato → nei PDF resteranno righe da completare a penna.
+⭐ **DECISIONE FINALE 10/07 sera**: il sistema compila SOLO le **6 deleghe** (nome, CF, marca/modello,
+targa, nome delegato). TUTTO il resto si scarica IN BIANCO e lo compila il cliente a penna:
+- **Dichiarazione fuori uso** (ex "stato veicolo con fermo"): generata da noi, con la qualifica giusta
+  per casistica, ma SENZA dati (il mezzo-compilato non piaceva)
+- **Curatore**: il PDF originale di Davide così com'è
+- **4 PDF ACI**: così come sono, col logo ACI (la scrittura dei dati sopra è stata PROVATA E SCARTATA)
+
+⭐ **RINOMINATI (10/07 sera, nel catalogo via SQL)**: "Dichiarazione stato veicolo con fermo" →
+**"Autodichiarazione veicolo fuori uso"** (anche nel titolo del PDF); "Attestazione di inutilizzabilità
+del veicolo" → **"Dichiarazione Inutilizzabilità Ente Pubblico"** (con la spiegazione nella
+descrizione sotto il nome).
+
+Cintura di sicurezza: il cliente può scaricare i moduli solo DOPO che l'admin ha verificato i
+documenti (l'admin sempre).
+⭐ ECCEZIONE (10/07 sera): la DICHIARAZIONE DEL FERMO è scaricabile SUBITO, senza aspettare la
+verifica — il cliente deve firmarla e portarla al Comune per farsi rilasciare l'Attestazione di
+inutilizzabilità (L. 14/2026), che a sua volta va caricata nella checklist. Senza questa eccezione
+il flusso si bloccherebbe in un circolo (attestazione richiede dichiarazione, dichiarazione
+richiedeva verifica, verifica richiede attestazione).
 
 ## Nota tecnica (per la lavorazione)
 
