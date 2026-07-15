@@ -434,11 +434,13 @@ Questa voce si attiva automaticamente se risponde "SÌ" alla domanda "Sul **mezz
 
 
 
-**Attenzione:**
+**Attenzione:** (aggiornato alla **Legge 26 gennaio 2026, n. 14**, in vigore dal 20/02/2026: il fermo NON blocca più la radiazione per demolizione — resta esclusa solo l'esportazione all'estero)
 
-Se sul **mezzo** c'è un fermo amministrativo, è necessaria una **dichiarazione sostitutiva sullo stato del** **mezzo**.
+Se sul **mezzo** c'è un fermo amministrativo servono DUE cose:
 
-Troverai il documento già compilato nella tua Area Personale, pronto da scaricare, stampare e firmare.
+1. La **dichiarazione di stato del veicolo con fermo amministrativo e richiesta di demolizione**: la troverai già compilata nella tua Area Personale, pronta da scaricare, stampare e firmare.
+
+2. L'**Attestazione di inutilizzabilità del veicolo**, rilasciata dal **Comune o dalla Polizia locale** (servizio a pagamento: costi e tempi variano da Comune a Comune). Va caricata nell'Area Personale e consegnata in **originale** al ritiro: senza, la radiazione al PRA non si può fare.
 
 
 
@@ -474,7 +476,9 @@ Se applicato a **Casistica 7** Il modulo viene intestato e firmato da: **Proprie
 
 **Documenti che deve caricare in NoiDemoliamo Area personale dopo la compilazione del modulo:**
 
-(Il sistema richiede solo i documenti già previsti dalla casistica principale **da 1 a 7** selezionata dall'utente, senza aggiungere slot duplicati)
+(Il sistema richiede i documenti già previsti dalla casistica principale **da 1 a 7** selezionata dall'utente, senza aggiungere slot duplicati, PIÙ:)
+
+* **Attestazione di inutilizzabilità del veicolo** (rilasciata dal Comune o dalla Polizia locale — Legge 26 gennaio 2026, n. 14)
 
 
 
@@ -484,7 +488,10 @@ Se applicato a **Casistica 7** Il modulo viene intestato e firmato da: **Proprie
 
 
 
-Documenti da consegnare al Demolitore al ritiro (da aggiungere nella sezione riepilogativa della pagina cliente, sms, email e notifica APP come promemoria insieme ai documenti della casistica principale):**DICHIARAZIONE\_SOSTITUTIVA\_STATO\_VEICOLO\_CON\_FERMO\_AMMINISTRATIVO** in originale compilata e firmata dal soggetto attivo (**Proprietario**, **Legale Rappresentante**, **Curatore**, **Presidente, Eredi Accettanti**)
+Documenti da consegnare al Demolitore al ritiro (da aggiungere nella sezione riepilogativa della pagina cliente, sms, email e notifica APP come promemoria insieme ai documenti della casistica principale):
+
+* **DICHIARAZIONE\_SOSTITUTIVA\_STATO\_VEICOLO\_CON\_FERMO\_AMMINISTRATIVO** in originale compilata e firmata dal soggetto attivo (**Proprietario**, **Legale Rappresentante**, **Curatore**, **Presidente, Eredi Accettanti, Proprietario non Intestatario**) — dal 10/07/2026 il titolo del modulo è "Dichiarazione di stato del veicolo con fermo amministrativo e richiesta di demolizione" (adeguato alla L. 14/2026), una sola firma
+* **Attestazione di inutilizzabilità del veicolo in ORIGINALE** (rilasciata dal Comune o dalla Polizia locale — Legge 26 gennaio 2026, n. 14)
 
 
 

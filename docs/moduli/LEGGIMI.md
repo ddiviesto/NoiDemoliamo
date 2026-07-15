@@ -60,7 +60,15 @@ NoiDemoliamo da scrivere (useremo il modello ACI come guida di impostazione).
 
 | # | Modulo | Casistica | Ce l'ho? | Stato |
 |---|--------|-----------|----------|-------|
-| 13 | DICHIARAZIONE_SOSTITUTIVA_STATO_VEICOLO_CON_FERMO_AMMINISTRATIVO | Tutte tranne targhe straniere — intestata automaticamente al firmatario della casistica | NO (il Word è vuoto: solo stili, nessun testo) | da creare da zero, insieme (contenuto delicato: stato veicolo + consapevolezza che il debito resta) |
+| 13 | DICHIARAZIONE_SOSTITUTIVA_STATO_VEICOLO_CON_FERMO_AMMINISTRATIVO | Tutte tranne targhe straniere — qualifica automatica per casistica (7 varianti) | ⭐ CREATA da noi (`lib/moduli/dichiarazioneFermo.ts`), adeguata alla **Legge 26/01/2026 n. 14** | ✅ APPROVATA 10/07 (titolo: "Dichiarazione di stato del veicolo con fermo amministrativo e richiesta di demolizione"; una sola firma; fotocopia doc. fronte/retro) |
+
+⭐ **LEGGE 14/2026 (in vigore dal 20/02/2026)** — decisioni del 10/07: il fermo non blocca più la
+radiazione per demolizione, ma serve l'**ATTESTAZIONE DI INUTILIZZABILITÀ** del Comune/Polizia locale.
+Flusso NoiDemoliamo: /inizia resta IDENTICO (avviso compreso — il cliente lo "portiamo dentro" noi);
+la dichiarazione resta da scaricare e firmare (presa d'atto: mezzo fuori uso da demolire + il debito
+resta); nella checklist c'è lo slot nuovo **ATTESTAZIONE_INUTILIZZABILITA** (foto da caricare +
+originale al ritiro), aggiunto al catalogo per le casistiche 1–7 con condizione `fermo_si`.
+Il file casistiche (sezione Integrazione 1) è stato aggiornato di conseguenza.
 
 ## Dati che il sistema compila da solo
 
