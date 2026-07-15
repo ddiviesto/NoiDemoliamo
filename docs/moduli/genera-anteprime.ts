@@ -10,6 +10,7 @@ import { mkdirSync, writeFileSync } from 'fs'
 import { join } from 'path'
 import { generaDelegaConsegna, VarianteDelega } from '../../lib/moduli/delegaConsegna'
 import { generaDichiarazioneFermo, VarianteFermo } from '../../lib/moduli/dichiarazioneFermo'
+import { generaDichiarazioneCuratore } from '../../lib/moduli/dichiarazioneCuratore'
 
 const CARTELLA = join(__dirname, 'anteprime')
 
@@ -50,6 +51,15 @@ async function main() {
     writeFileSync(join(CARTELLA, file), pdf)
     console.log(`OK: ${file}`)
   }
+
+  const curatore = await generaDichiarazioneCuratore({
+    nomeDichiarante: 'Mario Rossi',
+    partitaIva: '12345678901',
+    marcaModello: DATI_PROVA.marcaModello,
+    targa: DATI_PROVA.targa,
+  })
+  writeFileSync(join(CARTELLA, 'DICHIARAZIONE_CURATORE_ANTEPRIMA.pdf'), curatore)
+  console.log('OK: DICHIARAZIONE_CURATORE_ANTEPRIMA.pdf')
 }
 
 main().catch(err => { console.error(err); process.exit(1) })

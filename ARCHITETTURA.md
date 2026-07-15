@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **9 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **10 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -826,9 +826,25 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ---
 
-# 📋 PARTE 8 — STATO ATTUALE (9 luglio 2026)
+# 📋 PARTE 8 — STATO ATTUALE (10 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐⭐⭐ SESSIONE 10 luglio 2026 — MODULI PDF: TUTTI E 13 DEFINITI (era lo STEP 2)
+
+> Fonte di verità dei moduli: **`docs/moduli/LEGGIMI.md`** (inventario, decisioni, stato di ogni modulo).
+> Metodo collaudato: testo proposto → correzioni di Davide → generatore pdf-lib → **anteprima con dati
+> di prova** (`docs/moduli/anteprime/`, script `genera-anteprime.ts`) → approvazione → commit.
+
+- ✅ **6 DELEGHE CONSEGNA VEICOLO** create da zero e approvate (`lib/moduli/delegaConsegna.ts`, generatore a varianti: privato/eredi/eredi_rinuncia/societa/fallimento/associazione). Decisioni: autodemolitore IN BIANCO (in futuro precompilazione post-assegnazione), firmano SOLO delegante e delegato, fotocopie fronte/retro dei documenti di entrambi allegate.
+- ✅ **DICHIARAZIONE FERMO** creata e approvata (`lib/moduli/dichiarazioneFermo.ts`, 7 varianti con qualifica automatica per casistica): "mezzo fuori uso da demolire" + impegno a fornire l'attestazione + "il debito resta". NIENTE fotocopia documento (deciso da Davide).
+- ⭐⭐ **LEGGE 26/01/2026 n. 14 (fermo amministrativo, in vigore dal 20/02/2026)**: il fermo NON blocca più la radiazione per demolizione (esclusa solo l'esportazione estero), ma serve l'**ATTESTAZIONE DI INUTILIZZABILITÀ del Comune/Polizia locale**. Flusso deciso: /inizia resta IDENTICO ("il cliente ce lo portiamo dentro noi"), la dichiarazione resta da firmare, e nella checklist c'è il nuovo slot **ATTESTAZIONE_INUTILIZZABILITA** (foto + originale al ritiro; SQL eseguito su Supabase per le casistiche 1-7, file in `docs/sql/2026-07-10-...`). Il **file casistiche è stato aggiornato** (Integrazione 1).
+- ✅ **CURATORE** rifatto col generatore sul documento di Davide (`lib/moduli/dichiarazioneCuratore.ts`): "curatore della liquidazione giudiziale (curatore fallimentare)", identificazione firma + fotocopia (art. 38 DPR 445).
+- ✅ **4 dichiarazioni ACI**: si usano i PDF ORIGINALI di Davide col logo ACI (eredità, eredità con rinuncia, legale rappresentante — che copre anche le associazioni —, non intestatario). ⚠️ Tentata la sostituzione con le versioni ACI 2026 (informative GDPR): impaginate MALE dalla fonte → ripristinati i suoi (lezione: controllare sempre anche la RESA GRAFICA). Le 2026 restano in `originali/versioni-aci-2026/` come riferimento.
+- ✅ **Decisione di flusso moduli** (ha cambiato lo STEP 2): i moduli NON si caricano firmati (niente foto del firmato, troppo complesso) — il cliente li trova **già compilati** dal box verde "Documenti originali da portare al ritiro", li scarica/stampa/firma e li **consegna in originale al ritiro**; il demolitore li vede nel suo box "Da farti consegnare". I documenti finiscono alle agenzie pratiche auto dei demolitori per la radiazione.
+- ✅ `.gitattributes`: PDF/Word/immagini trattati come BINARI (un PDF rischiava la corruzione da conversione fine-riga).
+- ✅ `pdf-lib` aggiunta alle dipendenze.
+- ⏳ **RESTA LA PARTE TECNICA** (prossimo passo moduli): endpoint download con compilazione al volo e `scaricato_il`, scrittura dati sopra i 4 PDF ACI, bottone Scarica nel box verde (MOCKUP prima), SQL `richiede_upload=false` per i 19 documenti template del catalogo.
 
 ### ⭐⭐ SESSIONE 9 luglio 2026 (sera) — RIFINITURE WIZARD DOCUMENTI + FLUSSO FOTO
 
@@ -940,8 +956,9 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 - **Denunce di smarrimento Carta d'Identità / Codice Fiscale**: previste dal file casistiche per ogni persona, ma NON presenti nel catalogo DB e senza domanda nel flusso. → decidere se aggiungerle.
 - **Pagina admin**: ✅ ~~casi "Da chiarire insieme" e "non so" sul CDC~~ FATTO (banner "Da contattare" + bottoni Cartaceo/Digitale/Smarrito, 9/07). Resta il caso "non so" sul **fermo amministrativo** (oggi solo pillola di allerta).
 
-### 🔥🔥 STEP 2 — TEMPLATE PDF MODULI
-- Davide fornisce i template (DELEGA_*, DICHIARAZIONI_*) → attivare download precompilato (tracciando `scaricato_il`) al posto dell'avviso "a breve"
+### 🔥🔥 STEP 2 — TEMPLATE PDF MODULI — ⭐ MODULI DEFINITI (10/07), RESTA L'INTEGRAZIONE
+- ✅ Tutti e 13 i moduli decisi/creati/approvati (vedi sessione 10/07 in 8.1 e `docs/moduli/LEGGIMI.md`)
+- ⏳ Integrazione tecnica: endpoint `/api/modulo-pdf` (compila al volo coi dati pratica, traccia `scaricato_il`, auth cliente proprietario), scrittura dati sopra i 4 PDF ACI, bottone Scarica nel box verde del cliente (mockup prima) + badge nel box del demolitore, SQL `richiede_upload=false` sui documenti template (oggi risultano ancora "da caricare": vanno resi solo "da consegnare"). ⚠️ Ricontrollare anche `CODICI_FRONTE_RETRO` e il wizard: i moduli non devono più comparire tra i documenti da fotografare.
 
 ### 🔥 STEP 3 — PULIZIA
 - Eliminare pratiche test: "ciccio", "Mario Verdi", "Sirio Valenti" (+ "EEEEE" quando non servirà più)
@@ -1085,4 +1102,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 9 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 10 luglio 2026.**

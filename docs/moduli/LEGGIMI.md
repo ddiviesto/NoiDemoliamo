@@ -52,7 +52,7 @@ NoiDemoliamo da scrivere (useremo il modello ACI come guida di impostazione).
 | 7 | DICHIARAZIONE_SOSTITUTIVA_EREDITA | Eredi (accettata) | PDF ACI di Davide (GDPR ok, tabella eredi, layout pulito) | pronto, da rendere compilabile |
 | 8 | DICHIARAZIONE_SOSTITUTIVA_EREDITA_RINUNCIA | Eredi con rinuncia | PDF ACI di Davide (GDPR ok, 2 tabelle, layout pulito) | pronto, da rendere compilabile |
 | 9 | DICHIARAZIONE_SOSTITUTIVA_LEGALE_RAPPRESENTANTE | Società | PDF ACI di Davide (logo ACI, layout pulito, informativa 2003) | ⭐ DECISO (10/07): si usa QUESTO — niente rifacimenti senza logo ACI; si aggiornerà quando ACI ripubblicherà versioni impaginate bene |
-| 10 | DICHIARAZIONE_SOSTITUTIVA_CURATORE_FALLIMENTARE | Società fallita | PDF+Word FATTI DA DAVIDE sul modello ACI (informativa GDPR ok) | da rivedere insieme (wording "curatore/liquidatore giudiziale") |
+| 10 | DICHIARAZIONE_SOSTITUTIVA_CURATORE_FALLIMENTARE | Società fallita | ⭐ RIFATTA da noi col generatore (`lib/moduli/dichiarazioneCuratore.ts`) sul documento di Davide: termine "curatore della liquidazione giudiziale", identificazione con firma + fotocopia (art. 38 DPR 445), auto-compilata (nome, P.IVA, veicolo, targa) | ✅ APPROVATA 10/07 |
 | 11 | DICHIARAZIONE_SOSTITUTIVA_PRESIDENTE_ASSOCIAZIONE | Associazione | ⭐ DECISO (10/07): si riusa il modulo #9 (dice "società/associazione") | coperto dal #9 |
 | 12 | DICHIARAZIONE_SOSTITUTIVA_RADIAZIONE_PROPRIETARIO_NON_INTESTATARIO | Non intestatario | PDF ACI di Davide (logo ACI, layout pulito, informativa 2003) | ⭐ DECISO (10/07): si usa QUESTO, come il #9 |
 
