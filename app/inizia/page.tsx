@@ -1038,7 +1038,7 @@ export default function IniziaPage() {
           tipo={tipo}
           tipoAltro={tipoAltro}
           intestazione={dati.intestazione}
-          onBack={idxCorrente > 0 ? back : () => router.push('/')}
+          onBack={idxCorrente > 0 ? back : () => router.push(utenteLoggato ? '/dashboard' : '/')}
         />
 
         <div className="flex items-center gap-2.5 mb-4">

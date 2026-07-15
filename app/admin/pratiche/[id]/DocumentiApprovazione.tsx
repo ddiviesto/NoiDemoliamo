@@ -141,7 +141,8 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
   const [signedMap, setSignedMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [azione, setAzione] = useState(false)
-  const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
+  // VISORE: indice della voce aperta (documenti + foto in un'unica fila)
+  const [visoreIdx, setVisoreIdx] = useState<number | null>(null)
   const [modalRifiuto, setModalRifiuto] = useState<{ id: string; titolo: string } | null>(null)
   const [notaRifiuto, setNotaRifiuto] = useState('')
   // "Cambia" sull'esito CDC: riapre i tre bottoni per correggere un errore
@@ -163,6 +164,22 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
     const tutti = totale > 0 && approvati === totale
     onStatoRef.current?.(tutti, totale, approvati)
   }, [docs])
+
+  // VISORE: navigazione da tastiera (← → per scorrere, Esc per chiudere)
+  const totVoci = docs.filter(d => d.richiede_upload && leggiFile(d.file_url).length > 0).length + foto.length
+  useEffect(() => {
+    if (visoreIdx === null) return
+    const handler = (e: KeyboardEvent) => {
+      // Non navigare mentre si scrive (es. nota di rifiuto)
+      const tag = (document.activeElement?.tagName || '').toLowerCase()
+      if (tag === 'textarea' || tag === 'input') return
+      if (e.key === 'Escape') setVisoreIdx(null)
+      if (e.key === 'ArrowRight') setVisoreIdx(i => (i === null ? null : Math.min(i + 1, totVoci - 1)))
+      if (e.key === 'ArrowLeft') setVisoreIdx(i => (i === null ? null : Math.max(i - 1, 0)))
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [visoreIdx, totVoci])
 
   async function carica() {
     setLoading(true)
@@ -339,6 +356,34 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
   const peso = (s: DocRiga['stato']) => ({ caricato: 0, rifiutato: 1, approvato: 2, da_fare: 3 }[s])
   const righeVisibili = [...daApprovare].sort((a, b) => peso(a.stato) - peso(b.stato) || a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
 
+  // ---- VISORE: fila unica documenti (con file) + foto del veicolo ----
+  // Ordine STABILE (da catalogo, non per stato): così una voce non cambia
+  // posto mentre la si approva dal visore.
+  type Voce = { tipo: 'doc'; doc: DocRiga } | { tipo: 'foto'; foto: FotoPratica; n: number }
+  const vociDocs = [...daApprovare]
+    .sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
+    .filter(d => leggiFile(d.file_url).length > 0)
+  const voci: Voce[] = [
+    ...vociDocs.map(d => ({ tipo: 'doc' as const, doc: d })),
+    ...foto.map((f, i) => ({ tipo: 'foto' as const, foto: f, n: i + 1 })),
+  ]
+  const titoloVoce = (v: Voce) => v.tipo === 'foto'
+    ? `Foto del veicolo ${v.n}`
+    : (v.doc.per_erede && v.doc.indice_erede ? `${v.doc.nome} (${ordinaleErede(v.doc.indice_erede)} erede)` : v.doc.nome)
+  const apriVisoreDoc = (id: string) => { const i = voci.findIndex(v => v.tipo === 'doc' && v.doc.id === id); if (i >= 0) setVisoreIdx(i) }
+  const apriVisoreFoto = (id: string) => { const i = voci.findIndex(v => v.tipo === 'foto' && v.foto.id === id); if (i >= 0) setVisoreIdx(i) }
+
+  // Approva e passa da solo al prossimo documento ancora da verificare
+  async function approvaEAvanti(doc: DocRiga) {
+    await approva(doc)
+    const idx = visoreIdx ?? 0
+    for (let k = 1; k <= voci.length; k++) {
+      const j = (idx + k) % voci.length
+      const v = voci[j]
+      if (v.tipo === 'doc' && v.doc.id !== doc.id && v.doc.stato === 'caricato') { setVisoreIdx(j); return }
+    }
+  }
+
   return (
     <>
       <div className="p-5" style={STILE_CARD}>
@@ -419,7 +464,7 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
                 doc={doc}
                 signedMap={signedMap}
                 azione={azione}
-                onApri={(url, titolo) => setAnteprima({ url, titolo })}
+                onApri={() => apriVisoreDoc(doc.id)}
                 onApprova={() => approva(doc)}
                 onRifiuta={() => { setNotaRifiuto(doc.nota_admin || ''); setModalRifiuto({ id: doc.id, titolo: doc.nome }) }}
                 onTornaInVerifica={() => tornaInVerifica(doc)}
@@ -436,31 +481,124 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
           <div className="flex flex-wrap gap-2">
             {foto.map((f, idx) => (
               /* eslint-disable-next-line @next/next/no-img-element */
-              <img key={f.id} src={f.url} alt={`Foto ${idx + 1}`} onClick={() => setAnteprima({ url: f.url, titolo: `Foto ${idx + 1}` })} className="w-20 h-20 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90" />
+              <img key={f.id} src={f.url} alt={`Foto ${idx + 1}`} onClick={() => apriVisoreFoto(f.id)} className="w-20 h-20 object-cover rounded-lg border border-gray-200 cursor-pointer hover:opacity-90" />
             ))}
           </div>
         </div>
       )}
 
-      {/* ANTEPRIMA INGRANDITA */}
-      {anteprima && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setAnteprima(null)}>
-          <div className="bg-white rounded-2xl p-4 max-w-3xl w-full max-h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-3">
-              <p className="font-semibold text-gray-800">{anteprima.titolo}</p>
-              <button onClick={() => setAnteprima(null)} className="text-gray-400 hover:text-gray-700 text-xl">×</button>
-            </div>
-            <div className="flex-1 overflow-auto">
-              {isPdfUrl(anteprima.url) ? (
-                <iframe src={anteprima.url} className="w-full h-[70vh] rounded-xl" title={anteprima.titolo} />
-              ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={anteprima.url} alt={anteprima.titolo} className="w-full h-auto object-contain rounded-xl" />
-              )}
+      {/* VISORE DOCUMENTI + FOTO: elenco a sinistra, frecce (anche da
+          tastiera), Approva/Rifiuta senza mai chiudere la finestra */}
+      {visoreIdx !== null && voci[visoreIdx] && (() => {
+        const voce = voci[visoreIdx]
+        const files = voce.tipo === 'doc' ? leggiFile(voce.doc.file_url) : []
+        const primaFotoIdx = voci.findIndex(v => v.tipo === 'foto')
+        return (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setVisoreIdx(null)}>
+            <div className="bg-white rounded-2xl w-full flex overflow-hidden" style={{ maxWidth: 1000, height: '85vh' }} onClick={e => e.stopPropagation()}>
+
+              {/* ELENCO A SINISTRA */}
+              <div style={{ width: 250, borderRight: '1px solid #EEF1F5', background: '#FAFBFD', overflowY: 'auto', padding: '12px 0', flexShrink: 0 }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '0 16px 8px' }}>DOCUMENTI · {vociDocs.length}</div>
+                {voci.map((v, i) => {
+                  const attiva = i === visoreIdx
+                  return (
+                    <div key={v.tipo === 'doc' ? v.doc.id : v.foto.id}>
+                      {i === primaFotoIdx && (
+                        <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '10px 16px 8px', borderTop: '1px solid #EEF1F5', marginTop: 8 }}>FOTO DEL VEICOLO · {foto.length}</div>
+                      )}
+                      <button
+                        onClick={() => setVisoreIdx(i)}
+                        style={{
+                          width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                          padding: attiva ? '9px 16px 9px 13px' : '9px 16px', fontSize: 12.5, border: 'none', cursor: 'pointer',
+                          background: attiva ? '#EFF6FF' : 'transparent', borderLeft: attiva ? '3px solid #2563eb' : 'none',
+                          color: attiva ? '#0C447C' : '#374151', fontWeight: attiva ? 700 : 400,
+                        }}
+                      >
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(v)}</span>
+                        {v.tipo === 'doc' && (
+                          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 8px', ...(v.doc.stato === 'approvato' ? { background: '#DCF3E4', color: '#1F7A43' } : v.doc.stato === 'rifiutato' ? { background: '#FBDADA', color: '#C0392B' } : { background: '#E0EDFB', color: '#1E4E8C' }) }}>
+                            {v.doc.stato === 'approvato' ? 'Approvato' : v.doc.stato === 'rifiutato' ? 'Rifiutato' : 'In verifica'}
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* AREA PRINCIPALE */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '14px 18px', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 700, fontSize: 15, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</div>
+                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>{visoreIdx + 1} di {voci.length} · usa ← → per scorrere</div>
+                  </div>
+                  <button onClick={() => setVisoreIdx(null)} className="text-gray-400 hover:text-gray-700" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
+                </div>
+
+                {/* FILE (fronte/retro affiancati) o FOTO */}
+                <div style={{ flex: 1, display: 'flex', gap: 10, minHeight: 0 }}>
+                  {voce.tipo === 'foto' ? (
+                    <div style={{ flex: 1, minWidth: 0, overflow: 'auto', background: '#F6F8FB', borderRadius: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={voce.foto.url} alt={titoloVoce(voce)} style={{ maxWidth: '100%', height: 'auto' }} />
+                    </div>
+                  ) : files.map((f, i) => {
+                    const url = signedMap[f.url] || f.url
+                    return (
+                      <div key={i} style={{ flex: 1, minWidth: 0, overflow: 'auto', background: '#F6F8FB', borderRadius: 12, position: 'relative' }}>
+                        {f.lato && (
+                          <span style={{ position: 'sticky', top: 8, left: 8, display: 'inline-block', margin: 8, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, borderRadius: 20, padding: '2px 9px', zIndex: 1 }}>{f.lato.toUpperCase()}</span>
+                        )}
+                        {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
+                          <iframe src={url} title={f.nome} style={{ width: '100%', height: '100%', minHeight: 300, border: 'none' }} />
+                        ) : (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={url} alt={f.nome} style={{ display: 'block', maxWidth: '100%', height: 'auto', margin: '0 auto' }} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* FRECCE + AZIONI */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                  <button onClick={() => setVisoreIdx(i => Math.max((i ?? 0) - 1, 0))} disabled={visoreIdx === 0} style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', border: '1.5px solid #E5E7EB', fontSize: 17, color: '#374151', cursor: 'pointer', opacity: visoreIdx === 0 ? 0.4 : 1 }}>‹</button>
+                  <button onClick={() => setVisoreIdx(i => Math.min((i ?? 0) + 1, voci.length - 1))} disabled={visoreIdx === voci.length - 1} style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', border: '1.5px solid #E5E7EB', fontSize: 17, color: '#374151', cursor: 'pointer', opacity: visoreIdx === voci.length - 1 ? 0.4 : 1 }}>›</button>
+                  <div style={{ flex: 1 }} />
+                  {voce.tipo === 'doc' && voce.doc.stato === 'caricato' && (
+                    <>
+                      <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setModalRifiuto({ id: voce.doc.id, titolo: voce.doc.nome }) }} disabled={azione} style={{ background: '#fff', color: '#C0392B', border: '1.5px solid #F3C8C8', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
+                      <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        Approva e avanti
+                      </button>
+                    </>
+                  )}
+                  {voce.tipo === 'doc' && voce.doc.stato === 'approvato' && (
+                    <>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: 700, color: '#1F7A43' }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        Approvato
+                      </span>
+                      <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setModalRifiuto({ id: voce.doc.id, titolo: voce.doc.nome }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Rifiuta</button>
+                    </>
+                  )}
+                  {voce.tipo === 'doc' && voce.doc.stato === 'rifiutato' && (
+                    <>
+                      <span style={{ fontSize: 12.5, fontWeight: 700, color: '#C0392B' }}>Rifiutato{voce.doc.nota_admin ? ` · "${voce.doc.nota_admin}"` : ''}</span>
+                      <button onClick={() => tornaInVerifica(voce.doc)} disabled={azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Rimetti in verifica</button>
+                    </>
+                  )}
+                </div>
+              </div>
+
             </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {/* MODAL NOTA RIFIUTO */}
       {modalRifiuto && (
@@ -503,7 +641,7 @@ function RigaDoc(props: {
   doc: DocRiga
   signedMap: Record<string, string>
   azione: boolean
-  onApri: (url: string, titolo: string) => void
+  onApri: () => void
   onApprova: () => void
   onRifiuta: () => void
   onTornaInVerifica: () => void
@@ -523,7 +661,7 @@ function RigaDoc(props: {
           {files.slice(0, 3).map((f, i) => {
             const url = props.signedMap[f.url] || f.url
             return (
-              <button key={i} onClick={() => props.onApri(url, titolo)} style={{ width: 42, height: 42, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', flexShrink: 0, position: 'relative' }} title={f.lato || undefined}>
+              <button key={i} onClick={() => props.onApri()} style={{ width: 42, height: 42, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: '#fff', flexShrink: 0, position: 'relative' }} title={f.lato || undefined}>
                 {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
                   <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 600, color: '#c0392b' }}>PDF</div>
                 ) : (

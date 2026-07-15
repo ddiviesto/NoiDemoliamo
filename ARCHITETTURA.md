@@ -843,6 +843,8 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ✅ **Card foto veicolo (variante B su mockup)**: via i bottoni rettangolari — casella tratteggiata "Scatta" nella griglia (pattern "+ Aggiungi"), galleria come link discreto in fondo, "Ho finito con le foto" = bottone di pagina fuori dalla card (stile wizard). Rimosso il componente UploadFoto.
 - ✅ **Banner "Mancano le foto"**: da giallo a **celeste tenue** (variante B — colori dei box informativi; il giallo era "un pugno in un occhio").
 - ✅ **Errori download moduli parlanti**: l'avviso mostra il motivo del server con lo status (es. "Non autorizzato (401)" = rifare login).
+- ✅ **"← Indietro" al primo passo di /inizia**: per il cliente loggato torna a `/dashboard` (prima portava alla home pubblica e sembrava un logout).
+- ⭐ **VISORE DOCUMENTI ADMIN** (variante B su mockup): cliccando un documento nella pagina pratica si apre un visore grande con **elenco a sinistra** (documenti con pillole di stato + sezione foto veicolo), **frecce ‹ › e frecce tastiera** per scorrere documenti E foto in un'unica fila (Esc chiude), fronte/retro affiancati con etichetta, PDF incorporati, e **"Approva e avanti"/"Rifiuta" direttamente nel visore** (approva e salta da solo al prossimo da verificare: si controlla tutta la pratica senza mai chiudere). Ordine voci stabile (da catalogo, non per stato). In `DocumentiApprovazione.tsx`; la vecchia anteprima singola è stata sostituita.
 - ⚠️ Nota di test: nello stesso browser vive UNA sessione alla volta — admin in Chrome normale, cliente di prova in incognito. Un 401 sul download dopo giri di login/logout si risolve con Esci + login.
 
 ### ⭐⭐⭐ SESSIONE 10 luglio 2026 — MODULI PDF: TUTTI E 13 DEFINITI (era lo STEP 2)
