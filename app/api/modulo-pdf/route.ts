@@ -1,12 +1,16 @@
 /**
- * Download di un MODULO PDF già compilato coi dati della pratica.
+ * Download di un MODULO PDF (IN BIANCO: lo compila il cliente a penna).
  *
  * GET /api/modulo-pdf?checklist_id=... (Authorization: Bearer <token>)
  * Autorizzati: il CLIENTE proprietario della pratica e l'admin.
  *
+ * ⭐ DECISIONE 15/07 (Davide): per ora NIENTE autocompilazione su nessun
+ * modulo (nemmeno le deleghe) e NIENTE blocco pre-verifica — i moduli sono
+ * scaricabili SUBITO dal box verde. In futuro si rivaluterà la compilazione.
+ *
  * - individua il template dal catalogo (casistiche_documenti.template_pdf)
- * - genera il PDF con lib/moduli/generaModulo (moduli nostri da zero,
- *   moduli ACI compilati sopra gli originali in docs/moduli/originali/)
+ * - genera il PDF con lib/moduli/generaModulo (moduli nostri da zero in
+ *   bianco, moduli ACI/curatore = PDF originali in docs/moduli/originali/)
  * - traccia il download in pratica_documenti_checklist.scaricato_il
  */
 
@@ -52,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     const { data: pratica } = await supabase
       .from('pratiche')
-      .select('user_id, stato, casistica, nome_richiedente, codice_fiscale, marca, modello, targa, delegato_nome')
+      .select('user_id, casistica')
       .eq('id', riga.pratica_id)
       .single()
     if (!pratica) return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
@@ -60,30 +64,12 @@ export async function GET(req: NextRequest) {
     const isAdmin = user.email === ADMIN_EMAIL
     if (!isAdmin && pratica.user_id !== user.id) return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
 
-    // Cintura di sicurezza (10/07): il CLIENTE scarica i moduli solo DOPO che
-    // l'admin ha verificato/approvato i documenti (i dati compilati devono
-    // essere già controllati — niente firme su dati sbagliati). L'admin può sempre.
-    // ⭐ ECCEZIONE (10/07 sera): la DICHIARAZIONE DEL FERMO è scaricabile SUBITO —
-    // serve al cliente per chiedere l'Attestazione di inutilizzabilità al Comune
-    // (Legge 14/2026), che a sua volta va caricata nella checklist. Senza
-    // l'eccezione il flusso si bloccherebbe in un circolo.
-    const STATI_PRE_VERIFICA = ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati']
-    const sempreDisponibile = doc.template_pdf === 'DICHIARAZIONE_SOSTITUTIVA_STATO_VEICOLO_CON_FERMO_AMMINISTRATIVO'
-    if (!isAdmin && !sempreDisponibile && STATI_PRE_VERIFICA.includes(pratica.stato)) {
-      return NextResponse.json({ error: 'Il modulo sarà disponibile dopo la verifica dei documenti' }, { status: 403 })
-    }
-
-    // Genera il PDF compilato
+    // Genera il PDF IN BIANCO: si passa SOLO la casistica (serve alla
+    // dichiarazione del fermo per scegliere la qualifica giusta), nessun
+    // dato personale compilato (decisione 15/07).
     const pdf = await generaModuloCompilato(
       doc.template_pdf,
-      {
-        casistica: pratica.casistica,
-        nomeRichiedente: pratica.nome_richiedente,
-        codiceFiscale: pratica.codice_fiscale,
-        marcaModello: [pratica.marca, pratica.modello].filter(Boolean).join(' ') || null,
-        targa: pratica.targa,
-        delegatoNome: pratica.delegato_nome,
-      },
+      { casistica: pratica.casistica },
       // I PDF ACI originali vivono nel repo (vedi outputFileTracingIncludes in next.config)
       (nomeFile) => readFile(path.join(process.cwd(), 'docs', 'moduli', 'originali', nomeFile)),
     )

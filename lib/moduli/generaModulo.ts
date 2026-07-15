@@ -4,10 +4,14 @@
  * PDF compilato. Usato dall'endpoint /api/modulo-pdf e dallo script delle
  * anteprime (docs/moduli/genera-anteprime.ts).
  *
- * ⭐ DECISIONE 10/07 sera (Davide): auto-compilate SOLO le DELEGHE.
- * - Deleghe (nostre): generate con pdf-lib, dati della pratica compilati
- * - Fermo/fuori uso (nostro): generato con pdf-lib ma IN BIANCO — il
- *   mezzo-compilato non piaceva; compila tutto il cliente a penna
+ * ⭐ DECISIONE 15/07 (Davide): per ora NIENTE autocompilazione — TUTTI i
+ * moduli escono IN BIANCO e li compila il cliente a penna. (La decisione
+ * 10/07 di autocompilare le deleghe è sospesa: si rivaluterà in futuro.)
+ * Il generatore delle deleghe accetta ancora i dati (per quando serviranno):
+ * l'endpoint semplicemente non li passa più.
+ * - Deleghe (nostre): generate con pdf-lib, righe in bianco
+ * - Fermo/fuori uso (nostro): generato con pdf-lib IN BIANCO — la casistica
+ *   serve solo a scegliere la qualifica giusta
  * - Curatore: si serve il PDF ORIGINALE di Davide così com'è (in bianco)
  * - Moduli ACI (eredità, rinuncia, legale rappresentante/presidente,
  *   non intestatario): serviti COSÌ COME SONO, in bianco, col logo ACI —

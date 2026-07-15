@@ -492,15 +492,17 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
         const path = estraiPathBucket(daRimuovere.url, 'documenti-pratiche')
         if (path) await supabase.storage.from('documenti-pratiche').remove([path])
       }
-      // Se il documento era già inviato (caricato) e non restano file, torna da fare.
-      // Se era in preparazione (da_fare/rifiutato), lo stato non cambia.
-      const nuovoStato = doc.stato === 'caricato' && rimanenti.length === 0 ? 'da_fare' : doc.stato
+      // Se il documento era già inviato (caricato), QUALSIASI eliminazione lo
+      // riporta "da fare": non è più completo, deve tornare nel wizard e
+      // essere re-inviato (upload ≠ invio). Così anche l'admin non se lo
+      // ritrova "in verifica" a metà. Se era in preparazione, non cambia.
+      const nuovoStato = doc.stato === 'caricato' ? 'da_fare' : doc.stato
       await supabase
         .from('pratica_documenti_checklist')
         .update({
           file_url: scriviFile(rimanenti),
           stato: nuovoStato,
-          caricato_il: rimanenti.length === 0 ? null : doc.caricato_il,
+          caricato_il: nuovoStato === 'da_fare' || rimanenti.length === 0 ? null : doc.caricato_il,
         })
         .eq('id', doc.id)
       await carica()
@@ -534,7 +536,11 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       const res = await fetch(`/api/modulo-pdf?checklist_id=${encodeURIComponent(doc.id)}`, {
         headers: { Authorization: `Bearer ${session.access_token}` },
       })
-      if (!res.ok) throw new Error('Download fallito')
+      if (!res.ok) {
+        // Mostra il motivo vero del rifiuto (es. sessione scaduta), non un generico "riprova"
+        const corpo = await res.json().catch(() => null)
+        throw new Error(corpo?.error ? `${corpo.error} (${res.status})` : `Download fallito (${res.status})`)
+      }
       const blob = await res.blob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
@@ -547,7 +553,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       await carica() // aggiorna scaricato_il nella lista
     } catch (err) {
       console.error('Errore download modulo:', err)
-      alert('Errore nel download del modulo. Riprova.')
+      alert(err instanceof Error && err.message ? `Errore nel download del modulo: ${err.message}` : 'Errore nel download del modulo. Riprova.')
     }
     setScaricandoId(null)
   }
@@ -610,17 +616,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const totale = totaleDocWizard
   const pronti = inviatiCount
   const tuttoApprovato = totaleDocWizard > 0 && docUpload.every(d => d.stato === 'approvato') && !librettoDaChiarire && !cdcDaChiarire
-  // I moduli PDF si sbloccano DOPO la verifica dei documenti da parte
-  // dell'admin (cintura di sicurezza sui dati compilati — stessa regola
-  // dell'endpoint /api/modulo-pdf).
-  // ⭐ ECCEZIONE: la DICHIARAZIONE DEL FERMO è scaricabile SUBITO — serve al
-  // cliente per chiedere l'Attestazione di inutilizzabilità al Comune (L. 14/2026).
-  const moduliSbloccati = !['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati'].includes(pratica.stato || '')
-  const TEMPLATE_FERMO = 'DICHIARAZIONE_SOSTITUTIVA_STATO_VEICOLO_CON_FERMO_AMMINISTRATIVO'
-  const moduloSbloccato = (d: DocChecklist) => moduliSbloccati || d.template_pdf === TEMPLATE_FERMO
-  // L'Autodichiarazione della pratica (se c'è il fermo): usata dalla guida
-  // a passi nella card dell'attestazione Ente Pubblico
-  const docFermo = docsAttivi.find(d => d.template_pdf === TEMPLATE_FERMO)
+  // ⭐ 15/07: i moduli PDF sono scaricabili SUBITO (niente blocco pre-verifica
+  // e niente autocompilazione: escono in bianco, li compila il cliente).
   // Documenti tutti inviati (la fila del wizard è vuota)
   const docsInviati = !tuttoApprovato && !docAttivo && totaleDocWizard > 0 && inviatiCount === totaleDocWizard
   // Banner giallo: nessuna foto del veicolo (e card non aperta)
@@ -717,9 +714,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
 
           <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
             onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => eliminaFile(docAttivo, idx)}
-            guidaAttestazione={docAttivo.codice === 'ATTESTAZIONE_INUTILIZZABILITA' && docFermo
-              ? { onScarica: () => scaricaModulo(docFermo), scaricando: scaricandoId === docFermo.id }
-              : undefined} />
+            guidaAttestazione={docAttivo.codice === 'ATTESTAZIONE_INUTILIZZABILITA'} />
 
           {/* CONTINUA di pagina SUBITO SOTTO la card (l'azione è attaccata a
               ciò che hai appena completato); grigio finché le foto non sono complete */}
@@ -761,13 +756,13 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           Riga compatta col bollino tondo "Aggiungi": tutta la card è il
           bottone che apre la card di caricamento. */}
       {bannerFotoVisibile && (
-        <button onClick={() => setCardFotoAperta(true)} className="active:scale-[0.99]" style={{ width: '100%', background: '#FDF7EA', border: '1.5px solid #F0DFB8', borderRadius: 14, padding: 13, display: 'flex', alignItems: 'flex-start', gap: 11, cursor: 'pointer', textAlign: 'left', transition: 'transform 0.1s' }}>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        <button onClick={() => setCardFotoAperta(true)} className="active:scale-[0.99]" style={{ width: '100%', background: '#F0F7FF', border: '1.5px solid #CFE3F8', borderRadius: 14, padding: 13, display: 'flex', alignItems: 'flex-start', gap: 11, cursor: 'pointer', textAlign: 'left', transition: 'transform 0.1s' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 600, fontSize: 13.5, color: '#111827' }}>Mancano le foto del veicolo</div>
-            <div style={{ fontSize: 11.5, color: '#854F0B', marginTop: 2, lineHeight: 1.45 }}>Ci servono per capire che tipo di carro attrezzi mandare ed evitare viaggi a vuoto. Puoi farle anche in un secondo momento, direttamente davanti al veicolo.</div>
+            <div style={{ fontWeight: 600, fontSize: 13.5, color: '#0C447C' }}>Mancano le foto del veicolo</div>
+            <div style={{ fontSize: 11.5, color: '#1E4E8C', marginTop: 2, lineHeight: 1.45 }}>Ci servono per capire che tipo di carro attrezzi mandare ed evitare viaggi a vuoto. Puoi farle anche in un secondo momento, direttamente davanti al veicolo.</div>
           </div>
           <div style={{ textAlign: 'center', flexShrink: 0, alignSelf: 'center' }}>
             <span style={{ width: 40, height: 40, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: '0 3px 9px rgba(37,99,235,0.25)' }}>
@@ -804,8 +799,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
               </svg>
             </span>
             <div style={{ flex: 1, textAlign: 'left' }}>
-              <div style={{ color: '#fff', fontWeight: 700, fontSize: 14.5, lineHeight: 1.3 }}>Documenti originali da portare al ritiro</div>
-              <div style={{ color: '#CCFBF1', fontSize: 11.5, marginTop: 2 }}>Consegnali al demolitore il giorno del ritiro</div>
+              <div style={{ color: '#fff', fontWeight: 800, fontSize: 16.5, lineHeight: 1.25 }}>Documenti originali da portare al ritiro</div>
+              <div style={{ marginTop: 5 }}>
+                <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.92)', color: '#0F766E', fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 10px' }}>CONSEGNALI IL GIORNO DEL RITIRO</span>
+              </div>
             </div>
             <span style={{ background: '#fff', color: '#0F766E', fontSize: 12.5, fontWeight: 800, borderRadius: 999, padding: '3px 11px', flexShrink: 0 }}>{daConsegnare.length}</span>
             <span style={{ transform: ritiroAperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><IcoChevronDown color="#CCFBF1" /></span>
@@ -815,14 +812,27 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
               <div style={{ background: '#fff', borderRadius: 12, padding: '4px 14px' }}>
                 {daConsegnare.map((d, i) => (
                   <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < daConsegnare.length - 1 ? '1px solid #EEF1F5' : 'none' }}>
-                    <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#CCFBF1', color: '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    {d.template_pdf && d.scaricato_il ? (
+                      <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#DCF3E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      </span>
+                    ) : (
+                      <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#CCFBF1', color: '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
+                    )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
                       {d.template_pdf && (
                         <div style={{ marginTop: 3 }}>
-                          <span style={{ fontSize: 10, fontWeight: 600, color: moduloSbloccato(d) ? '#0F766E' : '#4B5563', background: moduloSbloccato(d) ? '#CCFBF1' : '#E7EAEE', borderRadius: 20, padding: '2px 9px' }}>
-                            {!moduloSbloccato(d) ? 'Modulo · dopo la verifica dei documenti' : d.scaricato_il ? 'Modulo scaricato · compila e firma' : 'Modulo · scarica, compila e firma'}
-                          </span>
+                          {d.scaricato_il ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#1F7A43', background: '#DCF3E4', borderRadius: 20, padding: '2px 9px' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                              Scaricata · ora compilala e firmala
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 10, fontWeight: 600, color: '#0F766E', background: '#CCFBF1', borderRadius: 20, padding: '2px 9px' }}>
+                              Scaricala, compilala e firmala
+                            </span>
+                          )}
                         </div>
                       )}
                     </div>
@@ -830,7 +840,15 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
                         Bloccato fino alla verifica — TRANNE la dichiarazione del
                         fermo, che serve subito per l'attestazione del Comune. */}
                     {d.template_pdf && (
-                      moduloSbloccato(d) ? (
+                      d.scaricato_il ? (
+                        <button
+                          onClick={() => scaricaModulo(d)}
+                          disabled={scaricandoId === d.id}
+                          style={{ flexShrink: 0, background: 'none', border: 'none', padding: 0, fontSize: 11.5, fontWeight: 600, color: '#0F766E', textDecoration: 'underline', cursor: 'pointer', opacity: scaricandoId === d.id ? 0.6 : 1 }}
+                        >
+                          {scaricandoId === d.id ? 'Scarico…' : 'Scarica di nuovo'}
+                        </button>
+                      ) : (
                         <button
                           onClick={() => scaricaModulo(d)}
                           disabled={scaricandoId === d.id}
@@ -840,11 +858,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                           {scaricandoId === d.id ? 'Scarico…' : 'Scarica'}
                         </button>
-                      ) : (
-                        <span style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, background: '#F3F4F6', color: '#9CA3AF', borderRadius: 9, padding: '8px 13px', fontSize: 12, fontWeight: 600 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                          Dopo la verifica
-                        </span>
                       )
                     )}
                   </div>
@@ -852,9 +865,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
               </div>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, padding: '0 2px' }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CCFBF1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>Servono <b style={{ color: '#fff' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.{daConsegnare.some(d => d.template_pdf) && (moduliSbloccati
-                  ? <> Scarica i moduli, <b style={{ color: '#fff' }}>compilali e firmali</b>.</>
-                  : <> I moduli si sbloccano <b style={{ color: '#fff' }}>dopo la verifica dei documenti</b>.</>)}{!moduliSbloccati && daConsegnare.some(d => d.template_pdf === TEMPLATE_FERMO) && <> L&apos;<b style={{ color: '#fff' }}>autodichiarazione veicolo fuori uso è già scaricabile</b>: compilala, firmala e portala al Comune per farti rilasciare la dichiarazione di inutilizzabilità.</>}</span>
+                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>Servono <b style={{ color: '#fff' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.{daConsegnare.some(d => d.template_pdf) && <> Scarica i moduli, <b style={{ color: '#fff' }}>compilali e firmali</b>.</>}</span>
               </div>
             </div>
           )}
@@ -1048,7 +1059,7 @@ function DocCard(props: {
   onElimina: (fileIdx: number) => void | Promise<void>
   // Solo per la card "Dichiarazione Inutilizzabilità Ente Pubblico":
   // guida a passi con il download dell'Autodichiarazione integrato
-  guidaAttestazione?: { onScarica: () => void; scaricando: boolean }
+  guidaAttestazione?: boolean
 }) {
   const inputCamFronte = useRef<HTMLInputElement>(null)
   const inputCamRetro = useRef<HTMLInputElement>(null)
@@ -1213,31 +1224,22 @@ function DocCard(props: {
         ) : null}
       </div>
 
-      {/* GUIDA A PASSI (solo attestazione Ente Pubblico): il passo 1 scarica
-          l'Autodichiarazione veicolo fuori uso senza uscire dalla card */}
+      {/* GUIDA A PASSI (solo attestazione Ente Pubblico): l'Autodichiarazione
+          si scarica SOLO dal box verde qui sotto (niente doppio bottone) */}
       {props.guidaAttestazione && (
         <div style={{ marginTop: 12, background: '#F0F7FF', border: '1px solid #CFE3F8', borderRadius: 11, padding: '11px 12px' }}>
           <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, color: '#1E4E8C', textTransform: 'uppercase', marginBottom: 8 }}>Come si ottiene</div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 7 }}>
             <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#DBEAFE', color: '#1E4E8C', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</span>
-            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Scarica e firma l&apos;<b>Autodichiarazione veicolo fuori uso</b></span>
-            <button
-              onClick={props.guidaAttestazione.onScarica}
-              disabled={props.guidaAttestazione.scaricando}
-              className="active:scale-[0.97]"
-              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 8, padding: '6px 11px', fontSize: 11.5, fontWeight: 600, cursor: 'pointer', opacity: props.guidaAttestazione.scaricando ? 0.7 : 1, transition: 'all 0.15s' }}
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-              {props.guidaAttestazione.scaricando ? 'Scarico…' : 'Scarica'}
-            </button>
+            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Scarica e firma l&apos;<b>Autodichiarazione veicolo fuori uso</b>: la trovi qui sotto, nel <b>box verde &quot;Documenti originali da portare al ritiro&quot;</b></span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 7 }}>
             <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#DBEAFE', color: '#1E4E8C', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>2</span>
-            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Portala al tuo <b>Comune o alla Polizia locale</b>: ti rilasciano la dichiarazione di inutilizzabilità</span>
+            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Portala al tuo <b>Comune, alla Polizia locale o all&apos;ente competente</b>: devono rilasciarti la <b>Dichiarazione Inutilizzabilità Ente Pubblico</b></span>
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#DBEAFE', color: '#1E4E8C', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</span>
-            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}>Fotografala qui — l&apos;<b>originale</b> va consegnato al ritiro</span>
+            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}><b>Fotografa qui la dichiarazione che ti hanno rilasciato</b> e inviacela — l&apos;<b>originale</b> va consegnato al ritiro</span>
           </div>
         </div>
       )}
@@ -1595,9 +1597,24 @@ function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina, onFin
 }) {
   // Foto per cui si sta chiedendo "Eliminare?" (conferma sul posto)
   const [conferma, setConferma] = useState<string | null>(null)
+  const inputCamera = useRef<HTMLInputElement>(null)
+  const inputGalleria = useRef<HTMLInputElement>(null)
+  const [caricando, setCaricando] = useState(false)
   const haFoto = foto.length > 0
+
+  async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    if (!e.target.files || e.target.files.length === 0) return
+    setCaricando(true)
+    await onUpload(Array.from(e.target.files))
+    setCaricando(false)
+    e.target.value = ''
+  }
+
   return (
+    <>
     <div style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14 }}>
+      <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handleUpload} className="hidden" />
+      <input ref={inputGalleria} type="file" accept="image/*,application/pdf" multiple onChange={handleUpload} className="hidden" />
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -1617,88 +1634,67 @@ function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina, onFin
         <span style={{ fontSize: 12, color: '#1E4E8C', lineHeight: 1.5 }}>Dalle foto capiamo <b>che tipo di carro attrezzi mandare</b>: così il ritiro riesce al primo colpo, senza viaggi a vuoto.</span>
       </div>
 
-      {/* GRIGLIA delle foto caricate (nessun riquadro guida, nessun limite) */}
-      {haFoto && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
-          {foto.map((f, idx) => (
-            <div key={f.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 11, overflow: 'hidden', border: '1.5px solid #C7D6EC', background: '#f3f5f8' }}>
-              <button onClick={() => onApri(f.url, `Foto ${idx + 1}`)} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              </button>
-              {eliminabile && <XElimina size={20} onClick={() => setConferma(f.id)} />}
-              {conferma === f.id && (
-                <ConfermaSullaFoto compatta cosa="questa foto" onAnnulla={() => setConferma(null)} onConferma={() => onElimina(f)} />
-              )}
+      {/* GRIGLIA: foto caricate + casella tratteggiata "Scatta" (stesso
+          pattern del "+ Aggiungi" dei documenti; nessun limite di foto) */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
+        {foto.map((f, idx) => (
+          <div key={f.id} style={{ position: 'relative', aspectRatio: '1', borderRadius: 11, overflow: 'hidden', border: '1.5px solid #C7D6EC', background: '#f3f5f8' }}>
+            <button onClick={() => onApri(f.url, `Foto ${idx + 1}`)} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={f.url} alt={`Foto ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            </button>
+            {eliminabile && <XElimina size={20} onClick={() => setConferma(f.id)} />}
+            {conferma === f.id && (
+              <ConfermaSullaFoto compatta cosa="questa foto" onAnnulla={() => setConferma(null)} onConferma={() => onElimina(f)} />
+            )}
+          </div>
+        ))}
+        {eliminabile && (
+          caricando ? (
+            <div style={{ aspectRatio: '1', border: '1.5px dashed #B5C6E0', borderRadius: 11, background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <span style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb' }}>Carico…</span>
             </div>
-          ))}
-        </div>
-      )}
+          ) : (
+            <button onClick={() => inputCamera.current?.click()} className="active:scale-[0.97]" style={{ aspectRatio: '1', border: '1.5px dashed #B5C6E0', borderRadius: 11, background: '#fff', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, cursor: 'pointer', transition: 'transform 0.1s' }}>
+              <span style={{ width: 34, height: 34, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 9px rgba(37,99,235,0.25)' }}>
+                <IcoCamera size={15} color="#fff" />
+              </span>
+              <span style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb' }}>Scatta</span>
+            </button>
+          )
+        )}
+      </div>
 
+      {/* Alternativa discreta: foto già sul telefono (come "Allega file") */}
       {eliminabile && (
-        <div style={{ marginTop: 12 }}>
-          <UploadFoto onUpload={onUpload} />
-        </div>
+        <p style={{ textAlign: 'center', fontSize: 12, color: '#6B7280', margin: '12px 0 0', paddingTop: 11, borderTop: '1px solid #F1F4F8' }}>
+          Hai le foto sul telefono?{' '}
+          <button onClick={() => inputGalleria.current?.click()} style={{ background: 'none', border: 'none', padding: 0, color: '#2563eb', fontWeight: 600, fontSize: 12, textDecoration: 'underline', cursor: 'pointer' }}>
+            Scegli dalla galleria
+          </button>
+        </p>
       )}
+    </div>
 
-      {/* Il completamento lo dichiara il cliente: acceso dalla prima foto */}
+    {/* Bottone di pagina, FUORI dalla card (stesso stile del wizard):
+        il completamento lo dichiara il cliente, acceso dalla prima foto */}
+    {eliminabile && (
       <button
         onClick={onFinito}
         disabled={!haFoto}
         className="active:scale-[0.99]"
         style={{
-          width: '100%', marginTop: 10, padding: '12px 0', border: 'none', borderRadius: 11,
+          width: '100%', padding: '14px 0', border: 'none', borderRadius: 13,
           background: haFoto ? '#2563eb' : '#E5E7EB', color: haFoto ? '#fff' : '#9CA3AF',
-          fontSize: 13.5, fontWeight: 600, cursor: haFoto ? 'pointer' : 'default',
+          fontSize: 15, fontWeight: 600, cursor: haFoto ? 'pointer' : 'default',
           boxShadow: haFoto ? '0 4px 12px rgba(37,99,235,0.25)' : 'none', transition: 'all 0.2s',
         }}
       >
         Ho finito con le foto
       </button>
-      <p style={{ textAlign: 'center', fontSize: 11.5, fontWeight: 600, color: '#9AA7B5', margin: '9px 0 0' }}>
-        {haFoto
-          ? (foto.length === 1 ? '1 foto caricata: aggiungine altre o premi Ho finito' : `${foto.length} foto caricate: aggiungine altre o premi Ho finito`)
-          : 'Carica quante foto vuoi: anche una sola va bene'}
-      </p>
-    </div>
-  )
-}
-
-// ============================================================
-// UPLOAD FOTO VEICOLO (due opzioni visibili, senza popup)
-// ============================================================
-
-function UploadFoto({ onUpload }: { onUpload: (files: File[]) => void }) {
-  const inputCamera = useRef<HTMLInputElement>(null)
-  const inputFile = useRef<HTMLInputElement>(null)
-  const [caricando, setCaricando] = useState(false)
-
-  async function handle(e: React.ChangeEvent<HTMLInputElement>) {
-    if (!e.target.files || e.target.files.length === 0) return
-    setCaricando(true)
-    await onUpload(Array.from(e.target.files))
-    setCaricando(false)
-    e.target.value = ''
-  }
-
-  return (
-    <>
-      <input ref={inputCamera} type="file" accept="image/*" capture="environment" multiple onChange={handle} className="hidden" />
-      <input ref={inputFile} type="file" accept="image/*,application/pdf" multiple onChange={handle} className="hidden" />
-      {caricando ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 0', border: '1.5px dashed #C9D3DF', borderRadius: 12, color: '#2563eb', fontSize: 12.5, fontWeight: 500 }}>
-          <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Caricamento...
-        </div>
-      ) : (
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={() => inputCamera.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 8px', border: 'none', borderRadius: 12, background: '#2563eb', color: '#fff', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.22)', transition: 'transform 0.1s' }}>
-            <IcoCamera size={16} color="#fff" />Scatta foto
-          </button>
-          <button onClick={() => inputFile.current?.click()} className="active:scale-[0.98]" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px 8px', border: '1.5px solid #BFDBFE', borderRadius: 12, background: '#EFF6FF', color: '#1E4E8C', fontSize: 12.5, fontWeight: 600, cursor: 'pointer', transition: 'transform 0.1s' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>Dalla galleria
-          </button>
-        </div>
-      )}
+    )}
     </>
   )
 }
+

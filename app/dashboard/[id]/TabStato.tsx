@@ -76,6 +76,12 @@ const TIMELINE_STEPS = [
     key: 'richiesta_inviata',
     label: 'Richiesta inviata',
     descrizione: 'Pratica creata',
+    statiAttiviPer: [],
+  },
+  {
+    key: 'attesa_documenti',
+    label: 'In attesa dei tuoi documenti',
+    descrizione: 'Carica e invia i documenti richiesti',
     statiAttiviPer: ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati'],
   },
   {
@@ -160,7 +166,7 @@ export default function TabStato({ pratica }: Props) {
           <p className="text-sm font-bold text-gray-900">Il percorso della tua pratica</p>
         </div>
         <p className="text-xs text-gray-500 mb-5">
-          Aperta il {new Date(pratica.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })}
+          Aperta il {new Date(pratica.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })} alle {new Date(pratica.creato_il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
         </p>
 
         {isAnnullata ? (

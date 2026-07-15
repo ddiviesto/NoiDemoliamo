@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **10 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **15 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -625,7 +625,7 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 
 - **`/api/assegna-pratica`** — algoritmo assegnazione ✅ (modalità dry-run / assegna demolitore scelto / auto). Converte sigla→nome provincia (`lib/province.ts`).
 - **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role). ⭐ 9/07: autorizzato anche il **cliente proprietario** (non solo admin) — il TabDocumenti lo chiama dopo ogni invio/eliminazione, così il banner del cliente si aggiorna da solo. Regola corretta: `in_attesa_approvazione_admin` SOLO quando **TUTTI** i documenti sono inviati (prima bastava il primo) → nel CRM una pratica entra in "Documenti da approvare" solo a invio completo.
-- ⭐ **`/api/modulo-pdf`** (nuovo 10/07) — download dei moduli PDF: `GET ?checklist_id=...` con Bearer token (cliente proprietario o admin). Genera al volo (deleghe autocompilate con pdf-lib; autodichiarazione in bianco per variante di casistica; curatore e ACI = PDF originali da `docs/moduli/originali/`, inclusi nel deploy via `outputFileTracingIncludes`), traccia `scaricato_il`. Bloccato per il cliente finché i documenti non sono verificati, TRANNE l'Autodichiarazione veicolo fuori uso (serve prima, per il Comune).
+- ⭐ **`/api/modulo-pdf`** (nuovo 10/07, rivisto 15/07) — download dei moduli PDF: `GET ?checklist_id=...` con Bearer token (cliente proprietario o admin). Genera al volo e traccia `scaricato_il`. ⭐⭐ **DECISIONE 15/07 (Davide): TUTTI i moduli escono IN BIANCO (niente autocompilazione, nemmeno le deleghe — si rivaluterà in futuro; il generatore accetta ancora i dati, l'endpoint non li passa) e sono scaricabili SUBITO (niente blocco pre-verifica)**. Deleghe e autodichiarazione = pdf-lib in bianco (la casistica serve solo per la qualifica del fermo); curatore e ACI = PDF originali da `docs/moduli/originali/`, inclusi nel deploy via `outputFileTracingIncludes`. Gli errori di download mostrano al cliente il motivo vero (es. "Non autorizzato (401)" = sessione da rifare).
 - ⭐ **`/api/pratica-dati`** (nuovo 9/07) — modifica dei dati importanti della pratica dall'admin (regola "modifica a tasto" nelle card della pagina pratica): Cliente (nome/telefono/CF), Veicolo (targa/marca/modello/anno/km), Ritiro (indirizzo con **autocomplete Google** che aggiorna anche comune/provincia/CAP/lat/lng — quelli usati da assegnazione e tariffe — più spazio carro attrezzi e note), Fermo amministrativo. Campi in whitelist, targa/CF normalizzati maiuscoli. ⭐ Cambiare il FERMO sincronizza la checklist (condizione `fermo_si`: dichiarazione da fotografare + originale al ritiro) e ricalcola lo stato; le righe con file caricati non si toccano mai. Le condizioni dichiarate dal cliente (incidentata/cammina/…) restano di sola lettura. Solo admin.
 - ⭐ **`/api/pratica-cdc`** (nuovo 9/07) — esito della telefonata "non sa che certificato ha": l'admin preme **Cartaceo / Digitale / Smarrito** nel banner "Da contattare" → aggiorna `pratiche.certificato_proprieta` e **sincronizza la checklist** col catalogo (cartaceo → aggiunge il CDC cartaceo da fotografare + originale al ritiro; smarrito → denuncia di smarrimento, come da file casistiche; digitale → nulla), poi ricalcola lo stato. Le righe con file già caricati dal cliente NON si toccano mai. Dopo la scelta, pillola "Cert. proprietà" + link **"Cambia"** per correggere (finché la pratica è in fase documenti). Solo admin.
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
@@ -830,6 +830,20 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 # 📋 PARTE 8 — STATO ATTUALE (10 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐⭐ SESSIONE 15 luglio 2026 — RIFINITURE AREA CLIENTE + MODULI IN BIANCO E SBLOCCATI
+
+> Tutte le modifiche UI passate da mockup e approvate da Davide, collaudate su localhost.
+
+- ⭐⭐ **MODULI: NIENTE AUTOCOMPILAZIONE, NIENTE BLOCCO** (decisione Davide che rivede il 10/07): tutti i moduli PDF escono **in bianco** (anche le 6 deleghe — il generatore resta pronto a ricompilare in futuro) e sono **scaricabili subito** dal box verde, senza aspettare la verifica dei documenti. Via il lucchetto "Dopo la verifica" ovunque (UI + endpoint).
+- ✅ **Box verde ritiro**: titolo più grande e pesante + banda bianca "CONSEGNALI IL GIORNO DEL RITIRO" (variante C scelta su mockup). Righe modulo: prima del download badge "Scaricala, compilala e firmala" + bottone Scarica; dopo, numero → spunta verde, badge "Scaricata · ora compilala e firmala", link "Scarica di nuovo". Footer accorciato (via la frase lunga sull'autodichiarazione).
+- ✅ **Guida "Come si ottiene" (attestazione Ente Pubblico)**: via il doppio bottone Scarica (si scarica SOLO dal box verde, il passo 1 lo dice); passo 2 chiarito (Comune/Polizia locale/ente competente DEVONO rilasciare la Dichiarazione Inutilizzabilità); passo 3 = fotografa la dichiarazione rilasciata e inviacela.
+- ✅ **Tab Stato**: "Aperta il … alle HH:MM" + nuovo passo **"In attesa dei tuoi documenti"** come passo attuale (timeline a 6 passi; "Richiesta inviata" appare subito completata).
+- ✅ **FIX eliminazione file da documento inviato**: QUALSIASI eliminazione da un documento `caricato` lo riporta `da_fare` (prima serviva eliminare TUTTI i file: un documento fronte/retro restava "in verifica" a metà e l'admin se lo trovava da approvare incompleto).
+- ✅ **Card foto veicolo (variante B su mockup)**: via i bottoni rettangolari — casella tratteggiata "Scatta" nella griglia (pattern "+ Aggiungi"), galleria come link discreto in fondo, "Ho finito con le foto" = bottone di pagina fuori dalla card (stile wizard). Rimosso il componente UploadFoto.
+- ✅ **Banner "Mancano le foto"**: da giallo a **celeste tenue** (variante B — colori dei box informativi; il giallo era "un pugno in un occhio").
+- ✅ **Errori download moduli parlanti**: l'avviso mostra il motivo del server con lo status (es. "Non autorizzato (401)" = rifare login).
+- ⚠️ Nota di test: nello stesso browser vive UNA sessione alla volta — admin in Chrome normale, cliente di prova in incognito. Un 401 sul download dopo giri di login/logout si risolve con Esci + login.
 
 ### ⭐⭐⭐ SESSIONE 10 luglio 2026 — MODULI PDF: TUTTI E 13 DEFINITI (era lo STEP 2)
 
@@ -1072,6 +1086,11 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - **Niente avvisi di chiamata lato cliente**: il box "Da chiarire insieme" è stato rimosso; i casi da chiarire li vede solo l'admin ("Da contattare") e chiama lui.
 - **Aggiornamenti silenziosi**: mai smontare la schermata per un refresh dati (spinner solo al primo caricamento; riusare i signed URL). I "sobbalzi" sono bug, non dettagli.
 
+**Nuove decisioni 15 luglio 2026:**
+
+- ⭐⭐ **Moduli PDF in bianco e subito scaricabili**: niente autocompilazione (nemmeno le deleghe — si rivaluterà in futuro, il generatore resta pronto) e niente blocco pre-verifica. Il cliente vede e scarica i moduli dal box verde da subito, li compila a penna e li porta firmati al ritiro.
+- **Eliminare un file da un documento inviato = torna in preparazione**: il documento non può restare "in verifica" a metà (upload ≠ invio, sempre).
+
 **Nuove decisioni 7 luglio 2026:**
 
 71. ⭐ **Il design admin è FISSATO** (vedi 6.8): lavanda + card con ombra, liste a card (non tabelle), profili con testata blu e statistiche in vetro, valori mai nero pieno. Ogni nuova pagina admin segue quegli input senza reinventare.
@@ -1110,4 +1129,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 10 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 15 luglio 2026.**
