@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **16 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **17 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -626,7 +626,7 @@ Anti-zoom iOS (text-base 16px), inputMode corretti, NO scrollIntoView automatico
 - **`/api/assegna-pratica`** — algoritmo assegnazione ✅ (modalità dry-run / assegna demolitore scelto / auto). Converte sigla→nome provincia (`lib/province.ts`).
 - **`/api/pratica-stato`** — ricalcola lo stato pratica dai documenti (service role). ⭐ 9/07: autorizzato anche il **cliente proprietario** (non solo admin) — il TabDocumenti lo chiama dopo ogni invio/eliminazione, così il banner del cliente si aggiorna da solo. Regola corretta: `in_attesa_approvazione_admin` SOLO quando **TUTTI** i documenti sono inviati (prima bastava il primo) → nel CRM una pratica entra in "Documenti da approvare" solo a invio completo.
 - ⭐ **`/api/modulo-pdf`** (nuovo 10/07, rivisto 15/07) — download dei moduli PDF: `GET ?checklist_id=...` con Bearer token (cliente proprietario o admin). Genera al volo e traccia `scaricato_il`. ⭐⭐ **DECISIONE 15/07 (Davide): TUTTI i moduli escono IN BIANCO (niente autocompilazione, nemmeno le deleghe — si rivaluterà in futuro; il generatore accetta ancora i dati, l'endpoint non li passa) e sono scaricabili SUBITO (niente blocco pre-verifica)**. Deleghe e autodichiarazione = pdf-lib in bianco (la casistica serve solo per la qualifica del fermo); curatore e ACI = PDF originali da `docs/moduli/originali/`, inclusi nel deploy via `outputFileTracingIncludes`. Gli errori di download mostrano al cliente il motivo vero (es. "Non autorizzato (401)" = sessione da rifare).
-- ⭐ **`/api/pratica-dati`** (nuovo 9/07) — modifica dei dati importanti della pratica dall'admin (regola "modifica a tasto" nelle card della pagina pratica): Cliente (nome/telefono/CF), Veicolo (targa/marca/modello/anno/km), Ritiro (indirizzo con **autocomplete Google** che aggiorna anche comune/provincia/CAP/lat/lng — quelli usati da assegnazione e tariffe — più spazio carro attrezzi e note), Fermo amministrativo. Campi in whitelist, targa/CF normalizzati maiuscoli. ⭐ Cambiare il FERMO sincronizza la checklist (condizione `fermo_si`: dichiarazione da fotografare + originale al ritiro) e ricalcola lo stato; le righe con file caricati non si toccano mai. Le condizioni dichiarate dal cliente (incidentata/cammina/…) restano di sola lettura. Solo admin.
+- ⭐ **`/api/pratica-dati`** (nuovo 9/07, esteso 17/07) — modifica dei dati importanti della pratica dall'admin (regola "modifica a tasto"): Cliente (nome/telefono/CF), Veicolo (targa/marca/modello/anno/km), Ritiro (indirizzo con **autocomplete Google** che aggiorna anche comune/provincia/CAP/lat/lng), Dichiarazioni (libretto, fermo, targhe, delegato) e Attesa (in_attesa/motivo/dal). Campi in whitelist, targa/CF normalizzati maiuscoli. ⭐⭐ **Sincronizzazione checklist GENERALIZZATA** (17/07): ogni dichiarazione modificata accende/spegne i documenti della sua condizione nel catalogo (`fermo_si`, `libretto_smarrito`, `targhe_assenti`, `delegato`) e ricalcola lo stato; le righe con file caricati non si toccano MAI. Delega rifiutata per non_intestatario/targhe_straniere. Le condizioni dichiarate dal cliente (incidentata/cammina/…) restano di sola lettura. Solo admin.
 - ⭐ **`/api/pratica-cdc`** (nuovo 9/07) — esito della telefonata "non sa che certificato ha": l'admin preme **Cartaceo / Digitale / Smarrito** nel banner "Da contattare" → aggiorna `pratiche.certificato_proprieta` e **sincronizza la checklist** col catalogo (cartaceo → aggiunge il CDC cartaceo da fotografare + originale al ritiro; smarrito → denuncia di smarrimento, come da file casistiche; digitale → nulla), poi ricalcola lo stato. Le righe con file già caricati dal cliente NON si toccano mai. Dopo la scelta, pillola "Cert. proprietà" + link **"Cambia"** per correggere (finché la pratica è in fase documenti). Solo admin.
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
 - **`/api/pulisci-utenti`** — cancella account clienti senza pratiche (mai admin/operatori).
@@ -830,6 +830,19 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 # 📋 PARTE 8 — STATO ATTUALE (10 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐⭐⭐ SESSIONE 17 luglio 2026 — DETTAGLIO PRATICA ADMIN RIFATTO (variante A su mockup)
+
+> SQL della sessione: `docs/sql/2026-07-17-attesa-note-preimpostati.sql` (ESEGUITO da Davide:
+> colonne attesa su pratiche + tabelle `pratiche_note` e `messaggi_preimpostati`, RLS solo admin).
+
+- ⭐⭐ **Dettaglio pratica `/admin/pratiche/[id]` RIFATTO**: **testata blu** stile profilo (targa+veicolo, cliente, aperta il+ora, statistiche in vetro: documenti approvati, aperta da, fase X/6, pillola stato) + layout a due colonne: SINISTRA il lavoro (documenti → chat → cronologia), DESTRA azioni e dati.
+- ⭐ **CHAT ADMIN** (`ChatAdmin.tsx`): linguette **Tu ↔ Cliente** (scrive come mittente_tipo 'admin') e **Demolitore ↔ Cliente** (SOLA LETTURA, controllo qualità); bottone Aggiorna (niente real-time); lo scorrimento avviene SOLO dentro il riquadro messaggi (mai la pagina — regola anti-sobbalzo). ⭐ **Messaggi rapidi** da `messaggi_preimpostati`: chips sopra la casella (tocco → testo in casella, ritoccabile), finestra "Gestisci" per aggiungere/modificare/eliminare le frasi.
+- ⭐ **CRONOLOGIA E NOTE** (`CronologiaNote.tsx`, tabella `pratiche_note`, SOLO ADMIN): timeline con data e ora esatte, voce fissa "Pratica creata", note manuali + note automatiche di attesa/ripresa (pillole con orologio/play).
+- ⭐⭐ **PRATICA "IN ATTESA"**: è una PAUSA SOPRA LO STATO (non uno stato del workflow: alla ripresa la pratica torna esattamente dov'era). Bottone "Metti in attesa" in testata (motivo OBBLIGATORIO, icona OROLOGIO — le barrette pausa bocciate), riquadro ambra con motivo + "Riprendi" in colonna destra. Salvataggio via `/api/pratica-dati` (server). **Dashboard**: riquadro ambra "In attesa · N" accanto a "Da contattare" (fuori dalle 6 fasi), pillola "In attesa" + **motivo visibile in riga** (per ricordarsi il perché). **Cliente**: solo pillola "In attesa" + banner grigio sereno ("non devi fare nulla"), zero motivi.
+- ⭐⭐ **DICHIARAZIONI E CASISTICA tutte modificabili** (tranne la CASISTICA, sola lettura): con Modifica si aprono campi uniformi — Libretto (SOLO esiti verifica: Ha l'originale / Denuncia — "Non ce l'ha" resta solo come dichiarazione del cliente), Certificato di proprietà (qui, VIA dalla testa dei documenti), Fermo (SOLO Sì/No, via "Non lo sa"), Targhe (Presenti/Smarrite), Delegato (nome+telefono, vuoto = prima persona; nascosto dove la delega non è ammessa). Niente opzioni "—" nelle tendine (placeholder "Scegli…" disabilitato). ⭐ **Sincronizzazione checklist GENERALIZZATA in `/api/pratica-dati`**: ogni risposta accende/spegne i documenti della sua condizione nel catalogo (fermo_si, libretto_smarrito, targhe_assenti, delegato) — righe con file MAI toccate; whitelist estesa (libretto, targhe_presenti, delegato_*, in_attesa, attesa_*).
+- ✅ `DocumentiApprovazione`: via le pillole casistica e il "Cambia" CDC (ora nelle Dichiarazioni); resta il banner "Da contattare" coi bottoni esito telefonata.
+- 🔜 **DA FARE (nota di Davide)**: semplificare le CASISTICHE EREDI — togliere i documenti degli eredi che non servono (si comunicano nel box verde come le fotocopie del delegato), tenere solo chi opera come erede/incaricato; la domanda "quanti eredi" in /inizia probabilmente sparirà. Per ora numero eredi NON modificabile dall'admin.
 
 ### ⭐⭐ SESSIONE 16 luglio 2026 — FLUSSO CRM LEGGIBILE + MENO FOTO PER IL CLIENTE
 
@@ -1096,6 +1109,15 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - **Niente avvisi di chiamata lato cliente**: il box "Da chiarire insieme" è stato rimosso; i casi da chiarire li vede solo l'admin ("Da contattare") e chiama lui.
 - **Aggiornamenti silenziosi**: mai smontare la schermata per un refresh dati (spinner solo al primo caricamento; riusare i signed URL). I "sobbalzi" sono bug, non dettagli.
 
+**Nuove decisioni 17 luglio 2026:**
+
+- ⭐⭐ **L'attesa è una pausa, non uno stato**: "Metti in attesa" congela la pratica SOPRA il suo stato (motivo obbligatorio, solo admin); alla ripresa torna esattamente dov'era. Il cliente vede solo "In attesa" con tono sereno, mai i motivi. Icona: OROLOGIO (niente barrette pausa).
+- ⭐ **Cronologia note della pratica = memoria dell'admin**: note con data/ora esatte in `pratiche_note`, SOLO admin; attesa e ripresa si annotano da sole.
+- ⭐ **Tutte le dichiarazioni sono modificabili dall'admin TRANNE la casistica** (che decide la struttura della pratica): ogni modifica sincronizza da sola l'area del cliente via le condizioni del catalogo. Le tendine admin offrono solo ESITI di verifica ("Non lo sa"/"Non ce l'ha" sono dichiarazioni del cliente, non opzioni dell'admin).
+- **Chat admin nel dettaglio pratica**: l'admin scrive al cliente e LEGGE (senza scrivere) la conversazione demolitore↔cliente; frasi rapide salvate in DB e gestibili dall'interfaccia.
+- **Niente "—" nelle tendine**: se manca il valore si mostra "Scegli…" disabilitato.
+- 🔜 **Casistiche EREDI da semplificare** (in separata sede, RICORDARLO a Davide): via i documenti degli eredi non necessari → comunicati nel box del ritiro; resta solo chi opera; probabilmente sparisce la domanda "quanti eredi" da /inizia.
+
 **Nuove decisioni 16 luglio 2026:**
 
 - ⭐⭐ **Nomenclatura UNICA admin↔cliente**: le fasi del CRM e la timeline del cliente usano gli stessi concetti e nomi coerenti; nel CRM ogni fase mostra anche "Il cliente vede: …". Se si aggiunge una fase/stato, va nominata in coppia.
@@ -1146,4 +1168,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 16 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 17 luglio 2026.**

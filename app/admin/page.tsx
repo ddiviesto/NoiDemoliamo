@@ -31,6 +31,9 @@ interface Pratica {
   stato: string
   creato_il: string
   aggiornato_il: string | null
+  // Pausa sopra lo stato (17/07): la pratica esce dal flusso finché non riprende
+  in_attesa: boolean | null
+  attesa_motivo: string | null
 }
 
 // ============================================================
@@ -93,6 +96,7 @@ function daContattare(p: Pratica): boolean {
 
 // Rango di priorità: 0 = massima urgenza (in cima)
 function rango(p: Pratica): number {
+  if (p.in_attesa && isAttiva(p.stato)) return 4 // in pausa: sotto le attive, sopra le chiuse
   if (daContattare(p)) return 0
   if (p.stato === 'in_attesa_approvazione_admin') return 1
   if (p.stato === 'da_assegnare') return 2
@@ -116,7 +120,7 @@ function formatAttesa(min: number): string {
 // COMPONENTE
 // ============================================================
 
-type Filtro = 'tutte' | 'moduli' | 'contattare' | 'approvare' | 'assegnare' | 'assegnate' | 'ritirate' | 'completate' | 'annullate'
+type Filtro = 'tutte' | 'moduli' | 'contattare' | 'attesa' | 'approvare' | 'assegnare' | 'assegnate' | 'ritirate' | 'completate' | 'annullate'
 
 // ============================================================
 // PIPELINE: ogni pratica appartiene a UN solo riquadro del flusso.
@@ -128,6 +132,8 @@ type Filtro = 'tutte' | 'moduli' | 'contattare' | 'approvare' | 'assegnare' | 'a
 function bucketDi(p: Pratica): Filtro {
   if (p.stato === 'annullata') return 'annullate'
   if (p.stato === 'completata') return 'completate'
+  // In attesa (pausa dell'admin): fuori dal flusso finché non riprende
+  if (p.in_attesa) return 'attesa'
   if (['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra'].includes(p.stato)) return 'ritirate'
   if (['assegnata', 'in_attesa_conferma_cliente', 'ritiro_confermato'].includes(p.stato)) return 'assegnate'
   if (['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(p.stato)) return 'assegnare'
@@ -159,7 +165,7 @@ export default function AdminDashboard() {
 
       const { data: praticheData } = await supabase
         .from('pratiche')
-        .select('id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il')
+        .select('id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo')
         .order('creato_il', { ascending: false })
 
       const { data: demoData } = await supabase.from('demolitori').select('id, ragione_sociale')
@@ -312,17 +318,32 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* ALLERTA "DA CONTATTARE" (fuori dal flusso, solo se ce ne sono) */}
-          {conta('contattare') > 0 && (
-            <button
-              onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
-              className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 mb-3 text-left transition-all hover:shadow-md"
-              style={{ background: '#FEF6F6', border: `1.5px solid ${filtro === 'contattare' ? '#2563eb' : '#F3C8C8'}`, maxWidth: 620 }}
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-              <span className="text-[12.5px] font-bold" style={{ color: '#9B1C1C' }}>Da contattare · {conta('contattare')}</span>
-              <span className="text-[11.5px]" style={{ color: '#B03A2E' }}>pratiche in fase documenti da chiamare (niente libretto o certificato sconosciuto)</span>
-            </button>
+          {/* ALLERTE FUORI DAL FLUSSO: da contattare + in attesa (solo se >0) */}
+          {(conta('contattare') > 0 || conta('attesa') > 0) && (
+            <div className="flex flex-wrap gap-2.5 mb-3">
+              {conta('contattare') > 0 && (
+                <button
+                  onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
+                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left transition-all hover:shadow-md"
+                  style={{ background: '#FEF6F6', border: `1.5px solid ${filtro === 'contattare' ? '#2563eb' : '#F3C8C8'}` }}
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+                  <span className="text-[12.5px] font-bold" style={{ color: '#9B1C1C' }}>Da contattare · {conta('contattare')}</span>
+                  <span className="text-[11.5px]" style={{ color: '#B03A2E' }}>da chiamare per i documenti</span>
+                </button>
+              )}
+              {conta('attesa') > 0 && (
+                <button
+                  onClick={() => setFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
+                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left transition-all hover:shadow-md"
+                  style={{ background: '#FDF7EA', border: `1.5px solid ${filtro === 'attesa' ? '#2563eb' : '#F0DFB8'}` }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  <span className="text-[12.5px] font-bold" style={{ color: '#854F0B' }}>In attesa · {conta('attesa')}</span>
+                  <span className="text-[11.5px]" style={{ color: '#B45309' }}>in pausa, fuori dal flusso finché non riprendono</span>
+                </button>
+              )}
+            </div>
           )}
 
           {/* FILTRI RAPIDI */}
@@ -375,9 +396,15 @@ export default function AdminDashboard() {
 
                     {/* Stato + demolitore */}
                     <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: contatta ? '#FDF7EA' : m.bg, color: contatta ? '#854F0B' : m.text, padding: '4px 12px' }}>
-                        {contatta ? 'Da contattare' : m.label}
+                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: (p.in_attesa && !chiusa) ? '#FAEEDA' : contatta ? '#FDF7EA' : m.bg, color: (p.in_attesa && !chiusa) ? '#854F0B' : contatta ? '#854F0B' : m.text, padding: '4px 12px' }}>
+                        {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
                       </span>
+                      {/* Il PERCHÉ dell'attesa, sempre sott'occhio in lista */}
+                      {p.in_attesa && !chiusa && p.attesa_motivo && (
+                        <div className="text-[11px] mt-1 truncate" style={{ color: '#B45309' }} title={p.attesa_motivo}>
+                          {p.attesa_motivo}
+                        </div>
+                      )}
                       {p.demolitore_id && demolitori[p.demolitore_id] && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.9" style={{ flexShrink: 0 }}><path d="M3 21h18M6 21V7l6-4 6 4v14" /></svg>

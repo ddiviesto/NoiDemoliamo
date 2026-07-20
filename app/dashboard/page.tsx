@@ -14,6 +14,7 @@ interface Pratica {
   indirizzo_ritiro: string | null
   stato: string
   creato_il: string
+  in_attesa: boolean | null
 }
 
 // ============================================================
@@ -129,7 +130,7 @@ export default function DashboardCliente() {
       // Recupera pratiche dell'utente
       const { data, error } = await supabase
         .from('pratiche')
-        .select('id, targa, tipo_mezzo, marca, modello, indirizzo_ritiro, stato, creato_il')
+        .select('id, targa, tipo_mezzo, marca, modello, indirizzo_ritiro, stato, creato_il, in_attesa')
         .eq('user_id', session.user.id)
         .order('creato_il', { ascending: false })
 
@@ -201,7 +202,9 @@ export default function DashboardCliente() {
           ) : (
             <div className="flex flex-col gap-2.5">
               {pratiche.map(p => {
-                const s = infoStato(p.stato)
+                // Pratica in pausa (decisa dall'admin): il cliente vede solo "In attesa"
+                const inPausa = p.in_attesa && p.stato !== 'completata' && p.stato !== 'annullata'
+                const s = inPausa ? { label: 'In attesa', bg: '#FAEEDA', text: '#854F0B' } : infoStato(p.stato)
                 return (
                   <button
                     key={p.id}

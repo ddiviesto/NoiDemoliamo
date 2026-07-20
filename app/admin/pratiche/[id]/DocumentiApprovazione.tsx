@@ -85,22 +85,6 @@ function ordinaleErede(n: number): string {
   return o[n] || `${n}°`
 }
 
-const NOMI_CASISTICHE: Record<string, string> = {
-  persona_fisica: 'Persona fisica',
-  eredi_accettato: 'Eredi (accettata)',
-  eredi_rinuncia: 'Eredi (con rinuncia)',
-  societa: 'Società',
-  societa_fallita: 'Società fallita',
-  associazione: 'Associazione',
-  non_intestatario: 'Non intestatario',
-  targhe_straniere: 'Targhe straniere',
-}
-
-const CDC_LABEL: Record<string, string> = { digitale: 'Digitale', cartaceo: 'Cartaceo', smarrito: 'Smarrito (denuncia)', nessuno: 'Non lo sa', documento_unico: 'Documento unico' }
-
-// Finché la pratica è in queste fasi l'esito CDC si può ancora cambiare
-const STATI_FASE_DOCUMENTI = ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati', 'da_assegnare']
-
 // Stile card condiviso (identico alle card della lista pratiche)
 const STILE_CARD: React.CSSProperties = {
   background: '#fff',
@@ -134,7 +118,7 @@ function BottoniCdc({ azione, onScegli }: { azione: boolean; onScegli: (cdc: 'ca
 // COMPONENTE
 // ============================================================
 
-export default function DocumentiApprovazione({ praticaId, statoPratica, onStatoCambiato, onRicaricaPratica }: Props) {
+export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRicaricaPratica }: Props) {
   const [docs, setDocs] = useState<DocRiga[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [dati, setDati] = useState<DatiPratica | null>(null)
@@ -145,8 +129,6 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
   const [visoreIdx, setVisoreIdx] = useState<number | null>(null)
   const [modalRifiuto, setModalRifiuto] = useState<{ id: string; titolo: string } | null>(null)
   const [notaRifiuto, setNotaRifiuto] = useState('')
-  // "Cambia" sull'esito CDC: riapre i tre bottoni per correggere un errore
-  const [cambiaCdc, setCambiaCdc] = useState(false)
 
   const onStatoRef = useRef(onStatoCambiato)
   useEffect(() => { onStatoRef.current = onStatoCambiato }, [onStatoCambiato])
@@ -314,7 +296,6 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
       if (!res.ok) throw new Error(data?.error || 'Errore')
       await carica()
       onRicaricaPratica?.()
-      setCambiaCdc(false)
     } catch (e) {
       console.error('Errore impostazione certificato:', e)
       alert('Errore nel salvataggio. Riprova.')
@@ -421,37 +402,9 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
           </div>
         )}
 
-        {/* DATI CASISTICA */}
-        {dati && (
-          <div className="flex flex-wrap items-center gap-1.5 mt-3">
-            {dati.casistica && <PillDato label="Casistica" valore={NOMI_CASISTICHE[dati.casistica] || dati.casistica} />}
-            {dati.certificato_proprieta && dati.certificato_proprieta !== 'nessuno' && (
-              <>
-                <PillDato label="Cert. proprietà" valore={CDC_LABEL[dati.certificato_proprieta] || dati.certificato_proprieta} />
-                {STATI_FASE_DOCUMENTI.includes(statoPratica) && !cambiaCdc && (
-                  <button onClick={() => setCambiaCdc(true)} className="text-[11px] font-semibold underline" style={{ color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: '0 2px' }}>
-                    Cambia
-                  </button>
-                )}
-              </>
-            )}
-            {dati.fermo_amministrativo && dati.fermo_amministrativo !== 'no' && <PillDato label="Fermo" valore={dati.fermo_amministrativo === 'si' ? 'Sì' : 'Non so'} allerta />}
-            {dati.delegato_nome && <PillDato label="Delegato" valore={dati.delegato_nome + (dati.delegato_telefono ? ` · ${dati.delegato_telefono}` : '')} />}
-            {dati.numero_eredi != null && dati.numero_eredi > 0 && (dati.casistica === 'eredi_accettato' || dati.casistica === 'eredi_rinuncia') && <PillDato label="Eredi" valore={String(dati.numero_eredi)} />}
-            {dati.targhe_presenti === false && <PillDato label="Targhe" valore="Smarrite" allerta />}
-          </div>
-        )}
-
-        {/* Correzione esito CDC (es. premuto Cartaceo invece di Smarrito) */}
-        {cambiaCdc && (
-          <div className="flex items-center flex-wrap gap-2 mt-2">
-            <span className="text-[11px] font-semibold" style={{ color: '#5B6779' }}>Che certificato ha?</span>
-            <BottoniCdc azione={azione} onScegli={impostaCdc} />
-            <button onClick={() => setCambiaCdc(false)} disabled={azione} className="text-[11px] font-semibold underline" style={{ color: '#5B6779', background: 'none', border: 'none', cursor: 'pointer' }}>
-              Annulla
-            </button>
-          </div>
-        )}
+        {/* Nota 17/07: le pillole casistica e la correzione del CDC sono state
+            SPOSTATE nella card "Dichiarazioni e casistica" della pagina (i dati
+            stavano in due posti). Qui resta solo il banner "Da contattare". */}
 
         {/* LISTA DOCUMENTI */}
         {righeVisibili.length === 0 ? (
@@ -628,14 +581,6 @@ export default function DocumentiApprovazione({ praticaId, statoPratica, onStato
 // ============================================================
 // SOTTOCOMPONENTI
 // ============================================================
-
-function PillDato({ label, valore, allerta = false }: { label: string; valore: string; allerta?: boolean }) {
-  return (
-    <span className="text-[11px] px-2.5 py-1 rounded-full" style={allerta ? { background: '#FBE2E2', color: '#9B1C1C' } : { background: '#EEF2F7', color: '#475569' }}>
-      <span className="opacity-70">{label}:</span> <span className="font-semibold">{valore}</span>
-    </span>
-  )
-}
 
 function RigaDoc(props: {
   doc: DocRiga

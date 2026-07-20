@@ -37,6 +37,7 @@ export interface Pratica {
   data_certificato_rottamazione: string | null
   data_certificato_pra: string | null
   riassegnata: boolean | null
+  in_attesa: boolean | null
   stato: string
   creato_il: string
 }
@@ -63,6 +64,15 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
   const ico = (path: React.ReactNode) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
   )
+  // Pratica in pausa (decisa dall'admin): messaggio sereno, nessun dettaglio
+  if (p.in_attesa && p.stato !== 'completata' && p.stato !== 'annullata') {
+    return {
+      icona: ico(<><rect x="7" y="4.5" width="3.5" height="15" rx="1" /><rect x="13.5" y="4.5" width="3.5" height="15" rx="1" /></>),
+      titolo: 'La tua pratica è momentaneamente in attesa',
+      sottotitolo: 'Riprenderemo appena possibile: non devi fare nulla',
+      bg: 'linear-gradient(135deg, #64748B 0%, #475569 100%)',
+    }
+  }
   switch (p.stato) {
     case 'in_attesa_documenti':
       return {
@@ -288,7 +298,8 @@ export default function DettaglioPraticaCliente() {
   if (!pratica) return null
 
   const banner = bannerInfo(pratica)
-  const badge = statoBadge(pratica.stato)
+  const inPausa = !!pratica.in_attesa && pratica.stato !== 'completata' && pratica.stato !== 'annullata'
+  const badge = inPausa ? { label: 'In attesa', bg: '#FAEEDA', text: '#854F0B' } : statoBadge(pratica.stato)
 
   return (
     <main className="min-h-screen flex justify-center p-4 pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>

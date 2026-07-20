@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import DocumentiApprovazione from './DocumentiApprovazione'
+import ChatAdmin from './ChatAdmin'
+import CronologiaNote from './CronologiaNote'
 import AutocompleteIndirizzo from '../../../inizia/steps/AutocompleteIndirizzo'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
@@ -54,6 +56,10 @@ interface Pratica {
   stato: string
   creato_il: string
   aggiornato_il: string | null
+  // Pausa sopra lo stato (17/07): quando si riprende, la pratica riparte da dov'era
+  in_attesa: boolean | null
+  attesa_motivo: string | null
+  attesa_dal: string | null
 }
 
 interface Candidato {
@@ -113,6 +119,25 @@ function TitoloCard({ children }: { children: React.ReactNode }) {
 function fmtData(x: string | null) {
   if (!x) return '—'
   return new Date(x).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+// Fase del flusso (1-6, come le caselle della dashboard) per la testata
+function faseDi(stato: string): number {
+  if (['in_attesa_documenti', 'documenti_parzialmente_approvati'].includes(stato)) return 1
+  if (stato === 'in_attesa_approvazione_admin') return 2
+  if (['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(stato)) return 3
+  if (['assegnata', 'in_attesa_conferma_cliente', 'ritiro_confermato'].includes(stato)) return 4
+  if (['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra'].includes(stato)) return 5
+  if (stato === 'completata') return 6
+  return 0
+}
+
+// Da quanto tempo è aperta (per la statistica in testata)
+function etaPratica(creatoIl: string): string {
+  const ore = Math.max(0, Math.floor((Date.now() - new Date(creatoIl).getTime()) / 3600000))
+  if (ore < 1) return '<1 h'
+  if (ore < 48) return `${ore} h`
+  return `${Math.floor(ore / 24)} gg`
 }
 
 const CAMBIO_LABEL: Record<string, string> = { manuale: 'Manuale', automatico: 'Automatico', non_so: 'Non so' }
@@ -211,6 +236,54 @@ export default function DettaglioPraticaAdmin() {
   const [erroreAnnulla, setErroreAnnulla] = useState<string | null>(null)
   // Quando una modifica cambia la checklist (es. fermo) si ricarica la colonna documenti
   const [docsVersion, setDocsVersion] = useState(0)
+  // Statistiche documenti per la testata (arrivano dalla card documenti)
+  const [docStats, setDocStats] = useState<{ totale: number; approvati: number } | null>(null)
+  // Attesa (pausa della pratica) + cronologia note
+  const [attesaOpen, setAttesaOpen] = useState(false)
+  const [attesaMotivo, setAttesaMotivo] = useState('')
+  const [attesaErr, setAttesaErr] = useState<string | null>(null)
+  const [attesaBusy, setAttesaBusy] = useState(false)
+  const [noteVersion, setNoteVersion] = useState(0)
+
+  // Nota automatica in cronologia (se la tabella non c'è ancora, pazienza)
+  async function notaAutomatica(testo: string) {
+    try { await supabase.from('pratiche_note').insert({ pratica_id: id, testo }) } catch { /* tabella assente */ }
+  }
+
+  // L'attesa passa dal SERVER (/api/pratica-dati, service role): niente
+  // scritture dal browser su `pratiche`, come tutte le altre modifiche.
+  async function mettiInAttesa() {
+    const motivo = attesaMotivo.trim()
+    if (!motivo) { setAttesaErr('Scrivi il motivo: resterà nella cronologia.'); return }
+    setAttesaBusy(true)
+    try {
+      await salvaDatiPratica(id, { in_attesa: true, attesa_motivo: motivo, attesa_dal: new Date().toISOString() })
+    } catch {
+      setAttesaErr('Errore nel salvataggio. Hai eseguito l\'SQL del 17/07 su Supabase?')
+      setAttesaBusy(false)
+      return
+    }
+    await notaAutomatica(`Messa in attesa: ${motivo}`)
+    await ricaricaPratica()
+    setNoteVersion(v => v + 1)
+    setAttesaOpen(false)
+    setAttesaMotivo('')
+    setAttesaErr(null)
+    setAttesaBusy(false)
+  }
+
+  async function riprendiPratica() {
+    setAttesaBusy(true)
+    try {
+      await salvaDatiPratica(id, { in_attesa: false, attesa_motivo: null, attesa_dal: null })
+      await notaAutomatica('Pratica ripresa')
+      await ricaricaPratica()
+      setNoteVersion(v => v + 1)
+    } catch {
+      alert('Errore nella ripresa. Riprova.')
+    }
+    setAttesaBusy(false)
+  }
 
   useEffect(() => {
     async function carica() {
@@ -298,41 +371,105 @@ export default function DettaglioPraticaAdmin() {
   return (
     <main className="min-h-screen" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
 
-      {/* TOP BAR */}
-      <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
-        <button
-          onClick={() => router.push('/admin')}
-          className="flex items-center gap-1.5 text-[12.5px] font-bold text-gray-700 bg-gray-50 hover:bg-gray-100 hover:text-gray-900 rounded-xl px-3.5 py-2 transition-colors flex-shrink-0"
-          style={{ border: '1.5px solid #E5E7EB' }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          Torna alle pratiche
-        </button>
-        <div style={{ width: 1, height: 32, background: '#E5E7EB', flexShrink: 0 }} />
-        <div className="min-w-0">
-          <div className="text-[16px] font-bold text-gray-900 leading-tight truncate">{pratica.targa || 'Targa mancante'}{pratica.marca && ` · ${pratica.marca} ${pratica.modello || ''}`}</div>
-          <div className="text-[12px] truncate" style={{ color: '#4B5563' }}>
-            {pratica.nome_richiedente || '—'}{pratica.comune_ritiro && ` · ${pratica.comune_ritiro}`}{pratica.provincia_ritiro && ` (${pratica.provincia_ritiro})`}
+      <div className="max-w-6xl mx-auto px-4 py-5">
+
+        {/* TESTATA BLU in stile profilo (mockup variante A, 17/07) */}
+        <div className="rounded-2xl px-5 py-4 mb-4 text-white" style={{ background: 'linear-gradient(120deg, #1d4ed8, #2563eb, #3b82f6)' }}>
+          <div className="flex items-center gap-4 flex-wrap">
+            <button
+              onClick={() => router.push('/admin')}
+              className="flex items-center gap-1 text-[11.5px] font-bold rounded-[9px] px-3 py-2 transition-colors flex-shrink-0 hover:bg-white"
+              style={{ background: 'rgba(255,255,255,0.88)', color: '#1d4ed8' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+              Pratiche
+            </button>
+            <div className="min-w-0 flex-1">
+              <div className="text-[17px] font-extrabold leading-tight truncate">{pratica.targa || 'Targa mancante'}{pratica.marca && ` · ${pratica.marca} ${pratica.modello || ''}`}</div>
+              <div className="text-[11.5px] truncate" style={{ opacity: 0.85 }}>
+                {pratica.nome_richiedente || '—'}{pratica.comune_ritiro && ` · ${pratica.comune_ritiro}`}{pratica.provincia_ritiro && ` (${pratica.provincia_ritiro})`} · aperta il {new Date(pratica.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })} alle {new Date(pratica.creato_il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+              </div>
+            </div>
+            <div className="flex gap-2 flex-shrink-0">
+              {docStats && docStats.totale > 0 && (
+                <div className="rounded-[11px] px-3 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.14)' }}>
+                  <div className="text-[15px] font-extrabold leading-tight">{docStats.approvati}/{docStats.totale}</div>
+                  <div className="text-[9px] font-bold" style={{ letterSpacing: 0.5, opacity: 0.85 }}>DOCUMENTI</div>
+                </div>
+              )}
+              <div className="rounded-[11px] px-3 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.14)' }}>
+                <div className="text-[15px] font-extrabold leading-tight">{etaPratica(pratica.creato_il)}</div>
+                <div className="text-[9px] font-bold" style={{ letterSpacing: 0.5, opacity: 0.85 }}>APERTA DA</div>
+              </div>
+              {faseDi(pratica.stato) > 0 && (
+                <div className="rounded-[11px] px-3 py-1.5 text-center" style={{ background: 'rgba(255,255,255,0.14)' }}>
+                  <div className="text-[15px] font-extrabold leading-tight">{faseDi(pratica.stato)} / 6</div>
+                  <div className="text-[9px] font-bold" style={{ letterSpacing: 0.5, opacity: 0.85 }}>FASE</div>
+                </div>
+              )}
+            </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {pratica.in_attesa && (
+                <span className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ background: '#FAEEDA', color: '#854F0B' }}>In attesa</span>
+              )}
+              <span className="text-[11.5px] font-bold px-3.5 py-1.5 rounded-full" style={{ background: m.bg, color: m.text }}>{m.label}</span>
+              {pratica.stato !== 'annullata' && pratica.stato !== 'completata' && !pratica.in_attesa && (
+                <button
+                  onClick={() => { setAttesaMotivo(''); setAttesaErr(null); setAttesaOpen(true) }}
+                  className="flex items-center gap-1.5 text-[11px] font-bold rounded-[9px] px-3 py-2 transition-colors hover:bg-white/30"
+                  style={{ background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.5)', color: '#fff' }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  Metti in attesa
+                </button>
+              )}
+            </div>
           </div>
         </div>
-        <span className="ml-auto text-[11.5px] font-bold px-3.5 py-1.5 rounded-full flex-shrink-0" style={{ background: m.bg, color: m.text }}>{m.label}</span>
-      </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-          {/* COLONNA SINISTRA: documenti + foto */}
+          {/* COLONNA SINISTRA (il LAVORO): documenti + chat + cronologia */}
           <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
             <DocumentiApprovazione
               key={`docs-${docsVersion}`}
               praticaId={pratica.id}
               statoPratica={pratica.stato}
+              onStatoCambiato={(tutti, totale, approvati) => setDocStats({ totale, approvati })}
               onRicaricaPratica={ricaricaPratica}
             />
+            <ChatAdmin praticaId={pratica.id} demolitoreNome={demolitoreNome} />
+            <CronologiaNote praticaId={pratica.id} praticaCreataIl={pratica.creato_il} refreshKey={noteVersion} />
           </div>
 
-          {/* COLONNA DESTRA: assegnazione + dati */}
+          {/* COLONNA DESTRA: attesa + assegnazione + dati */}
           <div className="w-full lg:w-[340px] flex-shrink-0 flex flex-col gap-4">
+
+            {/* PRATICA IN ATTESA: riquadro ambra con motivo e Riprendi */}
+            {pratica.in_attesa && (
+              <div className="p-4" style={{ ...STILE_CARD, background: '#FDF7EA', borderColor: '#F0DFB8' }}>
+                <div className="flex items-start gap-2.5">
+                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] font-bold" style={{ color: '#854F0B' }}>In attesa dal {fmtData(pratica.attesa_dal)}</div>
+                    {pratica.attesa_motivo && (
+                      <div className="text-[12px] mt-1" style={{ color: '#B45309', lineHeight: 1.5 }}>&quot;{pratica.attesa_motivo}&quot;</div>
+                    )}
+                    <button
+                      onClick={riprendiPratica}
+                      disabled={attesaBusy}
+                      className="flex items-center gap-1.5 text-[11.5px] font-bold rounded-[9px] px-3 py-2 mt-2.5 transition-colors disabled:opacity-50"
+                      style={{ background: '#fff', border: '1.5px solid #F0DFB8', color: '#854F0B' }}
+                    >
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="#854F0B"><polygon points="6 3 20 12 6 21 6 3" /></svg>
+                      {attesaBusy ? 'Un attimo…' : 'Riprendi la pratica'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Pratica annullata: motivo sempre visibile (cronologia) */}
             {pratica.stato === 'annullata' && (
@@ -384,6 +521,37 @@ export default function DettaglioPraticaAdmin() {
 
         </div>
       </div>
+
+      {/* MODALE METTI IN ATTESA */}
+      {attesaOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: '#FAEEDA' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+            </div>
+            <p className="text-center font-semibold text-gray-900">Mettere la pratica in attesa?</p>
+            <p className="text-center text-sm text-gray-500 mt-1">
+              La pratica esce dal flusso finché non la riprendi (tornerà esattamente dov&apos;era). Il cliente vedrà solo &quot;In attesa&quot;, senza motivi.
+            </p>
+            <label className="block text-xs font-semibold text-gray-700 mt-4 mb-1.5">Perché va in attesa? <span className="text-gray-400 font-normal">(lo vedi solo tu, in cronologia)</span></label>
+            <textarea
+              value={attesaMotivo}
+              onChange={e => { setAttesaMotivo(e.target.value); setAttesaErr(null) }}
+              rows={3}
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500"
+              placeholder="Es. cliente partito per ferie, torna il 28 luglio"
+              autoFocus
+            />
+            {attesaErr && <p className="text-xs text-red-600 mt-1.5">{attesaErr}</p>}
+            <div className="flex gap-2 justify-end mt-4">
+              <button onClick={() => setAttesaOpen(false)} disabled={attesaBusy} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl">Annulla</button>
+              <button onClick={mettiInAttesa} disabled={attesaBusy} className="px-4 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50" style={{ background: '#B45309' }}>
+                {attesaBusy ? 'Un attimo…' : 'Metti in attesa'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODALE ANNULLA PRATICA */}
       {annullaOpen && (
@@ -1069,21 +1237,75 @@ function CardRitiro({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () =>
   )
 }
 
+// Finché la pratica è in queste fasi l'esito CDC si può ancora cambiare
+// (spostato qui dalla card documenti il 17/07: la modifica del certificato
+// vive nelle dichiarazioni, non sopra i documenti)
+const STATI_FASE_DOCUMENTI = ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati', 'da_assegnare']
+
 function CardDichiarazioni({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () => Promise<void> | void }) {
   const [edit, setEdit] = useState(false)
   const [salvando, setSalvando] = useState(false)
+  const [libretto, setLibretto] = useState('')
+  const [cdc, setCdc] = useState('')
   const [fermo, setFermo] = useState('')
+  const [targhe, setTarghe] = useState('') // 'presenti' | 'smarrite'
+  const [delegatoNome, setDelegatoNome] = useState('')
+  const [delegatoTel, setDelegatoTel] = useState('')
+
+  // TUTTO modificabile TRANNE la casistica (deciso 17/07). Regole:
+  // - fermo e targhe non esistono per le targhe straniere (non è al PRA italiano)
+  // - il certificato si corregge solo finché la pratica è in fase documenti
+  // - la delega non è ammessa per non intestatario e targhe straniere
+  // - numero eredi NON modificabile (le casistiche eredi si rivedono a parte)
+  const straniere = pratica.casistica === 'targhe_straniere'
+  const cdcModificabile = STATI_FASE_DOCUMENTI.includes(pratica.stato) && !straniere
+  const targheModificabili = !straniere
+  const delegaAmmessa = !straniere && pratica.casistica !== 'non_intestatario'
 
   function apri() {
-    setFermo(pratica.fermo_amministrativo || '')
+    setLibretto(['si', 'denuncia', 'no'].includes(pratica.libretto || '') ? (pratica.libretto as string) : '')
+    setCdc(['cartaceo', 'digitale', 'smarrito'].includes(pratica.certificato_proprieta || '') ? (pratica.certificato_proprieta as string) : '')
+    setFermo(pratica.fermo_amministrativo === 'si' || pratica.fermo_amministrativo === 'no' ? pratica.fermo_amministrativo : '')
+    setTarghe(pratica.targhe_presenti == null ? '' : pratica.targhe_presenti ? 'presenti' : 'smarrite')
+    setDelegatoNome(pratica.delegato_nome || '')
+    setDelegatoTel(pratica.delegato_telefono || '')
     setEdit(true)
   }
-  const modificato = edit && fermo !== (pratica.fermo_amministrativo || '')
+
+  const librettoCambiato = edit && libretto !== '' && libretto !== (pratica.libretto || '')
+  const cdcCambiato = edit && cdcModificabile && cdc !== '' && cdc !== (pratica.certificato_proprieta || '')
+  const fermoCambiato = edit && fermo !== '' && fermo !== (pratica.fermo_amministrativo || '')
+  const targheCambiate = edit && targheModificabili && targhe !== '' && targhe !== (pratica.targhe_presenti == null ? '' : pratica.targhe_presenti ? 'presenti' : 'smarrite')
+  const delegatoCambiato = edit && delegaAmmessa && (delegatoNome.trim() !== (pratica.delegato_nome || '') || delegatoTel.trim() !== (pratica.delegato_telefono || ''))
+  const modificato = librettoCambiato || cdcCambiato || fermoCambiato || targheCambiate || delegatoCambiato
 
   async function salva() {
     setSalvando(true)
     try {
-      await salvaDatiPratica(pratica.id, { fermo_amministrativo: fermo || null })
+      // 1) Certificato di proprietà: endpoint dedicato (sincronizza la checklist)
+      if (cdcCambiato) {
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch('/api/pratica-cdc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ pratica_id: pratica.id, cdc }),
+        })
+        const data = await res.json().catch(() => null)
+        if (!res.ok) throw new Error(data?.error || 'Errore certificato')
+      }
+      // 2) Tutto il resto in un colpo solo: /api/pratica-dati sincronizza
+      //    la checklist per libretto (denuncia), targhe (denuncia) e delegato (delega)
+      const dati: Record<string, unknown> = {}
+      if (librettoCambiato) dati.libretto = libretto
+      if (fermoCambiato) dati.fermo_amministrativo = fermo
+      if (targheCambiate) dati.targhe_presenti = targhe === 'presenti'
+      if (delegatoCambiato) {
+        const nome = delegatoNome.trim()
+        dati.delegato_nome = nome || null
+        // Senza delegato niente telefono (consegna in prima persona)
+        dati.delegato_telefono = nome ? (delegatoTel.trim() || null) : null
+      }
+      if (Object.keys(dati).length > 0) await salvaDatiPratica(pratica.id, dati)
       await onSalvata()
       setEdit(false)
     } catch (e) {
@@ -1093,33 +1315,77 @@ function CardDichiarazioni({ pratica, onSalvata }: { pratica: Pratica; onSalvata
     setSalvando(false)
   }
 
-  // Il fermo non esiste per le targhe straniere (non è al PRA italiano)
-  const fermoModificabile = pratica.casistica !== 'targhe_straniere'
-
   return (
-    <CardInfo titolo="Dichiarazioni e casistica" azione={!edit && fermoModificabile ? <BtnModifica onClick={apri} /> : undefined}>
+    <CardInfo titolo="Dichiarazioni e casistica" azione={!edit ? <BtnModifica onClick={apri} /> : undefined}>
+      {/* La casistica non si tocca: decide documenti e moduli di tutta la pratica */}
       {pratica.casistica && <Riga label="Casistica" value={NOMI_CASISTICHE[pratica.casistica] || pratica.casistica} />}
-      {pratica.libretto && <Riga label="Libretto" value={lbl(LIBRETTO_LABEL, pratica.libretto)} />}
-      {pratica.certificato_proprieta && <Riga label="Cert. proprietà" value={lbl(CDC_LABEL, pratica.certificato_proprieta)} />}
-      {!edit && pratica.fermo_amministrativo && <Riga label="Fermo amministrativo" value={lbl(FERMO_LABEL, pratica.fermo_amministrativo)} />}
+      {!edit && (
+        <>
+          {pratica.libretto && <Riga label="Libretto" value={lbl(LIBRETTO_LABEL, pratica.libretto)} />}
+          {pratica.certificato_proprieta && <Riga label="Cert. proprietà" value={lbl(CDC_LABEL, pratica.certificato_proprieta)} />}
+          {pratica.fermo_amministrativo && <Riga label="Fermo amministrativo" value={lbl(FERMO_LABEL, pratica.fermo_amministrativo)} />}
+          {pratica.targhe_presenti != null && <Riga label="Targhe" value={pratica.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite'} />}
+          <Riga label="Delegato" value={pratica.delegato_nome ? `${pratica.delegato_nome}${pratica.delegato_telefono ? ` · ${pratica.delegato_telefono}` : ''}` : 'Consegna in prima persona'} />
+        </>
+      )}
       {edit && (
         <div className="mt-2 pt-2 border-t border-gray-100 flex flex-col gap-2.5">
-          <CampoEdit label="Fermo amministrativo (dopo la verifica)">
-            <select className={INPUT_CLS} value={fermo} onChange={e => setFermo(e.target.value)}>
-              <option value="">—</option>
-              <option value="si">Sì</option>
-              <option value="no">No</option>
-              <option value="non_so">Non lo sa</option>
+          <CampoEdit label="Libretto (esito della verifica)">
+            {/* "Non ce l'ha" non è un'opzione dell'admin: è la risposta del
+                cliente che fa scattare il "Da contattare" — dopo la telefonata
+                l'esito è sempre uno di questi due */}
+            <select className={INPUT_CLS} value={libretto === 'no' ? '' : libretto} onChange={e => setLibretto(e.target.value)}>
+              {(libretto === '' || libretto === 'no') && <option value="" disabled>Scegli…</option>}
+              <option value="si">Ha l&apos;originale</option>
+              <option value="denuncia">Denuncia di smarrimento</option>
             </select>
-            <p className="text-[11px] mt-1" style={{ color: '#64748b' }}>
-              Con &quot;Sì&quot; al cliente appare la dichiarazione del fermo da fotografare (e da portare in originale al ritiro); con &quot;No&quot; viene tolta se non l&apos;ha ancora caricata.
-            </p>
           </CampoEdit>
+          {cdcModificabile && (
+            <CampoEdit label="Certificato di proprietà">
+              <select className={INPUT_CLS} value={cdc} onChange={e => setCdc(e.target.value)}>
+                {cdc === '' && <option value="" disabled>Scegli…</option>}
+                <option value="cartaceo">Cartaceo</option>
+                <option value="digitale">Digitale</option>
+                <option value="smarrito">Smarrito (denuncia)</option>
+              </select>
+            </CampoEdit>
+          )}
+          {!straniere && (
+            <CampoEdit label="Fermo amministrativo">
+              <select className={INPUT_CLS} value={fermo} onChange={e => setFermo(e.target.value)}>
+                {fermo === '' && <option value="" disabled>Scegli…</option>}
+                <option value="si">Sì</option>
+                <option value="no">No</option>
+              </select>
+            </CampoEdit>
+          )}
+          {targheModificabili && (
+            <CampoEdit label="Targhe">
+              <select className={INPUT_CLS} value={targhe} onChange={e => setTarghe(e.target.value)}>
+                {targhe === '' && <option value="" disabled>Scegli…</option>}
+                <option value="presenti">Presenti sul mezzo</option>
+                <option value="smarrite">Smarrite (denuncia)</option>
+              </select>
+            </CampoEdit>
+          )}
+          {delegaAmmessa && (
+            <>
+              <CampoEdit label="Delegato (vuoto = consegna in prima persona)">
+                <input className={INPUT_CLS} value={delegatoNome} onChange={e => setDelegatoNome(e.target.value)} placeholder="Nome e cognome del delegato" />
+              </CampoEdit>
+              {delegatoNome.trim() !== '' && (
+                <CampoEdit label="Telefono delegato">
+                  <input className={INPUT_CLS} value={delegatoTel} onChange={e => setDelegatoTel(e.target.value)} placeholder="Numero di telefono" />
+                </CampoEdit>
+              )}
+            </>
+          )}
+          <p className="text-[11px]" style={{ color: '#64748b', lineHeight: 1.5 }}>
+            L&apos;area del cliente si aggiorna da sola: documenti e denunce compaiono o spariscono in base a queste risposte. Ciò che il cliente ha già caricato non si tocca mai.
+          </p>
           <BarraSalva modificato={modificato} salvando={salvando} onSalva={salva} onAnnulla={() => setEdit(false)} />
         </div>
       )}
-      {pratica.targhe_presenti != null && <Riga label="Targhe" value={pratica.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite'} />}
-      {pratica.delegato_nome && <Riga label="Delegato" value={`${pratica.delegato_nome}${pratica.delegato_telefono ? ` · ${pratica.delegato_telefono}` : ''}`} />}
       {pratica.numero_eredi != null && (pratica.casistica === 'eredi_accettato' || pratica.casistica === 'eredi_rinuncia') && <Riga label="Numero eredi" value={String(pratica.numero_eredi)} />}
       {pratica.nomi_rinunciatari && <Riga label="Rinunciatari" value={pratica.nomi_rinunciatari} />}
     </CardInfo>

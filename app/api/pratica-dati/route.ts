@@ -24,8 +24,16 @@ const CAMPI_TESTO = new Set([
   'indirizzo_ritiro', 'comune_ritiro', 'provincia_ritiro', 'cap_ritiro',
   'spazio_carro_attrezzi', 'spazio_carro_attrezzi_note',
   'fermo_amministrativo',
+  // Dichiarazioni modificabili dall'admin (17/07): sincronizzano la checklist
+  'libretto', 'delegato_nome', 'delegato_telefono',
+  // Attesa (pausa della pratica, 17/07)
+  'attesa_motivo', 'attesa_dal',
 ])
 const CAMPI_NUMERO = new Set(['anno', 'km', 'lat', 'lng'])
+const CAMPI_BOOL = new Set(['in_attesa', 'targhe_presenti'])
+
+// La delega non è ammessa per queste casistiche (regola del file casistiche)
+const CASISTICHE_SENZA_DELEGA = ['non_intestatario', 'targhe_straniere']
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,7 +57,7 @@ export async function POST(req: NextRequest) {
 
     const { data: pratica } = await supabase
       .from('pratiche')
-      .select('stato, casistica, numero_eredi, fermo_amministrativo')
+      .select('stato, casistica, numero_eredi, fermo_amministrativo, libretto, targhe_presenti, delegato_nome')
       .eq('id', praticaId)
       .single()
     if (!pratica) return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
@@ -67,6 +75,8 @@ export async function POST(req: NextRequest) {
       } else if (CAMPI_NUMERO.has(campo)) {
         const n = valore === null || valore === '' ? null : Number(valore)
         update[campo] = n != null && Number.isFinite(n) ? n : null
+      } else if (CAMPI_BOOL.has(campo)) {
+        update[campo] = valore === true
       }
     }
     if (Object.keys(update).length === 0) return NextResponse.json({ error: 'Nessun campo da aggiornare' }, { status: 400 })
@@ -77,54 +87,76 @@ export async function POST(req: NextRequest) {
     if ('spazio_carro_attrezzi' in update && update.spazio_carro_attrezzi != null && !['libero', 'stretto', 'no'].includes(update.spazio_carro_attrezzi as string)) {
       return NextResponse.json({ error: 'Valore spazio carro attrezzi non valido' }, { status: 400 })
     }
+    if ('libretto' in update && update.libretto != null && !['si', 'denuncia', 'no'].includes(update.libretto as string)) {
+      return NextResponse.json({ error: 'Valore libretto non valido' }, { status: 400 })
+    }
+    if ('delegato_nome' in update && update.delegato_nome != null && CASISTICHE_SENZA_DELEGA.includes(pratica.casistica || '')) {
+      return NextResponse.json({ error: 'La delega non è ammessa per questa casistica' }, { status: 400 })
+    }
 
     update.aggiornato_il = new Date().toISOString()
     const { error: errUpd } = await supabase.from('pratiche').update(update).eq('id', praticaId)
     if (errUpd) throw errUpd
 
-    // ---- SINCRONIZZAZIONE CHECKLIST per il fermo (se è cambiato) ----
-    const fermoNuovo = update.fermo_amministrativo as string | null | undefined
-    const fermoCambiato = fermoNuovo !== undefined && fermoNuovo !== pratica.fermo_amministrativo
+    // ---- SINCRONIZZAZIONE CHECKLIST (17/07: generalizzata a TUTTE le
+    // dichiarazioni) ---- Ogni risposta modificata accende o spegne i
+    // documenti della sua condizione nel catalogo. Le righe con file
+    // caricati dal cliente non si toccano MAI.
+    const sync: { condizione: string; attiva: boolean }[] = []
+    if (update.fermo_amministrativo !== undefined && update.fermo_amministrativo !== pratica.fermo_amministrativo) {
+      sync.push({ condizione: 'fermo_si', attiva: update.fermo_amministrativo === 'si' })
+    }
+    if (update.libretto !== undefined && update.libretto !== pratica.libretto) {
+      sync.push({ condizione: 'libretto_smarrito', attiva: update.libretto === 'denuncia' })
+    }
+    if (update.targhe_presenti !== undefined && update.targhe_presenti !== pratica.targhe_presenti) {
+      sync.push({ condizione: 'targhe_assenti', attiva: update.targhe_presenti === false })
+    }
+    if (update.delegato_nome !== undefined && !!update.delegato_nome !== !!pratica.delegato_nome) {
+      sync.push({ condizione: 'delegato', attiva: !!update.delegato_nome })
+    }
     let nuovoStato = pratica.stato
 
-    if (fermoCambiato) {
-      const { data: catalogo } = await supabase
-        .from('casistiche_documenti')
-        .select('id, per_erede')
-        .eq('casistica', pratica.casistica)
-        .eq('condizione', 'fermo_si')
-
+    if (sync.length > 0) {
       const { data: righeEsistenti } = await supabase
         .from('pratica_documenti_checklist')
         .select('id, documento_id, indice_erede, stato, file_url')
         .eq('pratica_id', praticaId)
 
-      if (fermoNuovo === 'si') {
-        // Aggiunge la dichiarazione (se non già presente)
-        const daInserire: { pratica_id: string; documento_id: string; indice_erede: number | null; stato: string }[] = []
-        for (const doc of catalogo || []) {
-          const esistenti = (righeEsistenti || []).filter(r => r.documento_id === doc.id)
-          const indici: (number | null)[] = doc.per_erede
-            ? Array.from({ length: Math.max(1, pratica.numero_eredi || 1) }, (_, i) => i + 1)
-            : [null]
-          for (const indice of indici) {
-            if (!esistenti.some(e => (e.indice_erede ?? 0) === (indice ?? 0))) {
-              daInserire.push({ pratica_id: praticaId, documento_id: doc.id as string, indice_erede: indice, stato: 'da_fare' })
+      for (const s of sync) {
+        const { data: catalogo } = await supabase
+          .from('casistiche_documenti')
+          .select('id, per_erede')
+          .eq('casistica', pratica.casistica)
+          .eq('condizione', s.condizione)
+
+        if (s.attiva) {
+          // Aggiunge i documenti della condizione (se non già presenti)
+          const daInserire: { pratica_id: string; documento_id: string; indice_erede: number | null; stato: string }[] = []
+          for (const doc of catalogo || []) {
+            const esistenti = (righeEsistenti || []).filter(r => r.documento_id === doc.id)
+            const indici: (number | null)[] = doc.per_erede
+              ? Array.from({ length: Math.max(1, pratica.numero_eredi || 1) }, (_, i) => i + 1)
+              : [null]
+            for (const indice of indici) {
+              if (!esistenti.some(e => (e.indice_erede ?? 0) === (indice ?? 0))) {
+                daInserire.push({ pratica_id: praticaId, documento_id: doc.id as string, indice_erede: indice, stato: 'da_fare' })
+              }
             }
           }
-        }
-        if (daInserire.length > 0) {
-          const { error: errIns } = await supabase.from('pratica_documenti_checklist').insert(daInserire)
-          if (errIns) throw errIns
-        }
-      } else {
-        // Toglie la dichiarazione SOLO se ancora da fare e senza file
-        const idCatalogo = new Set((catalogo || []).map(c => c.id as string))
-        const idDaTogliere = (righeEsistenti || [])
-          .filter(r => idCatalogo.has(r.documento_id) && r.stato === 'da_fare' && !r.file_url)
-          .map(r => r.id)
-        if (idDaTogliere.length > 0) {
-          await supabase.from('pratica_documenti_checklist').delete().in('id', idDaTogliere)
+          if (daInserire.length > 0) {
+            const { error: errIns } = await supabase.from('pratica_documenti_checklist').insert(daInserire)
+            if (errIns) throw errIns
+          }
+        } else {
+          // Toglie i documenti della condizione SOLO se ancora da fare e senza file
+          const idCatalogo = new Set((catalogo || []).map(c => c.id as string))
+          const idDaTogliere = (righeEsistenti || [])
+            .filter(r => idCatalogo.has(r.documento_id) && r.stato === 'da_fare' && !r.file_url)
+            .map(r => r.id)
+          if (idDaTogliere.length > 0) {
+            await supabase.from('pratica_documenti_checklist').delete().in('id', idDaTogliere)
+          }
         }
       }
 
@@ -153,7 +185,7 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, stato: nuovoStato, fermoSincronizzato: fermoCambiato })
+    return NextResponse.json({ success: true, stato: nuovoStato, sincronizzate: sync.length })
   } catch (err) {
     console.error('Errore modifica dati pratica:', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })
