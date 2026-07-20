@@ -618,12 +618,44 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
           })
 
           polygon.addListener('click', () => {
+            const eraSelezionata = regioniSelRef.current.has(nomeReg)
             setRegioniSelezionate(prev => {
               const next = new Set(prev)
               if (next.has(nomeReg)) next.delete(nomeReg)
               else next.add(nomeReg)
               return next
             })
+            if (!eraSelezionata) {
+              // ⭐ Assorbo le selezioni interne: ora copre TUTTA la regione,
+              // quindi province selezionate singolarmente, esclusioni e comuni
+              // inclusi/esclusi al suo interno sono ridondanti (e sulla mappa
+              // si vedevano più scuri sopra la regione)
+              const provInRegione = (p: string) => provinciaToRegione.current.get(p) === nomeReg
+              const comInRegione = (c: string) => {
+                const prov = comuneToProvincia.current.get(c)
+                return !!prov && provinciaToRegione.current.get(prov) === nomeReg
+              }
+              setProvinceSelezionate(prev => {
+                const next = new Set(prev)
+                next.forEach(p => { if (provInRegione(p)) next.delete(p) })
+                return next
+              })
+              setProvinceEscluse(prev => {
+                const next = new Set(prev)
+                next.forEach(p => { if (provInRegione(p)) next.delete(p) })
+                return next
+              })
+              setComuniInclusi(prev => {
+                const next = new Set(prev)
+                next.forEach(c => { if (comInRegione(c)) next.delete(c) })
+                return next
+              })
+              setComuniEsclusi(prev => {
+                const next = new Set(prev)
+                next.forEach(c => { if (comInRegione(c)) next.delete(c) })
+                return next
+              })
+            }
           })
 
           polygon.addListener('mouseover', () => {
@@ -750,6 +782,16 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
                   if (comuneToProvincia.current.get(c) === nomeProv) nextEx.delete(c)
                 })
                 return nextEx
+              })
+              // ⭐ Assorbo i comuni già inclusi singolarmente: ora copre tutta
+              // la provincia, la selezione singola è ridondante (e sulla mappa
+              // si vedeva blu più scuro sopra la provincia)
+              setComuniInclusi(prevIn => {
+                const nextIn = new Set(prevIn)
+                nextIn.forEach(c => {
+                  if (comuneToProvincia.current.get(c) === nomeProv) nextIn.delete(c)
+                })
+                return nextIn
               })
               // Pre-carica comuni della regione di questa provincia
               const slug = PROVINCE_REGIONI[nomeProv]
