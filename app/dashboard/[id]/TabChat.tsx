@@ -112,8 +112,9 @@ export default function TabChat({ pratica, onMessaggiLetti }: Props) {
               : 'bg-gray-100 border-2 border-transparent text-gray-600'
           }`}
         >
-          <div className="w-6 h-6 bg-orange-500 rounded-full flex items-center justify-center">
-            <IconaDemolitore size={14} color="#ffffff" />
+          {/* Variante B (16/07): quadratino celeste stile app, niente arancione */}
+          <div className="w-6 h-6 flex items-center justify-center" style={{ background: '#DBEAFE', borderRadius: 7 }}>
+            <IconaDemolitore size={15} color="#2563eb" />
           </div>
           Demolitore
         </button>
@@ -148,8 +149,8 @@ export default function TabChat({ pratica, onMessaggiLetti }: Props) {
 function PlaceholderPrimaAssegnazione() {
   return (
     <div className="bg-white border border-gray-200 rounded-2xl p-6 flex flex-col items-center text-center" style={{ minHeight: 320 }}>
-      <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mb-3">
-        <IconaDemolitore size={36} color="#f97316" />
+      <div className="w-16 h-16 flex items-center justify-center mb-3" style={{ background: '#DBEAFE', borderRadius: 16 }}>
+        <IconaDemolitore size={34} color="#2563eb" />
       </div>
       <div className="text-sm font-semibold text-gray-800 mb-1">In attesa del demolitore</div>
       <p className="text-xs text-gray-500 max-w-xs leading-relaxed">
@@ -270,7 +271,6 @@ function Chat({
   }
 
   const isAdmin = destinatarioTipo === 'admin'
-  const headerColor = isAdmin ? '#0d2144' : '#f97316'
   const headerNome = isAdmin ? 'NoiDemoliamo' : 'Demolitore'
   const headerSubtitle = isAdmin ? '● Risposta media: 2 ore' : '● Comunica per il ritiro'
 
@@ -279,10 +279,10 @@ function Chat({
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2.5">
         <div
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={{ backgroundColor: headerColor }}
+          className="w-9 h-9 flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
+          style={isAdmin ? { backgroundColor: '#0d2144', borderRadius: '50%' } : { background: '#DBEAFE', borderRadius: 10 }}
         >
-          {isAdmin ? 'N' : <IconaDemolitore size={20} color="#ffffff" />}
+          {isAdmin ? 'N' : <IconaDemolitore size={20} color="#2563eb" />}
         </div>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-gray-900">{headerNome}</div>

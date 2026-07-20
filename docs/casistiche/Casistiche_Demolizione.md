@@ -15,10 +15,7 @@
 
 Se **Proprietario mezzo** delega un'altra persona alla consegna del mezzo al Demolitore:
 
-* Carta Identità **Delegato** (fronte e retro) o Patente di guida **Delegato** (fronte e retro) se Carta Identità **Delegato** non disponibile
-* Codice Fiscale (fronte e retro) **Delegato**
-* Denuncia di smarrimento Carta Identità **Delegato** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Delegato** (se smarrito)
+* ⭐ 16/07/2026 (decisione Davide): NIENTE da caricare per il **Delegato** — le fotocopie dei suoi documenti si consegnano al ritiro insieme alla delega (vedi sezione ritiro)
 
 
 
@@ -37,6 +34,7 @@ Se **Proprietario mezzo** delega un'altra persona alla consegna del mezzo al Dem
 * Denuncia di smarrimento originale Carta Identità **Proprietario mezzo** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Proprietario mezzo** (se smarrito)
 * **DELEGA\_CONSEGNA\_VEICOLO\_PRIVATO** in originale compilata e firmata dal **Delegante** (**Proprietario mezzo**) e **Delegato** (Se si delega qualcun altro)
+* Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
 
@@ -65,10 +63,7 @@ Se **Proprietario mezzo** delega un'altra persona alla consegna del mezzo al Dem
 
 Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolitore:
 
-* Carta Identità **Delegato** (fronte e retro) o Patente di guida **Delegato** (fronte e retro) se Carta Identità **Delegato** non disponibile
-* Codice Fiscale (fronte e retro) **Delegato**
-* Denuncia di smarrimento Carta Identità **Delegato** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Delegato** (se smarrito)
+* ⭐ 16/07/2026 (decisione Davide): NIENTE da caricare per il **Delegato** — le fotocopie dei suoi documenti si consegnano al ritiro insieme alla delega (vedi sezione ritiro)
 
 
 
@@ -88,6 +83,7 @@ Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolito
 * Denuncia di smarrimento originale Carta Identità **Erede o Eredi** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Erede o Eredi** (se smarrito)
 * **DELEGA CONSEGNA VEICOLO\_EREDI** in originale compilata e firmata dal **Erede o Eredi** e **Delegato** (Se si delega qualcun altro)
+* Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
 * **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ** in originale compilata e firmata
@@ -142,10 +138,7 @@ Mappatura PDF: I nomi dei parenti rinunciatari (inseriti dall'utente in un sempl
 
 Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolitore:
 
-* Carta Identità **Delegato** (fronte e retro) o Patente di guida **Delegato** (fronte e retro) se Carta Identità **Delegato** non disponibile
-* Codice Fiscale (fronte e retro) **Delegato**
-* Denuncia di smarrimento Carta Identità **Delegato** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Delegato** (se smarrito)
+* ⭐ 16/07/2026 (decisione Davide): NIENTE da caricare per il **Delegato** — le fotocopie dei suoi documenti si consegnano al ritiro insieme alla delega (vedi sezione ritiro)
 
 
 
@@ -165,6 +158,7 @@ Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolito
 * Denuncia di smarrimento originale Carta Identità **Erede o Eredi** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Erede o Eredi** (se smarrito)
 * **DELEGA CONSEGNA VEICOLO\_EREDI\_RINUNCIA** in originale compilata e firmata dal **Erede o Eredi** e **Delegato** (Se si delega qualcun altro)
+* Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
 * **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ\_RINUNCIA** in originale compilata e firmata
@@ -198,10 +192,7 @@ Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolito
 
 Se **Legale Rappresentante Società/Azienda** delega un'altra persona alla consegna del mezzo al Demolitore:
 
-* Carta Identità **Delegato** (fronte e retro) o Patente di guida **Delegato** (fronte e retro) se Carta Identità **Delegato** non disponibile
-* Codice Fiscale (fronte e retro) **Delegato**
-* Denuncia di smarrimento Carta Identità **Delegato** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Delegato** (se smarrito)
+* ⭐ 16/07/2026 (decisione Davide): NIENTE da caricare per il **Delegato** — le fotocopie dei suoi documenti si consegnano al ritiro insieme alla delega (vedi sezione ritiro)
 
 
 
@@ -221,6 +212,7 @@ Se **Legale Rappresentante Società/Azienda** delega un'altra persona alla conse
 * Denuncia di smarrimento originale Carta Identità **Legale Rappresentante Società/Azienda** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Legale Rappresentante Società/Azienda** (se smarrito)
 * **DELEGA\_CONSEGNA\_VEICOLO\_SOCIETÀ\_AZIENDA** in originale compilata e firmata dal **Delegante** (**Legale Rappresentante Società/Azienda**) e **Delegato** (Se si delega qualcun altro)
+* Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
 * **DICHIARAZIONE\_SOSTITUTIVA\_LEGALE\_RAPPRESENTANTE** in originale compilata e firmata
@@ -252,10 +244,7 @@ Se **Legale Rappresentante Società/Azienda** delega un'altra persona alla conse
 
 Se **Curatore Fallimentare** delega un'altra persona alla consegna del mezzo al Demolitore:
 
-* Carta Identità **Delegato** (fronte e retro) o Patente di guida **Delegato** (fronte e retro) se Carta Identità **Delegato** non disponibile
-* Codice Fiscale (fronte e retro) **Delegato**
-* Denuncia di smarrimento Carta Identità **Delegato** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Delegato** (se smarrito)
+* ⭐ 16/07/2026 (decisione Davide): NIENTE da caricare per il **Delegato** — le fotocopie dei suoi documenti si consegnano al ritiro insieme alla delega (vedi sezione ritiro)
 
 
 
@@ -277,6 +266,7 @@ Se **Curatore Fallimentare** delega un'altra persona alla consegna del mezzo al 
 * Denuncia di smarrimento originale Carta Identità **Curatore Fallimentare** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Curatore Fallimentare** (se smarrito)
 * **DELEGA\_CONSEGNA\_VEICOLO\_FALLIMENTO** in originale compilata e firmata dal **Delegante** (**Curatore Fallimentare**) e **Delegato** (Se si delega qualcun altro)
+* Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
 * **DICHIARAZIONE\_SOSTITUTIVA\_CURATORE\_FALLIMENTARE** in originale compilata e firmata
@@ -307,10 +297,7 @@ Se **Curatore Fallimentare** delega un'altra persona alla consegna del mezzo al 
 
 Se **Presidente Associazione** delega un'altra persona alla consegna del mezzo al Demolitore:
 
-* Carta Identità **Delegato** (fronte e retro) o Patente di guida **Delegato** (fronte e retro) se Carta Identità **Delegato** non disponibile
-* Codice Fiscale (fronte e retro) **Delegato**
-* Denuncia di smarrimento Carta Identità **Delegato** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Delegato** (se smarrito)
+* ⭐ 16/07/2026 (decisione Davide): NIENTE da caricare per il **Delegato** — le fotocopie dei suoi documenti si consegnano al ritiro insieme alla delega (vedi sezione ritiro)
 
 
 
@@ -330,6 +317,7 @@ Se **Presidente Associazione** delega un'altra persona alla consegna del mezzo a
 * Denuncia di smarrimento originale Carta Identità **Presidente Associazione** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Presidente Associazione** (se smarrito)
 * **DELEGA\_CONSEGNA\_VEICOLO\_ASSOCIAZIONE** in originale compilata e firmata dal **Delegante** (**Presidente Associazione**) e **Delegato** (Se si delega qualcun altro)
+* Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
 * **DICHIARAZIONE\_SOSTITUTIVA\_PRESIDENTE\_ASSOCIAZIONE** in originale compilata e firmata

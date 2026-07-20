@@ -33,6 +33,9 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# mockup di lavoro (si guarda su localhost:3000/mockup.html, mai in deploy)
+/public/mockup.html
+
 # vercel
 .vercel
 

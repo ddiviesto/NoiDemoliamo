@@ -37,21 +37,30 @@ interface Pratica {
 // METADATI STATO (etichetta + colori pillola + barra colorata)
 // ============================================================
 
+// Etichette ALLINEATE alle 6 fasi del flusso (16/07): la pillola inizia
+// sempre col nome della fase (stesso colore della casella in cima) e dopo
+// il "·" tiene il dettaglio. Rosso solo per le anomalie (da rifare, a mano).
 const STATO_META: Record<string, { label: string; bg: string; text: string; bar: string }> = {
-  in_attesa_documenti: { label: 'Attesa documenti', bg: '#FAEEDA', text: '#854F0B', bar: '#EAB308' },
-  in_attesa_approvazione_admin: { label: 'Documenti da approvare', bg: '#E0EDFB', text: '#1E4E8C', bar: '#378ADD' },
-  documenti_parzialmente_approvati: { label: 'Documenti da rifare', bg: '#FBE2E2', text: '#9B1C1C', bar: '#E24B4A' },
-  da_assegnare: { label: 'Da assegnare', bg: '#FDEBD9', text: '#92500E', bar: '#EF9F27' },
-  in_attesa_assegnazione: { label: 'In assegnazione', bg: '#FDEBD9', text: '#92500E', bar: '#EF9F27' },
-  in_assegnazione_manuale: { label: 'Assegnazione manuale', bg: '#FBE2E2', text: '#9B1C1C', bar: '#E24B4A' },
-  assegnata: { label: 'Assegnata', bg: '#E0EDFB', text: '#1E4E8C', bar: '#378ADD' },
-  in_attesa_conferma_cliente: { label: 'Attesa conferma cliente', bg: '#E0EDFB', text: '#1E4E8C', bar: '#378ADD' },
-  ritiro_confermato: { label: 'Ritiro confermato', bg: '#E4E4FB', text: '#4338CA', bar: '#6366F1' },
-  ritirata: { label: 'Veicolo ritirato', bg: '#EDE4FB', text: '#6B21A8', bar: '#9333EA' },
-  in_attesa_recensione_cliente: { label: 'Attesa recensione', bg: '#EDE4FB', text: '#6B21A8', bar: '#9333EA' },
-  in_attesa_cert_rottamazione: { label: 'Attesa cert. rottamazione', bg: '#DDF2F0', text: '#0F766E', bar: '#14B8A6' },
-  in_attesa_cert_radiazione_pra: { label: 'Attesa cert. PRA', bg: '#DDF2F0', text: '#0F766E', bar: '#14B8A6' },
-  completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43', bar: '#97C459' },
+  // Fase 1 — In attesa documenti (ambra)
+  in_attesa_documenti: { label: 'In attesa documenti', bg: '#FAEEDA', text: '#854F0B', bar: '#EF9F27' },
+  documenti_parzialmente_approvati: { label: 'In attesa documenti · da rifare', bg: '#FBE2E2', text: '#9B1C1C', bar: '#E24B4A' },
+  // Fase 2 — Documenti da verificare (blu)
+  in_attesa_approvazione_admin: { label: 'Documenti da verificare', bg: '#E0EDFB', text: '#1E4E8C', bar: '#378ADD' },
+  // Fase 3 — Da assegnare (corallo)
+  da_assegnare: { label: 'Da assegnare', bg: '#FAECE7', text: '#92500E', bar: '#D85A30' },
+  in_attesa_assegnazione: { label: 'Da assegnare · in corso', bg: '#FAECE7', text: '#92500E', bar: '#D85A30' },
+  in_assegnazione_manuale: { label: 'Da assegnare · a mano', bg: '#FBE2E2', text: '#9B1C1C', bar: '#E24B4A' },
+  // Fase 4 — Assegnata (viola)
+  assegnata: { label: 'Assegnata', bg: '#E4E4FB', text: '#4338CA', bar: '#7F77DD' },
+  in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', bg: '#E4E4FB', text: '#4338CA', bar: '#7F77DD' },
+  ritiro_confermato: { label: 'Assegnata · ritiro fissato', bg: '#E4E4FB', text: '#4338CA', bar: '#7F77DD' },
+  // Fase 5 — Ritirata (teal)
+  ritirata: { label: 'Ritirata', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
+  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
+  in_attesa_cert_rottamazione: { label: 'Ritirata · attesa rottamazione', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
+  in_attesa_cert_radiazione_pra: { label: 'Ritirata · attesa PRA', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
+  // Fase 6 — Completata (verde)
+  completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43', bar: '#639922' },
   annullata: { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563', bar: '#C0C7D1' },
 }
 
@@ -283,17 +292,38 @@ export default function AdminDashboard() {
 
         <div className="p-6 overflow-auto">
 
-          {/* PIPELINE DEL FLUSSO PRATICHE */}
+          {/* PIPELINE DEL FLUSSO PRATICHE — fila da sinistra a destra con le
+              frecce, nomi allineati alla timeline del cliente (mockup 16/07).
+              "Da contattare" è FUORI dalla fila: è un'anomalia, non una tappa. */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
-          <div className="grid grid-cols-4 xl:grid-cols-7 gap-2 mb-5">
-            <CardBucket attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} valore={conta('moduli')} label="Moduli inseriti" sub={nDaRifare > 0 ? `${nDaRifare} da rifare` : undefined} bordo="#F0DFB8" colore="#854F0B" />
-            <CardBucket attivo={filtro === 'contattare'} onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')} valore={conta('contattare')} label="Da contattare" bordo="#F3C8C8" colore="#9B1C1C" alert />
-            <CardBucket attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} valore={conta('approvare')} label="Documenti da approvare" bordo="#B5D4F4" colore="#1E4E8C" />
-            <CardBucket attivo={filtro === 'assegnare'} onClick={() => setFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} valore={conta('assegnare')} label="Da assegnare" bordo="#F6D2A8" colore="#92500E" />
-            <CardBucket attivo={filtro === 'assegnate'} onClick={() => setFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} valore={conta('assegnate')} label="Assegnate" bordo="#C7D2FE" colore="#4338CA" />
-            <CardBucket attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} valore={conta('ritirate')} label="Ritirate" sub="in fatturazione" bordo="#A7DED8" colore="#0F766E" />
-            <CardBucket attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} valore={conta('completate')} label="Completate" bordo="#C8E6D5" colore="#1F7A43" />
+          <div className="mb-3 overflow-x-auto">
+            <div className="flex items-stretch" style={{ minWidth: 960 }}>
+              <FaseCard numero={1} nome="In attesa documenti" valore={conta('moduli')} sub={nDaRifare > 0 ? `di cui ${nDaRifare} da rifare` : undefined} subColore="#B45309" chi="cliente" vede="In attesa dei tuoi documenti" colTop="#EF9F27" colNum="#854F0B" attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
+              <FrecciaFase />
+              <FaseCard numero={2} nome="Documenti da verificare" valore={conta('approvare')} sub="tutto inviato, tocca a te" chi="tu" vede="Stiamo verificando i tuoi documenti" colTop="#378ADD" colNum="#1E4E8C" attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
+              <FrecciaFase />
+              <FaseCard numero={3} nome="Da assegnare" valore={conta('assegnare')} sub="scegli il demolitore" chi="tu" vede="Documenti verificati" colTop="#D85A30" colNum="#92500E" attivo={filtro === 'assegnare'} onClick={() => setFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} />
+              <FrecciaFase />
+              <FaseCard numero={4} nome="Assegnata" valore={conta('assegnate')} sub="ritiro da fissare o fissato" chi="demolitore" vede="Demolitore assegnato" colTop="#7F77DD" colNum="#4338CA" attivo={filtro === 'assegnate'} onClick={() => setFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} />
+              <FrecciaFase />
+              <FaseCard numero={5} nome="Ritirata" valore={conta('ritirate')} sub="certificati in arrivo · in fatturazione" chi="demolitore" vede="Veicolo ritirato" colTop="#1D9E75" colNum="#0F766E" attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
+              <FrecciaFase />
+              <FaseCard numero={6} nome="Completata" valore={conta('completate')} sub="radiazione PRA emessa" chi="fine" vede="Pratica completata" colTop="#639922" colNum="#1F7A43" attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
+            </div>
           </div>
+
+          {/* ALLERTA "DA CONTATTARE" (fuori dal flusso, solo se ce ne sono) */}
+          {conta('contattare') > 0 && (
+            <button
+              onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
+              className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 mb-3 text-left transition-all hover:shadow-md"
+              style={{ background: '#FEF6F6', border: `1.5px solid ${filtro === 'contattare' ? '#2563eb' : '#F3C8C8'}`, maxWidth: 620 }}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
+              <span className="text-[12.5px] font-bold" style={{ color: '#9B1C1C' }}>Da contattare · {conta('contattare')}</span>
+              <span className="text-[11.5px]" style={{ color: '#B03A2E' }}>pratiche in fase documenti da chiamare (niente libretto o certificato sconosciuto)</span>
+            </button>
+          )}
 
           {/* FILTRI RAPIDI */}
           <div className="flex gap-1.5 mb-3 flex-wrap text-xs">
@@ -493,18 +523,55 @@ function IconaVeicolo({ tipo }: { tipo: string | null }) {
   )
 }
 
-function CardBucket({ valore, label, sub, bordo, colore, alert = false, attivo = false, onClick }: { valore: number; label: string; sub?: string; bordo: string; colore: string; alert?: boolean; attivo?: boolean; onClick: () => void }) {
+// Casella di una fase del flusso (fila orizzontale con le frecce).
+// "chi" dice chi deve agire in quella fase; "vede" è l'etichetta che il
+// cliente legge nella SUA timeline nella stessa fase (nomenclatura allineata).
+const CHI_FASE: Record<'cliente' | 'tu' | 'demolitore' | 'fine', { label: string; bg: string; color: string }> = {
+  cliente: { label: 'AGISCE IL CLIENTE', bg: '#E0EDFB', color: '#1E4E8C' },
+  tu: { label: 'TOCCA A TE', bg: '#2563eb', color: '#fff' },
+  demolitore: { label: 'AGISCE IL DEMOLITORE', bg: '#E4E4FB', color: '#4338CA' },
+  fine: { label: 'FINITA', bg: '#DCF3E4', color: '#1F7A43' },
+}
+
+function FaseCard({ numero, nome, valore, sub, subColore = '#8B95A5', chi, vede, colTop, colNum, attivo, onClick }: {
+  numero: number
+  nome: string
+  valore: number
+  sub?: string
+  subColore?: string
+  chi: 'cliente' | 'tu' | 'demolitore' | 'fine'
+  vede: string
+  colTop: string
+  colNum: string
+  attivo: boolean
+  onClick: () => void
+}) {
+  const c = CHI_FASE[chi]
   return (
-    <button onClick={onClick} className="bg-white rounded-xl px-3 py-3 text-left transition-all hover:shadow-md" style={{ border: `1.5px solid ${attivo ? '#2563eb' : bordo}`, boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 3px 8px rgba(16,24,40,0.04)' }}>
-      <div className="flex items-center gap-1.5" style={{ fontSize: 21, fontWeight: 800, color: colore, lineHeight: 1.1 }}>
-        {valore}
-        {alert && valore > 0 && (
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-        )}
+    <button
+      onClick={onClick}
+      className="bg-white text-left transition-all hover:shadow-md flex-1"
+      style={{
+        minWidth: 0, borderRadius: '0 0 12px 12px', padding: '11px 10px',
+        border: `1.5px solid ${attivo ? '#2563eb' : '#E5E7EB'}`, borderTop: `3px solid ${colTop}`,
+        boxShadow: '0 1px 3px rgba(16,24,40,0.07)',
+        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+      }}
+    >
+      <div style={{ fontSize: 22, fontWeight: 800, color: colNum, lineHeight: 1.1 }}>{valore}</div>
+      <div className="text-[12px] font-bold leading-tight mt-1.5" style={{ color: '#0F1B33' }}>{numero} · {nome}</div>
+      {sub && <div className="text-[10px] mt-0.5 leading-tight" style={{ color: subColore, fontWeight: subColore !== '#8B95A5' ? 600 : 400 }}>{sub}</div>}
+      <span className="text-[9.5px] font-extrabold rounded-full mt-2" style={{ background: c.bg, color: c.color, letterSpacing: 0.5, padding: '2px 8px' }}>{c.label}</span>
+      <div className="text-[10px] mt-2 pt-2 leading-snug" style={{ color: '#6B7280', borderTop: '1px dashed #E5E7EB', width: '100%' }}>
+        Il cliente vede: <span style={{ color: '#374151', fontWeight: 600 }}>{vede}</span>
       </div>
-      <div className="text-[11px] font-semibold text-gray-700 mt-1 leading-tight">{label}</div>
-      {sub && <div className="text-[10px] mt-0.5" style={{ color: colore }}>{sub}</div>}
     </button>
+  )
+}
+
+function FrecciaFase() {
+  return (
+    <div style={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A5', fontSize: 17, fontWeight: 700, flexShrink: 0 }}>›</div>
   )
 }
 

@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **15 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **16 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -439,16 +439,16 @@ annullata
 
 ⭐ **Le transizioni di stato pratica passano dal SERVER** (service role), non dal browser admin: endpoint `/api/pratica-stato` ricalcola lo stato dai documenti (tutti approvati → `da_assegnare`, ecc.). La pagina admin si **auto-sincronizza all'apertura** (self-heal: se i documenti sono a posto ma la pratica è indietro, la sblocca da sola).
 
-### ⭐ PIPELINE CRM — IL FLUSSO IN 7 FASI (voluto da Davide, 7/07/2026)
-Nel CRM ogni pratica appartiene a UN SOLO riquadro della pipeline (funzione `bucketDi` in `/admin`):
-1. **Moduli inseriti** = `in_attesa_documenti` + `documenti_parzialmente_approvati` (in mano al cliente, con conteggio "da rifare")
-2. **Da contattare** = fase documenti con libretto='no' o CDC='nessuno'
-3. **Documenti da approvare** = `in_attesa_approvazione_admin`
-4. **Da assegnare** = `da_assegnare` + `in_assegnazione_manuale` + `in_attesa_assegnazione`
-5. **Assegnate** = `assegnata` + `in_attesa_conferma_cliente` + `ritiro_confermato`
-6. **Ritirate (in fatturazione)** = `ritirata` + recensione + attesa certificati — il ritiro effettivo fa partire la fatturazione
-7. **Completate** = `completata` — **SOLO col certificato di cancellazione targhe PRA**
-Le annullate stanno FUORI dalla pipeline (filtro a parte). "Tutte" = pipeline senza annullate.
+### ⭐ PIPELINE CRM — IL FLUSSO IN 6 FASI + ALLERTA (rifatta 16/07/2026 su mockup)
+Nel CRM il "Flusso pratiche" è una **fila da sinistra a destra con le frecce** (mockup approvato): ogni casella ha contatore, barretta colorata, pillola "chi agisce" (cliente / TOCCA A TE / demolitore) e la riga **"Il cliente vede: …"** — la nomenclatura admin è ALLINEATA alla timeline del cliente. Ogni pratica appartiene a UNA fase (funzione `bucketDi` in `/admin`):
+1. **In attesa documenti** = `in_attesa_documenti` + `documenti_parzialmente_approvati` (in mano al cliente; "di cui N da rifare") — cliente vede "In attesa dei tuoi documenti"
+2. **Documenti da verificare** = `in_attesa_approvazione_admin` — cliente vede "Stiamo verificando i tuoi documenti"
+3. **Da assegnare** = `da_assegnare` + `in_assegnazione_manuale` + `in_attesa_assegnazione` — cliente vede "Documenti verificati"
+4. **Assegnata** = `assegnata` + `in_attesa_conferma_cliente` + `ritiro_confermato` — cliente vede "Demolitore assegnato"
+5. **Ritirata (in fatturazione)** = `ritirata` + recensione + attesa certificati — cliente vede "Veicolo ritirato"
+6. **Completata** = `completata` — **SOLO col certificato di cancellazione targhe PRA**
+**"Da contattare" è FUORI dalla fila** (non è una tappa, è un'anomalia): riquadro rosso d'allerta sotto la pipeline, visibile solo se >0, cliccabile come filtro. Le annullate restano fuori (filtro a parte). "Tutte" = flusso senza annullate.
+⭐ Le **pilloline di stato** sulle righe (lista + dettaglio pratica) iniziano sempre col nome della fase e dopo il "·" tengono il dettaglio ("Assegnata · ritiro fissato", "Ritirata · attesa PRA"); rosso solo per le anomalie ("In attesa documenti · da rifare", "Da assegnare · a mano").
 
 ⭐ **Regola certificati**: il certificato di ROTTAMAZIONE può essere caricato dal demolitore (il cliente lo scarica) **oppure consegnato a mano al ritiro** (nella futura dashboard demolitore ci sarà la spunta "consegnato a mano" per non bloccare la pratica). Ciò che completa la pratica è SEMPRE e solo il **certificato di cancellazione targhe (radiazione PRA)**.
 
@@ -831,6 +831,14 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ## 8.1 ✅ FATTO
 
+### ⭐⭐ SESSIONE 16 luglio 2026 — FLUSSO CRM LEGGIBILE + MENO FOTO PER IL CLIENTE
+
+- ✅ **Mappa copertura: assorbimento selezioni** — selezionare una provincia assorbe i comuni inclusi singolarmente al suo interno; selezionare una regione assorbe province selezionate, esclusioni e comuni. Niente più "doppio blu" sulla mappa né righe ridondanti nel DB (`MappaComuni.tsx`).
+- ⭐ **FLUSSO PRATICHE CRM rifatto** (vedi 4.6): fila da sinistra a destra con frecce, 6 fasi numerate, "chi agisce", riga "Il cliente vede", rinomine ("Moduli inseriti" → In attesa documenti; "Documenti da approvare" → Documenti da verificare), "Da contattare" fuori fila come allerta rossa. Pilloline di stato allineate (fase · dettaglio) in lista e dettaglio pratica.
+- ⭐⭐ **FOTOCOPIE DELEGATO (alleggerimento wizard)**: il cliente NON fotografa più carta d'identità e tessera sanitaria del DELEGATO (2 documenti in meno). Le **fotocopie fronte/retro si consegnano al ritiro insieme alla delega**: la riga della delega nel box verde lo spiega (frase in grassetto, testo dal catalogo). SQL `docs/sql/2026-07-16-fotocopie-delegato.sql` (eseguito): `richiede_upload=false` sulle 12 righe delegato + descrizione sulle 6 deleghe. **File casistiche aggiornato** (6 casistiche). Il pannello "inviati" del cliente ora filtra per `richiede_upload`: i documenti spenti dal catalogo spariscono anche dalle pratiche già aperte.
+- ✅ **Icona demolitore in chat** (variante B su mockup): via l'arancione fuori palette — quadratino celeste `#DBEAFE` con carro attrezzi blu, in linguetta, placeholder "In attesa del demolitore" e testata chat.
+- ⭐ **Mockup a indirizzo fisso**: i mockup si guardano SEMPRE su `localhost:3000/mockup.html` (file `public/mockup.html`, in .gitignore — mai in deploy). Davide ha il segnalibro: basta ricaricare.
+
 ### ⭐⭐ SESSIONE 15 luglio 2026 — RIFINITURE AREA CLIENTE + MODULI IN BIANCO E SBLOCCATI
 
 > Tutte le modifiche UI passate da mockup e approvate da Davide, collaudate su localhost.
@@ -1088,6 +1096,13 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - **Niente avvisi di chiamata lato cliente**: il box "Da chiarire insieme" è stato rimosso; i casi da chiarire li vede solo l'admin ("Da contattare") e chiama lui.
 - **Aggiornamenti silenziosi**: mai smontare la schermata per un refresh dati (spinner solo al primo caricamento; riusare i signed URL). I "sobbalzi" sono bug, non dettagli.
 
+**Nuove decisioni 16 luglio 2026:**
+
+- ⭐⭐ **Nomenclatura UNICA admin↔cliente**: le fasi del CRM e la timeline del cliente usano gli stessi concetti e nomi coerenti; nel CRM ogni fase mostra anche "Il cliente vede: …". Se si aggiunge una fase/stato, va nominata in coppia.
+- ⭐ **Il cliente fotografa solo ciò che serve a NoiDemoliamo**: i documenti del delegato non si caricano — fotocopie al ritiro insieme alla delega. Principio: meno attrito nel wizard, i controlli fisici stanno al ritiro.
+- **Selezionare una zona sulla mappa assorbe le selezioni interne** (comune ⊂ provincia ⊂ regione): mai doppie selezioni sovrapposte, né visive né nel DB.
+- **Mockup a indirizzo fisso**: `localhost:3000/mockup.html` è il posto unico dove Davide guarda ogni mockup (F5 per vedere il nuovo).
+
 **Nuove decisioni 15 luglio 2026:**
 
 - ⭐⭐ **Moduli PDF in bianco e subito scaricabili**: niente autocompilazione (nemmeno le deleghe — si rivaluterà in futuro, il generatore resta pronto) e niente blocco pre-verifica. Il cliente vede e scarica i moduli dal box verde da subito, li compila a penna e li porta firmati al ritiro.
@@ -1131,4 +1146,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 15 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 16 luglio 2026.**

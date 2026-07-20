@@ -595,7 +595,10 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const isDocLibretto = (d: DocChecklist) => d.codice === 'LIBRETTO_CIRCOLAZIONE' || d.codice === 'LIBRETTO_ESTERO'
   const docsAttivi = librettoDaChiarire ? docs.filter(d => !isDocLibretto(d)) : docs
 
-  const sistemati = docsAttivi.filter(d => d.stato === 'caricato' || d.stato === 'approvato')
+  // Solo i documenti DA FOTOGRAFARE: se un documento viene tolto dal
+  // caricamento nel catalogo (es. documenti del delegato, 16/07), sparisce
+  // dal pannello anche nelle pratiche già aperte con file caricati.
+  const sistemati = docsAttivi.filter(d => d.richiede_upload && (d.stato === 'caricato' || d.stato === 'approvato'))
   const daFare = docsAttivi.filter(d => d.stato === 'da_fare' || d.stato === 'rifiutato')
   // WIZARD: tutti i documenti da fotografare in UN'UNICA fila (anche quelli
   // per erede), i rifiutati passano davanti. Moduli PDF e documenti senza
@@ -821,6 +824,12 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
+                      {/* La delega "porta con sé" le fotocopie dei documenti del
+                          delegato (non si fotografano più, decisione 16/07):
+                          la spiegazione arriva dal catalogo, fotocopie in grassetto */}
+                      {d.template_pdf?.startsWith('DELEGA') && d.descrizione && (
+                        <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3, lineHeight: 1.5 }}>{descrizioneDelega(d.descrizione)}</div>
+                      )}
                       {d.template_pdf && (
                         <div style={{ marginTop: 3 }}>
                           {d.scaricato_il ? (
@@ -975,6 +984,21 @@ function ordinaleErede(n: number): string {
 function nomeRitiro(d: DocChecklist): string {
   if (d.per_erede && d.indice_erede) return `${d.nome} (${ordinaleErede(d.indice_erede).toLowerCase()} erede)`
   return d.nome
+}
+
+// Descrizione della delega nel box verde: la parte sulle FOTOCOPIE dei
+// documenti del delegato va in grassetto (richiesta Davide 16/07)
+function descrizioneDelega(desc: string): React.ReactNode {
+  const FRASE = "fotocopie fronte e retro di carta d'identità e codice fiscale del delegato"
+  const i = desc.toLowerCase().indexOf(FRASE)
+  if (i === -1) return desc
+  return (
+    <>
+      {desc.slice(0, i)}
+      <b style={{ color: '#111827', fontWeight: 700 }}>{desc.slice(i, i + FRASE.length)}</b>
+      {desc.slice(i + FRASE.length)}
+    </>
+  )
 }
 
 // ============================================================

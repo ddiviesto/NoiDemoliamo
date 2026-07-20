@@ -66,18 +66,22 @@ interface Candidato {
   pratiche_aperte?: number
 }
 
+// Etichette ALLINEATE alle 6 fasi del flusso del CRM (16/07): stessa
+// nomenclatura della lista pratiche (fase · dettaglio).
 const STATO_META: Record<string, { label: string; bg: string; text: string }> = {
-  in_attesa_documenti: { label: 'Attesa documenti', bg: '#FAEEDA', text: '#854F0B' },
-  in_attesa_approvazione_admin: { label: 'Documenti da approvare', bg: '#E0EDFB', text: '#1E4E8C' },
-  documenti_parzialmente_approvati: { label: 'Documenti da rifare', bg: '#FBE2E2', text: '#9B1C1C' },
-  da_assegnare: { label: 'Da assegnare', bg: '#FDEBD9', text: '#92500E' },
-  in_assegnazione_manuale: { label: 'Assegnazione manuale', bg: '#FBE2E2', text: '#9B1C1C' },
-  assegnata: { label: 'Assegnata', bg: '#E0EDFB', text: '#1E4E8C' },
-  in_attesa_conferma_cliente: { label: 'Attesa conferma cliente', bg: '#E0EDFB', text: '#1E4E8C' },
-  ritiro_confermato: { label: 'Ritiro confermato', bg: '#E4E4FB', text: '#4338CA' },
-  ritirata: { label: 'Veicolo ritirato', bg: '#EDE4FB', text: '#6B21A8' },
-  in_attesa_cert_rottamazione: { label: 'Attesa cert. rottamazione', bg: '#DDF2F0', text: '#0F766E' },
-  in_attesa_cert_radiazione_pra: { label: 'Attesa cert. PRA', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_documenti: { label: 'In attesa documenti', bg: '#FAEEDA', text: '#854F0B' },
+  documenti_parzialmente_approvati: { label: 'In attesa documenti · da rifare', bg: '#FBE2E2', text: '#9B1C1C' },
+  in_attesa_approvazione_admin: { label: 'Documenti da verificare', bg: '#E0EDFB', text: '#1E4E8C' },
+  da_assegnare: { label: 'Da assegnare', bg: '#FAECE7', text: '#92500E' },
+  in_attesa_assegnazione: { label: 'Da assegnare · in corso', bg: '#FAECE7', text: '#92500E' },
+  in_assegnazione_manuale: { label: 'Da assegnare · a mano', bg: '#FBE2E2', text: '#9B1C1C' },
+  assegnata: { label: 'Assegnata', bg: '#E4E4FB', text: '#4338CA' },
+  in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', bg: '#E4E4FB', text: '#4338CA' },
+  ritiro_confermato: { label: 'Assegnata · ritiro fissato', bg: '#E4E4FB', text: '#4338CA' },
+  ritirata: { label: 'Ritirata', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_cert_rottamazione: { label: 'Ritirata · attesa rottamazione', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_cert_radiazione_pra: { label: 'Ritirata · attesa PRA', bg: '#DDF2F0', text: '#0F766E' },
   completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43' },
   annullata: { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563' },
 }
