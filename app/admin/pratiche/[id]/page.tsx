@@ -244,6 +244,10 @@ export default function DettaglioPraticaAdmin() {
   const [attesaErr, setAttesaErr] = useState<string | null>(null)
   const [attesaBusy, setAttesaBusy] = useState(false)
   const [noteVersion, setNoteVersion] = useState(0)
+  // Menu unico "Stato pratica" (Attiva / In attesa / Annulla) + riattivazione
+  const [menuStato, setMenuStato] = useState(false)
+  const [riattivaOpen, setRiattivaOpen] = useState(false)
+  const [riattivaBusy, setRiattivaBusy] = useState(false)
 
   // Nota automatica in cronologia (se la tabella non c'è ancora, pazienza)
   async function notaAutomatica(testo: string) {
@@ -329,13 +333,39 @@ export default function DettaglioPraticaAdmin() {
       })
       const data = await res.json()
       if (!res.ok) { setErroreAnnulla(data?.error || 'Errore durante l\'annullamento'); setAnnullando(false); return }
+      // L'annullamento finisce in cronologia (richiesta Davide 20/07)
+      await notaAutomatica(`Pratica annullata: ${motivo}`)
       await ricaricaPratica()
+      setNoteVersion(v => v + 1)
       setAnnullaOpen(false)
       setMotivoAnnulla('')
     } catch {
       setErroreAnnulla('Errore di rete.')
     }
     setAnnullando(false)
+  }
+
+  // RIATTIVAZIONE (20/07): la pratica torna esattamente dov'era rimasta
+  async function riattivaPratica() {
+    if (!pratica) return
+    setRiattivaBusy(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pratica-annulla', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, riattiva: true }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { alert(data?.error || 'Errore durante la riattivazione'); setRiattivaBusy(false); return }
+      await notaAutomatica('Pratica riattivata')
+      await ricaricaPratica()
+      setNoteVersion(v => v + 1)
+      setRiattivaOpen(false)
+    } catch {
+      alert('Errore di rete durante la riattivazione.')
+    }
+    setRiattivaBusy(false)
   }
 
   async function eliminaDefinitiva(eliminaAccount: boolean) {
@@ -413,15 +443,76 @@ export default function DettaglioPraticaAdmin() {
                 <span className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ background: '#FAEEDA', color: '#854F0B' }}>In attesa</span>
               )}
               <span className="text-[11.5px] font-bold px-3.5 py-1.5 rounded-full" style={{ background: m.bg, color: m.text }}>{m.label}</span>
-              {pratica.stato !== 'annullata' && pratica.stato !== 'completata' && !pratica.in_attesa && (
-                <button
-                  onClick={() => { setAttesaMotivo(''); setAttesaErr(null); setAttesaOpen(true) }}
-                  className="flex items-center gap-1.5 text-[11px] font-bold rounded-[9px] px-3 py-2 transition-colors hover:bg-white/30"
-                  style={{ background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.5)', color: '#fff' }}
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                  Metti in attesa
-                </button>
+
+              {/* MENU UNICO "Stato pratica" (mockup variante A, 20/07):
+                  Attiva / Metti in attesa / Annulla in un solo posto */}
+              {pratica.stato !== 'completata' && (
+                <div className="relative">
+                  <button
+                    onClick={() => setMenuStato(o => !o)}
+                    className="flex items-center gap-1.5 text-[11px] font-bold rounded-[9px] px-3 py-2 transition-colors hover:bg-white/30"
+                    style={{ background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.5)', color: '#fff' }}
+                  >
+                    Stato pratica
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{ transform: menuStato ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }}><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  {menuStato && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setMenuStato(false)} />
+                      <div className="absolute right-0 z-50 bg-white rounded-xl p-1.5" style={{ top: 'calc(100% + 8px)', width: 262, border: '1.5px solid #E5E7EB', boxShadow: '0 8px 24px rgba(16,24,40,0.16)' }}>
+                        {(() => {
+                          const annullata = pratica.stato === 'annullata'
+                          const attiva = !annullata && !pratica.in_attesa
+                          return (
+                            <>
+                              <button
+                                onClick={() => {
+                                  setMenuStato(false)
+                                  if (annullata) setRiattivaOpen(true)
+                                  else if (pratica.in_attesa) riprendiPratica()
+                                }}
+                                className="w-full text-left flex items-start gap-2.5 rounded-[9px] px-3 py-2.5 transition-colors hover:bg-blue-50"
+                                style={attiva ? { background: '#EFF6FF' } : undefined}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={attiva ? '#1D4ED8' : '#1E293B'} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
+                                <span>
+                                  <span className="block text-[12.5px] font-bold" style={{ color: attiva ? '#1D4ED8' : '#1E293B' }}>Attiva</span>
+                                  <span className="block text-[10.5px] mt-0.5" style={{ color: '#8B95A5' }}>
+                                    {annullata ? 'riattiva: torna dov\'era rimasta' : pratica.in_attesa ? 'riprendi da dov\'era rimasta' : 'la pratica segue il flusso normale'}
+                                  </span>
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => { setMenuStato(false); setAttesaMotivo(''); setAttesaErr(null); setAttesaOpen(true) }}
+                                disabled={annullata || !!pratica.in_attesa}
+                                className="w-full text-left flex items-start gap-2.5 rounded-[9px] px-3 py-2.5 transition-colors hover:bg-amber-50 disabled:opacity-40 disabled:hover:bg-transparent"
+                                style={pratica.in_attesa ? { background: '#FDF7EA' } : undefined}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                <span>
+                                  <span className="block text-[12.5px] font-bold" style={{ color: '#854F0B' }}>Metti in attesa</span>
+                                  <span className="block text-[10.5px] mt-0.5" style={{ color: '#8B95A5' }}>pausa col motivo · si riprende quando vuoi</span>
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => { setMenuStato(false); setAnnullaOpen(true) }}
+                                disabled={annullata}
+                                className="w-full text-left flex items-start gap-2.5 rounded-[9px] px-3 py-2.5 transition-colors hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent"
+                                style={annullata ? { background: '#F3F4F7' } : undefined}
+                              >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B1C1C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                <span>
+                                  <span className="block text-[12.5px] font-bold" style={{ color: '#9B1C1C' }}>{annullata ? 'Annullata' : 'Annulla pratica'}</span>
+                                  <span className="block text-[10.5px] mt-0.5" style={{ color: '#8B95A5' }}>{annullata ? 'usa Attiva per riattivarla' : 'col motivo · riattivabile in futuro'}</span>
+                                </span>
+                              </button>
+                            </>
+                          )
+                        })()}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
             </div>
           </div>
@@ -471,29 +562,9 @@ export default function DettaglioPraticaAdmin() {
               </div>
             )}
 
-            {/* Pratica annullata: motivo sempre visibile (cronologia) */}
-            {pratica.stato === 'annullata' && (
-              <div className="p-4" style={{ ...STILE_CARD, background: '#FBFBFD', borderColor: '#D8DCE5' }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#E7EAEE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
-                  </span>
-                  <div>
-                    <div className="text-[13.5px] font-bold text-gray-800">Pratica annullata</div>
-                    {pratica.aggiornato_il && <div className="text-[10.5px] font-semibold uppercase" style={{ color: '#94A3B8', letterSpacing: 0.4 }}>{fmtData(pratica.aggiornato_il)}</div>}
-                  </div>
-                </div>
-                <div className="text-[13px] rounded-[10px] px-3 py-2.5" style={{ background: '#F3F4F7', color: '#3E4C63', lineHeight: 1.5 }}>
-                  {pratica.motivo_annullamento || 'Motivo non registrato (annullata prima dell\'introduzione delle note).'}
-                </div>
-                {pratica.demolitore_id && (
-                  <div className="flex items-center gap-1.5 mt-2 text-[11.5px]" style={{ color: '#64748b' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /></svg>
-                    Annullata dopo l&apos;assegnazione a <b className="text-gray-700">{demolitoreNome || 'demolitore'}</b>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Nota 20/07: il riquadro "Pratica annullata" è stato RIMOSSO
+                (doppione): motivo e data stanno in Cronologia e note, la
+                riattivazione sta nel menu "Stato pratica" in testata. */}
 
             {pratica.stato !== 'annullata' && <AssegnazioneCard pratica={pratica} demolitoreNome={demolitoreNome} onAssegnato={ricaricaPratica} />}
 
@@ -507,13 +578,10 @@ export default function DettaglioPraticaAdmin() {
 
             <CardDichiarazioni pratica={pratica} onSalvata={async () => { await ricaricaPratica(); setDocsVersion(v => v + 1) }} />
 
-            <div className="flex gap-2 pt-1">
-              {pratica.stato !== 'annullata' && (
-                <button onClick={() => setAnnullaOpen(true)} className="flex-1 text-xs font-semibold text-gray-600 hover:text-amber-700 bg-white hover:bg-amber-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #E5E7EB' }}>
-                  Annulla pratica
-                </button>
-              )}
-              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="flex-1 text-xs font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #F3C8C8' }}>
+            {/* L'annullamento ora vive nel menu "Stato pratica" in testata:
+                qui in fondo resta solo l'azione davvero irreversibile */}
+            <div className="pt-1">
+              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="w-full text-xs font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #F3C8C8' }}>
                 Elimina definitivamente
               </button>
             </div>
@@ -521,6 +589,27 @@ export default function DettaglioPraticaAdmin() {
 
         </div>
       </div>
+
+      {/* MODALE RIATTIVA PRATICA ANNULLATA */}
+      {riattivaOpen && pratica.stato === 'annullata' && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
+            <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-3" style={{ background: '#DCF3E4' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            </div>
+            <p className="text-center font-semibold text-gray-900">Riattivare questa pratica?</p>
+            <p className="text-center text-sm text-gray-500 mt-1">
+              La pratica <b>{pratica.targa || 'senza targa'}</b> torna esattamente allo stato in cui era quando l&apos;hai annullata. La riattivazione resta in cronologia.
+            </p>
+            <div className="flex gap-2 justify-end mt-5">
+              <button onClick={() => setRiattivaOpen(false)} disabled={riattivaBusy} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">Annulla</button>
+              <button onClick={riattivaPratica} disabled={riattivaBusy} className="px-4 py-2 text-sm font-semibold text-white rounded-xl disabled:opacity-50" style={{ background: '#16A34A' }}>
+                {riattivaBusy ? 'Un attimo…' : 'Sì, riattiva'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODALE METTI IN ATTESA */}
       {attesaOpen && (

@@ -18,6 +18,8 @@ interface Nota {
 
 const PREFISSO_ATTESA = 'Messa in attesa'
 const PREFISSO_RIPRESA = 'Pratica ripresa'
+const PREFISSO_ANNULLATA = 'Pratica annullata'
+const PREFISSO_RIATTIVATA = 'Pratica riattivata'
 
 function fmtGiorno(x: string) {
   return new Date(x).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }).toUpperCase().replace('.', '')
@@ -82,23 +84,46 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
         </p>
       ) : (
         <div className="mt-2">
+          {/* Riquadro a altezza FISSA: si scorre dentro (mouse/dito), la
+              pagina non si allunga (richiesta Davide 21/07) */}
+          <div className="overflow-y-auto" style={{ maxHeight: 300 }}>
           {note.map(n => {
-            const isAttesa = n.testo.startsWith(PREFISSO_ATTESA)
-            const isRipresa = n.testo.startsWith(PREFISSO_RIPRESA)
+            // Pillola per le voci automatiche (attesa/ripresa/annullo/riattivo)
+            const tipo = n.testo.startsWith(PREFISSO_ATTESA) ? 'attesa'
+              : n.testo.startsWith(PREFISSO_RIPRESA) ? 'ripresa'
+              : n.testo.startsWith(PREFISSO_RIATTIVATA) ? 'riattivata'
+              : n.testo.startsWith(PREFISSO_ANNULLATA) ? 'annullata'
+              : null
+            // Ogni riga ha la sua pillola (20/07): le note manuali hanno "Nota"
+            const stilePillola = tipo === 'attesa' ? { bg: '#FAEEDA', col: '#854F0B', label: 'In attesa' }
+              : tipo === 'ripresa' ? { bg: '#DCF3E4', col: '#1F7A43', label: 'Ripresa' }
+              : tipo === 'riattivata' ? { bg: '#DCF3E4', col: '#1F7A43', label: 'Riattivata' }
+              : tipo === 'annullata' ? { bg: '#FBE2E2', col: '#9B1C1C', label: 'Annullata' }
+              : { bg: '#E0EDFB', col: '#1E4E8C', label: 'Nota' }
             return (
               <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
                 <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
                   {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
                 </div>
                 <div style={{ flex: 1, fontSize: 12.5, color: '#3E4C63', lineHeight: 1.5, minWidth: 0 }}>
-                  {(isAttesa || isRipresa) && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: isAttesa ? '#FAEEDA' : '#DCF3E4', color: isAttesa ? '#854F0B' : '#1F7A43', fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
-                      {isAttesa ? (
+                  {stilePillola && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: stilePillola.bg, color: stilePillola.col, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
+                      {tipo === 'attesa' && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                      ) : (
+                      )}
+                      {tipo === 'ripresa' && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
                       )}
-                      {isAttesa ? 'In attesa' : 'Ripresa'}
+                      {tipo === 'riattivata' && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                      )}
+                      {tipo === 'annullata' && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      )}
+                      {tipo === null && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                      )}
+                      {stilePillola.label}
                     </span>
                   )}
                   {n.testo}
@@ -112,7 +137,14 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
             <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
               {fmtGiorno(praticaCreataIl)}<br />{fmtOra(praticaCreataIl)}
             </div>
-            <div style={{ flex: 1, fontSize: 12.5, color: '#94A3B8', lineHeight: 1.5 }}>Pratica creata dal cliente</div>
+            <div style={{ flex: 1, fontSize: 12.5, color: '#94A3B8', lineHeight: 1.5 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EEF2F7', color: '#475569', fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                Creata
+              </span>
+              Pratica creata dal cliente
+            </div>
+          </div>
           </div>
 
           {/* Aggiungi nota */}

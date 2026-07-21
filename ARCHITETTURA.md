@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **17 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **21 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -452,8 +452,9 @@ Nel CRM il "Flusso pratiche" è una **fila da sinistra a destra con le frecce** 
 
 ⭐ **Regola certificati**: il certificato di ROTTAMAZIONE può essere caricato dal demolitore (il cliente lo scarica) **oppure consegnato a mano al ritiro** (nella futura dashboard demolitore ci sarà la spunta "consegnato a mano" per non bloccare la pratica). Ciò che completa la pratica è SEMPRE e solo il **certificato di cancellazione targhe (radiazione PRA)**.
 
-### ⭐ ANNULLAMENTO PRATICA — DUE BINARI (7/07/2026)
+### ⭐ ANNULLAMENTO PRATICA — DUE BINARI (7/07/2026) + RIATTIVAZIONE (20/07/2026)
 Endpoint `/api/pratica-annulla` (server, motivo OBBLIGATORIO → `pratiche.motivo_annullamento`, cronologia consultabile).
+⭐ **RIATTIVAZIONE (20/07)**: all'annullamento si salva `pratiche.stato_precedente`; lo stesso endpoint con `{ riattiva: true }` riporta la pratica ESATTAMENTE dov'era (per le annullate storiche senza stato_precedente: fase documenti + self-heal). Annullamento e riattivazione si annotano DA SOLI in `pratiche_note` (pillole rossa/verde in cronologia). Nel dettaglio pratica tutto vive nel menu unico "Stato pratica" in testata (Attiva / Metti in attesa / Annulla — mockup variante A); il riquadro "Pratica annullata" è stato rimosso (doppione della cronologia). SQL: `docs/sql/2026-07-20-riattivazione-pratica.sql` (eseguito).
 - **Prima dell'assegnazione** (cliente ci ripensa, ecc.): stato annullata + motivo, fine.
 - **Dopo l'assegnazione** (demolitore si tira indietro): il **`demolitore_id` NON viene azzerato** — resta come traccia per il controllo qualità. La scheda demolitore mostra la statistica **"Annullate"** (rossa, cliccabile → elenco con motivi). Se un demolitore accumula troppe annullate in un mese, Davide lo chiama/cambia. Anche il demolitore vedrà le sue annullate nella futura dashboard (deterrente).
 - La pratica annullata non conta tra le "aperte" del demolitore (tutti i conteggi escludono completata/annullata).
@@ -831,6 +832,14 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ## 8.1 ✅ FATTO
 
+### ⭐⭐ SESSIONE 20-21 luglio 2026 — MENU "STATO PRATICA" + RIATTIVAZIONE + CRONOLOGIA COMPLETA
+
+- ⭐ **Menu unico "Stato pratica ▾"** in testata del dettaglio (mockup variante A): Attiva / Metti in attesa / Annulla pratica in un solo posto — via il bottone attesa sparso e il bottone "Annulla" in fondo (in fondo resta SOLO "Elimina definitivamente"). Le voci si evidenziano in base allo stato corrente.
+- ⭐⭐ **Riattivazione pratica annullata** (vedi 4.6): "Attiva" su un'annullata la riporta esattamente dov'era (`stato_precedente`, SQL 20/07 eseguito), con modale di conferma. Il riquadro "Pratica annullata" è stato rimosso: motivo e data vivono in cronologia.
+- ✅ **Annullamento e riattivazione in cronologia** (il buco trovato da Davide): note automatiche con pillole rossa "✕ Annullata" (col motivo) e verde "✓ Riattivata". ⚠️ Solo da ora in poi: gli annullamenti precedenti al 20/07 non hanno la voce.
+- ✅ **Ogni voce della cronologia ha la sua pillola**: "Nota" (celeste, matita) per le note manuali, "Creata" (grigia) per la nascita, più le 4 di stato (In attesa / Ripresa / Annullata / Riattivata).
+- ✅ **Riquadri a scorrimento interno**: chat (~320px) e cronologia (~300px) scorrono DENTRO il proprio riquadro (mouse/dito), la pagina non si allunga; casella di scrittura sempre visibile sotto.
+
 ### ⭐⭐⭐ SESSIONE 17 luglio 2026 — DETTAGLIO PRATICA ADMIN RIFATTO (variante A su mockup)
 
 > SQL della sessione: `docs/sql/2026-07-17-attesa-note-preimpostati.sql` (ESEGUITO da Davide:
@@ -1168,4 +1177,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 17 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 21 luglio 2026.**

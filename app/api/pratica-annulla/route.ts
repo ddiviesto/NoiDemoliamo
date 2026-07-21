@@ -1,7 +1,8 @@
 /**
- * Endpoint server-side per ANNULLARE una pratica (con motivo obbligatorio).
- * La pratica resta nello storico con stato 'annullata' e il motivo in
- * pratiche.motivo_annullamento (cronologia consultabile in futuro).
+ * Endpoint server-side per ANNULLARE una pratica (con motivo obbligatorio)
+ * e per RIATTIVARLA (20/07: body { riattiva: true }).
+ * All'annullamento salviamo lo stato in cui era (pratiche.stato_precedente):
+ * la riattivazione la riporta ESATTAMENTE dov'era rimasta.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -13,9 +14,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const praticaId: string | undefined = body.pratica_id
+    const riattiva: boolean = body.riattiva === true
     const motivo: string = (body.motivo || '').trim()
     if (!praticaId) return NextResponse.json({ error: 'Manca pratica_id' }, { status: 400 })
-    if (!motivo) return NextResponse.json({ error: 'Manca il motivo dell\'annullamento' }, { status: 400 })
+    if (!riattiva && !motivo) return NextResponse.json({ error: 'Manca il motivo dell\'annullamento' }, { status: 400 })
 
     // Verifica admin
     const authHeader = req.headers.get('authorization')
@@ -35,21 +37,47 @@ export async function POST(req: NextRequest) {
     // ("quante pratiche annullate dopo l'assegnazione ha questo demolitore?").
     // La pratica annullata non conta comunque più tra le "aperte" del demolitore
     // (tutti i conteggi escludono stato completata/annullata).
-    const { data: pratica } = await supabase.from('pratiche').select('id, demolitore_id').eq('id', praticaId).single()
+    const { data: pratica } = await supabase.from('pratiche').select('id, stato, stato_precedente, demolitore_id').eq('id', praticaId).single()
     if (!pratica) return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
     const eraAssegnata = !!pratica.demolitore_id
 
+    // ---- RIATTIVAZIONE: torna esattamente dov'era rimasta ----
+    if (riattiva) {
+      if (pratica.stato !== 'annullata') return NextResponse.json({ error: 'La pratica non è annullata' }, { status: 400 })
+      // Fallback per le annullate "storiche" (prima di stato_precedente):
+      // si riparte dalla fase documenti e il self-heal della pagina admin
+      // (/api/pratica-stato) la rimette a posto da solo.
+      const statoRipristinato = pratica.stato_precedente || 'in_attesa_documenti'
+      const { error: errRi } = await supabase
+        .from('pratiche')
+        .update({
+          stato: statoRipristinato,
+          stato_precedente: null,
+          motivo_annullamento: null,
+          aggiornato_il: new Date().toISOString(),
+        })
+        .eq('id', praticaId)
+      if (errRi) {
+        console.error('Errore riattivazione pratica:', errRi)
+        return NextResponse.json({ error: 'Errore nel salvataggio. Hai eseguito l\'SQL del 20/07 su Supabase?' }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, stato: statoRipristinato })
+    }
+
+    // ---- ANNULLAMENTO (salva lo stato per la riattivazione futura) ----
+    if (pratica.stato === 'annullata') return NextResponse.json({ error: 'La pratica è già annullata' }, { status: 400 })
     const { error } = await supabase
       .from('pratiche')
       .update({
         stato: 'annullata',
+        stato_precedente: pratica.stato,
         motivo_annullamento: motivo,
         aggiornato_il: new Date().toISOString(),
       })
       .eq('id', praticaId)
     if (error) {
       console.error('Errore annullamento pratica:', error)
-      return NextResponse.json({ error: 'Errore nel salvataggio' }, { status: 500 })
+      return NextResponse.json({ error: 'Errore nel salvataggio. Hai eseguito l\'SQL del 20/07 su Supabase?' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, era_assegnata: eraAssegnata })
