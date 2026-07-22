@@ -839,6 +839,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ✅ **Annullamento e riattivazione in cronologia** (il buco trovato da Davide): note automatiche con pillole rossa "✕ Annullata" (col motivo) e verde "✓ Riattivata". ⚠️ Solo da ora in poi: gli annullamenti precedenti al 20/07 non hanno la voce.
 - ✅ **Ogni voce della cronologia ha la sua pillola**: "Nota" (celeste, matita) per le note manuali, "Creata" (grigia) per la nascita, più le 4 di stato (In attesa / Ripresa / Annullata / Riattivata).
 - ✅ **Riquadri a scorrimento interno**: chat (~320px) e cronologia (~300px) scorrono DENTRO il proprio riquadro (mouse/dito), la pagina non si allunga; casella di scrittura sempre visibile sotto.
+- ✅ **Rifiniture 21/07**: rimosso anche il riquadro ambra "In attesa" dalla colonna destra (tutto dal menu "Stato pratica", motivo in cronologia — come per l'annullata); contatore rosso dei tab cliente (Chat/Documenti) ATTACCATO all'icona col bordino dello sfondo (prima era sperso nell'angolo del riquadro); spazi mancanti dopo la targa nelle modali di annullo/riattivo.
 
 ### ⭐⭐⭐ SESSIONE 17 luglio 2026 — DETTAGLIO PRATICA ADMIN RIFATTO (variante A su mockup)
 

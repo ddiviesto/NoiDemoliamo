@@ -536,31 +536,9 @@ export default function DettaglioPraticaAdmin() {
           {/* COLONNA DESTRA: attesa + assegnazione + dati */}
           <div className="w-full lg:w-[340px] flex-shrink-0 flex flex-col gap-4">
 
-            {/* PRATICA IN ATTESA: riquadro ambra con motivo e Riprendi */}
-            {pratica.in_attesa && (
-              <div className="p-4" style={{ ...STILE_CARD, background: '#FDF7EA', borderColor: '#F0DFB8' }}>
-                <div className="flex items-start gap-2.5">
-                  <span style={{ width: 30, height: 30, borderRadius: 9, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                  </span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[13px] font-bold" style={{ color: '#854F0B' }}>In attesa dal {fmtData(pratica.attesa_dal)}</div>
-                    {pratica.attesa_motivo && (
-                      <div className="text-[12px] mt-1" style={{ color: '#B45309', lineHeight: 1.5 }}>&quot;{pratica.attesa_motivo}&quot;</div>
-                    )}
-                    <button
-                      onClick={riprendiPratica}
-                      disabled={attesaBusy}
-                      className="flex items-center gap-1.5 text-[11.5px] font-bold rounded-[9px] px-3 py-2 mt-2.5 transition-colors disabled:opacity-50"
-                      style={{ background: '#fff', border: '1.5px solid #F0DFB8', color: '#854F0B' }}
-                    >
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="#854F0B"><polygon points="6 3 20 12 6 21 6 3" /></svg>
-                      {attesaBusy ? 'Un attimo…' : 'Riprendi la pratica'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* Nota 21/07: anche il riquadro "In attesa" è stato RIMOSSO
+                (come quello dell'annullata): tutto si gestisce dal menu
+                "Stato pratica" in testata, motivo e date stanno in cronologia. */}
 
             {/* Nota 20/07: il riquadro "Pratica annullata" è stato RIMOSSO
                 (doppione): motivo e data stanno in Cronologia e note, la
@@ -599,7 +577,7 @@ export default function DettaglioPraticaAdmin() {
             </div>
             <p className="text-center font-semibold text-gray-900">Riattivare questa pratica?</p>
             <p className="text-center text-sm text-gray-500 mt-1">
-              La pratica <b>{pratica.targa || 'senza targa'}</b> torna esattamente allo stato in cui era quando l&apos;hai annullata. La riattivazione resta in cronologia.
+              La pratica <b>{pratica.targa || 'senza targa'}</b>{' '}torna esattamente allo stato in cui era quando l&apos;hai annullata. La riattivazione resta in cronologia.
             </p>
             <div className="flex gap-2 justify-end mt-5">
               <button onClick={() => setRiattivaOpen(false)} disabled={riattivaBusy} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">Annulla</button>
@@ -651,7 +629,7 @@ export default function DettaglioPraticaAdmin() {
             </div>
             <p className="text-center font-semibold text-gray-900">Annullare questa pratica?</p>
             <p className="text-center text-sm text-gray-500 mt-1">
-              La pratica <b>{pratica.targa || 'senza targa'}</b> resterà nello storico come annullata (non viene cancellata). Il cliente la vedrà come annullata nella sua area.
+              La pratica <b>{pratica.targa || 'senza targa'}</b>{' '}resterà nello storico come annullata (non viene cancellata). Il cliente la vedrà come annullata nella sua area.
             </p>
             {pratica.demolitore_id && (
               <div className="flex items-start gap-2 rounded-xl px-3 py-2.5 mt-3" style={{ background: '#FDF7EA', border: '1.5px solid #F0DFB8' }}>

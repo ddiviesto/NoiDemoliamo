@@ -382,13 +382,20 @@ function TabButton(props: {
         ? { background: '#2563eb', color: '#fff' }
         : { background: 'transparent', color: '#5F6C7E' }}
     >
-      <Icona attivo={props.attivo} />
+      {/* Il contatore sta ATTACCATO all'icona (non sperso nell'angolo del
+          riquadro), col bordino del colore dello sfondo per staccare bene */}
+      <span className="relative">
+        <Icona attivo={props.attivo} />
+        {mostraBadge && (
+          <span
+            className="absolute min-w-[18px] h-[18px] text-[10px] font-bold px-1 rounded-full leading-none flex items-center justify-center bg-red-500 text-white"
+            style={{ top: -7, right: -13, border: `2px solid ${props.attivo ? '#2563eb' : '#EFF3F9'}` }}
+          >
+            {props.badge}
+          </span>
+        )}
+      </span>
       <span className="text-xs font-medium">{props.label}</span>
-      {mostraBadge && (
-        <span className="absolute top-1.5 right-2.5 min-w-[18px] h-[18px] text-[10px] font-bold px-1 rounded-full leading-none flex items-center justify-center bg-red-500 text-white">
-          {props.badge}
-        </span>
-      )}
     </button>
   )
 }
