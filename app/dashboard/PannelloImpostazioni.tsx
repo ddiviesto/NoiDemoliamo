@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -12,9 +12,11 @@ import { supabase } from '@/lib/supabase'
 // ============================================================
 
 // Campo "slim" per la modifica sul posto: stessa taglia del valore in
-// lettura (bordo azzurrino per capire che è attivo). text-base = 16px:
-// obbligatorio su iOS per non far zoomare la pagina al focus.
-const INPUT_CLS = 'w-full border-[1.5px] border-blue-300 rounded-[8px] px-2 py-1 text-base font-semibold text-gray-900 bg-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-400 placeholder:font-normal'
+// lettura (bordo azzurrino sottile per capire che è attivo).
+// ⚠️ Su schermi piccoli (iPhone) il testo resta 16px: sotto quella soglia
+// iOS zooma tutta la pagina al focus. Da sm in su (PC) scende a 13.5px,
+// così la riga non si "gonfia".
+const INPUT_CLS = 'w-full border border-blue-300 rounded-[7px] px-2 py-[3px] text-base sm:text-[13.5px] font-medium text-gray-900 bg-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-400 placeholder:font-normal'
 
 type Sezione = 'nome' | 'telefono' | 'email' | 'password' | null
 
@@ -32,6 +34,16 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
   const [sezione, setSezione] = useState<Sezione>(null)
   const [busy, setBusy] = useState(false)
   const [esito, setEsito] = useState<{ tipo: 'ok' | 'errore'; testo: string } | null>(null)
+
+  // Il banner verde di conferma sparisce da solo dopo qualche secondo
+  // (gli ERRORI invece restano finché non si corregge o si chiude).
+  // I messaggi lunghi (es. conferma cambio email) hanno più tempo per essere letti.
+  useEffect(() => {
+    if (!esito || esito.tipo !== 'ok') return
+    const durata = esito.testo.length > 60 ? 8000 : 3500
+    const t = setTimeout(() => setEsito(null), durata)
+    return () => clearTimeout(t)
+  }, [esito])
 
   const [nuovoNome, setNuovoNome] = useState('')
   const [nuovoCognome, setNuovoCognome] = useState('')

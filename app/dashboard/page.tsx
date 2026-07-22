@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
@@ -178,9 +179,8 @@ export default function DashboardCliente() {
 
         {/* HEADER BLU (stile banner /inizia) */}
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
-          <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0 text-sm font-bold">
-            N
-          </div>
+          {/* Logo vero (variante A su mockup 22/07): lo stesso di /inizia e login */}
+          <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={38} height={38} className="rounded-xl flex-shrink-0" />
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
             <div className="text-sm font-semibold leading-tight truncate">
