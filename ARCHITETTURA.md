@@ -841,6 +841,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ✅ **Card "Aggiungi un altro veicolo"** (variante B): via il riquadro tratteggiato col "+" — card bianca in fila con le pratiche, quadratino blu con l'auto, sottotitolo "Sempre gratis, come la prima", freccia.
 - ⭐ **Termini: clausola gratuità condizionata** (richiesta Davide): la gratuità presuppone veicolo **sostanzialmente completo**; parti importanti mancanti o casi particolari → lo comunichiamo SUBITO e proponiamo un **contributo**, sempre con accordo esplicito. (Le pagine legali restano da rivedere per i dati anagrafici, vedi 8.2.)
 - ⭐ **Pannello impostazioni RESTYLING "modifica sul posto"** (2 giri di mockup): scheda "I TUOI DATI" con valori in LETTURA (etichetta + valore + bottoncino Modifica/Cambia per riga); premendo Modifica il valore diventa un **campo slim della stessa taglia** (bordo azzurrino, niente sfondi grigi né riquadri che si gonfiano) e Modifica diventa **"Annulla · Salva" pilloline della stessa misura**. ⚠️ Nei campi il testo resta 16px (anti-zoom iOS). ⚠️ Lezione tecnica: MAI definire sotto-componenti con input dentro un componente (si rimontano a ogni render e i campi perdono il focus) — usare funzioni chiamate direttamente.
+- ⭐⭐ **REGOLA "dopo l'assegnazione comanda solo l'admin"** (chiusa il cerchio 22/07): ANCHE nome e telefono dal profilo aggiornano le pratiche in corso **solo se NON assegnate** (`demolitore_id IS NULL`, escluse completate/annullate); documenti e foto erano già bloccati post-assegnazione (STATI_MODIFICABILI_DA_CLIENTE). Il cambio NOME ora si propaga alle pratiche non assegnate come il telefono (coi moduli in bianco `nome_richiedente` è informativo): l'admin vede subito i dati nuovi. Documenti APPROVATI: ✕ di eliminazione mai mostrata al cliente (verificato — solo finché "in verifica").
 
 ### ⭐⭐ SESSIONE 20-21 luglio 2026 — MENU "STATO PRATICA" + RIATTIVAZIONE + CRONOLOGIA COMPLETA
 
@@ -1136,6 +1137,7 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - ⭐ **Il telefono del profilo aggiorna le pratiche in corso** (è il recapito operativo per il ritiro); il NOME sulle pratiche resta quello dichiarato (identità sui documenti — lo corregge l'admin se serve).
 - **Cambio email in autonomia**: via link di conferma Supabase (doppioni impossibili), `utenti.email` si riallinea al login successivo; l'admin vede sempre l'email attuale ("Email account").
 - **Gratuità con la clausola onesta**: gratis per veicoli sostanzialmente completi; parti importanti mancanti → contributo proposto SUBITO e accettato esplicitamente, mai a sorpresa.
+- ⭐ **Dopo l'assegnazione comanda solo l'admin**: da "assegnata" in poi il cliente non modifica più NULLA (documenti, foto, e nemmeno nome/telefono via profilo); le modifiche dell'admin le vede anche il cliente. Prima dell'assegnazione, tutto ciò che il cliente cambia si riflette in admin.
 
 **Nuove decisioni 17 luglio 2026:**
 

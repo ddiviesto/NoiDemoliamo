@@ -45,12 +45,27 @@ export async function POST(req: NextRequest) {
     const { error: errUtente } = await supabase.from('utenti').update(update).eq('id', user.id)
     if (errUtente) throw errUtente
 
-    // Il telefono vale anche per le pratiche in corso (contatto per il ritiro)
-    if (update.telefono) {
+    // Telefono e NOME valgono anche per le pratiche in corso (22/07: i moduli
+    // escono in bianco, quindi il nome sulla pratica è solo informativo e può
+    // seguire il profilo — l'admin vede subito il dato aggiornato)
+    const updatePratiche: Record<string, unknown> = {}
+    if (update.telefono) updatePratiche.telefono = update.telefono
+    if (update.nome !== undefined || update.cognome !== undefined) {
+      // Nome completo dal profilo APPENA salvato (così non si perde il
+      // cognome se un giorno arrivasse solo il nome, o viceversa)
+      const { data: profilo } = await supabase.from('utenti').select('nome, cognome').eq('id', user.id).single()
+      const nomeCompleto = [profilo?.nome, profilo?.cognome].filter(Boolean).join(' ').trim()
+      if (nomeCompleto) updatePratiche.nome_richiedente = nomeCompleto
+    }
+    if (Object.keys(updatePratiche).length > 0) {
+      // ⭐ Regola 22/07: dopo l'ASSEGNAZIONE al demolitore il cliente non
+      // modifica più nulla sulla pratica — nemmeno tramite il profilo.
+      // Da lì in poi tocca solo all'admin (e il cliente vede le sue modifiche).
       const { error: errPratiche } = await supabase
         .from('pratiche')
-        .update({ telefono: update.telefono })
+        .update(updatePratiche)
         .eq('user_id', user.id)
+        .is('demolitore_id', null)
         .not('stato', 'in', '("completata","annullata")')
       if (errPratiche) throw errPratiche
     }
