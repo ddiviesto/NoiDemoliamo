@@ -167,7 +167,7 @@ Tabella centrale del progetto. Contiene tutte le pratiche di demolizione.
 - **Veicolo**: `targa`, `tipo_mezzo`, `tipo_mezzo_altro` (text), `marca`, `modello`, `anno`, `km`, `incidentato` (bool), `marciante` (bool), `va_in_moto` (bool), `parti_mancanti` (bool), `note_veicolo`, `tipo_cambio` (text: manuale/automatico/non_so)
 - **Indirizzo**: `indirizzo_ritiro`, `comune_ritiro`, `provincia_ritiro`, `cap_ritiro`, `lat`, `lng`, `spazio_carro_attrezzi` (text: libero/stretto/no), `spazio_carro_attrezzi_note` (text libero)
 - **Cliente**: `codice_fiscale` (⚠️ NULLABLE — null per targhe straniere; per le società contiene la P.IVA a 11 cifre), `nome_richiedente`, `telefono`
-- **SISTEMA CASISTICHE (giugno 2026)**: `casistica` (text con CHECK sugli 8 codici, vedi 3.3), `fermo_amministrativo` (si/no/non_so, null se non applicabile), `targhe_presenti` (bool, null per targhe straniere), `delegato_nome`, `delegato_telefono` (null se consegna in prima persona), `numero_eredi` (int, solo casi eredi), `nomi_rinunciatari` (text — colonna pronta ma NON compilata dal flusso: si raccoglierà nell'area personale)
+- **SISTEMA CASISTICHE (giugno 2026)**: `casistica` (text con CHECK sugli 8 codici, vedi 3.3), `fermo_amministrativo` (si/no/non_so, null se non applicabile), `targhe_presenti` (bool, null per targhe straniere), `delegato_nome`, `delegato_telefono` (null se consegna in prima persona), `numero_eredi` (int — ⭐ LEGACY dal 22/07/2026: la domanda "quanti eredi" non esiste più, il flusso salva null; resta per le pratiche storiche), `nomi_rinunciatari` (text — colonna pronta ma NON compilata dal flusso: i rinunciatari si scrivono a penna nel modulo ACI)
 - **Documenti dichiarati**: `libretto` (si/denuncia/no — NULLABLE), `certificato_proprieta` (NULLABLE; CHECK ammette digitale/cartaceo/documento_unico/smarrito/nessuno ma la UI attuale ne propone 4: digitale, cartaceo, smarrito, nessuno)
 - **Legacy da rimuovere in pulizia finale**: `ruolo_richiedente`, `eredita` (sostituiti dal sistema casistiche)
 - **Workflow**: `demolitore_id`, `data_ritiro_prevista`, `data_certificato_rottamazione`, `data_certificato_pra`, `stato`
@@ -186,8 +186,8 @@ imbarcazione, pullman, camion, velivolo, altro
 | # | Codice | Descrizione | Particolarità |
 |---|---|---|---|
 | 1 | `persona_fisica` | Privato, mezzo intestato a persona fisica vivente | Caso base |
-| 2 | `eredi_accettato` | Intestatario deceduto, eredi accettano tutti | numero_eredi 1-10, documenti × erede |
-| 3 | `eredi_rinuncia` | Intestatario deceduto, qualcuno ha rinunciato | Rinuncia formale Notaio/Tribunale; chi rinuncia NON firma nulla |
+| 2 | `eredi_accettato` | Intestatario deceduto, eredi accettano tutti | ⭐ 22/07: fotografa solo chi gestisce la pratica; fotocopie di OGNI erede al ritiro con la dichiarazione |
+| 3 | `eredi_rinuncia` | Intestatario deceduto, qualcuno ha rinunciato | Rinuncia formale Notaio/Tribunale; chi rinuncia NON firma nulla e NON allega documenti |
 | 4 | `societa` | Mezzo intestato a società attiva | P.IVA 11 cifre al posto del CF, visura camerale |
 | 5 | `societa_fallita` | Società fallita/liquidata | Autorizzazione Giudice Delegato |
 | 6 | `associazione` | Intestato ad associazione/ente | CF associazione |
@@ -244,7 +244,7 @@ RLS: SELECT/INSERT/UPDATE configurate. GRANT espliciti già applicati.
 ⭐ **Convenzione `file_url`**: contiene un **array JSON** `[{url, nome}]` per supportare più file per documento (fronte/retro, più pagine) senza cambiare schema. Helper `leggiFile()`/`scriviFile()` in `TabDocumenti.tsx` (gestiscono anche il fallback stringa semplice legacy).
 
 ### ✅ TRIGGER DI GENERAZIONE AUTOMATICA ("commesso automatico")
-Trigger PostgreSQL su `pratiche`: alla creazione della pratica legge `casistica` + risposte (CDC, targhe, fermo, delegato, n° eredi) e **genera automaticamente le righe checklist** dal catalogo. I documenti `per_erede` sono duplicati per `indice_erede`.
+Trigger PostgreSQL su `pratiche`: alla creazione della pratica legge `casistica` + risposte (CDC, targhe, fermo, delegato) e **genera automaticamente le righe checklist** dal catalogo. Il meccanismo `per_erede`/`indice_erede` resta pronto nel trigger, ma ⭐ dal 22/07/2026 **nessun documento del catalogo lo usa più** (eredi semplificati: si fotografa solo chi gestisce la pratica).
 ✅ Verificato end-to-end con test SQL (incluso caso complesso `eredi_accettato` multi-erede) e con pratica reale dal flusso ("EEEEE", vedi 8.1).
 
 ### ⭐ FLUSSO FRONTE/RETRO (deciso e implementato il 3/07/2026)
@@ -278,7 +278,7 @@ Tracking granulare del vecchio sistema. TabDocumenti la legge ancora per lo stat
 
 Chat persistente tra cliente, admin, demolitore, commerciante.
 `id`, `pratica_id`, `mittente_id`, `mittente_tipo` ('cliente'|'admin'|'demolitore'|'commerciante'), `testo`, `letto`, `creato_il`.
-⚠️ Real-time non implementato — messaggi appaiono ricaricando.
+✅ **Tempo reale ATTIVO dal 22/07/2026** (vedi 5.7): i messaggi appaiono da soli, il bottone "Aggiorna" della chat admin è stato rimosso.
 
 ## 3.9 Tabella `impostazioni`
 
@@ -574,7 +574,7 @@ C:\Progetto_NoiDemoliamo\
 ```
 1  TIPO VEICOLO (griglia 4+4 + "Altro")
 2  INTESTAZIONE (6 opzioni → deriva la casistica)
-2b RAMO EREDI (rinuncia sì/no + stepper 1-10)         [solo deceduto]
+2b RAMO EREDI (solo rinuncia sì/no — ⭐ 22/07: via il contatore eredi)  [solo deceduto]
 2c RAMO SOCIETÀ FALLITA                                [solo società]
 3  IDENTIFICA VEICOLO (anno, km, marca, modello)
 4  CAMBIO                                              [solo auto/minicar/furgone/pullman/camion/altro]
@@ -666,6 +666,21 @@ Il componente più importante dell'area cliente. **Design a WIZARD approvato da 
 - **Bottone di pagina SOPRA la coda**: ordine = card documento → "Vai al prossimo documento" → "Dopo questo" → box ritiro. Sull'ultimo documento il bottone dice "Invia l'ultimo documento" (il passo foto NON è più nella fila del wizard).
 - **FOTO DEL VEICOLO: banner giallo → card senza limiti** (chiude il buco "Continua senza foto" di /inizia): con 0 foto appare il **banner giallo compatto** "Mancano le foto del veicolo — ci servono per capire che tipo di carro attrezzi mandare ed evitare viaggi a vuoto…" (TUTTA la card è il bottone, bollino tondo "Aggiungi" a destra). Tocco → card di caricamento: spiegazione carro attrezzi, Scatta/Galleria, griglia foto. **NESSUN limite né soglia** (1 o 6 foto vanno bene), niente riquadri-guida con etichette: il completamento lo dichiara il cliente con "**Ho finito con le foto**" (acceso dalla prima foto) → card chiusa, "Hai fatto tutto", foto come riga nel pannello.
 - **Box giallo "Da chiarire insieme" RIMOSSO** lato cliente (e col box anche il suo bottone WhatsApp): vede tutto solo l'admin ("Da contattare") e chiama lui. Il libretto resta fuori dalla lista da caricare.
+
+## 5.7 ⭐⭐ AGGIORNAMENTO AUTOMATICO — `lib/aggiornaLive.ts` (22/07/2026)
+
+Il sistema è **istantaneo su tutto** (richiesta esplicita di Davide): nessuna pagina deve richiedere il refresh manuale. Hook condiviso `useAggiornaLive({ canale, tabelle, onCambio, pollingMs, attivo })` con **3 livelli**:
+
+1. **TEMPO REALE** — Supabase Realtime (postgres_changes): il DB avvisa le pagine aperte nell'istante in cui una tabella osservata cambia. Le tabelle vanno abilitate alla pubblicazione (`docs/sql/2026-07-22-tempo-reale.sql`, ESEGUITA: pratiche, pratica_documenti_checklist, foto_pratiche, messaggi_chat, pratiche_note, documenti_approvazione). Il realtime rispetta le RLS: a ogni utente arrivano solo le righe che può vedere.
+2. **RITORNO SULLA PAGINA** — visibilitychange/focus: si cambia finestra e si torna → dati freschi (max una volta ogni 3s).
+3. **CONTROLLO PERIODICO** — rete di sicurezza: default 60s (chat 30s, demolitore 20s), solo a pagina visibile.
+
+**Regole**:
+- `onCambio` è SEMPRE la ricarica **silenziosa** del componente (niente spinner, niente sobbalzi, signed URL riusati; le chat confrontano il JSON prima di aggiornare lo stato per non far saltare lo scroll).
+- Eventi a raffica ("approva tutti") → UNA ricarica (debounce 400ms interno all'hook).
+- **Area demolitore**: niente accesso diretto al DB (RLS) → hook SENZA tabelle (solo livelli 2+3, polling 20s). La scheda demolitore va in pausa (`attivo: false`) mentre il form del ritiro è aperto, per non sovrascrivere ciò che si scrive.
+- ⭐ **Ogni NUOVA pagina con dati condivisi deve usare questo hook** (e le sue nuove tabelle vanno aggiunte alla pubblicazione realtime nella stessa SQL di creazione).
+- **Cintura di sicurezza server-fresh**: prima di mutare un documento, TabDocumenti rilegge lo stato dal DB — un documento `approvato` non si modifica mai, nemmeno da una pagina rimasta vecchia.
 
 ---
 
@@ -832,6 +847,18 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ## 8.1 ✅ FATTO
 
+### ⭐⭐⭐ SESSIONE 22 luglio 2026 (seconda parte) — EREDI SEMPLIFICATI + AGGIORNAMENTO AUTOMATICO OVUNQUE
+
+> SQL della sessione (entrambe ESEGUITE da Davide): `docs/sql/2026-07-22-eredi-semplificati.sql`
+> e `docs/sql/2026-07-22-tempo-reale.sql`.
+
+- ⭐⭐ **CASISTICHE EREDI SEMPLIFICATE** (decisione Davide, mockup approvato): via la domanda "**Quanti eredi hanno accettato?**" da /inizia (resta solo rinuncia sì/no + avviso ambra); nell'area personale si fotografa SOLO **chi gestisce la pratica** (la sua CI + il suo CF, una volta sola — mai moltiplicati per erede, come il cittadino privato); i documenti degli ALTRI eredi sono **fotocopie fronte/retro da consegnare al ritiro insieme alla Dichiarazione sostitutiva** (stesso principio del delegato 16/07). Catalogo: `CARTA_IDENTITA_EREDE`/`TESSERA_SANITARIA_EREDE` ora `per_erede=false` e nomi "La tua carta d'identità"/"La tua tessera sanitaria"; `numero_eredi` non viene più compilato dal flusso (colonna legacy). File casistiche aggiornato (casi 2 e 3).
+- ⭐ **Moduli ACI eredità letti a fondo** (dai PDF veri): compila e firma **UNA sola persona** (il dichiarante, un erede che ha accettato), che si identifica allegando la fotocopia del SUO documento. Versione rinuncia: **tabella 1 = eredi che hanno ACCETTATO** (chi rinuncia per legge è come se non fosse mai stato erede), **tabella 2 = chi ha rinunciato** con gli estremi dell'atto (Notaio/Tribunale, n. rep/prot, registro successioni). Le descrizioni nel box verde del cliente spiegano tutto questo (frasi chiave in grassetto, avviso ROSSO "Chi ha rinunciato NON firma nulla"); sotto l'atto di morte: "Basta una copia o fotocopia".
+- ⭐⭐⭐ **AGGIORNAMENTO AUTOMATICO OVUNQUE** (`lib/aggiornaLive.ts`, hook `useAggiornaLive`) — vedi 5.7: tempo reale Supabase + ricarica al ritorno in pagina + controllo periodico. Collegato a: lista e pagina pratica del cliente (banner, documenti, foto, chat, contatore non letti), CRM admin, dettaglio pratica admin (documenti, chat, cronologia, testata), area demolitore (solo focus+polling 20s, passa dagli endpoint). Il caso che l'ha fatto nascere: Davide approvava dall'admin, la pagina del cliente restava vecchia e permetteva di eliminare un documento approvato.
+- ⭐ **Cinture di sicurezza**: prima di caricare/eliminare file su un documento, il cliente ricontrolla lo stato FRESCO dal server — un documento **approvato** non si tocca nemmeno da una pagina rimasta indietro.
+- ✅ **Foto del veicolo: pillola neutra "Inviate"** — le foto NON sono un documento da verificare (servono per il carro attrezzi): mai più "In verifica"/"Approvato" sulla riga foto del cliente. Rimossa la lettura del vecchio sistema `documenti_approvazione` da TabDocumenti (la tabella resta solo nel DB, più nessuna pagina la usa).
+- ✅ **Rifiniture**: via l'anello "0 su 3 — Iniziamo!" dal wizard documenti (doppione della barretta "DOCUMENTO X DI Y"; la frase "Un documento alla volta: bastano le foto" ora sta piccola sotto la barretta, solo sul primo documento); via il bottone "Aggiorna" dalla chat admin (coi messaggi in tempo reale non serve).
+
 ### ⭐⭐ SESSIONE 22 luglio 2026 — AREA CLIENTE: UN SOLO BOX, COLORI SEMANTICI, PANNELLO IMPOSTAZIONI
 
 - ✅ **Un solo box di stato** (mockup approvato): il box centrale di TabDocumenti ("Documenti tutti approvati" / "Hai fatto tutto" / "Documenti inviati") è stato RIMOSSO — era un doppione del banner in alto. Il banner integra l'unica informazione che mancava: verde "Documenti approvati, è tutto in ordine · Stiamo assegnando un demolitore. **Tieni gli originali a portata di mano**"; blu "Hai fatto tutto: stiamo verificando · Ti avviseremo entro 3 ore: non devi fare altro." (niente trattini). L'anello di avanzamento resta solo col wizard in corso.
@@ -864,7 +891,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐⭐ **PRATICA "IN ATTESA"**: è una PAUSA SOPRA LO STATO (non uno stato del workflow: alla ripresa la pratica torna esattamente dov'era). Bottone "Metti in attesa" in testata (motivo OBBLIGATORIO, icona OROLOGIO — le barrette pausa bocciate), riquadro ambra con motivo + "Riprendi" in colonna destra. Salvataggio via `/api/pratica-dati` (server). **Dashboard**: riquadro ambra "In attesa · N" accanto a "Da contattare" (fuori dalle 6 fasi), pillola "In attesa" + **motivo visibile in riga** (per ricordarsi il perché). **Cliente**: solo pillola "In attesa" + banner grigio sereno ("non devi fare nulla"), zero motivi.
 - ⭐⭐ **DICHIARAZIONI E CASISTICA tutte modificabili** (tranne la CASISTICA, sola lettura): con Modifica si aprono campi uniformi — Libretto (SOLO esiti verifica: Ha l'originale / Denuncia — "Non ce l'ha" resta solo come dichiarazione del cliente), Certificato di proprietà (qui, VIA dalla testa dei documenti), Fermo (SOLO Sì/No, via "Non lo sa"), Targhe (Presenti/Smarrite), Delegato (nome+telefono, vuoto = prima persona; nascosto dove la delega non è ammessa). Niente opzioni "—" nelle tendine (placeholder "Scegli…" disabilitato). ⭐ **Sincronizzazione checklist GENERALIZZATA in `/api/pratica-dati`**: ogni risposta accende/spegne i documenti della sua condizione nel catalogo (fermo_si, libretto_smarrito, targhe_assenti, delegato) — righe con file MAI toccate; whitelist estesa (libretto, targhe_presenti, delegato_*, in_attesa, attesa_*).
 - ✅ `DocumentiApprovazione`: via le pillole casistica e il "Cambia" CDC (ora nelle Dichiarazioni); resta il banner "Da contattare" coi bottoni esito telefonata.
-- 🔜 **DA FARE (nota di Davide)**: semplificare le CASISTICHE EREDI — togliere i documenti degli eredi che non servono (si comunicano nel box verde come le fotocopie del delegato), tenere solo chi opera come erede/incaricato; la domanda "quanti eredi" in /inizia probabilmente sparirà. Per ora numero eredi NON modificabile dall'admin.
+- ✅ ~~DA FARE: semplificare le CASISTICHE EREDI~~ **FATTO il 22/07/2026** (vedi sessione 22/07 seconda parte): via la domanda "quanti eredi", fotografa solo chi opera, fotocopie al ritiro con la dichiarazione.
 
 ### ⭐⭐ SESSIONE 16 luglio 2026 — FLUSSO CRM LEGGIBILE + MENO FOTO PER IL CLIENTE
 
@@ -1131,6 +1158,13 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - **Niente avvisi di chiamata lato cliente**: il box "Da chiarire insieme" è stato rimosso; i casi da chiarire li vede solo l'admin ("Da contattare") e chiama lui.
 - **Aggiornamenti silenziosi**: mai smontare la schermata per un refresh dati (spinner solo al primo caricamento; riusare i signed URL). I "sobbalzi" sono bug, non dettagli.
 
+**Nuove decisioni 22 luglio 2026 (seconda parte):**
+
+- ⭐⭐ **Il sistema è ISTANTANEO su tutto** ("voglio tutto perfetto" — Davide): nessuna pagina richiede il refresh manuale. Ogni nuova pagina con dati condivisi usa `useAggiornaLive` (vedi 5.7) e le sue tabelle vanno abilitate al realtime.
+- ⭐⭐ **Eredi: fotografa solo chi gestisce la pratica** (la sua CI + il suo CF); i documenti degli ALTRI eredi sono fotocopie da consegnare al ritiro insieme alla Dichiarazione sostitutiva. Via la domanda "quanti eredi" da /inizia. Nel modulo con rinuncia: tabella 1 = accettanti, tabella 2 = rinunciatari con estremi dell'atto; firma solo il dichiarante.
+- ⭐ **Le foto del veicolo non hanno approvazione**: non sono un documento da verificare (servono per il carro attrezzi) — pillola neutra "Inviate", mai stati di verifica. Se una foto non va, glielo si dice in chat.
+- **Un'azione non più valida non deve essere possibile da una pagina rimasta vecchia**: oltre all'aggiornamento automatico, i punti critici ricontrollano lo stato fresco dal server prima di mutare (documento approvato = intoccabile).
+
 **Nuove decisioni 22 luglio 2026:**
 
 - ⭐ **Banner cliente: SOLO 3 colori semantici** (blu in corso, verde traguardi, rosso serve-azione; grigio per pausa/annullo). Mai un colore per stato: i "troppi colori" stonano.
@@ -1147,7 +1181,7 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - ⭐ **Tutte le dichiarazioni sono modificabili dall'admin TRANNE la casistica** (che decide la struttura della pratica): ogni modifica sincronizza da sola l'area del cliente via le condizioni del catalogo. Le tendine admin offrono solo ESITI di verifica ("Non lo sa"/"Non ce l'ha" sono dichiarazioni del cliente, non opzioni dell'admin).
 - **Chat admin nel dettaglio pratica**: l'admin scrive al cliente e LEGGE (senza scrivere) la conversazione demolitore↔cliente; frasi rapide salvate in DB e gestibili dall'interfaccia.
 - **Niente "—" nelle tendine**: se manca il valore si mostra "Scegli…" disabilitato.
-- 🔜 **Casistiche EREDI da semplificare** (in separata sede, RICORDARLO a Davide): via i documenti degli eredi non necessari → comunicati nel box del ritiro; resta solo chi opera; probabilmente sparisce la domanda "quanti eredi" da /inizia.
+- ✅ ~~Casistiche EREDI da semplificare~~ FATTO il 22/07/2026 (vedi decisioni 22/07 seconda parte).
 
 **Nuove decisioni 16 luglio 2026:**
 
