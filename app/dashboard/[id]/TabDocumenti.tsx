@@ -253,31 +253,6 @@ function IconaTipoDocumento({ nome, color }: { nome: string; color: string }) {
 }
 
 // ============================================================
-// ANELLO DI PROGRESSO
-// ============================================================
-
-function AnelloProgresso({ pronti, totale }: { pronti: number; totale: number }) {
-  const r = 27
-  const circ = 2 * Math.PI * r
-  const perc = totale > 0 ? pronti / totale : 0
-  const offset = circ * (1 - perc)
-  return (
-    <div style={{ position: 'relative', width: 66, height: 66, flexShrink: 0 }}>
-      <svg width="66" height="66" viewBox="0 0 66 66">
-        <circle cx="33" cy="33" r={r} fill="none" stroke="#eaf0f7" strokeWidth="7" />
-        <circle cx="33" cy="33" r={r} fill="none" stroke="#2563eb" strokeWidth="7" strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={offset} transform="rotate(-90 33 33)"
-          style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <span style={{ fontSize: 17, fontWeight: 500, color: '#0d2144', lineHeight: 1 }}>{pronti}</span>
-        <span style={{ fontSize: 10, color: '#9aa7b5', lineHeight: 1.3 }}>su {totale}</span>
-      </div>
-    </div>
-  )
-}
-
-// ============================================================
 // COMPONENTE PRINCIPALE
 // ============================================================
 
@@ -616,13 +591,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   // Contatori e stati basati SOLO sui documenti da fotografare: i moduli PDF
   // non si caricano (si scaricano dal box verde, si firmano e si consegnano
   // in originale al ritiro — deciso il 10/07)
-  const totale = totaleDocWizard
-  const pronti = inviatiCount
   const tuttoApprovato = totaleDocWizard > 0 && docUpload.every(d => d.stato === 'approvato') && !librettoDaChiarire && !cdcDaChiarire
   // ⭐ 15/07: i moduli PDF sono scaricabili SUBITO (niente blocco pre-verifica
   // e niente autocompilazione: escono in bianco, li compila il cliente).
-  // Documenti tutti inviati (la fila del wizard è vuota)
-  const docsInviati = !tuttoApprovato && !docAttivo && totaleDocWizard > 0 && inviatiCount === totaleDocWizard
   // Banner giallo: nessuna foto del veicolo (e card non aperta)
   const bannerFotoVisibile = !docAttivo && foto.length === 0 && !cardFotoAperta && !tuttoApprovato && puoEliminare
   // Card di caricamento foto aperta dal banner
@@ -633,22 +604,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
 
       {/* ====== STATO ======
           22/07: le card "Documenti tutti approvati" / "Hai fatto tutto" /
-          "Documenti inviati" sono state RIMOSSE (doppioni del banner in alto,
-          che ora integra anche il promemoria sugli originali). Resta SOLO
-          l'anello di avanzamento mentre il wizard è in corso. */}
-      {!tuttoApprovato && !docsInviati && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '6px 6px 2px' }}>
-          <AnelloProgresso pronti={pronti} totale={totale} />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 500, fontSize: 16, color: '#0d2144' }}>
-              {pronti === 0 ? 'Iniziamo!' : 'Stai andando bene!'}
-            </div>
-            <div style={{ fontSize: 12.5, color: '#7a8a9a', marginTop: 2, lineHeight: 1.4 }}>
-              {daFare.length === 0 ? 'Documenti inviati, in attesa di verifica.' : 'Un documento alla volta: bastano le foto.'}
-            </div>
-          </div>
-        </div>
-      )}
+          "Documenti inviati" sono state RIMOSSE (doppioni del banner in alto);
+          idem l'anello "0 su 3 — Iniziamo!" (doppione della barretta
+          "DOCUMENTO X DI Y" del wizard, variante A scelta su mockup). */}
 
       {/* Nota: il box giallo "Da chiarire insieme" è stato RIMOSSO (9/07):
           i casi libretto mancante / CDC sconosciuto li vede solo l'admin
@@ -692,6 +650,14 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
               <div style={{ width: `${Math.max(6, Math.round((inviatiCount / Math.max(1, totaleDocWizard)) * 100))}%`, height: '100%', background: '#2563eb', transition: 'width 0.4s ease' }} />
             </div>
           </div>
+
+          {/* Frase rassicurante SOLO sul primo documento (variante A, 22/07):
+              dal secondo in poi il cliente ha capito il meccanismo */}
+          {inviatiCount === 0 && (
+            <div style={{ fontSize: 11.5, color: '#7a8a9a', margin: '-4px 2px 10px', lineHeight: 1.4 }}>
+              Un documento alla volta: bastano le foto.
+            </div>
+          )}
 
           <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
             onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => eliminaFile(docAttivo, idx)}
@@ -802,11 +768,15 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
                     )}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
-                      {/* La delega "porta con sé" le fotocopie dei documenti del
-                          delegato (non si fotografano più, decisione 16/07):
-                          la spiegazione arriva dal catalogo, fotocopie in grassetto */}
-                      {d.template_pdf?.startsWith('DELEGA') && d.descrizione && (
-                        <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3, lineHeight: 1.5 }}>{descrizioneDelega(d.descrizione)}</div>
+                      {/* Deleghe e dichiarazioni eredità "portano con sé" le fotocopie
+                          (delegato 16/07, eredi 22/07): la spiegazione arriva dal
+                          catalogo, frasi chiave in evidenza */}
+                      {mostraDescrizioneRitiro(d) && (
+                        <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3, lineHeight: 1.5 }}>{descrizioneModulo(d.descrizione!)}</div>
+                      )}
+                      {/* L'atto di morte è l'eccezione tra gli originali: basta una copia */}
+                      {d.codice === 'ATTO_MORTE' && (
+                        <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3, lineHeight: 1.5 }}>Basta una copia o fotocopia.</div>
                       )}
                       {d.template_pdf && (
                         <div style={{ marginTop: 3 }}>
@@ -964,19 +934,40 @@ function nomeRitiro(d: DocChecklist): string {
   return d.nome
 }
 
-// Descrizione della delega nel box verde: la parte sulle FOTOCOPIE dei
-// documenti del delegato va in grassetto (richiesta Davide 16/07)
-function descrizioneDelega(desc: string): React.ReactNode {
-  const FRASE = "fotocopie fronte e retro di carta d'identità e codice fiscale del delegato"
-  const i = desc.toLowerCase().indexOf(FRASE)
-  if (i === -1) return desc
-  return (
-    <>
-      {desc.slice(0, i)}
-      <b style={{ color: '#111827', fontWeight: 700 }}>{desc.slice(i, i + FRASE.length)}</b>
-      {desc.slice(i + FRASE.length)}
-    </>
-  )
+// Descrizioni dei moduli nel box verde (delega e dichiarazioni eredità):
+// le frasi chiave vanno in evidenza (fotocopie in grassetto — richiesta
+// Davide 16/07 — e l'avviso rosso per chi ha rinunciato — 22/07)
+const FRASI_MODULO: { frase: string; colore?: string }[] = [
+  { frase: "fotocopie fronte e retro di carta d'identità e codice fiscale del delegato" },
+  { frase: "fotocopie fronte e retro della carta d'identità (o patente) e del codice fiscale di ogni erede che ha accettato" },
+  { frase: "fotocopie fronte e retro della carta d'identità (o patente) e del codice fiscale di ogni erede" },
+  { frase: 'Chi ha rinunciato NON firma nulla e NON allega i suoi documenti.', colore: '#9B1C1C' },
+  { frase: 'solo tu' },
+]
+
+function descrizioneModulo(desc: string): React.ReactNode {
+  const parti: React.ReactNode[] = []
+  let resto = desc
+  let key = 0
+  while (resto.length) {
+    let primo: { i: number; f: { frase: string; colore?: string } } | null = null
+    for (const f of FRASI_MODULO) {
+      const i = resto.toLowerCase().indexOf(f.frase.toLowerCase())
+      if (i !== -1 && (!primo || i < primo.i || (i === primo.i && f.frase.length > primo.f.frase.length))) primo = { i, f }
+    }
+    if (!primo) { parti.push(resto); break }
+    if (primo.i > 0) parti.push(resto.slice(0, primo.i))
+    parti.push(<b key={key++} style={{ color: primo.f.colore || '#111827', fontWeight: 700 }}>{resto.slice(primo.i, primo.i + primo.f.frase.length)}</b>)
+    resto = resto.slice(primo.i + primo.f.frase.length)
+  }
+  return <>{parti}</>
+}
+
+// Nel box verde la descrizione si mostra solo per i moduli che "portano
+// con sé" istruzioni di consegna: deleghe e dichiarazioni eredità
+function mostraDescrizioneRitiro(d: DocChecklist): boolean {
+  if (!d.descrizione) return false
+  return !!d.template_pdf && (d.template_pdf.startsWith('DELEGA') || d.template_pdf.startsWith('DICHIARAZIONE_SOSTITUTIVA_EREDITA'))
 }
 
 // ============================================================

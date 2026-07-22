@@ -934,7 +934,6 @@ export default function IniziaPage() {
       }
 
       const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
-      const isEredi = cas === 'eredi_accettato' || cas === 'eredi_rinuncia'
 
       setLoadingMessage('Salvo la richiesta di demolizione...')
       const { data: praticaCreata, error: dbError } = await supabase
@@ -965,7 +964,9 @@ export default function IniziaPage() {
           parti_mancanti: dati.veicolo.partiMancanti === 'si',
           note_veicolo: dati.veicolo.note || null,
           casistica: cas,
-          numero_eredi: isEredi ? dati.numeroEredi : null,
+          // Semplificazione eredi (22/07/2026): la domanda "quanti eredi" non esiste più,
+          // i documenti degli eredi arrivano come fotocopie al ritiro con la dichiarazione
+          numero_eredi: null,
           nomi_rinunciatari: cas === 'eredi_rinuncia' && dati.nomiRinunciatari.trim() ? dati.nomiRinunciatari.trim() : null,
           fermo_amministrativo: dati.fermo,
           delegato_nome: dati.consegna === 'delegato' ? dati.delegatoNome.trim() : null,
@@ -1610,28 +1611,6 @@ export default function IniziaPage() {
                 <span><strong>Quando usare questa opzione:</strong> seleziona questa casistica solo se il proprietario del veicolo è deceduto e tra i parenti aventi diritto (es. coniuge, figli, fratelli, nipoti, cugini o altri parenti legittimi) qualcuno ha rinunciato formalmente all&apos;eredità tramite Notaio o Tribunale, mentre almeno uno di questi stessi parenti ha accettato l&apos;eredità e si prende l&apos;incarico di demolire il mezzo.<br/><br/><strong>Attenzione:</strong> chi ha rinunciato all&apos;eredità <strong>NON deve firmare nulla</strong> e <strong>NON deve consegnare i propri documenti</strong>, altrimenti rischia di annullare la rinuncia. La pratica verrà firmata e gestita solo da chi ha accettato, che dichiarerà la rinuncia degli altri nell&apos;autocertificazione generata dall&apos;app.</span>
               </div>
             )}
-
-            <h2 className="text-base font-semibold text-gray-900 mt-5 mb-2">Quanti eredi hanno accettato?</h2>
-            <div className="flex items-center gap-3 bg-gray-50 border-[1.5px] border-gray-200 rounded-xl px-4 py-3">
-              <button
-                type="button"
-                onClick={() => update({ numeroEredi: Math.max(1, dati.numeroEredi - 1) })}
-                className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 text-xl font-bold flex items-center justify-center hover:bg-blue-200 active:scale-95 transition-all"
-                aria-label="Diminuisci"
-              >
-                −
-              </button>
-              <div className="flex-1 text-center text-2xl font-bold text-gray-900">{dati.numeroEredi}</div>
-              <button
-                type="button"
-                onClick={() => update({ numeroEredi: Math.min(10, dati.numeroEredi + 1) })}
-                className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 text-xl font-bold flex items-center justify-center hover:bg-blue-200 active:scale-95 transition-all"
-                aria-label="Aumenta"
-              >
-                +
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 mt-2 px-1">Per ogni erede ti chiederemo carta d&apos;identità e codice fiscale nella tua area personale. Massimo 10.</p>
 
             <button onClick={handleContinuaEredi} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
           </>

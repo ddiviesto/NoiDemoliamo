@@ -53,11 +53,12 @@ Se **Proprietario mezzo** delega un'altra persona alla consegna del mezzo al Dem
 * Denuncia di smarrimento Libretto di Circolazione (se smarrito)
 * Certificato di Proprietà Cartaceo (fronte e retro) (Se è Digitale non deve caricarlo e non serve)
 * Denuncia di smarrimento Certificato di Proprietà Cartaceo (se smarrito)
-* Identificare il **numero di eredi (il sistema deve dare più slot di caricamento in base alla selezione**:
-* Carta Identità **Erede o Eredi** (fronte e retro) o Patente di guida **Erede o Eredi** (fronte e retro) se Carta Identità **Erede o Eredi** non disponibile
-* Codice Fiscale **Erede o Eredi** (fronte e retro)
-* Denuncia di smarrimento Carta Identità **Erede o Eredi** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Erede o Eredi** (se smarrito)
+* ⭐ 22/07/2026 (decisione Davide): NIENTE più contatore eredi né documenti moltiplicati per erede — nell'area personale si fotografa SOLO **chi gestisce la pratica**:
+* Carta Identità di **chi gestisce la pratica** (fronte e retro) o Patente di guida (fronte e retro) se Carta Identità non disponibile
+* Codice Fiscale di **chi gestisce la pratica** (fronte e retro)
+* Denuncia di smarrimento Carta Identità di **chi gestisce la pratica** (se smarrita)
+* Denuncia di smarrimento Codice Fiscale di **chi gestisce la pratica** (se smarrito)
+* I documenti degli ALTRI eredi NON si fotografano: le fotocopie si consegnano al ritiro insieme alla **DICHIARAZIONE SOSTITUTIVA EREDITÀ** (vedi sezione ritiro)
 
 
 
@@ -69,8 +70,8 @@ Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolito
 
 **Documenti PDF da stampare e firmare prima del ritiro:**
 
-* **DELEGA CONSEGNA VEICOLO\_EREDI** (auto compilata dal sistema) se **Erede o Eredi** **(delega/delegano)** un'altra persona alla consegna del mezzo al Demolitore
-* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ** (auto compilata dal sistema)
+* **DELEGA CONSEGNA VEICOLO\_EREDI** (in bianco, si compila a penna) se **Erede o Eredi** **(delega/delegano)** un'altra persona alla consegna del mezzo al Demolitore
+* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ** (in bianco, si compila a penna): la compila e la firma SOLO chi gestisce la pratica (il dichiarante); nella tabella scrive TUTTI gli eredi con nome, data e luogo di nascita, grado di parentela e codice fiscale
 
 
 
@@ -80,13 +81,14 @@ Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolito
 * Denuncia di smarrimento originale Libretto di Circolazione (se smarrito)
 * Certificato di Proprietà Cartaceo originale (se è Digitale no)
 * Denuncia di smarrimento originale Certificato di Proprietà Cartaceo (se smarrito)
-* Denuncia di smarrimento originale Carta Identità **Erede o Eredi** (se smarrita)
-* Denuncia di smarrimento originale Codice Fiscale **Erede o Eredi** (se smarrito)
+* Denuncia di smarrimento originale Carta Identità di **chi gestisce la pratica** (se smarrita)
+* Denuncia di smarrimento originale Codice Fiscale di **chi gestisce la pratica** (se smarrito)
 * **DELEGA CONSEGNA VEICOLO\_EREDI** in originale compilata e firmata dal **Erede o Eredi** e **Delegato** (Se si delega qualcun altro)
 * Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
-* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ** in originale compilata e firmata
+* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ** in originale, compilata e firmata SOLO da chi gestisce la pratica (il dichiarante)
+* ⭐ 22/07/2026: Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale di **OGNI EREDE**, consegnate insieme alla dichiarazione (non si fotografano più nell'area personale)
 * **COPIA/FOTOCOPIA ATTO DI MORTE PROPRIETARIO DECEDUTO**
 
 
@@ -111,11 +113,11 @@ Condizione di sblocco (Trigger): Questa casistica si attiva se l'utente risponde
 
 
 
-Contatore Slot Dinamici: Il sistema deve generare gli slot di upload dei documenti d'identità esclusivamente per il numero di eredi dichiarati come "Accettanti". Non richiedere dati anagrafici o documenti d'identità per i rinunciatari.
+~~Contatore Slot Dinamici~~: ⭐ SUPERATO il 22/07/2026 — non esiste più il contatore eredi né gli slot moltiplicati: nell'area personale si fotografa solo chi gestisce la pratica; i documenti degli altri eredi accettanti sono fotocopie da consegnare al ritiro con la dichiarazione.
 
 
 
-Mappatura PDF: I nomi dei parenti rinunciatari (inseriti dall'utente in un semplice campo di testo) devono essere iniettati automaticamente nel PDF della **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ\_RINUNCIA** nella sezione "Dichiara inoltre che i signori X, Y, Z hanno rinunciato al diritto di successione".
+~~Mappatura PDF~~: ⭐ SUPERATO — i moduli escono IN BIANCO (decisione 15/07/2026) e si compilano a penna. Nel modulo ACI: **prima tabella = gli eredi che hanno ACCETTATO** (chi rinuncia per legge è come se non fosse mai stato erede), **seconda tabella = chi ha RINUNCIATO**, con gli estremi dell'atto di rinuncia (ricevuto da Notaio/Tribunale, n. rep/prot, registro delle successioni del Tribunale).
 
 
 
@@ -128,11 +130,12 @@ Mappatura PDF: I nomi dei parenti rinunciatari (inseriti dall'utente in un sempl
 * Denuncia di smarrimento Libretto di Circolazione (se smarrito)
 * Certificato di Proprietà Cartaceo (fronte e retro) (Se è Digitale non deve caricarlo e non serve)
 * Denuncia di smarrimento Certificato di Proprietà Cartaceo (se smarrito)
-* **Identificare il numero di eredi CHE HANNO ACCETTATO L'EREDITÀ (il sistema dà più slot di caricamento in base alla selezione):**
-* Carta Identità **Erede o Eredi** (fronte e retro) o Patente di guida **Erede o Eredi** (fronte e retro) se Carta Identità **Erede o Eredi** non disponibile
-* Codice Fiscale **Erede o Eredi** (fronte e retro)
-* Denuncia di smarrimento Carta Identità **Erede o Eredi** (se smarrita)
-* Denuncia di smarrimento Codice Fiscale **Erede o Eredi** (se smarrito)
+* ⭐ 22/07/2026 (decisione Davide): NIENTE più contatore eredi né documenti moltiplicati per erede — nell'area personale si fotografa SOLO **chi gestisce la pratica** (un erede che HA ACCETTATO):
+* Carta Identità di **chi gestisce la pratica** (fronte e retro) o Patente di guida (fronte e retro) se Carta Identità non disponibile
+* Codice Fiscale di **chi gestisce la pratica** (fronte e retro)
+* Denuncia di smarrimento Carta Identità di **chi gestisce la pratica** (se smarrita)
+* Denuncia di smarrimento Codice Fiscale di **chi gestisce la pratica** (se smarrito)
+* I documenti degli ALTRI eredi che hanno accettato NON si fotografano: le fotocopie si consegnano al ritiro insieme alla **DICHIARAZIONE SOSTITUTIVA EREDITÀ RINUNCIA** (vedi sezione ritiro). Chi ha rinunciato NON fornisce alcun documento.
 
 
 
@@ -144,8 +147,8 @@ Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolito
 
 **Documenti PDF da stampare e firmare prima del ritiro:**
 
-* **DELEGA CONSEGNA VEICOLO\_EREDI\_RINUNCIA** (auto compilata dal sistema) se **Erede o Eredi** **(delega/delegano)** un'altra persona alla consegna del mezzo al Demolitore
-* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ\_RINUNCIA** (auto compilata dal sistema)
+* **DELEGA CONSEGNA VEICOLO\_EREDI\_RINUNCIA** (in bianco, si compila a penna) se **Erede o Eredi** **(delega/delegano)** un'altra persona alla consegna del mezzo al Demolitore
+* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ\_RINUNCIA** (in bianco, si compila a penna): la compila e la firma SOLO chi gestisce la pratica; prima tabella = eredi che hanno accettato, seconda tabella = chi ha rinunciato con gli estremi dell'atto di rinuncia (Notaio o Tribunale)
 
 
 
@@ -155,13 +158,14 @@ Se **Erede o Eredi** delega un'altra persona alla consegna del mezzo al Demolito
 * Denuncia di smarrimento originale Libretto di Circolazione (se smarrito)
 * Certificato di Proprietà Cartaceo originale (se è Digitale no)
 * Denuncia di smarrimento originale Certificato di Proprietà Cartaceo (se smarrito)
-* Denuncia di smarrimento originale Carta Identità **Erede o Eredi** (se smarrita)
-* Denuncia di smarrimento originale Codice Fiscale **Erede o Eredi** (se smarrito)
+* Denuncia di smarrimento originale Carta Identità di **chi gestisce la pratica** (se smarrita)
+* Denuncia di smarrimento originale Codice Fiscale di **chi gestisce la pratica** (se smarrito)
 * **DELEGA CONSEGNA VEICOLO\_EREDI\_RINUNCIA** in originale compilata e firmata dal **Erede o Eredi** e **Delegato** (Se si delega qualcun altro)
 * Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale del **Delegato**, consegnate insieme alla delega (⭐ 16/07/2026: non si fotografano più nell'area personale)
 * Denuncia di smarrimento originale Carta Identità **Delegato** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Delegato** (se smarrito)
-* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ\_RINUNCIA** in originale compilata e firmata
+* **DICHIARAZIONE\_SOSTITUTIVA\_EREDITÀ\_RINUNCIA** in originale, compilata e firmata SOLO da chi gestisce la pratica (il dichiarante). Chi ha rinunciato NON firma nulla.
+* ⭐ 22/07/2026: Fotocopie fronte e retro di Carta Identità (o Patente) e Codice Fiscale di **OGNI EREDE CHE HA ACCETTATO**, consegnate insieme alla dichiarazione (non si fotografano più nell'area personale). Chi ha rinunciato NON allega i suoi documenti.
 * **COPIA/FOTOCOPIA ATTO DI MORTE PROPRIETARIO DECEDUTO**
 
 
