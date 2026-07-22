@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { useRouter } from 'next/navigation'
 import {
   chiamataDemolitore, PraticaDemolitore, GruppoPratica, GRUPPO_LABEL,
@@ -53,6 +54,20 @@ export default function DashboardDemolitore() {
     }
     carica()
   }, [router])
+
+  // Aggiornamento automatico (22/07): il demolitore non ha accesso diretto
+  // al DB (tutto passa dagli endpoint), quindi niente tempo reale — la lista
+  // si rinfresca al ritorno sulla pagina e ogni 20 secondi
+  useAggiornaLive({
+    canale: 'demolitore-lista',
+    onCambio: async () => {
+      try {
+        const json = await chiamataDemolitore<{ pratiche: PraticaDemolitore[] }>('/api/demolitore-pratiche')
+        setPratiche(json.pratiche || [])
+      } catch { /* silenzioso: la lista resta quella attuale */ }
+    },
+    pollingMs: 20000,
+  })
 
   async function esci() {
     await supabase.auth.signOut()

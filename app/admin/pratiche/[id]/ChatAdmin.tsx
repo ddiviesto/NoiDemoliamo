@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 
 // ============================================================
 // CHAT ADMIN (17/07/2026) — dentro il dettaglio pratica.
@@ -41,11 +42,24 @@ export default function ChatAdmin({ praticaId, demolitoreNome }: { praticaId: st
   const [gestisci, setGestisci] = useState(false)
   const listaRef = useRef<HTMLDivElement>(null)
 
+  // Fotografia dell'ultimo elenco: si aggiorna SOLO se è cambiato qualcosa
+  // (altrimenti lo scroll del riquadro salterebbe a ogni controllo)
+  const messaggiJson = useRef('')
+
   useEffect(() => {
     caricaMessaggi()
     caricaPreimpostati()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [praticaId])
+
+  // Aggiornamento automatico (22/07): i messaggi del cliente e del
+  // demolitore appaiono da soli — il vecchio bottone "Aggiorna" è stato rimosso
+  useAggiornaLive({
+    canale: `admin-chat-${praticaId}`,
+    tabelle: [{ tabella: 'messaggi_chat', filtro: `pratica_id=eq.${praticaId}` }],
+    onCambio: () => caricaMessaggi(),
+    pollingMs: 30000,
+  })
 
   // Scorre in fondo SOLO dentro il riquadro messaggi: la pagina non si
   // muove mai (niente scrollIntoView: faceva "sobbalzare" tutto).
@@ -59,7 +73,11 @@ export default function ChatAdmin({ praticaId, demolitoreNome }: { praticaId: st
       .select('id, mittente_tipo, testo, creato_il')
       .eq('pratica_id', praticaId)
       .order('creato_il', { ascending: true })
-    setMessaggi((data as Messaggio[]) || [])
+    const json = JSON.stringify(data || [])
+    if (json !== messaggiJson.current) {
+      messaggiJson.current = json
+      setMessaggi((data as Messaggio[]) || [])
+    }
   }
 
   async function caricaPreimpostati() {
@@ -102,17 +120,13 @@ export default function ChatAdmin({ praticaId, demolitoreNome }: { praticaId: st
 
   return (
     <div className="p-5" style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>
-      <div className="flex items-center justify-between">
-        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0 }}>
-          <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-          Chat
-          <span style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>· parla con il cliente</span>
-        </p>
-        <button onClick={caricaMessaggi} className="flex items-center gap-1.5 text-[11.5px] font-bold text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 rounded-lg px-2.5 py-1.5 transition-colors" style={{ border: '1px solid #E5E7EB' }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.5 2v6h-6" /><path d="M21.34 15.57a10 10 0 1 1-.57-8.38" /></svg>
-          Aggiorna
-        </button>
-      </div>
+      {/* Il bottone "Aggiorna" è stato rimosso (22/07): coi messaggi in
+          tempo reale non serve più — la chat si aggiorna da sola */}
+      <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0 }}>
+        <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+        Chat
+        <span style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>· parla con il cliente</span>
+      </p>
 
       {/* LINGUETTE */}
       <div className="flex gap-1.5 rounded-xl p-1 mt-3" style={{ background: '#EFF3F9' }}>

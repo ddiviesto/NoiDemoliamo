@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import DocumentiApprovazione from './DocumentiApprovazione'
 import ChatAdmin from './ChatAdmin'
 import CronologiaNote from './CronologiaNote'
@@ -323,6 +324,15 @@ export default function DettaglioPraticaAdmin() {
       }
     }
   }
+
+  // Aggiornamento automatico (22/07): la testata e i dati si aggiornano da
+  // soli quando il cliente (o il sistema) cambia qualcosa sulla pratica
+  useAggiornaLive({
+    canale: `admin-pratica-${id}`,
+    tabelle: [{ tabella: 'pratiche', filtro: `id=eq.${id}` }],
+    onCambio: ricaricaPratica,
+    attivo: !!id,
+  })
 
   async function annullaPratica() {
     if (!pratica) return

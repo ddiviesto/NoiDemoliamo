@@ -2,6 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { Pratica } from './page'
 
 // ============================================================
@@ -39,8 +40,6 @@ interface FotoPratica {
   pratica_id: string
   url: string
   caricato_il: string
-  stato_approvazione?: 'approvato' | 'rifiutato' | 'in_attesa'
-  nota_admin?: string | null
 }
 
 interface Props {
@@ -283,6 +282,17 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pratica.id])
 
+  // Aggiornamento automatico (22/07): se l'admin approva/rifiuta mentre
+  // questa pagina è aperta, la checklist si aggiorna da sola in silenzio
+  useAggiornaLive({
+    canale: `cliente-doc-${pratica.id}`,
+    tabelle: [
+      { tabella: 'pratica_documenti_checklist', filtro: `pratica_id=eq.${pratica.id}` },
+      { tabella: 'foto_pratiche', filtro: `pratica_id=eq.${pratica.id}` },
+    ],
+    onCambio: () => carica(),
+  })
+
   // La rotellina a schermo pieno appare SOLO al primo caricamento: gli
   // aggiornamenti successivi (upload, invio, eliminazione) avvengono in
   // silenzio, senza smontare la schermata (niente "sobbalzi", e il pannello
@@ -344,36 +354,23 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
     signedRef.current = sm
     setSignedMap(sm)
 
+    // Le foto del veicolo non hanno un'approvazione (22/07): via la lettura
+    // del vecchio sistema documenti_approvazione — le foto sono solo "inviate"
     const { data: fotos } = await supabase
       .from('foto_pratiche')
       .select('*')
       .eq('pratica_id', pratica.id)
       .order('caricato_il')
 
-    const { data: approvazioni } = await supabase
-      .from('documenti_approvazione')
-      .select('*')
-      .eq('pratica_id', pratica.id)
-
-    const mappaApprov = new Map<string, { stato: 'approvato' | 'rifiutato' | 'in_attesa'; nota: string | null }>()
-    for (const a of approvazioni || []) {
-      mappaApprov.set(a.tipo_documento, { stato: a.stato, nota: a.nota_admin })
-    }
-
-    const fotoArricchite: FotoPratica[] = (fotos || []).map((f: Record<string, unknown>) => {
-      const appr = mappaApprov.get(`foto:${f.id as string}`)
-      return {
-        id: f.id as string,
-        pratica_id: f.pratica_id as string,
-        url: f.url as string,
-        caricato_il: f.caricato_il as string,
-        stato_approvazione: appr?.stato ?? 'in_attesa',
-        nota_admin: appr?.nota ?? null,
-      }
-    })
+    const fotoPulite: FotoPratica[] = (fotos || []).map((f: Record<string, unknown>) => ({
+      id: f.id as string,
+      pratica_id: f.pratica_id as string,
+      url: f.url as string,
+      caricato_il: f.caricato_il as string,
+    }))
 
     setDocs(lista)
-    setFoto(fotoArricchite)
+    setFoto(fotoPulite)
     setLoading(false)
   }
 
@@ -388,6 +385,18 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   async function caricaFile(doc: DocChecklist, files: File[], lato?: 'fronte' | 'retro') {
     setCaricandoId(doc.id)
     try {
+      // Cintura di sicurezza (22/07): niente aggiunte a un documento che
+      // l'admin ha appena approvato (pagina rimasta indietro)
+      const { data: fresco } = await supabase
+        .from('pratica_documenti_checklist')
+        .select('stato')
+        .eq('id', doc.id)
+        .single()
+      if (fresco?.stato === 'approvato') {
+        await carica()
+        alert('Questo documento è stato appena approvato da NoiDemoliamo: è tutto a posto, non serve modificarlo.')
+        return
+      }
       const esistenti = leggiFile(doc.file_url)
       // Se sto caricando in una casella (fronte/retro) prendo un solo file e sostituisco quel lato
       const daCaricare = lato ? files.slice(0, 1) : files
@@ -460,6 +469,18 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   // Eliminazione diretta: la conferma la gestisce la ✕ sulla foto (niente modali)
   async function eliminaFile(doc: DocChecklist, fileIdx: number) {
     try {
+      // Cintura di sicurezza (22/07): se nel frattempo l'admin ha APPROVATO
+      // il documento, questa pagina era rimasta indietro — non si tocca nulla
+      const { data: fresco } = await supabase
+        .from('pratica_documenti_checklist')
+        .select('stato')
+        .eq('id', doc.id)
+        .single()
+      if (fresco?.stato === 'approvato') {
+        await carica()
+        alert('Questo documento è stato appena approvato da NoiDemoliamo: è tutto a posto, non serve modificarlo.')
+        return
+      }
       const files = leggiFile(doc.file_url)
       const daRimuovere = files[fileIdx]
       const rimanenti = files.filter((_, i) => i !== fileIdx)
@@ -1363,6 +1384,16 @@ function PillolaStato({ approvato }: { approvato: boolean }) {
   )
 }
 
+// Le foto del veicolo NON sono un documento da verificare (servono per il
+// carro attrezzi): pillola neutra "Inviate", mai stati di approvazione (22/07)
+function PillolaInviate() {
+  return (
+    <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: '#1F7A43', background: '#DCF3E4', borderRadius: 20, padding: '2px 9px' }}>
+      Inviate
+    </span>
+  )
+}
+
 function PannelloInviati(props: {
   docs: DocChecklist[]
   foto: FotoPratica[]
@@ -1413,7 +1444,6 @@ function PannelloInviati(props: {
   }, [girata])
 
   const inVerifica = docs.some(d => d.stato === 'caricato')
-  const fotoApprovate = foto.length > 0 && foto.every(f => f.stato_approvazione === 'approvato')
 
   const facciaStile: React.CSSProperties = {
     position: 'absolute', top: 0, left: 0, right: 0,
@@ -1421,12 +1451,12 @@ function PannelloInviati(props: {
     background: '#fff', borderRadius: 12, overflow: 'hidden',
   }
 
-  function Riga({ nome, approvato, onClick }: { nome: string; approvato: boolean; onClick: () => void }) {
+  function Riga({ nome, approvato, neutra, onClick }: { nome: string; approvato?: boolean; neutra?: boolean; onClick: () => void }) {
     return (
       <button onClick={onClick} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'none', border: 'none', borderTop: '1px solid #F3F4F6', cursor: 'pointer' }}>
         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
           <div style={{ fontSize: 12.5, fontWeight: 600, color: '#111827', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nome}</div>
-          <div style={{ marginTop: 3 }}><PillolaStato approvato={approvato} /></div>
+          <div style={{ marginTop: 3 }}>{neutra ? <PillolaInviate /> : <PillolaStato approvato={!!approvato} />}</div>
         </div>
         <span style={{ width: 30, height: 30, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
@@ -1460,7 +1490,7 @@ function PannelloInviati(props: {
             <Riga key={d.id} nome={nomeRitiro(d)} approvato={d.stato === 'approvato'} onClick={() => setGirata(d.id)} />
           ))}
           {props.aperta && mostraFoto && foto.length > 0 && (
-            <Riga nome="Foto del veicolo" approvato={fotoApprovate} onClick={() => setGirata('foto')} />
+            <Riga nome="Foto del veicolo" neutra onClick={() => setGirata('foto')} />
           )}
         </div>
 
@@ -1524,7 +1554,7 @@ function PannelloInviati(props: {
             <div style={{ padding: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, flexWrap: 'wrap' }}>
                 <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>Foto del veicolo</span>
-                <PillolaStato approvato={fotoApprovate} />
+                <PillolaInviate />
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
                 {foto.map((f, idx) => (

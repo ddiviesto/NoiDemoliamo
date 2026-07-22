@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
 
@@ -159,6 +160,24 @@ export default function DashboardCliente() {
     }
     carica()
   }, [router])
+
+  // Aggiornamento automatico (22/07): gli stati delle pratiche in lista si
+  // aggiornano da soli (il tempo reale manda solo le righe visibili all'utente)
+  const ricaricaPratiche = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const { data, error } = await supabase
+      .from('pratiche')
+      .select('id, targa, tipo_mezzo, marca, modello, indirizzo_ritiro, stato, creato_il, in_attesa')
+      .eq('user_id', session.user.id)
+      .order('creato_il', { ascending: false })
+    if (!error && data) setPratiche(data)
+  }
+  useAggiornaLive({
+    canale: 'cliente-lista-pratiche',
+    tabelle: [{ tabella: 'pratiche' }],
+    onCambio: ricaricaPratiche,
+  })
 
   async function logout() {
     await supabase.auth.signOut()

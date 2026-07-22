@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import TabDocumenti from './TabDocumenti'
 import TabStato from './TabStato'
 import TabChat from './TabChat'
@@ -254,6 +255,19 @@ export default function DettaglioPraticaCliente() {
     const { data } = await supabase.from('pratiche').select('*').eq('id', id).single()
     if (data) setPratica(data)
   }, [id])
+
+  // Aggiornamento automatico (22/07): stato/banner e contatore chat si
+  // aggiornano da soli quando l'admin o il demolitore cambiano qualcosa
+  // (il ricaricamento della pratica fa ripartire anche il conteggio non letti)
+  useAggiornaLive({
+    canale: `cliente-pratica-${id}`,
+    tabelle: [
+      { tabella: 'pratiche', filtro: `id=eq.${id}` },
+      { tabella: 'messaggi_chat', filtro: `pratica_id=eq.${id}` },
+    ],
+    onCambio: ricaricaPratica,
+    attivo: !!id,
+  })
 
   useEffect(() => {
     async function carica() {

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 
 // ============================================================
 // CRONOLOGIA E NOTE DELLA PRATICA — SOLO ADMIN (17/07/2026)
@@ -38,19 +39,29 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
   const [nuova, setNuova] = useState('')
   const [salvando, setSalvando] = useState(false)
 
+  async function carica() {
+    const { data, error } = await supabase
+      .from('pratiche_note')
+      .select('*')
+      .eq('pratica_id', praticaId)
+      .order('creato_il', { ascending: false })
+    if (error) { setTabellaAssente(true); return }
+    setTabellaAssente(false)
+    setNote((data as Nota[]) || [])
+  }
+
   useEffect(() => {
-    async function carica() {
-      const { data, error } = await supabase
-        .from('pratiche_note')
-        .select('*')
-        .eq('pratica_id', praticaId)
-        .order('creato_il', { ascending: false })
-      if (error) { setTabellaAssente(true); return }
-      setTabellaAssente(false)
-      setNote((data as Nota[]) || [])
-    }
     carica()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [praticaId, refreshKey])
+
+  // Aggiornamento automatico (22/07): le note automatiche (attesa, annullo,
+  // riattivo) compaiono da sole nella timeline
+  useAggiornaLive({
+    canale: `admin-note-${praticaId}`,
+    tabelle: [{ tabella: 'pratiche_note', filtro: `pratica_id=eq.${praticaId}` }],
+    onCambio: () => carica(),
+  })
 
   async function aggiungi() {
     const testo = nuova.trim()

@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { useRouter, useParams } from 'next/navigation'
 import {
   chiamataDemolitore, caricaCertificato, nomeVeicolo, fmtDataOra, fmtData, countdownScadenza,
@@ -117,6 +118,17 @@ export default function SchedaPraticaDemolitore() {
     }
     init()
   }, [carica, router])
+
+  // Aggiornamento automatico (22/07): ritorno sulla pagina + ogni 20 secondi
+  // (niente tempo reale: il demolitore passa dagli endpoint, non dal DB).
+  // In pausa mentre il form del ritiro è aperto: non va sovrascritto ciò
+  // che si sta scrivendo.
+  useAggiornaLive({
+    canale: `demolitore-pratica-${praticaId}`,
+    onCambio: carica,
+    pollingMs: 20000,
+    attivo: !mostraFissaForm && !salvando,
+  })
 
   async function eseguiAzione(azione: string, extra?: object) {
     setSalvando(true)

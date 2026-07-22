@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import AdminSidebar from './_components/AdminSidebar'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
@@ -178,6 +179,21 @@ export default function AdminDashboard() {
     }
     carica()
   }, [router])
+
+  // Aggiornamento automatico (22/07): il CRM si aggiorna da solo quando i
+  // clienti caricano/inviano documenti o le pratiche cambiano stato
+  const ricaricaPratiche = async () => {
+    const { data: praticheData } = await supabase
+      .from('pratiche')
+      .select('id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo')
+      .order('creato_il', { ascending: false })
+    if (praticheData) setPratiche(praticheData as Pratica[])
+  }
+  useAggiornaLive({
+    canale: 'admin-crm',
+    tabelle: [{ tabella: 'pratiche' }],
+    onCambio: ricaricaPratiche,
+  })
 
   async function eliminaPratica() {
     if (!confermaElimina) return

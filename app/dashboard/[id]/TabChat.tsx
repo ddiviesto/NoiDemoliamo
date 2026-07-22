@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { Pratica } from './page'
 
 interface Messaggio {
@@ -205,39 +206,55 @@ function Chat({
   const [inviando, setInviando] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  // Fotografia dell'ultimo elenco: si aggiorna lo stato SOLO se è cambiato
+  // davvero qualcosa (altrimenti lo scroll salterebbe a ogni controllo)
+  const messaggiJson = useRef('')
 
-  useEffect(() => {
-    async function carica() {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      setUserId(session.user.id)
+  async function carica() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    setUserId(session.user.id)
 
-      const tipiVisibili = destinatarioTipo === 'admin'
-        ? ['admin', 'cliente']
-        : ['demolitore', 'cliente']
+    const tipiVisibili = destinatarioTipo === 'admin'
+      ? ['admin', 'cliente']
+      : ['demolitore', 'cliente']
 
-      const { data } = await supabase
-        .from('messaggi_chat')
-        .select('*')
-        .eq('pratica_id', pratica.id)
-        .in('mittente_tipo', tipiVisibili)
-        .order('creato_il', { ascending: true })
+    const { data } = await supabase
+      .from('messaggi_chat')
+      .select('*')
+      .eq('pratica_id', pratica.id)
+      .in('mittente_tipo', tipiVisibili)
+      .order('creato_il', { ascending: true })
 
+    const json = JSON.stringify(data || [])
+    if (json !== messaggiJson.current) {
+      messaggiJson.current = json
       setMessaggi(data || [])
+    }
 
-      if (data && data.length > 0) {
-        const daSegnarLetti = data
-          .filter(m => !m.letto && m.mittente_id !== session.user.id)
-          .map(m => m.id)
-        if (daSegnarLetti.length > 0) {
-          await supabase.from('messaggi_chat').update({ letto: true }).in('id', daSegnarLetti)
-          if (onMessaggiLetti) onMessaggiLetti()
-        }
+    if (data && data.length > 0) {
+      const daSegnarLetti = data
+        .filter(m => !m.letto && m.mittente_id !== session.user.id)
+        .map(m => m.id)
+      if (daSegnarLetti.length > 0) {
+        await supabase.from('messaggi_chat').update({ letto: true }).in('id', daSegnarLetti)
+        if (onMessaggiLetti) onMessaggiLetti()
       }
     }
+  }
+
+  useEffect(() => {
     carica()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pratica.id, destinatarioTipo])
+
+  // Aggiornamento automatico (22/07): i messaggi nuovi appaiono da soli
+  useAggiornaLive({
+    canale: `chat-${destinatarioTipo}-${pratica.id}`,
+    tabelle: [{ tabella: 'messaggi_chat', filtro: `pratica_id=eq.${pratica.id}` }],
+    onCambio: () => carica(),
+    pollingMs: 30000,
+  })
 
   useEffect(() => {
     if (containerRef.current) {

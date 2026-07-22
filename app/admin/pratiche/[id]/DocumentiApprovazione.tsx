@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useAggiornaLive } from '@/lib/aggiornaLive'
 
 // ============================================================
 // APPROVAZIONE DOCUMENTI — nuovo sistema (pratica_documenti_checklist)
@@ -132,11 +133,23 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
 
   const onStatoRef = useRef(onStatoCambiato)
   useEffect(() => { onStatoRef.current = onStatoCambiato }, [onStatoCambiato])
+  const signedRef = useRef<Record<string, string>>({})
 
   useEffect(() => {
-    carica()
+    carica(true)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [praticaId])
+
+  // Aggiornamento automatico (22/07): upload/invii del cliente appaiono da
+  // soli, senza ricaricare la pagina (ricarica silenziosa, niente spinner)
+  useAggiornaLive({
+    canale: `admin-doc-${praticaId}`,
+    tabelle: [
+      { tabella: 'pratica_documenti_checklist', filtro: `pratica_id=eq.${praticaId}` },
+      { tabella: 'foto_pratiche', filtro: `pratica_id=eq.${praticaId}` },
+    ],
+    onCambio: () => carica(),
+  })
 
   // Notifica il padre (per sbloccare lo Step 2) — solo sui documenti che richiedono upload
   useEffect(() => {
@@ -163,8 +176,10 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
     return () => window.removeEventListener('keydown', handler)
   }, [visoreIdx, totVoci])
 
-  async function carica() {
-    setLoading(true)
+  // La rotellina appare SOLO al primo caricamento: gli aggiornamenti
+  // automatici e post-azione avvengono in silenzio (niente sobbalzi)
+  async function carica(spinnerIniziale = false) {
+    if (spinnerIniziale) setLoading(true)
 
     const { data: righe } = await supabase
       .from('pratica_documenti_checklist')
@@ -197,16 +212,19 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
     })
     lista.sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
 
-    // Signed URL per il bucket privato
-    const sm: Record<string, string> = {}
+    // Signed URL per il bucket privato (riusati tra una ricarica e l'altra:
+    // niente lampeggi delle immagini durante gli aggiornamenti silenziosi)
+    const sm: Record<string, string> = { ...signedRef.current }
     for (const d of lista) {
       for (const f of leggiFile(d.file_url)) {
+        if (sm[f.url]) continue
         const path = estraiPathBucket(f.url, 'documenti-pratiche')
         if (!path) continue
         const { data } = await supabase.storage.from('documenti-pratiche').createSignedUrl(path, 3600)
         if (data?.signedUrl) sm[f.url] = data.signedUrl
       }
     }
+    signedRef.current = sm
     setSignedMap(sm)
 
     const { data: fotos } = await supabase
