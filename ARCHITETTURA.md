@@ -840,6 +840,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ✅ **Admin**: card Cliente con riga **"Email account"** (da `utenti`, sempre attuale anche dopo un cambio email). Il NOME sulle pratiche resta quello dichiarato (si corregge dall'admin).
 - ✅ **Card "Aggiungi un altro veicolo"** (variante B): via il riquadro tratteggiato col "+" — card bianca in fila con le pratiche, quadratino blu con l'auto, sottotitolo "Sempre gratis, come la prima", freccia.
 - ⭐ **Termini: clausola gratuità condizionata** (richiesta Davide): la gratuità presuppone veicolo **sostanzialmente completo**; parti importanti mancanti o casi particolari → lo comunichiamo SUBITO e proponiamo un **contributo**, sempre con accordo esplicito. (Le pagine legali restano da rivedere per i dati anagrafici, vedi 8.2.)
+- ⭐ **Pannello impostazioni RESTYLING "modifica sul posto"** (2 giri di mockup): scheda "I TUOI DATI" con valori in LETTURA (etichetta + valore + bottoncino Modifica/Cambia per riga); premendo Modifica il valore diventa un **campo slim della stessa taglia** (bordo azzurrino, niente sfondi grigi né riquadri che si gonfiano) e Modifica diventa **"Annulla · Salva" pilloline della stessa misura**. ⚠️ Nei campi il testo resta 16px (anti-zoom iOS). ⚠️ Lezione tecnica: MAI definire sotto-componenti con input dentro un componente (si rimontano a ogni render e i campi perdono il focus) — usare funzioni chiamate direttamente.
 
 ### ⭐⭐ SESSIONE 20-21 luglio 2026 — MENU "STATO PRATICA" + RIATTIVAZIONE + CRONOLOGIA COMPLETA
 
