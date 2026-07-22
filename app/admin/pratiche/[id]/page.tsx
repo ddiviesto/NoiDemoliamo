@@ -226,6 +226,8 @@ export default function DettaglioPraticaAdmin() {
 
   const [pratica, setPratica] = useState<Pratica | null>(null)
   const [demolitoreNome, setDemolitoreNome] = useState<string | null>(null)
+  // Email dell'account del cliente (tabella utenti): sempre aggiornata
+  const [emailAccount, setEmailAccount] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [eliminaOpen, setEliminaOpen] = useState(false)
   const [eliminando, setEliminando] = useState(false)
@@ -299,6 +301,10 @@ export default function DettaglioPraticaAdmin() {
       if (data.demolitore_id) {
         const { data: d } = await supabase.from('demolitori').select('ragione_sociale').eq('id', data.demolitore_id).single()
         setDemolitoreNome(d?.ragione_sociale ?? null)
+      }
+      if (data.user_id) {
+        const { data: u } = await supabase.from('utenti').select('email').eq('id', data.user_id).single()
+        setEmailAccount(u?.email ?? null)
       }
       setLoading(false)
     }
@@ -548,7 +554,7 @@ export default function DettaglioPraticaAdmin() {
 
             <FeePraticaCard pratica={pratica} onAggiornata={ricaricaPratica} />
 
-            <CardCliente pratica={pratica} onSalvata={ricaricaPratica} />
+            <CardCliente pratica={pratica} emailAccount={emailAccount} onSalvata={ricaricaPratica} />
 
             <CardVeicolo pratica={pratica} onSalvata={ricaricaPratica} />
 
@@ -1082,7 +1088,7 @@ function CardInfo({ titolo, azione, children }: { titolo: string; azione?: React
 // qualcosa è cambiato. Salvataggio via /api/pratica-dati (solo admin).
 // ============================================================
 
-function CardCliente({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () => Promise<void> | void }) {
+function CardCliente({ pratica, emailAccount, onSalvata }: { pratica: Pratica; emailAccount: string | null; onSalvata: () => Promise<void> | void }) {
   const [edit, setEdit] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [nome, setNome] = useState('')
@@ -1121,6 +1127,9 @@ function CardCliente({ pratica, onSalvata }: { pratica: Pratica; onSalvata: () =
           <Riga label="Nome" value={pratica.nome_richiedente} />
           <Riga label="Telefono" value={pratica.telefono} />
           <Riga label="Codice fiscale" value={pratica.codice_fiscale} mono />
+          {/* Email dell'ACCOUNT (tabella utenti): sempre quella attuale,
+              anche dopo un cambio email fatto dal cliente (22/07) */}
+          {emailAccount && <Riga label="Email account" value={emailAccount} />}
         </>
       ) : (
         <div className="flex flex-col gap-2.5">

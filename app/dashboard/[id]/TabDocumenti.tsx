@@ -627,38 +627,16 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const bannerFotoVisibile = !docAttivo && foto.length === 0 && !cardFotoAperta && !tuttoApprovato && puoEliminare
   // Card di caricamento foto aperta dal banner
   const cardFotoVisibile = !docAttivo && cardFotoAperta && !tuttoApprovato && puoEliminare
-  // "Hai fatto tutto": documenti inviati, almeno una foto, card chiusa
-  const tuttoInviato = docsInviati && foto.length > 0 && !cardFotoAperta
 
   return (
     <div className="flex flex-col gap-3">
 
-      {/* ====== STATO ====== */}
-      {tuttoApprovato ? (
-        <div style={{ background: '#eef7f1', border: '1.5px solid #c8e6d5', borderRadius: 18, padding: 20, textAlign: 'center' }}>
-          <div style={{ width: 54, height: 54, margin: '0 auto 12px', background: '#1D9E75', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-          </div>
-          <p style={{ fontWeight: 600, fontSize: 16, color: '#0F6E56', margin: 0 }}>Documenti tutti approvati</p>
-          <p style={{ fontSize: 12.5, color: '#3c7a60', marginTop: 4, lineHeight: 1.5 }}>È tutto in ordine. Tieni gli originali a portata di mano: ti serviranno il giorno del ritiro.</p>
-        </div>
-      ) : tuttoInviato ? (
-        <div style={{ background: '#EDF4FC', border: '1.5px solid #C7DCF5', borderRadius: 18, padding: 20, textAlign: 'center' }}>
-          <div style={{ width: 54, height: 54, margin: '0 auto 12px', background: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </div>
-          <p style={{ fontWeight: 600, fontSize: 16, color: '#1E4E8C', margin: 0 }}>Hai fatto tutto</p>
-          <p style={{ fontSize: 12.5, color: '#4A6FA5', marginTop: 4, lineHeight: 1.5 }}>È tutto in ordine. NoiDemoliamo sta controllando i tuoi documenti: ti avvisiamo al più presto, non devi fare altro.</p>
-        </div>
-      ) : docsInviati ? (
-        <div style={{ background: '#EDF4FC', border: '1.5px solid #C7DCF5', borderRadius: 18, padding: 16, textAlign: 'center' }}>
-          <div style={{ width: 44, height: 44, margin: '0 auto 8px', background: '#2563eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-          </div>
-          <p style={{ fontWeight: 600, fontSize: 15, color: '#1E4E8C', margin: 0 }}>Documenti inviati</p>
-          <p style={{ fontSize: 12, color: '#4A6FA5', marginTop: 4, lineHeight: 1.5 }}>NoiDemoliamo li sta controllando: ti avvisiamo al più presto.</p>
-        </div>
-      ) : (
+      {/* ====== STATO ======
+          22/07: le card "Documenti tutti approvati" / "Hai fatto tutto" /
+          "Documenti inviati" sono state RIMOSSE (doppioni del banner in alto,
+          che ora integra anche il promemoria sugli originali). Resta SOLO
+          l'anello di avanzamento mentre il wizard è in corso. */}
+      {!tuttoApprovato && !docsInviati && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '6px 6px 2px' }}>
           <AnelloProgresso pronti={pronti} totale={totale} />
           <div style={{ flex: 1, minWidth: 0 }}>

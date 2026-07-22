@@ -44,9 +44,15 @@ export default function Termini() {
           <Sezione titolo="2. Il servizio è gratuito per te">
             <p>
               Per il cliente privato la demolizione tramite NoiDemoliamo è <b>gratuita</b>: non ti chiediamo
-              alcun pagamento per la richiesta, il ritiro a domicilio o i certificati. Eventuali accordi
-              economici diversi (es. situazioni particolari fuori copertura) vengono sempre concordati
-              esplicitamente prima del ritiro.
+              alcun pagamento per la richiesta, il ritiro a domicilio o i certificati.
+            </p>
+            <p className="mt-2">
+              La gratuità presuppone che il veicolo sia <b>sostanzialmente completo</b>. Se mancano parti
+              importanti (ad esempio motore, cambio, catalizzatore o altri componenti di valore), oppure in
+              situazioni particolari (es. zone fuori copertura), il ritiro gratuito potrebbe non essere
+              possibile: in questi casi <b>te lo comunichiamo subito</b>, prima di procedere, ed eventualmente
+              ti proponiamo un <b>contributo</b> per il ritiro. Nulla ti viene mai richiesto senza il tuo
+              <b> accordo esplicito</b>: sei sempre libero di accettare o rinunciare senza alcun costo.
             </p>
           </Sezione>
 

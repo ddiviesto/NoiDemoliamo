@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
+import PannelloImpostazioni from './PannelloImpostazioni'
 
 interface Pratica {
   id: string
@@ -113,6 +114,17 @@ export default function DashboardCliente() {
   const [pratiche, setPratiche] = useState<Pratica[]>([])
   const [loading, setLoading] = useState(true)
   const [nomeUtente, setNomeUtente] = useState<string>('')
+  // Pannello impostazioni (ingranaggio nell'header)
+  const [impostazioniAperte, setImpostazioniAperte] = useState(false)
+  const [profilo, setProfilo] = useState<{ nome: string; cognome: string; telefono: string; email: string }>({ nome: '', cognome: '', telefono: '', email: '' })
+
+  // Tornando da Privacy/Termini il pannello si riapre da solo
+  useEffect(() => {
+    if (sessionStorage.getItem('nd_riapri_impostazioni')) {
+      sessionStorage.removeItem('nd_riapri_impostazioni')
+      setImpostazioniAperte(true)
+    }
+  }, [])
 
   useEffect(() => {
     async function carica() {
@@ -122,10 +134,17 @@ export default function DashboardCliente() {
       // Recupera dati utente
       const { data: utente } = await supabase
         .from('utenti')
-        .select('nome')
+        .select('nome, cognome, telefono, email')
         .eq('id', session.user.id)
         .single()
       if (utente?.nome) setNomeUtente(utente.nome.split(' ')[0])
+      const emailLogin = session.user.email || ''
+      setProfilo({ nome: utente?.nome || '', cognome: utente?.cognome || '', telefono: utente?.telefono || '', email: emailLogin || utente?.email || '' })
+      // Se il cliente ha cambiato email (confermata dal link), la tabella
+      // utenti si riallinea da sola al login successivo
+      if (emailLogin && utente && utente.email !== emailLogin) {
+        await supabase.from('utenti').update({ email: emailLogin }).eq('id', session.user.id)
+      }
 
       // Recupera pratiche dell'utente
       const { data, error } = await supabase
@@ -168,11 +187,16 @@ export default function DashboardCliente() {
               {nomeUtente ? `Ciao, ${nomeUtente}!` : 'La tua area personale'}
             </div>
           </div>
+          {/* Ingranaggio: apre il pannello impostazioni (Esci ora vive lì) */}
           <button
-            onClick={logout}
-            className="bg-white/85 hover:bg-white text-blue-700 rounded-lg px-3 py-1.5 text-xs font-semibold flex-shrink-0 shadow-sm transition-all"
+            onClick={() => setImpostazioniAperte(true)}
+            aria-label="Impostazioni"
+            className="bg-white/85 hover:bg-white text-blue-700 rounded-lg p-2 flex-shrink-0 shadow-sm transition-all"
           >
-            Esci
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
           </button>
         </div>
 
@@ -249,14 +273,23 @@ export default function DashboardCliente() {
                 )
               })}
 
-              {/* Nuova richiesta: si aggiunge in fila alle pratiche esistenti */}
+              {/* Nuova richiesta: card in fila con le pratiche (variante B su
+                  mockup 22/07 — via il riquadro tratteggiato col +) */}
               <button
                 onClick={() => router.push('/inizia')}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-semibold text-blue-600 hover:bg-blue-50 transition-colors active:scale-[0.99]"
-                style={{ border: '1.5px dashed #93C5FD', background: '#F8FAFF' }}
+                className="w-full text-left hover:!border-blue-300 active:scale-[0.995]"
+                style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14, transition: 'border-color 0.15s' }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                Richiedi un&apos;altra demolizione
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 3px 9px rgba(37,99,235,0.25)' }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/><path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6"/></svg>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>Aggiungi un altro veicolo</div>
+                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>Sempre gratis, come la prima</div>
+                  </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6" /></svg>
+                </div>
               </button>
             </div>
           )}
@@ -265,6 +298,20 @@ export default function DashboardCliente() {
       </div>
 
       <AiutoWhatsApp />
+
+      <PannelloImpostazioni
+        aperto={impostazioniAperte}
+        onChiudi={() => setImpostazioniAperte(false)}
+        nome={profilo.nome}
+        cognome={profilo.cognome}
+        telefono={profilo.telefono}
+        email={profilo.email}
+        onProfiloAggiornato={patch => {
+          setProfilo(p => ({ ...p, ...patch }))
+          if (patch.nome) setNomeUtente(patch.nome.split(' ')[0])
+        }}
+        onEsci={logout}
+      />
     </main>
   )
 }

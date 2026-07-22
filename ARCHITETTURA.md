@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **21 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **22 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -832,6 +832,15 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ## 8.1 ✅ FATTO
 
+### ⭐⭐ SESSIONE 22 luglio 2026 — AREA CLIENTE: UN SOLO BOX, COLORI SEMANTICI, PANNELLO IMPOSTAZIONI
+
+- ✅ **Un solo box di stato** (mockup approvato): il box centrale di TabDocumenti ("Documenti tutti approvati" / "Hai fatto tutto" / "Documenti inviati") è stato RIMOSSO — era un doppione del banner in alto. Il banner integra l'unica informazione che mancava: verde "Documenti approvati, è tutto in ordine · Stiamo assegnando un demolitore. **Tieni gli originali a portata di mano**"; blu "Hai fatto tutto: stiamo verificando · Ti avviseremo entro 3 ore: non devi fare altro." (niente trattini). L'anello di avanzamento resta solo col wizard in corso.
+- ⭐ **Colori dei banner cliente = 3 semantici** (variante B su mockup): **blu** per tutto ciò che è in corso (ritiro fissato, ritirata, attesa PRA — via indaco/viola/teal), **verde** solo per i traguardi (approvati, completata), **rosso** solo per "da rifare", grigio per attesa/annullata. Icona orologio anche nel banner attesa del cliente.
+- ⭐⭐ **PANNELLO IMPOSTAZIONI cliente** (variante A su mockup, `PannelloImpostazioni.tsx`): ingranaggio nell'header (via "Esci"), pannello che scivola da destra. Dentro: nome+email in vista, **Nome e cognome** modificabili, **Telefono per il ritiro** ("il numero che il demolitore userà" — ⭐ aggiorna anche le PRATICHE IN CORSO), **Cambia email** (link di conferma Supabase, doppioni rifiutati, `utenti.email` si riallinea da sola al login dopo), **Cambia password**, Assistenza WhatsApp, **Privacy/Termini nella STESSA scheda** (indietro → pannello riaperto da solo via sessionStorage), **Esci** in fondo. Profilo salvato via endpoint **`/api/profilo`** (service role, ogni utente solo la propria riga).
+- ✅ **Admin**: card Cliente con riga **"Email account"** (da `utenti`, sempre attuale anche dopo un cambio email). Il NOME sulle pratiche resta quello dichiarato (si corregge dall'admin).
+- ✅ **Card "Aggiungi un altro veicolo"** (variante B): via il riquadro tratteggiato col "+" — card bianca in fila con le pratiche, quadratino blu con l'auto, sottotitolo "Sempre gratis, come la prima", freccia.
+- ⭐ **Termini: clausola gratuità condizionata** (richiesta Davide): la gratuità presuppone veicolo **sostanzialmente completo**; parti importanti mancanti o casi particolari → lo comunichiamo SUBITO e proponiamo un **contributo**, sempre con accordo esplicito. (Le pagine legali restano da rivedere per i dati anagrafici, vedi 8.2.)
+
 ### ⭐⭐ SESSIONE 20-21 luglio 2026 — MENU "STATO PRATICA" + RIATTIVAZIONE + CRONOLOGIA COMPLETA
 
 - ⭐ **Menu unico "Stato pratica ▾"** in testata del dettaglio (mockup variante A): Attiva / Metti in attesa / Annulla pratica in un solo posto — via il bottone attesa sparso e il bottone "Annulla" in fondo (in fondo resta SOLO "Elimina definitivamente"). Le voci si evidenziano in base allo stato corrente.
@@ -998,7 +1007,7 @@ Tutto il percorso cliente ora parla il linguaggio "/inizia" (lavanda + card bian
 **IN CODA:** landing vetrina su noidemoliamo.it, chat nella scheda demolitore, completare /privacy e /termini. (~~Migliorie TabDocumenti wizard~~: FATTE il 9/07, vedi 5.6.)
 
 **In sospeso (nessun codice a metà: sono test o decisioni aperte):**
-- 🟡 **Pagine legali /privacy e /termini**: completare i [DA COMPLETARE] (ragione sociale, P.IVA, sede, email contatto — idealmente info@noidemoliamo.it) quando dominio ed email aziendale saranno attivi
+- 🟡 **Pagine legali /privacy e /termini DA RIVEDERE INSIEME** (ribadito da Davide il 22/07): capire esattamente quali dati anagrafici di NoiDemoliamo inserire (ragione sociale, P.IVA, sede, email contatto — idealmente info@noidemoliamo.it) e completare i [DA COMPLETARE] quando dominio ed email aziendale saranno attivi. Da 22/07 sono linkate anche dal pannello Impostazioni del cliente.
 - 🟡 **Test dell'amico** sul flusso /inizia migliorato — in attesa dell'esito
 - 🟡 **Assegnazione MANUALE ("Scegli io")**: il flusso c'è, da testare fino in fondo
 - 🟡 **Caso 7 (non intestatario)**: manca l'avviso di stop nel flusso (vedi STEP 1-bis)
@@ -1119,6 +1128,14 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 - **Niente avvisi di chiamata lato cliente**: il box "Da chiarire insieme" è stato rimosso; i casi da chiarire li vede solo l'admin ("Da contattare") e chiama lui.
 - **Aggiornamenti silenziosi**: mai smontare la schermata per un refresh dati (spinner solo al primo caricamento; riusare i signed URL). I "sobbalzi" sono bug, non dettagli.
 
+**Nuove decisioni 22 luglio 2026:**
+
+- ⭐ **Banner cliente: SOLO 3 colori semantici** (blu in corso, verde traguardi, rosso serve-azione; grigio per pausa/annullo). Mai un colore per stato: i "troppi colori" stonano.
+- ⭐ **Un solo box di stato per schermata**: se il banner in alto dice già la cosa, niente box che la ripete sotto.
+- ⭐ **Il telefono del profilo aggiorna le pratiche in corso** (è il recapito operativo per il ritiro); il NOME sulle pratiche resta quello dichiarato (identità sui documenti — lo corregge l'admin se serve).
+- **Cambio email in autonomia**: via link di conferma Supabase (doppioni impossibili), `utenti.email` si riallinea al login successivo; l'admin vede sempre l'email attuale ("Email account").
+- **Gratuità con la clausola onesta**: gratis per veicoli sostanzialmente completi; parti importanti mancanti → contributo proposto SUBITO e accettato esplicitamente, mai a sorpresa.
+
 **Nuove decisioni 17 luglio 2026:**
 
 - ⭐⭐ **L'attesa è una pausa, non uno stato**: "Metti in attesa" congela la pratica SOPRA il suo stato (motivo obbligatorio, solo admin); alla ripresa torna esattamente dov'era. Il cliente vede solo "In attesa" con tono sereno, mai i motivi. Icona: OROLOGIO (niente barrette pausa).
@@ -1178,4 +1195,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 21 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 22 luglio 2026.**

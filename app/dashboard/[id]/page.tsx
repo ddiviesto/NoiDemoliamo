@@ -67,7 +67,7 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
   // Pratica in pausa (decisa dall'admin): messaggio sereno, nessun dettaglio
   if (p.in_attesa && p.stato !== 'completata' && p.stato !== 'annullata') {
     return {
-      icona: ico(<><rect x="7" y="4.5" width="3.5" height="15" rx="1" /><rect x="13.5" y="4.5" width="3.5" height="15" rx="1" /></>),
+      icona: ico(<><circle cx="12" cy="12" r="9.5" /><polyline points="12 7 12 12 15.5 13.5" /></>),
       titolo: 'La tua pratica è momentaneamente in attesa',
       sottotitolo: 'Riprenderemo appena possibile: non devi fare nulla',
       bg: 'linear-gradient(135deg, #64748B 0%, #475569 100%)',
@@ -84,8 +84,8 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
     case 'in_attesa_approvazione_admin':
       return {
         icona: ico(<><circle cx="12" cy="12" r="9.5"/><polyline points="12 7 12 12 15.5 13.5"/></>),
-        titolo: 'Stiamo verificando i tuoi documenti',
-        sottotitolo: 'Ti avviseremo entro 3 ore — non serve fare nulla',
+        titolo: 'Hai fatto tutto: stiamo verificando',
+        sottotitolo: 'Ti avviseremo entro 3 ore: non devi fare altro.',
         bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'documenti_parzialmente_approvati':
@@ -108,8 +108,8 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
       }
       return {
         icona: ico(<polyline points="20 6 9 17 4 12"/>),
-        titolo: 'Documenti approvati',
-        sottotitolo: 'Stiamo assegnando un demolitore alla tua pratica',
+        titolo: 'Documenti approvati, è tutto in ordine',
+        sottotitolo: 'Stiamo assegnando un demolitore alla tua pratica. Tieni gli originali a portata di mano: ti serviranno il giorno del ritiro.',
         bg: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
       }
     case 'assegnata':
@@ -135,7 +135,7 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
         sottotitolo: p.data_ritiro_prevista
           ? `Il demolitore arriverà il ${new Date(p.data_ritiro_prevista).toLocaleDateString('it-IT', { day: '2-digit', month: 'long' })}`
           : 'Data ritiro confermata',
-        bg: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)',
+        bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'ritirata':
     case 'in_attesa_cert_rottamazione':
@@ -143,14 +143,14 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
         icona: ico(<><path d="M10 17h4V5H2v12h3"/><path d="M20 17h2v-3.34a4 4 0 0 0-1.17-2.83L19 9h-5v8h1"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></>),
         titolo: 'Veicolo ritirato',
         sottotitolo: 'Stiamo preparando il certificato di rottamazione',
-        bg: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+        bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'in_attesa_cert_radiazione_pra':
       return {
         icona: ico(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>),
         titolo: 'In attesa radiazione PRA',
         sottotitolo: 'Disponibile entro 15 giorni dal ritiro',
-        bg: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+        bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'completata':
       return {
