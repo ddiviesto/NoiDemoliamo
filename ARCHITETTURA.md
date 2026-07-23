@@ -847,6 +847,34 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ## 8.1 ✅ FATTO
 
+### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
+
+> ⚠️ **METODO SPECIALE PER QUEST'AREA** (dopo 3 tentativi di design bocciati): Davide DETTA
+> un pezzo alla volta, Claude mette SOLO quel pezzo e si ferma per il giudizio. NIENTE
+> assemblaggi autonomi, NIENTE mockup per quest'area: si costruisce direttamente sul vero.
+> **Layout di riferimento: il CRM admin** ("uguale alla mia"). Regola colori: SOLO pillola
+> di stato e countdown colorati, tutto il resto neutro.
+
+**COSTRUITO E APPROVATO finora:**
+- ⭐ **Barra laterale sinistra A SCOMPARSA** (`_components/SidebarDemolitore.tsx`): colonnina di icone che si apre all'avvicinarsi del mouse (sul telefono: menu ☰ a tenda). In testa il NOME DEL DEMOLITORE; voci: Pratiche · La tua azienda (apre il pannello anagrafica) · Fatturazione "PRESTO" · Esci in fondo. È L'UNICA COSA sopravvissuta ai redesign — non toccarla.
+- **Pannello anagrafica a tenda da destra** (`_components/PannelloAnagrafica.tsx`, endpoint `/api/demolitore-profilo`): dati azienda in sola lettura ("li gestisce NoiDemoliamo"), Esci in fondo. Qui in futuro: fatturazione ecc.
+- **Home demolitore** (`app/demolitore/page.tsx`): layout IDENTICO al CRM admin — barra bianca con "Pratiche · N totali · nome" e ricerca, sfondo lavanda, "FLUSSO PRATICHE" con le caselle stile FaseCard. Per ora UNA casella: "**Pratiche assegnate**" (solo nome + numero rosso — Davide ha fatto togliere "TOCCA A TE", "Il cliente vede" e la riga 8 ore). Sotto: pillola "**Tutte N**" (chip stile admin). **Card pratica dettata da Davide**: [PILLOLA di stato per prima a sinistra] [targa · modello e anno] [la via di dove si trova] [countdown 8 ore a destra in rosso]. Niente altri colori, niente icona veicolo.
+- **Scheda pratica** (`app/demolitore/pratiche/[id]/page.tsx`): **TELA BIANCA** — solo barra laterale, briciole "Pratiche / TARGA", targa e veicolo. Da ricostruire su dettatura.
+- **In dispensa, pronti da reinserire** quando Davide li chiede: `_components/ChatDemolitore.tsx` e `_components/NoteDemolitore.tsx` (funzionanti, stile da adeguare).
+
+**FONDAMENTA (fatte oggi, INDIPENDENTI dal design):**
+- **Endpoint nuovi**: `/api/demolitore-chat` (chat demolitore↔cliente, segna letti, il cliente la vede nella linguetta Demolitore, l'admin la legge già); `/api/demolitore-note` (note cronologiche "chiamato, non risponde" → `pratiche_note` con `autore='demolitore'`, il demolitore vede SOLO le sue); `/api/demolitore-profilo` (anagrafica sola lettura). `/api/demolitore-pratiche` lista arricchita: telefono, CF, anno, km, casistica, indirizzo, `non_letti` (messaggi cliente non letti).
+- ⭐ **SPOSTAMENTO RITIRO CON MOTIVO OBBLIGATORIO** (`/api/demolitore-azioni`): se una data c'era già, senza motivo il server RIFIUTA; il motivo finisce in `pratiche_note` ("Ritiro spostato dal X al Y — Motivo: …") → cronologia admin.
+- **Cronologia admin**: pillola celeste "**Demolitore**" (icona carro attrezzi) sulle note con `autore='demolitore'`. SQL: `docs/sql/2026-07-23-note-demolitore.sql` (colonna `autore`, ESEGUITA).
+- ⭐ **ALLERTA 8 ORE nel CRM admin**: riquadro rosso "Allerta 8 ore · N — il demolitore non ha fissato il ritiro nei tempi" accanto a "Da contattare" (appare solo se >0, clic = filtro). Predicato: stato assegnata/in_attesa_conferma_cliente + `scadenza_proposta_ritiro` scaduta.
+- **Fasi del flusso demolitore** (`_lib/api.ts` `gruppoDi`): arrivo · fissato · rottamazione · targhe · completate · annullate ("Non a buon fine").
+
+**DA COMPLETARE (ripartire da qui, un pezzo alla volta su dettatura di Davide):**
+1. **Home**: le altre caselle del flusso (Ritiro fissato, Certificato rottamazione, Cancellazione targhe, Completate, Non a buon fine col motivo — Davide le vuole come deterrente, non modificabili, riattiva solo NoiDemoliamo)
+2. **Scheda pratica**: ricostruire tutto — azione per fase (fissa ritiro / sposta con motivo / veicolo ritirato / carica certificati: "Certificato di rottamazione" 24h e "Certificato di cancellazione targhe (PRA)" 15gg, quello che completa), dati in sola lettura (il "Chiama" va sul DELEGATO se c'è), documenti solo visione, box "da farti consegnare", chat, note
+3. **Notifiche 8 ore scadute**: email+app al demolitore e avviso a NoiDemoliamo → con la fase notifiche (Resend)
+4. Regola ribadita: il ritiro effettivo fa partire la fatturazione; "ci sono altre cose" che Davide detterà
+
 ### ⭐⭐⭐ SESSIONE 22 luglio 2026 (seconda parte) — EREDI SEMPLIFICATI + AGGIORNAMENTO AUTOMATICO OVUNQUE
 
 > SQL della sessione (entrambe ESEGUITE da Davide): `docs/sql/2026-07-22-eredi-semplificati.sql`

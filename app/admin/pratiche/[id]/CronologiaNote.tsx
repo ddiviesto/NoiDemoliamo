@@ -15,6 +15,9 @@ interface Nota {
   id: string
   testo: string
   creato_il: string
+  // 'admin' (default) o 'demolitore' — le note del demolitore ("chiamato,
+  // non risponde") arrivano dalla sua area e hanno la pillola dedicata (23/07)
+  autore?: string
 }
 
 const PREFISSO_ATTESA = 'Messa in attesa'
@@ -100,7 +103,9 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
           <div className="overflow-y-auto" style={{ maxHeight: 300 }}>
           {note.map(n => {
             // Pillola per le voci automatiche (attesa/ripresa/annullo/riattivo)
-            const tipo = n.testo.startsWith(PREFISSO_ATTESA) ? 'attesa'
+            // e per le note del DEMOLITORE (23/07: quadratino celeste come in chat)
+            const tipo = n.autore === 'demolitore' ? 'demolitore'
+              : n.testo.startsWith(PREFISSO_ATTESA) ? 'attesa'
               : n.testo.startsWith(PREFISSO_RIPRESA) ? 'ripresa'
               : n.testo.startsWith(PREFISSO_RIATTIVATA) ? 'riattivata'
               : n.testo.startsWith(PREFISSO_ANNULLATA) ? 'annullata'
@@ -110,6 +115,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
               : tipo === 'ripresa' ? { bg: '#DCF3E4', col: '#1F7A43', label: 'Ripresa' }
               : tipo === 'riattivata' ? { bg: '#DCF3E4', col: '#1F7A43', label: 'Riattivata' }
               : tipo === 'annullata' ? { bg: '#FBE2E2', col: '#9B1C1C', label: 'Annullata' }
+              : tipo === 'demolitore' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Demolitore' }
               : { bg: '#E0EDFB', col: '#1E4E8C', label: 'Nota' }
             return (
               <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
@@ -130,6 +136,9 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
                       )}
                       {tipo === 'annullata' && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                      )}
+                      {tipo === 'demolitore' && (
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 16.5V13a1 1 0 0 0-1-1H3v4.5" /><path d="M3 12V7a1 1 0 0 1 1-1h9l3 4h3a2 2 0 0 1 2 2v4.5" /><circle cx="6.5" cy="17.5" r="2" /><circle cx="17.5" cy="17.5" r="2" /></svg>
                       )}
                       {tipo === null && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>

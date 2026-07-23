@@ -16,8 +16,8 @@ import { autenticaDemolitore } from '@/lib/demolitoreAuth'
 
 // Campi mostrati nelle liste (niente dati superflui in giro)
 const CAMPI_LISTA = [
-  'id', 'stato', 'targa', 'tipo_mezzo', 'tipo_mezzo_altro', 'marca', 'modello',
-  'nome_richiedente', 'comune_ritiro', 'provincia_ritiro', 'marciante',
+  'id', 'stato', 'targa', 'tipo_mezzo', 'tipo_mezzo_altro', 'marca', 'modello', 'anno', 'km', 'casistica',
+  'nome_richiedente', 'telefono', 'codice_fiscale', 'indirizzo_ritiro', 'comune_ritiro', 'provincia_ritiro', 'marciante',
   'data_assegnazione', 'scadenza_proposta_ritiro', 'data_ritiro_prevista',
   'data_ritiro_effettuato', 'data_certificato_rottamazione', 'data_certificato_pra',
   'cert_rottamazione_a_mano', 'motivo_annullamento', 'aggiornato_il', 'creato_il',
@@ -60,7 +60,20 @@ export async function POST(req: NextRequest) {
         console.error('Errore elenco pratiche demolitore:', error)
         return NextResponse.json({ error: 'Errore nel caricamento delle pratiche' }, { status: 500 })
       }
-      return NextResponse.json({ success: true, pratiche: data || [] })
+      // Pallino chat: messaggi del cliente non ancora letti, per pratica
+      const pratiche = (data || []) as unknown as { id: string; non_letti?: number }[]
+      if (pratiche.length > 0) {
+        const { data: nonLetti } = await supabase
+          .from('messaggi_chat')
+          .select('pratica_id')
+          .in('pratica_id', pratiche.map(p => p.id))
+          .eq('mittente_tipo', 'cliente')
+          .eq('letto', false)
+        const conta: Record<string, number> = {}
+        for (const m of nonLetti || []) conta[m.pratica_id] = (conta[m.pratica_id] || 0) + 1
+        for (const p of pratiche) p.non_letti = conta[p.id] || 0
+      }
+      return NextResponse.json({ success: true, pratiche })
     }
 
     // ===== DETTAGLIO =====

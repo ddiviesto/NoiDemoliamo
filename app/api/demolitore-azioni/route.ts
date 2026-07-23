@@ -52,12 +52,32 @@ export async function POST(req: NextRequest) {
       if (dataRitiro.getTime() < Date.now() - 60 * 60 * 1000) {
         return NextResponse.json({ error: 'La data del ritiro è nel passato' }, { status: 400 })
       }
+
+      // SPOSTAMENTO (23/07, decisione Davide): se una data c'era già, il
+      // motivo è OBBLIGATORIO e finisce nella cronologia che vede l'admin
+      const { pratica: att } = await praticaDelDemolitore(supabase, praticaId, demolitoreId, 'data_ritiro_prevista')
+      const dataPrecedente = att?.data_ritiro_prevista as string | null
+      const eSpostamento = !!dataPrecedente && new Date(dataPrecedente).getTime() !== dataRitiro.getTime()
+      const motivo: string = typeof body.motivo === 'string' ? body.motivo.trim() : ''
+      if (eSpostamento && !motivo) {
+        return NextResponse.json({ error: 'Scrivi il motivo dello spostamento: resterà nella cronologia.' }, { status: 400 })
+      }
+
       const { error } = await supabase.from('pratiche').update({
         data_ritiro_prevista: dataRitiro.toISOString(),
         stato: 'ritiro_confermato',
         aggiornato_il: adesso,
       }).eq('id', praticaId)
       if (error) throw error
+
+      if (eSpostamento) {
+        const fmt = (x: string | Date) => new Date(x).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+        await supabase.from('pratiche_note').insert({
+          pratica_id: praticaId,
+          testo: `Ritiro spostato dal ${fmt(dataPrecedente!)} al ${fmt(dataRitiro)} — Motivo: ${motivo.slice(0, 500)}`,
+          autore: 'demolitore',
+        })
+      }
       return NextResponse.json({ success: true, stato: 'ritiro_confermato' })
     }
 

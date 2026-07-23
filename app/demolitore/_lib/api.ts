@@ -46,7 +46,13 @@ export interface PraticaDemolitore {
   tipo_mezzo_altro: string | null
   marca: string | null
   modello: string | null
+  anno: number | null
+  km: number | null
+  casistica: string | null
   nome_richiedente: string | null
+  telefono: string | null
+  codice_fiscale: string | null
+  indirizzo_ritiro: string | null
   comune_ritiro: string | null
   provincia_ritiro: string | null
   marciante: boolean | null
@@ -60,26 +66,35 @@ export interface PraticaDemolitore {
   motivo_annullamento: string | null
   aggiornato_il: string | null
   creato_il: string | null
+  /** messaggi del cliente non ancora letti (dal server) */
+  non_letti?: number
 }
 
-export type GruppoPratica = 'da_evadere' | 'ritiri' | 'da_certificare' | 'completate' | 'annullate'
+// ============================================================
+// IL FLUSSO DEL DEMOLITORE — 5 fasi + "non a buon fine" fuori fila
+// (redesign 23/07/2026, mockup approvato da Davide)
+// ============================================================
 
-const STATI_CERTIFICARE = ['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra']
+export type GruppoPratica = 'arrivo' | 'fissato' | 'rottamazione' | 'targhe' | 'completate' | 'annullate'
+
+const STATI_ROTTAMAZIONE = ['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione']
 
 export function gruppoDi(p: Pick<PraticaDemolitore, 'stato'>): GruppoPratica {
   if (p.stato === 'annullata') return 'annullate'
   if (p.stato === 'completata') return 'completate'
-  if (p.stato === 'ritiro_confermato') return 'ritiri'
-  if (STATI_CERTIFICARE.includes(p.stato)) return 'da_certificare'
-  return 'da_evadere' // assegnata, in_attesa_conferma_cliente
+  if (p.stato === 'in_attesa_cert_radiazione_pra') return 'targhe'
+  if (STATI_ROTTAMAZIONE.includes(p.stato)) return 'rottamazione'
+  if (p.stato === 'ritiro_confermato') return 'fissato'
+  return 'arrivo' // assegnata, in_attesa_conferma_cliente
 }
 
 export const GRUPPO_LABEL: Record<GruppoPratica, string> = {
-  da_evadere: 'Da evadere',
-  ritiri: 'Ritiri programmati',
-  da_certificare: 'Da certificare',
+  arrivo: 'In arrivo · fissa il ritiro',
+  fissato: 'Ritiro fissato',
+  rottamazione: 'Ritirata · cert. rottamazione',
+  targhe: 'Cancellazione targhe (PRA)',
   completate: 'Completate',
-  annullate: 'Annullate',
+  annullate: 'Non a buon fine',
 }
 
 // ============================================================

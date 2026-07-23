@@ -35,6 +35,8 @@ interface Pratica {
   // Pausa sopra lo stato (17/07): la pratica esce dal flusso finché non riprende
   in_attesa: boolean | null
   attesa_motivo: string | null
+  // Scadenza delle 8 ore lavorative per fissare il ritiro (allerta 23/07)
+  scadenza_proposta_ritiro: string | null
 }
 
 // ============================================================
@@ -95,6 +97,16 @@ function daContattare(p: Pratica): boolean {
   return isAttiva(p.stato) && (p.libretto === 'no' || p.certificato_proprieta === 'nessuno')
 }
 
+// ALLERTA 8 ORE (23/07): pratiche assegnate il cui demolitore NON ha
+// fissato il ritiro entro le 8 ore lavorative — appaiono tutte nel
+// riquadro rosso dedicato (e in futuro faranno partire le notifiche)
+function allerta8h(p: Pratica): boolean {
+  return ['assegnata', 'in_attesa_conferma_cliente'].includes(p.stato)
+    && !p.in_attesa
+    && !!p.scadenza_proposta_ritiro
+    && new Date(p.scadenza_proposta_ritiro).getTime() < Date.now()
+}
+
 // Rango di priorità: 0 = massima urgenza (in cima)
 function rango(p: Pratica): number {
   if (p.in_attesa && isAttiva(p.stato)) return 4 // in pausa: sotto le attive, sopra le chiuse
@@ -121,7 +133,7 @@ function formatAttesa(min: number): string {
 // COMPONENTE
 // ============================================================
 
-type Filtro = 'tutte' | 'moduli' | 'contattare' | 'attesa' | 'approvare' | 'assegnare' | 'assegnate' | 'ritirate' | 'completate' | 'annullate'
+type Filtro = 'tutte' | 'moduli' | 'contattare' | 'attesa' | 'approvare' | 'assegnare' | 'assegnate' | 'ritirate' | 'completate' | 'annullate' | 'allerta8h'
 
 // ============================================================
 // PIPELINE: ogni pratica appartiene a UN solo riquadro del flusso.
@@ -166,7 +178,7 @@ export default function AdminDashboard() {
 
       const { data: praticheData } = await supabase
         .from('pratiche')
-        .select('id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo')
+        .select('id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro')
         .order('creato_il', { ascending: false })
 
       const { data: demoData } = await supabase.from('demolitori').select('id, ragione_sociale')
@@ -258,9 +270,11 @@ export default function AdminDashboard() {
 
   // Filtro + ricerca ("Tutte" = tutto il flusso, escluse le annullate)
   const q = ricerca.trim().toLowerCase()
+  const nAllerta8h = pratiche.filter(allerta8h).length
   const filtrate = pratiche.filter(p => {
     const b = bucketDi(p)
     if (filtro === 'tutte') { if (b === 'annullate') return false }
+    else if (filtro === 'allerta8h') { if (!allerta8h(p)) return false }
     else if (b !== filtro) return false
     if (q) {
       const blob = [p.targa, p.nome_richiedente, p.telefono, p.marca, p.modello, p.comune_ritiro].filter(Boolean).join(' ').toLowerCase()
@@ -334,9 +348,20 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* ALLERTE FUORI DAL FLUSSO: da contattare + in attesa (solo se >0) */}
-          {(conta('contattare') > 0 || conta('attesa') > 0) && (
+          {/* ALLERTE FUORI DAL FLUSSO: 8 ore + da contattare + in attesa (solo se >0) */}
+          {(nAllerta8h > 0 || conta('contattare') > 0 || conta('attesa') > 0) && (
             <div className="flex flex-wrap gap-2.5 mb-3">
+              {nAllerta8h > 0 && (
+                <button
+                  onClick={() => setFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h')}
+                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left transition-all hover:shadow-md"
+                  style={{ background: '#FEF6F6', border: `1.5px solid ${filtro === 'allerta8h' ? '#2563eb' : '#F3C8C8'}` }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                  <span className="text-[12.5px] font-bold" style={{ color: '#9B1C1C' }}>Allerta 8 ore · {nAllerta8h}</span>
+                  <span className="text-[11.5px]" style={{ color: '#B03A2E' }}>il demolitore non ha fissato il ritiro nei tempi</span>
+                </button>
+              )}
               {conta('contattare') > 0 && (
                 <button
                   onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
