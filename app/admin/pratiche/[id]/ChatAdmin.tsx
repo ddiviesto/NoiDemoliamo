@@ -32,7 +32,8 @@ function fmtOra(x: string) {
   return new Date(x).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
 }
 
-export default function ChatAdmin({ praticaId, demolitoreNome }: { praticaId: string; demolitoreNome: string | null }) {
+// ⭐ 23/07: card A SCOMPARSA — chiusa all'apertura, la testata apre e chiude
+export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle }: { praticaId: string; demolitoreNome: string | null; aperta: boolean; onToggle: () => void }) {
   const [tab, setTab] = useState<'cliente' | 'demolitore'>('cliente')
   const [messaggi, setMessaggi] = useState<Messaggio[]>([])
   const [testo, setTesto] = useState('')
@@ -122,12 +123,21 @@ export default function ChatAdmin({ praticaId, demolitoreNome }: { praticaId: st
     <div className="p-5" style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>
       {/* Il bottone "Aggiorna" è stato rimosso (22/07): coi messaggi in
           tempo reale non serve più — la chat si aggiorna da sola */}
-      <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0 }}>
-        <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-        Chat
-        <span style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>· parla con il cliente</span>
-      </p>
+      {/* TESTATA sempre visibile: clic = apre/chiude (23/07, mockup approvato) */}
+      <div className="flex items-center gap-2 cursor-pointer select-none" onClick={onToggle}>
+        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0, flex: 1, minWidth: 0 }}>
+          <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+          Chat
+          <span style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>
+            {messaggi.length > 0 ? `· ${messaggi.length} messaggi` : '· parla con il cliente'}
+          </span>
+        </p>
+        <span className="transition-transform flex-shrink-0" style={{ color: '#9AA7B5', transform: aperta ? 'rotate(180deg)' : 'none' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+        </span>
+      </div>
 
+      {aperta && (<>
       {/* LINGUETTE */}
       <div className="flex gap-1.5 rounded-xl p-1 mt-3" style={{ background: '#EFF3F9' }}>
         <button
@@ -236,6 +246,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome }: { praticaId: st
           onCambiati={caricaPreimpostati}
         />
       )}
+      </>)}
     </div>
   )
 }

@@ -1,12 +1,14 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 // ============================================================
 // SIDEBAR CONDIVISA AREA ADMIN
-// Nav coerente su tutte le pagine (Pratiche, Demolitori, Copertura).
-// `extra` = slot opzionale per azioni specifiche della pagina (es. pulizia account).
+// ⭐ 23/07 (variante A scelta da Davide su mockup): BLU NoiDemoliamo
+// (gradiente del logo), testo e icone bianche, voce attiva "in vetro".
+// `extra` = slot opzionale per azioni specifiche della pagina.
 // ============================================================
 
 type Sezione = 'pratiche' | 'demolitori'
@@ -19,13 +21,16 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
     router.push('/')
   }
 
+  // ⭐ 23/07 (dosaggio 3 su mockup): blu pieno fino a 3/4, poi la
+  // dissolvenza si apre verso un azzurro più chiaro SOLO in fondo
   return (
-    <aside className="flex flex-col flex-shrink-0 bg-white border-r border-gray-200" style={{ width: 210 }}>
-      <div className="px-4 py-4 flex items-center gap-2.5 border-b border-gray-100">
-        <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold" style={{ background: 'linear-gradient(135deg, #1d4ed8, #2563eb)' }}>N</div>
+    <aside className="flex flex-col flex-shrink-0 text-white" style={{ width: 210, background: 'linear-gradient(180deg, #2563eb 0%, #2563eb 65%, #7CA4F2 100%)' }}>
+      <div className="px-4 py-4 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
+        {/* Il logo VERO in alto a sinistra (23/07, come nell'area cliente) */}
+        <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={36} height={36} className="rounded-xl flex-shrink-0" />
         <div>
-          <div className="text-sm font-bold text-gray-900 leading-none">NoiDemoliamo</div>
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-blue-600 mt-1">Admin</div>
+          <div className="text-sm font-bold leading-none">NoiDemoliamo</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wide mt-1" style={{ color: '#BFDBFE' }}>Admin</div>
         </div>
       </div>
       <nav className="flex flex-col gap-1 p-2.5 flex-1">
@@ -33,8 +38,8 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
         <NavItem attivo={attivo === 'demolitori'} label="Demolitori" onClick={() => router.push('/admin/demolitori')} icon={<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>} />
       </nav>
       {extra}
-      <div className="p-2.5 border-t border-gray-100">
-        <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold text-gray-600 hover:text-red-600 hover:bg-red-50 transition-colors">
+      <div className="p-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.25)' }}>
+        <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
             <polyline points="16 17 21 12 16 7" />
@@ -49,7 +54,13 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
 
 function NavItem({ label, icon, attivo, onClick }: { label: string; icon: React.ReactNode; attivo: boolean; onClick: () => void }) {
   return (
-    <button onClick={onClick} className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${attivo ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}>
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+      style={attivo ? { background: 'rgba(255,255,255,0.22)', color: '#fff', fontWeight: 600 } : { color: '#F0F5FF' }}
+      onMouseEnter={e => { if (!attivo) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
+      onMouseLeave={e => { if (!attivo) e.currentTarget.style.background = 'transparent' }}
+    >
       <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
       {label}
     </button>

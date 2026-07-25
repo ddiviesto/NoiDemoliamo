@@ -393,7 +393,7 @@ export default function DettaglioDemolitore() {
   }
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
@@ -422,7 +422,7 @@ export default function DettaglioDemolitore() {
   ]
 
   return (
-    <main className="min-h-screen" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen" style={{ background: '#ECEEF2' }}>
 
       {/* TOP BAR minimale */}
       <div className="bg-white border-b border-gray-200 px-6 py-2.5">

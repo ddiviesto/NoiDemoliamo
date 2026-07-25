@@ -32,10 +32,13 @@ function fmtOra(x: string) {
   return new Date(x).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 }
 
-export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey }: {
+// ⭐ 23/07: card A SCOMPARSA — chiusa all'apertura, la testata apre e chiude
+export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey, aperta, onToggle }: {
   praticaId: string
   praticaCreataIl: string
   refreshKey: number
+  aperta: boolean
+  onToggle: () => void
 }) {
   const [note, setNote] = useState<Nota[]>([])
   const [tabellaAssente, setTabellaAssente] = useState(false)
@@ -86,13 +89,21 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
 
   return (
     <div className="p-5" style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>
-      <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0 }}>
-        <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-        Cronologia e note
-        <span style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>· le vedi solo tu</span>
-      </p>
+      {/* TESTATA sempre visibile: clic = apre/chiude (23/07, mockup approvato) */}
+      <div className="flex items-center gap-2 cursor-pointer select-none" onClick={onToggle}>
+        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0, flex: 1, minWidth: 0 }}>
+          <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+          Cronologia e note
+          <span className="truncate" style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>
+            {note.length > 0 ? `· ultima: ${fmtGiorno(note[0].creato_il)} ${fmtOra(note[0].creato_il)}` : '· le vedi solo tu'}
+          </span>
+        </p>
+        <span className="transition-transform flex-shrink-0" style={{ color: '#9AA7B5', transform: aperta ? 'rotate(180deg)' : 'none' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+        </span>
+      </div>
 
-      {tabellaAssente ? (
+      {aperta && (tabellaAssente ? (
         <p className="text-xs mt-3" style={{ color: '#854F0B', background: '#FDF7EA', border: '1px solid #F0DFB8', borderRadius: 10, padding: '8px 12px' }}>
           Per attivare le note esegui su Supabase l&apos;SQL <b>docs/sql/2026-07-17-attesa-note-preimpostati.sql</b>
         </p>
@@ -187,7 +198,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey 
             </button>
           </div>
         </div>
-      )}
+      ))}
     </div>
   )
 }

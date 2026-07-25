@@ -166,6 +166,8 @@ export default function AdminDashboard() {
   const [eliminando, setEliminando] = useState(false)
   const [erroreElimina, setErroreElimina] = useState<string | null>(null)
   const [pulisciOpen, setPulisciOpen] = useState(false)
+  // Tendina "Impostazioni" in fondo alla barra laterale (23/07)
+  const [impostazioniAperte, setImpostazioniAperte] = useState(false)
   const [candidatiPulizia, setCandidatiPulizia] = useState<{ id: string; nome: string | null; tipo: string | null }[] | null>(null)
   const [pulendo, setPulendo] = useState(false)
   const [risultatoPulizia, setRisultatoPulizia] = useState<number | null>(null)
@@ -266,7 +268,6 @@ export default function AdminDashboard() {
 
   // Conteggi per riquadro della pipeline
   const conta = (b: Filtro) => pratiche.filter(p => bucketDi(p) === b).length
-  const nDaRifare = pratiche.filter(p => p.stato === 'documenti_parzialmente_approvati').length
 
   // Filtro + ricerca ("Tutte" = tutto il flusso, escluse le annullate)
   const q = ricerca.trim().toLowerCase()
@@ -292,26 +293,40 @@ export default function AdminDashboard() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </main>
     )
   }
 
+  // ⭐ 23/07 (variante A su mockup): via il lilla — sfondo GRIGIO chiaro,
+  // barre (laterale + "Pratiche") nel blu NoiDemoliamo
   return (
-    <main className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
 
       {/* SIDEBAR (condivisa) */}
+      {/* IMPOSTAZIONI in fondo alla barra (23/07): dentro ci vivono le azioni
+          di servizio — per ora "Pulisci account senza pratiche", poi altre */}
       <AdminSidebar attivo="pratiche" extra={
-        <button onClick={apriPulizia} className="mx-2.5 px-3 py-2 text-[11px] font-medium text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg text-left transition-colors">
-          Pulisci account senza pratiche
-        </button>
+        <div className="mx-2.5 mb-1">
+          <button onClick={() => setImpostazioniAperte(a => !a)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+            Impostazioni
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto transition-transform" style={{ transform: impostazioniAperte ? 'rotate(180deg)' : 'none' }}><polyline points="6 9 12 15 18 9" /></svg>
+          </button>
+          {impostazioniAperte && (
+            <button onClick={apriPulizia} className="w-full text-left rounded-lg py-2 text-[12px] font-medium transition-colors hover:bg-white/15 hover:text-white" style={{ color: '#DBEAFE', paddingLeft: 38, paddingRight: 12 }}>
+              Pulisci account senza pratiche
+            </button>
+          )}
+        </div>
       } />
 
       {/* MAIN */}
       <div className="flex-1 min-w-0 flex flex-col">
 
-        {/* TOP BAR con ricerca */}
+        {/* TOP BAR con ricerca — bianca (23/07: Davide la vuole come nella
+            pagina Demolitori; il blu resta solo sulla barra laterale) */}
         <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-none">Pratiche</h1>
@@ -328,40 +343,35 @@ export default function AdminDashboard() {
 
         <div className="p-6 overflow-auto">
 
-          {/* PIPELINE DEL FLUSSO PRATICHE — fila da sinistra a destra con le
-              frecce, nomi allineati alla timeline del cliente (mockup 16/07).
-              "Da contattare" è FUORI dalla fila: è un'anomalia, non una tappa. */}
+          {/* PIPELINE DEL FLUSSO PRATICHE — pillole tonde in una riga
+              (variante B scelta da Davide su mockup 23/07). Sotto "Assegnata"
+              vive l'ALLERTA 8 ORE: pillola IDENTICA alla fase (simmetrica),
+              sempre visibile — bianca a zero, rossa quando c'è un ritardo. */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
           <div className="mb-3 overflow-x-auto">
-            <div className="flex items-stretch" style={{ minWidth: 960 }}>
-              <FaseCard numero={1} nome="In attesa documenti" valore={conta('moduli')} sub={nDaRifare > 0 ? `di cui ${nDaRifare} da rifare` : undefined} subColore="#B45309" chi="cliente" vede="In attesa dei tuoi documenti" colTop="#EF9F27" colNum="#854F0B" attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
+            <div className="flex items-start">
+              <PillolaFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
               <FrecciaFase />
-              <FaseCard numero={2} nome="Documenti da verificare" valore={conta('approvare')} sub="tutto inviato, tocca a te" chi="tu" vede="Stiamo verificando i tuoi documenti" colTop="#378ADD" colNum="#1E4E8C" attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
+              <PillolaFase nome="Documenti da verificare" valore={conta('approvare')} attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
               <FrecciaFase />
-              <FaseCard numero={3} nome="Da assegnare" valore={conta('assegnare')} sub="scegli il demolitore" chi="tu" vede="Documenti verificati" colTop="#D85A30" colNum="#92500E" attivo={filtro === 'assegnare'} onClick={() => setFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} />
+              <PillolaFase nome="Da assegnare" valore={conta('assegnare')} attivo={filtro === 'assegnare'} onClick={() => setFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} />
               <FrecciaFase />
-              <FaseCard numero={4} nome="Assegnata" valore={conta('assegnate')} sub="ritiro da fissare o fissato" chi="demolitore" vede="Demolitore assegnato" colTop="#7F77DD" colNum="#4338CA" attivo={filtro === 'assegnate'} onClick={() => setFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} />
+              <div className="flex flex-col items-stretch gap-1.5">
+                <PillolaFase nome="Assegnata" valore={conta('assegnate')} attivo={filtro === 'assegnate'} onClick={() => setFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} />
+                <PillolaFase nome="Allerta 8 ore" valore={nAllerta8h} rossa={nAllerta8h > 0} attivo={filtro === 'allerta8h'} onClick={() => setFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h')}
+                  title={nAllerta8h > 0 ? 'Il demolitore non ha fissato il ritiro nei tempi' : 'Demolitori nei tempi: nessun ritiro in ritardo'} />
+              </div>
               <FrecciaFase />
-              <FaseCard numero={5} nome="Ritirata" valore={conta('ritirate')} sub="certificati in arrivo · in fatturazione" chi="demolitore" vede="Veicolo ritirato" colTop="#1D9E75" colNum="#0F766E" attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
+              <PillolaFase nome="Ritirata" valore={conta('ritirate')} attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
               <FrecciaFase />
-              <FaseCard numero={6} nome="Completata" valore={conta('completate')} sub="radiazione PRA emessa" chi="fine" vede="Pratica completata" colTop="#639922" colNum="#1F7A43" attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
+              <PillolaFase nome="Completata" valore={conta('completate')} attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
             </div>
           </div>
 
-          {/* ALLERTE FUORI DAL FLUSSO: 8 ore + da contattare + in attesa (solo se >0) */}
-          {(nAllerta8h > 0 || conta('contattare') > 0 || conta('attesa') > 0) && (
-            <div className="flex flex-wrap gap-2.5 mb-3">
-              {nAllerta8h > 0 && (
-                <button
-                  onClick={() => setFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h')}
-                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left transition-all hover:shadow-md"
-                  style={{ background: '#FEF6F6', border: `1.5px solid ${filtro === 'allerta8h' ? '#2563eb' : '#F3C8C8'}` }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                  <span className="text-[12.5px] font-bold" style={{ color: '#9B1C1C' }}>Allerta 8 ore · {nAllerta8h}</span>
-                  <span className="text-[11.5px]" style={{ color: '#B03A2E' }}>il demolitore non ha fissato il ritiro nei tempi</span>
-                </button>
-              )}
+          {/* ALLERTE FUORI DAL FLUSSO (l'allerta 8 ore ora vive sotto la
+              casella "Assegnata", dentro la fila) */}
+          {(conta('contattare') > 0 || conta('attesa') > 0) && (
+          <div className="flex flex-wrap gap-2.5 mb-3">
               {conta('contattare') > 0 && (
                 <button
                   onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
@@ -384,7 +394,7 @@ export default function AdminDashboard() {
                   <span className="text-[11.5px]" style={{ color: '#B45309' }}>in pausa, fuori dal flusso finché non riprendono</span>
                 </button>
               )}
-            </div>
+          </div>
           )}
 
           {/* FILTRI RAPIDI */}
@@ -404,14 +414,13 @@ export default function AdminDashboard() {
                 const min = minutiAttesa(p)
                 const rosso = rango(p) <= 2 && min > SOGLIA_ROSSO_MIN
                 const chiusa = !isAttiva(p.stato)
-                const barColor = contatta ? '#E24B4A' : m.bar
                 const azioneRichiesta = rango(p) <= 2
                 return (
                   <div
                     key={p.id}
                     onClick={() => router.push(`/admin/pratiche/${p.id}`)}
                     className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
-                    style={{ border: '1.5px solid #E5E7EB', borderLeft: `4px solid ${barColor}`, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa ? 0.82 : 1 }}
+                    style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa ? 0.82 : 1 }}
                   >
                     {/* Quadratino icona veicolo (o spunta se chiusa) */}
                     <div style={{ width: 46, height: 46, borderRadius: 12, background: p.stato === 'completata' ? '#DCF3E4' : '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -591,55 +600,38 @@ function IconaVeicolo({ tipo }: { tipo: string | null }) {
   )
 }
 
-// Casella di una fase del flusso (fila orizzontale con le frecce).
-// "chi" dice chi deve agire in quella fase; "vede" è l'etichetta che il
-// cliente legge nella SUA timeline nella stessa fase (nomenclatura allineata).
-const CHI_FASE: Record<'cliente' | 'tu' | 'demolitore' | 'fine', { label: string; bg: string; color: string }> = {
-  cliente: { label: 'AGISCE IL CLIENTE', bg: '#E0EDFB', color: '#1E4E8C' },
-  tu: { label: 'TOCCA A TE', bg: '#2563eb', color: '#fff' },
-  demolitore: { label: 'AGISCE IL DEMOLITORE', bg: '#E4E4FB', color: '#4338CA' },
-  fine: { label: 'FINITA', bg: '#DCF3E4', color: '#1F7A43' },
-}
-
-function FaseCard({ numero, nome, valore, sub, subColore = '#8B95A5', chi, vede, colTop, colNum, attivo, onClick }: {
-  numero: number
+// Fase del flusso come PILLOLA TONDA (variante B scelta da Davide su
+// mockup 23/07): numero nel tondino, nome accanto, tutto in una riga
+// bassa. `rossa` = versione allerta (stessa forma, colorata di rosso).
+function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
   nome: string
   valore: number
-  sub?: string
-  subColore?: string
-  chi: 'cliente' | 'tu' | 'demolitore' | 'fine'
-  vede: string
-  colTop: string
-  colNum: string
   attivo: boolean
+  rossa?: boolean
+  title?: string
   onClick: () => void
 }) {
-  const c = CHI_FASE[chi]
   return (
     <button
       onClick={onClick}
-      className="bg-white text-left transition-all hover:shadow-md flex-1"
+      title={title}
+      className="flex items-center gap-2 transition-all hover:shadow-md flex-shrink-0"
       style={{
-        minWidth: 0, borderRadius: '0 0 12px 12px', padding: '11px 10px',
-        border: `1.5px solid ${attivo ? '#2563eb' : '#E5E7EB'}`, borderTop: `3px solid ${colTop}`,
-        boxShadow: '0 1px 3px rgba(16,24,40,0.07)',
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+        background: rossa ? '#FEF6F6' : '#fff',
+        border: `1.5px solid ${attivo ? '#2563eb' : rossa ? '#F3C8C8' : '#E5E7EB'}`,
+        borderRadius: 999, padding: '8px 14px 8px 9px', whiteSpace: 'nowrap',
+        boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
       }}
     >
-      <div style={{ fontSize: 22, fontWeight: 800, color: colNum, lineHeight: 1.1 }}>{valore}</div>
-      <div className="text-[12px] font-bold leading-tight mt-1.5" style={{ color: '#0F1B33' }}>{numero} · {nome}</div>
-      {sub && <div className="text-[10px] mt-0.5 leading-tight" style={{ color: subColore, fontWeight: subColore !== '#8B95A5' ? 600 : 400 }}>{sub}</div>}
-      <span className="text-[9.5px] font-extrabold rounded-full mt-2" style={{ background: c.bg, color: c.color, letterSpacing: 0.5, padding: '2px 8px' }}>{c.label}</span>
-      <div className="text-[10px] mt-2 pt-2 leading-snug" style={{ color: '#6B7280', borderTop: '1px dashed #E5E7EB', width: '100%' }}>
-        Il cliente vede: <span style={{ color: '#374151', fontWeight: 600 }}>{vede}</span>
-      </div>
+      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : '#EFF4FF', color: rossa ? '#C0392B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
+      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : '#374151' }}>{nome}</span>
     </button>
   )
 }
 
 function FrecciaFase() {
   return (
-    <div style={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8B95A5', fontSize: 17, fontWeight: 700, flexShrink: 0 }}>›</div>
+    <div style={{ display: 'flex', alignItems: 'center', height: 42, color: '#8B95A5', fontSize: 15, fontWeight: 700, flexShrink: 0, padding: '0 5px' }}>›</div>
   )
 }
 

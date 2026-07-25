@@ -193,13 +193,13 @@ export default function GestioneDemolitori() {
   }
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
 
   return (
-    <main className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
       <AdminSidebar attivo="demolitori" />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -214,8 +214,8 @@ export default function GestioneDemolitori() {
               <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca demolitore…" className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400" />
             </div>
           </div>
-          <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-colors">
-            <span className="text-base leading-none">+</span> Aggiungi
+          <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+            Aggiungi
           </button>
         </div>
 

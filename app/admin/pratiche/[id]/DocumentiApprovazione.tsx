@@ -53,6 +53,10 @@ interface DatiPratica {
 interface Props {
   praticaId: string
   statoPratica: string
+  // ⭐ 23/07: card A SCOMPARSA — chiusa all'apertura della pratica,
+  // la testata (sempre visibile, col riassunto) apre e chiude
+  aperta: boolean
+  onToggle: () => void
   onStatoCambiato?: (tuttiApprovati: boolean, totale: number, approvati: number) => void
   onRicaricaPratica?: () => void
 }
@@ -119,7 +123,7 @@ function BottoniCdc({ azione, onScegli }: { azione: boolean; onScegli: (cdc: 'ca
 // COMPONENTE
 // ============================================================
 
-export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRicaricaPratica }: Props) {
+export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onStatoCambiato, onRicaricaPratica }: Props) {
   const [docs, setDocs] = useState<DocRiga[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [dati, setDati] = useState<DatiPratica | null>(null)
@@ -386,17 +390,24 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
   return (
     <>
       <div className="p-5" style={STILE_CARD}>
-        <div className="flex items-center justify-between">
+        {/* TESTATA sempre visibile: clic = apre/chiude (23/07, mockup approvato) */}
+        <div className="flex items-center justify-between gap-3 cursor-pointer select-none" onClick={onToggle}>
           <div>
-            <TitoloCard>Documenti da approvare</TitoloCard>
+            <TitoloCard>Documenti</TitoloCard>
             <p className="text-xs mt-1" style={{ color: '#64748b' }}>{approvatiCount} di {daApprovare.length} approvati{daVerificareCount > 0 ? ` · ${daVerificareCount} da verificare` : ''}</p>
           </div>
-          {daVerificareCount > 0 && (
-            <button onClick={approvaTutti} disabled={azione} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50">
-              Approva tutti
-            </button>
-          )}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            {daVerificareCount > 0 && (
+              <button onClick={e => { e.stopPropagation(); approvaTutti() }} disabled={azione} className="bg-green-600 hover:bg-green-700 text-white rounded-lg px-4 py-2 text-xs font-semibold disabled:opacity-50">
+                Approva tutti
+              </button>
+            )}
+            <span className="transition-transform" style={{ color: '#9AA7B5', transform: aperta ? 'rotate(180deg)' : 'none' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+            </span>
+          </div>
         </div>
+        {aperta && (<>
 
         {/* BANNER "DA CONTATTARE" */}
         {daContattare && (
@@ -443,10 +454,11 @@ export default function DocumentiApprovazione({ praticaId, onStatoCambiato, onRi
             ))}
           </div>
         )}
+        </>)}
       </div>
 
-      {/* FOTO DEL VEICOLO (sola visione) */}
-      {foto.length > 0 && (
+      {/* FOTO DEL VEICOLO (sola visione) — segue l'apertura dei documenti */}
+      {aperta && foto.length > 0 && (
         <div className="p-5" style={STILE_CARD}>
           <div className="mb-3"><TitoloCard>Foto del veicolo <span style={{ color: '#64748b', fontWeight: 400 }}>· {foto.length}</span></TitoloCard></div>
           <div className="flex flex-wrap gap-2">

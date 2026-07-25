@@ -73,13 +73,13 @@ export default function SchedaPraticaDemolitore() {
   }
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: '#F4F5F8' }}>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
 
   if (!pratica) return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-3 p-6" style={{ background: '#F4F5F8' }}>
+    <main className="min-h-screen flex flex-col items-center justify-center gap-3 p-6" style={{ background: '#ECEEF2' }}>
       <p className="text-sm" style={{ color: '#374151' }}>{errore || 'Pratica non trovata'}</p>
       <button onClick={() => router.push('/demolitore')} className="text-sm font-semibold" style={{ color: '#1D4ED8' }}>← Torna alle pratiche</button>
     </main>
@@ -88,7 +88,7 @@ export default function SchedaPraticaDemolitore() {
   const p = pratica
 
   return (
-    <main className="min-h-screen flex" style={{ background: '#F4F5F8' }}>
+    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
 
       <SidebarDemolitore
         attiva="pratiche"
@@ -101,7 +101,7 @@ export default function SchedaPraticaDemolitore() {
 
       <div className="flex-1 min-w-0">
 
-        {/* barra mobile col menu ☰ */}
+        {/* barra mobile col menu ☰ — bianca come le barre in alto (23/07) */}
         <div className="lg:hidden bg-white flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>
           <button onClick={() => setMenuMobile(true)} aria-label="Menu" className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ border: '1px solid #E5E7EB' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>

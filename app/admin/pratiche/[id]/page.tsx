@@ -247,6 +247,10 @@ export default function DettaglioPraticaAdmin() {
   const [attesaErr, setAttesaErr] = useState<string | null>(null)
   const [attesaBusy, setAttesaBusy] = useState(false)
   const [noteVersion, setNoteVersion] = useState(0)
+  // ⭐ 23/07: Documenti, Chat e Cronologia sono a scomparsa e partono CHIUSE
+  const [docsAperti, setDocsAperti] = useState(false)
+  const [chatAperta, setChatAperta] = useState(false)
+  const [cronoAperta, setCronoAperta] = useState(false)
   // Menu unico "Stato pratica" (Attiva / In attesa / Annulla) + riattivazione
   const [menuStato, setMenuStato] = useState(false)
   const [riattivaOpen, setRiattivaOpen] = useState(false)
@@ -406,7 +410,7 @@ export default function DettaglioPraticaAdmin() {
   }
 
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
       <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
     </main>
   )
@@ -415,7 +419,7 @@ export default function DettaglioPraticaAdmin() {
   const m = metaStato(pratica.stato)
 
   return (
-    <main className="min-h-screen" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen" style={{ background: '#ECEEF2' }}>
 
       <div className="max-w-6xl mx-auto px-4 py-5">
 
@@ -536,17 +540,21 @@ export default function DettaglioPraticaAdmin() {
 
         <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-          {/* COLONNA SINISTRA (il LAVORO): documenti + chat + cronologia */}
+          {/* COLONNA SINISTRA (il LAVORO): documenti + chat + cronologia.
+              ⭐ 23/07 (mockup approvato): card A SCOMPARSA, tutte CHIUSE
+              all'apertura della pratica — le estende Davide se vuole */}
           <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
             <DocumentiApprovazione
               key={`docs-${docsVersion}`}
               praticaId={pratica.id}
               statoPratica={pratica.stato}
+              aperta={docsAperti}
+              onToggle={() => setDocsAperti(a => !a)}
               onStatoCambiato={(tutti, totale, approvati) => setDocStats({ totale, approvati })}
               onRicaricaPratica={ricaricaPratica}
             />
-            <ChatAdmin praticaId={pratica.id} demolitoreNome={demolitoreNome} />
-            <CronologiaNote praticaId={pratica.id} praticaCreataIl={pratica.creato_il} refreshKey={noteVersion} />
+            <ChatAdmin praticaId={pratica.id} demolitoreNome={demolitoreNome} aperta={chatAperta} onToggle={() => setChatAperta(a => !a)} />
+            <CronologiaNote praticaId={pratica.id} praticaCreataIl={pratica.creato_il} refreshKey={noteVersion} aperta={cronoAperta} onToggle={() => setCronoAperta(a => !a)} />
           </div>
 
           {/* COLONNA DESTRA: attesa + assegnazione + dati */}
@@ -573,10 +581,12 @@ export default function DettaglioPraticaAdmin() {
             <CardDichiarazioni pratica={pratica} onSalvata={async () => { await ricaricaPratica(); setDocsVersion(v => v + 1) }} />
 
             {/* L'annullamento ora vive nel menu "Stato pratica" in testata:
-                qui in fondo resta solo l'azione davvero irreversibile */}
-            <div className="pt-1">
-              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="w-full text-xs font-semibold text-red-600 hover:text-red-700 bg-white hover:bg-red-50 px-3 py-2.5 rounded-xl transition-colors" style={{ border: '1.5px solid #F3C8C8' }}>
-                Elimina definitivamente
+                qui resta solo l'azione irreversibile — DISCRETA (23/07,
+                mockup approvato): scritta piccola in rosso spento, niente
+                bottone gigante */}
+            <div className="pt-1 flex justify-center">
+              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="text-[12px] font-medium underline transition-colors hover:text-red-700" style={{ color: '#A65D5D', textUnderlineOffset: 2 }}>
+                Elimina definitivamente questa pratica
               </button>
             </div>
           </div>
@@ -1478,11 +1488,13 @@ function CardDichiarazioni({ pratica, onSalvata }: { pratica: Pratica; onSalvata
   )
 }
 
+// ⭐ 23/07 (mockup approvato): ETICHETTE in evidenza (scure), DATI del
+// cliente più leggeri (grigio normale) — il grassetto pieno resta ai titoli
 function Riga({ label, value, mono = false }: { label: string; value: string | null; mono?: boolean }) {
   return (
-    <div className="flex justify-between items-center gap-3 py-1.5" style={{ borderBottom: '1px solid #F3F5F9' }}>
-      <span className="text-[13px] flex-shrink-0" style={{ color: '#64748b' }}>{label}</span>
-      <span className={`text-[13.5px] font-semibold text-right truncate ${mono ? 'font-mono !text-[12px]' : ''}`} style={{ color: '#111827' }}>{value || '—'}</span>
+    <div className="flex justify-between items-baseline gap-3 py-1.5" style={{ borderBottom: '1px solid #F4F6F8' }}>
+      <span className="text-[12.5px] font-semibold flex-shrink-0" style={{ color: '#374151' }}>{label}</span>
+      <span className={`text-[12.5px] text-right truncate ${mono ? 'font-mono' : ''}`} style={{ color: '#6B7280', letterSpacing: mono ? 0.8 : 0 }}>{value || '—'}</span>
     </div>
   )
 }

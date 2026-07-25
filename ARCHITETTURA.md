@@ -766,7 +766,8 @@ in_attesa_documenti `#FAEEDA`/`#854F0B` · in verifica `#E0EDFB`/`#1E4E8C` · da
 > Il layout e i colori che piacciono a Davide. OGNI nuova pagina admin DEVE seguire questi input.
 
 **Fondamenta**
-- **Sfondo pagina**: lavanda di sistema `linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)` (lo stesso dell'area cliente)
+- ⭐ **AGGIORNATO 23/07**: sfondo pagina **GRIGIO CHIARO `#ECEEF2`** (il lilla è stato tolto: "non inerente a NoiDemoliamo"); **sidebar BLU in dissolvenza** `linear-gradient(180deg,#2563eb 0%,#2563eb 65%,#7CA4F2 100%)` col logo vero; barre in alto BIANCHE; flusso a PILLOLE tonde; POCHE decorazioni (colore solo dove significa qualcosa). L'area cliente resta lavanda.
+- ~~Sfondo pagina: lavanda~~ (superato, vedi sopra)
 - **Card**: bianche, bordo `1.5px solid #E5E7EB`, radius 14, ombra morbida `0 1px 3px rgba(16,24,40,0.07)` (costante `STILE_CARD`)
 - **Titoli card**: barretta blu verticale a sinistra + testo bold `#0F1B33` (componente `TitoloCard`)
 - **NO emoji, NO freccette testuali** (←/→): solo icone SVG. Bottone "Indietro" = pillola grigia con chevron SVG
@@ -874,6 +875,14 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 2. **Scheda pratica**: ricostruire tutto — azione per fase (fissa ritiro / sposta con motivo / veicolo ritirato / carica certificati: "Certificato di rottamazione" 24h e "Certificato di cancellazione targhe (PRA)" 15gg, quello che completa), dati in sola lettura (il "Chiama" va sul DELEGATO se c'è), documenti solo visione, box "da farti consegnare", chat, note
 3. **Notifiche 8 ore scadute**: email+app al demolitore e avviso a NoiDemoliamo → con la fase notifiche (Resend)
 4. Regola ribadita: il ritiro effettivo fa partire la fatturazione; "ci sono altre cose" che Davide detterà
+
+**SECONDA PARTE (sera) — PEZZI DETTATI E RESTYLING CRM (tutti approvati da Davide):**
+- **Home demolitore**: pillola-fase "**Pratiche assegnate**" (solo nome + numero) + pillola filtro "Tutte N"; card pratica dettata: [PILLOLA stato per prima] [targa · modello e anno] [via del ritiro] [countdown 8 ore rosso]. Solo pillola e countdown colorati.
+- ⭐ **FLUSSO CRM A PILLOLE TONDE** (variante B su mockup, admin E demolitore gemelli): numero nel tondino azzurro + nome, frecce in mezzo, attiva con anello blu. Caselle PULITE: via "chi agisce", "il cliente vede", sottotitoli e l'arcobaleno di colori.
+- ⭐ **ALLERTA 8 ORE**: pillola IDENTICA e SIMMETRICA sotto "Assegnata" nella fila, SEMPRE visibile (bianca a 0, rossa coi ritardi), clic = filtro. Predicato `allerta8h()` in `/admin` (stato assegnata/in_attesa_conferma_cliente + scadenza scaduta).
+- ⭐ **COLORI UNIFICATI** (via il lilla): sfondo **GRIGIO CHIARO `#ECEEF2`** su tutte le pagine admin e demolitore; **sidebar BLU in dissolvenza** (dosaggio 3: `linear-gradient(180deg,#2563eb 0%,#2563eb 65%,#7CA4F2 100%)`, testi bianchi) con **LOGO VERO** in testa; barre "Pratiche" in alto BIANCHE; card pratiche senza bordo sinistro colorato (restano pillole di stato + riquadro attesa). Bottone "Aggiungi" senza "+".
+- **Sidebar admin: voce "Impostazioni"** (ingranaggio, tendina) in fondo — dentro "Pulisci account senza pratiche", lì andranno le prossime voci di servizio.
+- ⭐ **DETTAGLIO PRATICA ADMIN rifinito** (mockup approvato): **Documenti, Chat e Cronologia A SCOMPARSA, CHIUSE all'apertura** (testata cliccabile con riassunto: "5 di 5 approvati", "N messaggi", "ultima: 21 lug"); **etichette in EVIDENZA e dati del cliente leggeri** (componente `Riga`: etichetta scura semibold a sinistra, valore grigio normale a destra — via il grassetto dai valori); "**Elimina definitivamente**" = scritta piccola sottolineata rosso spento (via il bottone). Font di sistema OVUNQUE (Inter provato e bocciato: pagine con font diversi non piacciono).
 
 ### ⭐⭐⭐ SESSIONE 22 luglio 2026 (seconda parte) — EREDI SEMPLIFICATI + AGGIORNAMENTO AUTOMATICO OVUNQUE
 

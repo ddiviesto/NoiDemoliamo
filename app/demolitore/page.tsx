@@ -108,14 +108,14 @@ export default function HomeDemolitore() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen flex" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
 
       <SidebarDemolitore
         attiva="pratiche"
@@ -129,7 +129,8 @@ export default function HomeDemolitore() {
       {/* MAIN (stesso scheletro del CRM admin) */}
       <div className="flex-1 min-w-0 flex flex-col">
 
-        {/* TOP BAR con ricerca */}
+        {/* TOP BAR con ricerca — bianca come nell'admin (23/07: il blu resta
+            solo sulla barra laterale) */}
         <div className="bg-white border-b border-gray-200 px-4 lg:px-6 py-3 flex items-center gap-4">
           {/* menu ☰ solo su telefono */}
           <button onClick={() => setMenuMobile(true)} aria-label="Menu" className="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ border: '1px solid #E5E7EB' }}>
@@ -158,12 +159,10 @@ export default function HomeDemolitore() {
               si aggiungono una alla volta, su indicazione di Davide */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
           <div className="mb-3 overflow-x-auto">
-            <div className="flex items-stretch" style={{ maxWidth: 340 }}>
-              <FaseCard
+            <div className="flex items-start">
+              <PillolaFase
                 nome="Pratiche assegnate"
                 valore={nArrivo}
-                colTop="#E24B4A"
-                colNum={nArrivo > 0 ? '#9B1C1C' : '#374151'}
                 attivo={filtro === 'arrivo'}
                 onClick={() => setFiltro(filtro === 'arrivo' ? 'tutte' : 'arrivo')}
               />
@@ -200,28 +199,31 @@ export default function HomeDemolitore() {
 // SOTTOCOMPONENTI (stessi input visivi del CRM admin)
 // ============================================================
 
-// Casella-fase SEMPLICE (richiesta Davide 23/07): solo nome e numero
-function FaseCard({ nome, valore, colTop, colNum, attivo, onClick }: {
+// Fase del flusso come PILLOLA TONDA — stessa forma del CRM admin
+// (variante B scelta da Davide su mockup 23/07): numero nel tondino,
+// nome accanto. Gemella di PillolaFase in app/admin/page.tsx.
+function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
   nome: string
   valore: number
-  colTop: string
-  colNum: string
   attivo: boolean
+  rossa?: boolean
+  title?: string
   onClick: () => void
 }) {
   return (
     <button
       onClick={onClick}
-      className="bg-white text-left transition-all hover:shadow-md flex-1"
+      title={title}
+      className="flex items-center gap-2 transition-all hover:shadow-md flex-shrink-0"
       style={{
-        minWidth: 0, borderRadius: '0 0 12px 12px', padding: '11px 12px',
-        border: `1.5px solid ${attivo ? '#2563eb' : '#E5E7EB'}`, borderTop: `3px solid ${colTop}`,
-        boxShadow: '0 1px 3px rgba(16,24,40,0.07)',
-        display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+        background: rossa ? '#FEF6F6' : '#fff',
+        border: `1.5px solid ${attivo ? '#2563eb' : rossa ? '#F3C8C8' : '#E5E7EB'}`,
+        borderRadius: 999, padding: '8px 14px 8px 9px', whiteSpace: 'nowrap',
+        boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
       }}
     >
-      <div style={{ fontSize: 22, fontWeight: 800, color: colNum, lineHeight: 1.1 }}>{valore}</div>
-      <div className="text-[12px] font-bold leading-tight mt-1.5" style={{ color: '#0F1B33' }}>{nome}</div>
+      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : '#EFF4FF', color: rossa ? '#C0392B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
+      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : '#374151' }}>{nome}</span>
     </button>
   )
 }
