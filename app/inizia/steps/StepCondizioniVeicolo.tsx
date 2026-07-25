@@ -36,8 +36,8 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
   function validate(): Errors {
     const e: Errors = {}
     if (!dati.incidentato) e.incidentato = 'Seleziona una risposta'
-    if (!dati.marciante) e.marciante = 'Seleziona una risposta'
     if (!dati.vaInMoto) e.vaInMoto = 'Seleziona una risposta'
+    if (!dati.marciante) e.marciante = 'Seleziona una risposta'
     if (!dati.partiMancanti) e.partiMancanti = 'Seleziona una risposta'
     return e
   }
@@ -89,21 +89,6 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
         onChange={v => togUpdate('incidentato', v)}
       />
       <ToggleRow
-        id="field-marciante"
-        label="Cammina?"
-        sub="Riesce a muoversi con le sue ruote e il suo motore"
-        icon={
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/>
-            <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9"/>
-          </svg>
-        }
-        value={dati.marciante}
-        siGood={true}
-        error={errors.marciante}
-        onChange={v => togUpdate('marciante', v)}
-      />
-      <ToggleRow
         id="field-vaInMoto"
         label="Va in moto?"
         sub="Il motore si avvia"
@@ -118,6 +103,21 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
         siGood={true}
         error={errors.vaInMoto}
         onChange={v => togUpdate('vaInMoto', v)}
+      />
+      <ToggleRow
+        id="field-marciante"
+        label="Cammina?"
+        sub="Il mezzo è marciante e si sposta"
+        icon={
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/>
+            <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9"/>
+          </svg>
+        }
+        value={dati.marciante}
+        siGood={true}
+        error={errors.marciante}
+        onChange={v => togUpdate('marciante', v)}
       />
       <ToggleRow
         id="field-partiMancanti"

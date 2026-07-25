@@ -751,7 +751,7 @@ in_attesa_documenti `#FAEEDA`/`#854F0B` · in verifica `#E0EDFB`/`#1E4E8C` · da
 8. **Una sola cosa per pagina** nei mini-step
 9. **Gamification dove possibile** (foto)
 10. **NO scrollIntoView automatico** su input
-11. **Niente trattini "—" nei titoli bottoni**
+11. ⭐ **Niente trattini "—" in NESSUN testo visibile all'utente** (ribadito da Davide il 26/07, "detto più volte"): titoli, bottoni, descrizioni, banner, avvisi. Non sono professionali. Al loro posto: due punti, parentesi o virgole. Unica eccezione ammessa: "—" come segnaposto di un valore vuoto (es. telefono non inserito).
 12. **Niente gergo tecnico/burocratico nei testi utente**
 13. **Rassicurare sui dati sensibili** (ogni campo telefono spiega l'uso)
 14. **Possessivi nei label quando serve distinguere le persone**
@@ -847,6 +847,17 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 # 📋 PARTE 8 — STATO ATTUALE (10 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐ SESSIONE 25-26 luglio 2026 — RIFINITURE /INIZIA E PANNELLO IMPOSTAZIONI (mockup → scelta di Davide)
+
+- **Tipo di cambio (passo 4)**: Manuale/Automatico sono PILLOLINE TONDE con spunta (famiglia dei Sì/No, in blu), via i rettangoli bianchi.
+- **Condizioni (passo 5)**: ordine "Va in moto? · Il motore si avvia" PRIMA, poi "Cammina? · Il mezzo è marciante e si sposta" (testo dettato da Davide: la domanda è slegata dal motore).
+- ⭐ **Avvisi informativi = SCHEDA BLU** (via il giallo ambra, che è da allarme): quadratino azzurro con icona + titoletto bold + testo. Applicata a: denuncia smarrimento targhe (passo 7) e "Ottimo inizio!" foto (passo 9). Il verde resta per i traguardi.
+- **✕ elimina foto in /inizia**: tondino scuro trasparente come XElimina della home cliente (via la X rossa).
+- **Sheet "Aggiungi una foto"**: tendina dal basso sul telefono, FINESTRA CENTRATA su PC (sm:items-center).
+- ⭐ **Impostazioni cliente: campo UNICO "Nome e cognome"** (come alla registrazione: tutto in `nome`, `cognome` si svuota) — decisione Davide 26/07.
+- ⭐ **Modifica sul posto SENZA SOBBALZI (variante B su mockup)**: campo con solo FILO BLU sotto (niente cornice), zona valore/campo ad altezza fissa con dissolvenza, bottoni a larghezza riservata, hint/campi extra si aprono morbidi (grid 0fr→1fr). Regola valida per le prossime "modifiche sul posto".
+- ⭐ **Regola trattini ESTESA** (6.7 n. 11): mai "—" in nessun testo visibile all'utente.
 
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 

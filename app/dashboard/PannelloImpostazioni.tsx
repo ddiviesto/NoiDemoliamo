@@ -11,12 +11,12 @@ import { supabase } from '@/lib/supabase'
 // col tasto, Salva e Annulla sono bottoncini compatti affiancati.
 // ============================================================
 
-// Campo "slim" per la modifica sul posto: stessa taglia del valore in
-// lettura (bordo azzurrino sottile per capire che è attivo).
+// Campo per la modifica sul posto (variante B, mockup 26/07): niente
+// cornice, solo un FILO BLU sotto il testo (azzurrino, blu pieno a fuoco).
+// Altezza fissa 26px = identica alla riga in lettura, così non c'è sobbalzo.
 // ⚠️ Su schermi piccoli (iPhone) il testo resta 16px: sotto quella soglia
-// iOS zooma tutta la pagina al focus. Da sm in su (PC) scende a 13.5px,
-// così la riga non si "gonfia".
-const INPUT_CLS = 'w-full border border-blue-300 rounded-[7px] px-2 py-[3px] text-base sm:text-[13.5px] font-medium text-gray-900 bg-white outline-none focus:border-blue-500 transition-all placeholder:text-gray-400 placeholder:font-normal'
+// iOS zooma tutta la pagina al focus. Da sm in su (PC) scende a 13.5px.
+const INPUT_CLS = 'w-full h-[26px] bg-transparent border-0 border-b-2 border-blue-300 rounded-none px-0.5 text-base sm:text-[13.5px] font-medium text-gray-900 outline-none focus:border-blue-600 transition-colors placeholder:text-gray-400 placeholder:font-normal'
 
 type Sezione = 'nome' | 'telefono' | 'email' | 'password' | null
 
@@ -46,7 +46,6 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
   }, [esito])
 
   const [nuovoNome, setNuovoNome] = useState('')
-  const [nuovoCognome, setNuovoCognome] = useState('')
   const [nuovoTelefono, setNuovoTelefono] = useState('')
   const [nuovaEmail, setNuovaEmail] = useState('')
   const [nuovaPassword, setNuovaPassword] = useState('')
@@ -54,7 +53,8 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
 
   function apriSezione(s: Sezione) {
     setEsito(null)
-    if (s === 'nome') { setNuovoNome(nome); setNuovoCognome(cognome) }
+    // Campo UNICO "Nome e cognome" (26/07): come alla registrazione
+    if (s === 'nome') setNuovoNome([nome, cognome].filter(Boolean).join(' '))
     if (s === 'telefono') setNuovoTelefono(telefono)
     if (s === 'email') setNuovaEmail('')
     if (s === 'password') { setNuovaPassword(''); setRipetiPassword('') }
@@ -92,9 +92,11 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
   }
 
   async function salvaNome() {
+    // Tutto nel campo `nome` (il cognome separato si svuota): stessa
+    // convenzione della registrazione, un campo solo
     const n = nuovoNome.trim()
-    if (!n) { setEsito({ tipo: 'errore', testo: 'Scrivi almeno il nome.' }); return }
-    await salvaProfilo({ nome: n, cognome: nuovoCognome.trim() }, 'Nome aggiornato.')
+    if (!n) { setEsito({ tipo: 'errore', testo: 'Scrivi il tuo nome e cognome.' }); return }
+    await salvaProfilo({ nome: n, cognome: '' }, 'Nome aggiornato.')
   }
 
   async function salvaTelefono() {
@@ -151,10 +153,11 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
     return <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, color: '#8B95A5', textTransform: 'uppercase' }}>{testo}</div>
   }
 
-  // Riga dato con MODIFICA SUL POSTO (mockup approvato 22/07): la riga non
-  // cambia taglia — in lettura mostra il valore, in modifica il valore
-  // diventa un campo slim e "Modifica" diventa "Annulla · Salva" della
-  // stessa misura. Niente sfondi grigi, niente riquadri che si gonfiano.
+  // Riga dato con MODIFICA SUL POSTO (variante B, mockup 26/07): NESSUN
+  // sobbalzo. La zona valore/campo ha ALTEZZA FISSA (26px) e i due stati
+  // si scambiano in dissolvenza; i bottoni hanno larghezza RISERVATA
+  // (Annulla · Salva appare al posto di Modifica senza spostare nulla);
+  // suggerimento ed eventuali campi extra si aprono morbidi (grid 0fr→1fr).
   function riga(opts: {
     label: string
     valore: string
@@ -165,36 +168,53 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
     testoSalva?: string
     hint?: string
     campi?: React.ReactNode
+    campiExtra?: React.ReactNode
     ultima?: boolean
   }) {
+    const fade = (visibile: boolean): React.CSSProperties => ({
+      opacity: visibile ? 1 : 0,
+      pointerEvents: visibile ? 'auto' : 'none',
+      transition: 'opacity .18s ease',
+    })
     return (
-      <div className="flex items-center gap-2.5 px-4 py-3 flex-wrap" style={{ borderBottom: opts.ultima ? 'none' : '1px solid #F1F4F8' }}>
-        <div style={{ flex: 1, minWidth: 170 }}>
+      <div className="flex items-center gap-2.5 px-4 py-3" style={{ borderBottom: opts.ultima ? 'none' : '1px solid #F1F4F8' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
           {etichetta(opts.label)}
-          {opts.inEdit ? (
-            <div style={{ marginTop: 3 }}>{opts.campi}</div>
-          ) : (
-            <div className="truncate" style={{ fontSize: 13.5, fontWeight: 600, color: '#1E293B', marginTop: 2 }}>{opts.valore}</div>
-          )}
-          {opts.inEdit && opts.hint && (
-            <div style={{ fontSize: 10, color: '#9AA7B5', marginTop: 4, lineHeight: 1.4 }}>{opts.hint}</div>
+          {/* Zona valore/campo ad altezza fissa: lettura e modifica sovrapposte */}
+          <div style={{ position: 'relative', height: 26, marginTop: 2 }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', fontSize: 13.5, fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...fade(!opts.inEdit) }}>
+              {opts.valore}
+            </div>
+            <div style={{ position: 'absolute', inset: 0, ...fade(opts.inEdit) }}>
+              {opts.campi}
+            </div>
+          </div>
+          {(opts.hint || opts.campiExtra) && (
+            <div style={{ display: 'grid', gridTemplateRows: opts.inEdit ? '1fr' : '0fr', transition: 'grid-template-rows .22s ease' }}>
+              <div style={{ overflow: 'hidden' }}>
+                {opts.campiExtra && <div style={{ paddingTop: 6 }}>{opts.campiExtra}</div>}
+                {opts.hint && <div style={{ fontSize: 10, color: '#9AA7B5', paddingTop: 4, lineHeight: 1.4 }}>{opts.hint}</div>}
+              </div>
+            </div>
           )}
         </div>
-        {opts.inEdit ? (
-          <div className="flex gap-1.5 flex-shrink-0">
-            <button onClick={() => setSezione(null)} disabled={busy} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>
+        {/* Bottoni a larghezza riservata: i due gruppi si scambiano in dissolvenza */}
+        <div className="flex-shrink-0" style={{ position: 'relative', width: 124, height: 26, alignSelf: 'flex-start', marginTop: 16 }}>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', ...fade(!opts.inEdit) }}>
+            <button onClick={opts.onApri} tabIndex={opts.inEdit ? -1 : 0} className="flex items-center gap-1 transition-colors hover:bg-blue-100" style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+              {opts.azione}
+            </button>
+          </div>
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center', ...fade(opts.inEdit) }}>
+            <button onClick={() => setSezione(null)} disabled={busy} tabIndex={opts.inEdit ? 0 : -1} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 9px' }}>
               Annulla
             </button>
-            <button onClick={opts.onSalva} disabled={busy} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563eb', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>
+            <button onClick={opts.onSalva} disabled={busy} tabIndex={opts.inEdit ? 0 : -1} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563eb', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>
               {busy ? 'Salvo…' : (opts.testoSalva || 'Salva')}
             </button>
           </div>
-        ) : (
-          <button onClick={opts.onApri} className="flex items-center gap-1 flex-shrink-0 transition-colors hover:bg-blue-100" style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-            {opts.azione}
-          </button>
-        )}
+        </div>
       </div>
     )
   }
@@ -254,12 +274,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
             inEdit: sezione === 'nome',
             onApri: () => apriSezione('nome'),
             onSalva: salvaNome,
-            campi: (
-              <div className="flex gap-1.5">
-                <input className={INPUT_CLS} style={{ flex: 1, minWidth: 0 }} value={nuovoNome} onChange={e => setNuovoNome(e.target.value)} placeholder="Nome" />
-                <input className={INPUT_CLS} style={{ flex: 1, minWidth: 0 }} value={nuovoCognome} onChange={e => setNuovoCognome(e.target.value)} placeholder="Cognome" />
-              </div>
-            ),
+            campi: <input className={INPUT_CLS} value={nuovoNome} onChange={e => setNuovoNome(e.target.value)} placeholder="Nome e cognome" />,
           })}
 
           {riga({
@@ -280,7 +295,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
             inEdit: sezione === 'email',
             onApri: () => apriSezione('email'),
             onSalva: cambiaEmail,
-            testoSalva: 'Invia conferma',
+            testoSalva: 'Invia',
             hint: "Ti mandiamo un link di conferma alla nuova email: l'accesso cambia solo dopo il click",
             campi: <input className={INPUT_CLS} type="email" inputMode="email" autoCapitalize="none" value={nuovaEmail} onChange={e => setNuovaEmail(e.target.value)} placeholder="Nuova email" />,
           })}
@@ -293,12 +308,8 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
             onApri: () => apriSezione('password'),
             onSalva: cambiaPassword,
             testoSalva: 'Aggiorna',
-            campi: (
-              <div className="flex flex-col gap-1.5">
-                <input className={INPUT_CLS} type="password" value={nuovaPassword} onChange={e => setNuovaPassword(e.target.value)} placeholder="Nuova password (min. 6 caratteri)" />
-                <input className={INPUT_CLS} type="password" value={ripetiPassword} onChange={e => setRipetiPassword(e.target.value)} placeholder="Ripeti la nuova password" />
-              </div>
-            ),
+            campi: <input className={INPUT_CLS} type="password" value={nuovaPassword} onChange={e => setNuovaPassword(e.target.value)} placeholder="Nuova password (min. 6 caratteri)" />,
+            campiExtra: <input className={INPUT_CLS} type="password" value={ripetiPassword} onChange={e => setRipetiPassword(e.target.value)} placeholder="Ripeti la nuova password" />,
           })}
 
           {/* ====== ALTRO ====== */}

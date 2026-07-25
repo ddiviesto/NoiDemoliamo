@@ -1253,7 +1253,7 @@ function DocCard(props: {
           </div>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
             <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#DBEAFE', color: '#1E4E8C', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>3</span>
-            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}><b>Fotografa qui la dichiarazione che ti hanno rilasciato</b> e inviacela — l&apos;<b>originale</b> va consegnato al ritiro</span>
+            <span style={{ flex: 1, fontSize: 12, color: '#1E4E8C', lineHeight: 1.45 }}><b>Fotografa qui la dichiarazione che ti hanno rilasciato</b> e inviacela: l&apos;<b>originale</b> va consegnato al ritiro</span>
           </div>
         </div>
       )}

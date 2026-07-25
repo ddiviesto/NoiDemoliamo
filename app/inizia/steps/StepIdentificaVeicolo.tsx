@@ -220,6 +220,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
                 <span className={`flex-shrink-0 ${errors.cambio ? 'text-red-500' : 'text-blue-600'}`}><IconaCambio /></span>
                 Tipo di cambio
               </span>
+              {/* Pilloline tonde con spunta, stessa famiglia dei Sì/No del passo condizioni (in blu) */}
               <div className="flex gap-2">
                 {(['manuale', 'automatico'] as const).map(v => {
                   const selected = dati.tipoCambio === v
@@ -228,12 +229,17 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
                       key={v}
                       type="button"
                       onClick={() => setCambio(v)}
-                      className={`flex-1 py-2.5 rounded-[10px] text-[14px] font-semibold transition-all active:scale-[0.99] border-[1.5px] ${
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-full text-[14px] font-semibold transition-all active:scale-[0.99] border-[1.5px] ${
                         selected
-                          ? 'bg-blue-50 text-blue-700 border-blue-600 shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
-                          : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                          ? 'bg-blue-50 text-blue-700 border-blue-600'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
                       }`}
                     >
+                      {selected && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      )}
                       {v === 'manuale' ? 'Manuale' : 'Automatico'}
                     </button>
                   )

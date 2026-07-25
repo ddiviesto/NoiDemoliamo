@@ -1240,13 +1240,19 @@ export default function IniziaPage() {
                   />
                 </div>
                 {dati.targhePresenti === 'no' && (
-                  <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-2.5 text-xs text-amber-800">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                      <path d="M12 9v4"/>
-                      <path d="M12 17h.01"/>
-                      <circle cx="12" cy="12" r="10"/>
-                    </svg>
-                    <span>Servirà la <strong>denuncia di smarrimento in originale</strong> da consegnare al ritiro. Te lo ricorderemo nella tua area personale.</span>
+                  <div className="mt-3 flex items-start gap-2.5 bg-blue-50 border-[1.5px] border-blue-200 rounded-xl p-3">
+                    <span className="w-[30px] h-[30px] rounded-[9px] bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                        <line x1="9" y1="13" x2="15" y2="13"/>
+                        <line x1="9" y1="17" x2="13" y2="17"/>
+                      </svg>
+                    </span>
+                    <span>
+                      <span className="block text-[12.5px] font-bold text-blue-900">Servirà la denuncia di smarrimento</span>
+                      <span className="block text-xs text-[#37507E] leading-snug mt-0.5">In <strong className="text-blue-900">originale</strong>, da consegnare al ritiro. Te lo ricorderemo nella tua area personale.</span>
+                    </span>
                   </div>
                 )}
               </div>
@@ -1395,12 +1401,17 @@ export default function IniziaPage() {
                       <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src={URL.createObjectURL(f)} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
+                        {/* ✕ scura trasparente, stessa famiglia della home del cliente (XElimina) */}
                         <button
                           onClick={() => rimuoviFoto(i)}
-                          className="absolute top-1 right-1 w-5 h-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center shadow-md hover:bg-red-600 transition-colors"
+                          className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
+                          style={{ background: 'rgba(15,23,42,0.55)' }}
                           aria-label="Rimuovi foto"
                         >
-                          ✕
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
                         </button>
                       </div>
                     ))}
@@ -1419,14 +1430,16 @@ export default function IniziaPage() {
               )}
 
               {foto.length > 0 && foto.length < 4 && (
-                <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                    <path d="M12 9v4"/>
-                    <path d="M12 17h.01"/>
-                    <circle cx="12" cy="12" r="10"/>
-                  </svg>
+                <div className="mt-3 flex items-start gap-2.5 bg-blue-50 border-[1.5px] border-blue-200 rounded-xl p-3">
+                  <span className="w-[30px] h-[30px] rounded-[9px] bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                      <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                  </span>
                   <span>
-                    Ottimo inizio! Aggiungi <strong>almeno {4 - foto.length} {4 - foto.length === 1 ? 'altra foto' : 'altre foto'}</strong> (frontale, posteriore, laterali, abitacolo) per aiutare il demolitore a preventivare meglio.
+                    <span className="block text-[12.5px] font-bold text-blue-900">Ottimo inizio!</span>
+                    <span className="block text-xs text-[#37507E] leading-snug mt-0.5">Aggiungi <strong className="text-blue-900">almeno {4 - foto.length} {4 - foto.length === 1 ? 'altra foto' : 'altre foto'}</strong> (frontale, posteriore, laterali, abitacolo) per aiutare il demolitore a preventivare meglio.</span>
                   </span>
                 </div>
               )}
@@ -1459,17 +1472,17 @@ export default function IniziaPage() {
               )}
             </div>
 
-            {/* Sheet popup scelta foto */}
+            {/* Sheet popup scelta foto: tendina dal basso sul telefono, finestra centrata su PC */}
             {mostraSheetFoto && (
               <div
-                className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200 sm:p-4"
                 onClick={() => setMostraSheetFoto(false)}
               >
                 <div
-                  className="bg-white w-full max-w-md rounded-t-3xl p-5 pb-8 shadow-2xl animate-in slide-in-from-bottom duration-300"
+                  className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 pb-8 sm:pb-5 shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300"
                   onClick={e => e.stopPropagation()}
                 >
-                  <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4" />
+                  <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4 sm:hidden" />
                   <h3 className="text-base font-bold text-gray-900 text-center mb-1">Aggiungi una foto</h3>
                   <p className="text-xs text-gray-500 text-center mb-5">Come vuoi procedere?</p>
 
