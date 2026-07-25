@@ -88,9 +88,13 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
   }
 
   return (
-    <div className="p-5" style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>
-      {/* TESTATA sempre visibile: clic = apre/chiude (23/07, mockup approvato) */}
-      <div className="flex items-center gap-2 cursor-pointer select-none" onClick={onToggle}>
+    // ⭐ 26/07: da chiusa TUTTA la card è cliccabile, con accensione al mouse
+    <div
+      className={`p-5 ${aperta ? '' : 'cursor-pointer transition-all hover:!border-blue-200 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.10)]'}`}
+      style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}
+      onClick={aperta ? undefined : onToggle}
+    >
+      <div className="flex items-center gap-2 cursor-pointer select-none" onClick={e => { e.stopPropagation(); onToggle() }}>
         <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0, flex: 1, minWidth: 0 }}>
           <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
           Cronologia e note

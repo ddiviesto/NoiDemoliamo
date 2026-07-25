@@ -120,6 +120,89 @@ function BottoniCdc({ azione, onScegli }: { azione: boolean; onScegli: (cdc: 'ca
 }
 
 // ============================================================
+// VISORE: IMMAGINE ZOOMABILE (26/07, mockup approvato: A + barretta
+// della B). Doppio clic sul punto da leggere = ingrandisce lì; da
+// ingrandito trascini per spostarti e la rotella regola; barretta
+// − / % / + / Adatta sempre visibile in basso.
+// ============================================================
+
+const SCALE_ZOOM = [1, 1.5, 2, 3, 4]
+
+function ZoomImg({ src, alt, badge }: { src: string; alt: string; badge?: string }) {
+  const box = useRef<HTMLDivElement>(null)
+  const [t, setT] = useState({ s: 1, x: 0, y: 0 })
+  const drag = useRef<{ x: number; y: number } | null>(null)
+
+  function dblClick(e: React.MouseEvent) {
+    if ((e.target as HTMLElement).closest('[data-barra-zoom]')) return
+    if (t.s === 1) {
+      const r = box.current!.getBoundingClientRect()
+      setT({ s: 2.5, x: (r.width / 2 - (e.clientX - r.left)) * 1.6, y: (r.height / 2 - (e.clientY - r.top)) * 1.6 })
+    } else {
+      setT({ s: 1, x: 0, y: 0 })
+    }
+  }
+
+  // La rotella regola lo zoom SOLO quando sei già ingrandito. Listener
+  // manuale non-passivo: React registra onWheel come passivo e il
+  // preventDefault non avrebbe effetto.
+  useEffect(() => {
+    const el = box.current
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      setT(prev => {
+        if (prev.s === 1) return prev
+        e.preventDefault()
+        const s = Math.min(5, Math.max(1, prev.s * (e.deltaY < 0 ? 1.15 : 0.87)))
+        return s === 1 ? { s: 1, x: 0, y: 0 } : { ...prev, s }
+      })
+    }
+    el.addEventListener('wheel', onWheel, { passive: false })
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [])
+
+  function zoomStep(dir: 1 | -1) {
+    setT(prev => {
+      let i = SCALE_ZOOM.findIndex(x => x >= prev.s - 0.01)
+      if (i === -1) i = SCALE_ZOOM.length - 1
+      const s = SCALE_ZOOM[Math.min(SCALE_ZOOM.length - 1, Math.max(0, i + dir))]
+      return s === 1 ? { s: 1, x: 0, y: 0 } : { ...prev, s }
+    })
+  }
+
+  const bottoneBarra: React.CSSProperties = { border: 'none', background: 'transparent', color: '#fff', width: 26, height: 26, borderRadius: 999, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }
+
+  return (
+    <div
+      ref={box}
+      onDoubleClick={dblClick}
+      onPointerDown={e => { if (t.s > 1 && !(e.target as HTMLElement).closest('[data-barra-zoom]')) { drag.current = { x: e.clientX, y: e.clientY }; box.current?.setPointerCapture(e.pointerId) } }}
+      onPointerMove={e => { if (drag.current) { const d = drag.current; drag.current = { x: e.clientX, y: e.clientY }; setT(prev => ({ ...prev, x: prev.x + e.clientX - d.x, y: prev.y + e.clientY - d.y })) } }}
+      onPointerUp={() => { drag.current = null }}
+      style={{ position: 'relative', width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, overflow: 'hidden', touchAction: 'none', cursor: t.s > 1 ? 'grab' : 'zoom-in' }}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', transform: `translate(${t.x}px, ${t.y}px) scale(${t.s})`, transformOrigin: 'center center', userSelect: 'none' }}
+      />
+      {badge && (
+        <span style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, borderRadius: 20, padding: '2px 9px', zIndex: 2 }}>{badge}</span>
+      )}
+      {/* Barretta di zoom sempre visibile */}
+      <div data-barra-zoom style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 8, display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(15,23,42,0.72)', borderRadius: 999, padding: 3, zIndex: 2 }}>
+        <button type="button" onClick={() => zoomStep(-1)} style={bottoneBarra}>−</button>
+        <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700, minWidth: 40, textAlign: 'center' }}>{Math.round(t.s * 100)}%</span>
+        <button type="button" onClick={() => zoomStep(1)} style={bottoneBarra}>+</button>
+        <button type="button" onClick={() => setT({ s: 1, x: 0, y: 0 })} style={{ ...bottoneBarra, width: 'auto', padding: '0 9px', fontSize: 10 }}>Adatta</button>
+      </div>
+    </div>
+  )
+}
+
+// ============================================================
 // COMPONENTE
 // ============================================================
 
@@ -389,9 +472,14 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
 
   return (
     <>
-      <div className="p-5" style={STILE_CARD}>
-        {/* TESTATA sempre visibile: clic = apre/chiude (23/07, mockup approvato) */}
-        <div className="flex items-center justify-between gap-3 cursor-pointer select-none" onClick={onToggle}>
+      {/* ⭐ 26/07: da chiusa TUTTA la card è cliccabile (non solo la testata),
+          con accensione al passaggio del mouse */}
+      <div
+        className={`p-5 ${aperta ? '' : 'cursor-pointer transition-all hover:!border-blue-200 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.10)]'}`}
+        style={STILE_CARD}
+        onClick={aperta ? undefined : onToggle}
+      >
+        <div className="flex items-center justify-between gap-3 cursor-pointer select-none" onClick={e => { e.stopPropagation(); onToggle() }}>
           <div>
             <TitoloCard>Documenti</TitoloCard>
             <p className="text-xs mt-1" style={{ color: '#64748b' }}>{approvatiCount} di {daApprovare.length} approvati{daVerificareCount > 0 ? ` · ${daVerificareCount} da verificare` : ''}</p>
@@ -516,40 +604,58 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</div>
-                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>{visoreIdx + 1} di {voci.length} · usa ← → per scorrere</div>
+                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>{visoreIdx + 1} di {voci.length} · frecce per scorrere · doppio clic per ingrandire</div>
                   </div>
                   <button onClick={() => setVisoreIdx(null)} className="text-gray-400 hover:text-gray-700" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
                 </div>
 
-                {/* FILE (fronte/retro affiancati) o FOTO */}
-                <div style={{ flex: 1, display: 'flex', gap: 10, minHeight: 0 }}>
-                  {voce.tipo === 'foto' ? (
-                    <div style={{ flex: 1, minWidth: 0, overflow: 'auto', background: '#F6F8FB', borderRadius: 12, display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={voce.foto.url} alt={titoloVoce(voce)} style={{ maxWidth: '100%', height: 'auto' }} />
-                    </div>
-                  ) : files.map((f, i) => {
-                    const url = signedMap[f.url] || f.url
-                    return (
-                      <div key={i} style={{ flex: 1, minWidth: 0, overflow: 'auto', background: '#F6F8FB', borderRadius: 12, position: 'relative' }}>
-                        {f.lato && (
-                          <span style={{ position: 'sticky', top: 8, left: 8, display: 'inline-block', margin: 8, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, borderRadius: 20, padding: '2px 9px', zIndex: 1 }}>{f.lato.toUpperCase()}</span>
-                        )}
-                        {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
-                          <iframe src={url} title={f.nome} style={{ width: '100%', height: '100%', minHeight: 300, border: 'none' }} />
-                        ) : (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={url} alt={f.nome} style={{ display: 'block', maxWidth: '100%', height: 'auto', margin: '0 auto' }} />
-                        )}
+                {/* PALCO (26/07, mockup approvato): FILE (fronte/retro
+                    affiancati) o FOTO zoomabili, FRECCE AI LATI a metà
+                    altezza (restano anche ← → da tastiera) */}
+                <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 10 }}>
+                    {voce.tipo === 'foto' ? (
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <ZoomImg key={voce.foto.url} src={voce.foto.url} alt={titoloVoce(voce)} />
                       </div>
-                    )
-                  })}
+                    ) : files.map((f, i) => {
+                      const url = signedMap[f.url] || f.url
+                      return (
+                        <div key={i} style={{ flex: 1, minWidth: 0 }}>
+                          {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
+                            <div style={{ width: '100%', height: '100%', overflow: 'auto', background: '#F6F8FB', borderRadius: 12, position: 'relative' }}>
+                              {f.lato && (
+                                <span style={{ position: 'sticky', top: 8, left: 8, display: 'inline-block', margin: 8, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, borderRadius: 20, padding: '2px 9px', zIndex: 1 }}>{f.lato.toUpperCase()}</span>
+                              )}
+                              <iframe src={url} title={f.nome} style={{ width: '100%', height: '100%', minHeight: 300, border: 'none' }} />
+                            </div>
+                          ) : (
+                            <ZoomImg key={url} src={url} alt={f.nome} badge={f.lato ? f.lato.toUpperCase() : undefined} />
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <button
+                    onClick={() => setVisoreIdx(i => Math.max((i ?? 0) - 1, 0))}
+                    disabled={visoreIdx === 0}
+                    aria-label="Precedente"
+                    style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', opacity: visoreIdx === 0 ? 0.35 : 1, zIndex: 3 }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                  </button>
+                  <button
+                    onClick={() => setVisoreIdx(i => Math.min((i ?? 0) + 1, voci.length - 1))}
+                    disabled={visoreIdx === voci.length - 1}
+                    aria-label="Successivo"
+                    style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', opacity: visoreIdx === voci.length - 1 ? 0.35 : 1, zIndex: 3 }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                  </button>
                 </div>
 
-                {/* FRECCE + AZIONI */}
+                {/* AZIONI */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                  <button onClick={() => setVisoreIdx(i => Math.max((i ?? 0) - 1, 0))} disabled={visoreIdx === 0} style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', border: '1.5px solid #E5E7EB', fontSize: 17, color: '#374151', cursor: 'pointer', opacity: visoreIdx === 0 ? 0.4 : 1 }}>‹</button>
-                  <button onClick={() => setVisoreIdx(i => Math.min((i ?? 0) + 1, voci.length - 1))} disabled={visoreIdx === voci.length - 1} style={{ width: 36, height: 36, borderRadius: '50%', background: '#fff', border: '1.5px solid #E5E7EB', fontSize: 17, color: '#374151', cursor: 'pointer', opacity: visoreIdx === voci.length - 1 ? 0.4 : 1 }}>›</button>
                   <div style={{ flex: 1 }} />
                   {voce.tipo === 'doc' && voce.doc.stato === 'caricato' && (
                     <>

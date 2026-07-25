@@ -859,6 +859,12 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **Modifica sul posto SENZA SOBBALZI (variante B su mockup)**: campo con solo FILO BLU sotto (niente cornice), zona valore/campo ad altezza fissa con dissolvenza, bottoni a larghezza riservata, hint/campi extra si aprono morbidi (grid 0fr→1fr). Regola valida per le prossime "modifiche sul posto".
 - ⭐ **Regola trattini ESTESA** (6.7 n. 11): mai "—" in nessun testo visibile all'utente.
 
+**Seconda parte (26/07 sera) — DETTAGLIO PRATICA ADMIN riorganizzato (variante C su mockup) + eliminazione + visore:**
+- ⭐⭐ **LAYOUT VARIANTE C**: sotto la testata blu una **FASCIA DATI orizzontale di 4 schede** (Dichiarazioni e casistica, Cliente, Veicolo, Ritiro) così i dati si leggono subito; sotto, a sinistra il LAVORO più largo (Documenti, Chat, Cronologia) e a destra colonna stretta (300px) con le sole AZIONI (Assegnazione, Importo, cestino).
+- ⭐ **Card a scomparsa cliccabili PER INTERO da chiuse** (non solo la freccetta), con accensione blu al passaggio del mouse; da aperte si chiudono solo dalla testata (i clic nel contenuto non le richiudono).
+- ⭐⭐ **ELIMINAZIONE: un solo punto, nel dettaglio** (variante B su mockup "nuvoletta ancorata"): il cestino nella LISTA CRM è stato TOLTO (con la sua modale); nel dettaglio, in fondo alla colonna azioni, ICONA cestino discreta → **nuvoletta ancorata sopra** (becco, niente sfondo scuro, clic fuori chiude) con le DUE eliminazioni: "Elimina solo la pratica" / "Elimina pratica e account" (l'endpoint `/api/elimina-pratica` supportava già `elimina_account` con protezioni: mai admin/operatori, mai clienti con altre pratiche). Niente più modali centrali per eliminare.
+- ⭐⭐ **VISORE DOCUMENTI/FOTO con ZOOM** (mockup: variante A + barretta della B): **frecce ai lati** dell'immagine a metà altezza (via i bottoncini in basso; ← → da tastiera restano); **doppio clic** sul punto da leggere = zoom centrato lì, trascina per spostarti, rotella per regolare; **barretta − / % / + / Adatta** sempre visibile in basso (scura). Vale per foto e documenti anche fronte/retro affiancati (zoom indipendente per lato); PDF invariati (iframe). Componente `ZoomImg` in `DocumentiApprovazione.tsx`; lo zoom si azzera cambiando voce.
+
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 
 > ⚠️ **METODO SPECIALE PER QUEST'AREA** (dopo 3 tentativi di design bocciati): Davide DETTA

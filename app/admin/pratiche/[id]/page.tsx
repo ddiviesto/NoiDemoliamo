@@ -538,11 +538,21 @@ export default function DettaglioPraticaAdmin() {
           </div>
         </div>
 
+        {/* ⭐ 26/07 (variante C su mockup): FASCIA DATI orizzontale sotto la
+            testata — Dichiarazioni, Cliente, Veicolo e Ritiro si leggono
+            subito, senza scendere nella pagina */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start mb-4">
+          <CardDichiarazioni pratica={pratica} onSalvata={async () => { await ricaricaPratica(); setDocsVersion(v => v + 1) }} />
+          <CardCliente pratica={pratica} emailAccount={emailAccount} onSalvata={ricaricaPratica} />
+          <CardVeicolo pratica={pratica} onSalvata={ricaricaPratica} />
+          <CardRitiro pratica={pratica} onSalvata={ricaricaPratica} />
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-4 items-start">
 
-          {/* COLONNA SINISTRA (il LAVORO): documenti + chat + cronologia.
-              ⭐ 23/07 (mockup approvato): card A SCOMPARSA, tutte CHIUSE
-              all'apertura della pratica — le estende Davide se vuole */}
+          {/* COLONNA SINISTRA (il LAVORO), più larga: documenti + chat +
+              cronologia — card a scomparsa, chiuse all'apertura, TUTTE
+              cliccabili da chiuse (26/07) */}
           <div className="flex-1 min-w-0 w-full flex flex-col gap-4">
             <DocumentiApprovazione
               key={`docs-${docsVersion}`}
@@ -557,37 +567,66 @@ export default function DettaglioPraticaAdmin() {
             <CronologiaNote praticaId={pratica.id} praticaCreataIl={pratica.creato_il} refreshKey={noteVersion} aperta={cronoAperta} onToggle={() => setCronoAperta(a => !a)} />
           </div>
 
-          {/* COLONNA DESTRA: attesa + assegnazione + dati */}
-          <div className="w-full lg:w-[340px] flex-shrink-0 flex flex-col gap-4">
-
-            {/* Nota 21/07: anche il riquadro "In attesa" è stato RIMOSSO
-                (come quello dell'annullata): tutto si gestisce dal menu
-                "Stato pratica" in testata, motivo e date stanno in cronologia. */}
-
-            {/* Nota 20/07: il riquadro "Pratica annullata" è stato RIMOSSO
-                (doppione): motivo e data stanno in Cronologia e note, la
-                riattivazione sta nel menu "Stato pratica" in testata. */}
+          {/* COLONNA DESTRA, stretta: solo le AZIONI */}
+          <div className="w-full lg:w-[300px] flex-shrink-0 flex flex-col gap-4">
 
             {pratica.stato !== 'annullata' && <AssegnazioneCard pratica={pratica} demolitoreNome={demolitoreNome} onAssegnato={ricaricaPratica} />}
 
             <FeePraticaCard pratica={pratica} onAggiornata={ricaricaPratica} />
 
-            <CardCliente pratica={pratica} emailAccount={emailAccount} onSalvata={ricaricaPratica} />
-
-            <CardVeicolo pratica={pratica} onSalvata={ricaricaPratica} />
-
-            <CardRitiro pratica={pratica} onSalvata={ricaricaPratica} />
-
-            <CardDichiarazioni pratica={pratica} onSalvata={async () => { await ricaricaPratica(); setDocsVersion(v => v + 1) }} />
-
             {/* L'annullamento ora vive nel menu "Stato pratica" in testata:
-                qui resta solo l'azione irreversibile — DISCRETA (23/07,
-                mockup approvato): scritta piccola in rosso spento, niente
-                bottone gigante */}
+                qui resta solo l'azione irreversibile — 26/07 (variante B su
+                mockup): ICONA cestino discreta + NUVOLETTA ancorata sopra
+                con le DUE eliminazioni (solo pratica / pratica + account).
+                Unico punto di eliminazione: il cestino in lista è stato tolto. */}
             <div className="pt-1 flex justify-center">
-              <button onClick={() => { setErroreElimina(null); setEliminaOpen(true) }} className="text-[12px] font-medium underline transition-colors hover:text-red-700" style={{ color: '#A65D5D', textUnderlineOffset: 2 }}>
-                Elimina definitivamente questa pratica
-              </button>
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={() => { setErroreElimina(null); setEliminaOpen(o => !o) }}
+                  aria-label="Elimina definitivamente questa pratica"
+                  title="Elimina definitivamente questa pratica"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl transition-colors hover:bg-red-50 hover:text-red-700"
+                  style={{ color: '#A65D5D' }}
+                >
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                </button>
+                {eliminaOpen && (
+                  <>
+                    {/* Strato invisibile: clic fuori = chiudi (la pagina resta viva alla vista) */}
+                    <div className="fixed inset-0 z-40" onClick={() => { if (!eliminando) setEliminaOpen(false) }} />
+                    <div className="absolute z-50" style={{ bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', width: 272, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: 12 }}>
+                      {/* Becco verso l'icona */}
+                      <div style={{ position: 'absolute', bottom: -6, left: '50%', marginLeft: -5, width: 10, height: 10, background: '#fff', borderRight: '1.5px solid #E5E7EB', borderBottom: '1.5px solid #E5E7EB', transform: 'rotate(45deg)' }} />
+                      <div className="flex items-center gap-2">
+                        <span className="w-[22px] h-[22px] rounded-full flex items-center justify-center flex-shrink-0" style={{ background: '#FEE2E2', color: '#DC2626' }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
+                        </span>
+                        <span className="text-[12.5px] font-bold text-gray-900">Eliminare {pratica.targa || 'la pratica'} per sempre?</span>
+                      </div>
+                      <p className="text-[11.5px] text-gray-500 leading-snug mt-1.5">Vanno via anche documenti, foto e file. Non si può annullare.</p>
+                      {pratica.demolitore_id && (
+                        <p className="text-[11px] leading-snug mt-1.5 rounded-lg px-2 py-1.5" style={{ background: '#FDF7EA', color: '#854F0B' }}>È assegnata a <b>{demolitoreNome || 'un demolitore'}</b>: sparirà anche per lui.</p>
+                      )}
+                      {erroreElimina && <p className="text-[11px] text-red-600 mt-1.5">{erroreElimina}</p>}
+                      {eliminando ? (
+                        <div className="flex items-center gap-2 justify-center text-[12px] text-gray-500 py-4"><div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />Elimino…</div>
+                      ) : (
+                        <div className="flex flex-col gap-1.5 mt-2.5">
+                          <button onClick={() => eliminaDefinitiva(false)} className="w-full px-3 py-2 text-[12px] font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-lg text-left">
+                            Elimina solo la pratica
+                            <span className="block text-[10.5px] font-normal text-gray-500 mt-0.5">L&apos;account del cliente resta attivo</span>
+                          </button>
+                          <button onClick={() => eliminaDefinitiva(true)} className="w-full px-3 py-2 text-[12px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg text-left">
+                            Elimina pratica e account
+                            <span className="block text-[10.5px] font-normal mt-0.5" style={{ color: '#FECACA' }}>Via anche login e accesso (solo se non ha altre pratiche)</span>
+                          </button>
+                          <button onClick={() => setEliminaOpen(false)} className="w-full px-3 py-1.5 text-[12px] font-medium text-gray-500 hover:bg-gray-100 rounded-lg">Annulla</button>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -683,42 +722,6 @@ export default function DettaglioPraticaAdmin() {
         </div>
       )}
 
-      {/* MODALE ELIMINAZIONE DEFINITIVA */}
-      {eliminaOpen && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-sm w-full">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-3">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-            </div>
-            <p className="text-center font-semibold text-gray-900">Come vuoi eliminare?</p>
-            <p className="text-center text-sm text-gray-500 mt-1">
-              La pratica <b>{pratica.targa || 'senza targa'}</b>, con documenti, foto e file, sarà cancellata per sempre. Scegli se cancellare anche l&apos;account del cliente.
-            </p>
-            {pratica.demolitore_id && (
-              <div className="flex items-start gap-2 rounded-xl px-3 py-2.5 mt-3" style={{ background: '#FDF7EA', border: '1.5px solid #F0DFB8' }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                <span className="text-xs" style={{ color: '#854F0B' }}>Attenzione: è <b>assegnata a {demolitoreNome || 'un demolitore'}</b>. Eliminandola sparirà anche per lui.</span>
-              </div>
-            )}
-            {erroreElimina && <p className="text-center text-xs text-red-600 mt-2">{erroreElimina}</p>}
-            {eliminando ? (
-              <div className="flex items-center gap-2 justify-center text-sm text-gray-500 py-5"><div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />Elimino…</div>
-            ) : (
-              <div className="flex flex-col gap-2.5 mt-4">
-                <div>
-                  <button onClick={() => eliminaDefinitiva(false)} className="w-full px-4 py-2.5 text-sm font-semibold text-red-600 border border-red-200 hover:bg-red-50 rounded-xl">Elimina solo la pratica</button>
-                  <p className="text-[11px] text-gray-500 text-center mt-1">L&apos;account del cliente resta attivo: potrà accedere e fare altre pratiche.</p>
-                </div>
-                <div>
-                  <button onClick={() => eliminaDefinitiva(true)} className="w-full px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl">Elimina pratica + account cliente</button>
-                  <p className="text-[11px] text-gray-500 text-center mt-1">Cancella anche login e accesso del cliente (solo se non ha altre pratiche).</p>
-                </div>
-                <button onClick={() => setEliminaOpen(false)} className="w-full px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 rounded-xl">Annulla</button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </main>
   )
 }
