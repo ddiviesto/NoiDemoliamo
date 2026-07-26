@@ -876,7 +876,7 @@ export default function DettaglioDemolitore() {
               <button
                 onClick={eliminaDemolitore}
                 disabled={eliminando || confermaNome.trim() !== demolitore.ragione_sociale}
-                className="text-xs font-bold text-white px-4 py-2.5 rounded-xl transition-colors disabled:opacity-40 bg-red-600 hover:bg-red-700"
+                className="text-xs font-bold text-white px-4 py-2.5 rounded-xl transition-colors disabled:opacity-40 bg-[#E15E5E] hover:bg-[#D25151]"
               >
                 {eliminando ? 'Eliminazione…' : 'Elimina per sempre'}
               </button>

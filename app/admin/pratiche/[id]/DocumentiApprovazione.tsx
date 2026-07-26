@@ -39,6 +39,13 @@ interface FotoPratica {
   caricato_il: string
 }
 
+// Frase pronta (messaggi_preimpostati, categoria 'rifiuto')
+interface Preimpostato {
+  id: string
+  testo: string
+  ordine: number
+}
+
 interface DatiPratica {
   libretto: string | null
   certificato_proprieta: string | null
@@ -50,6 +57,27 @@ interface DatiPratica {
   targhe_presenti: boolean | null
 }
 
+// ⭐ 26/07: NOMI PRECISI per l'admin. Il catalogo parla al cliente ("La tua
+// carta d'identità"): qui il possessivo diventa il RUOLO vero secondo la
+// casistica, così Davide incrocia il documento coi dati dichiarati.
+const RUOLO_CASISTICA: Record<string, string> = {
+  persona_fisica: "dell'intestatario",
+  eredi_accettato: "dell'erede che gestisce la pratica",
+  eredi_rinuncia: "dell'erede che gestisce la pratica",
+  societa: 'del legale rappresentante',
+  societa_fallita: 'del legale rappresentante',
+  associazione: 'del rappresentante',
+  non_intestatario: 'del richiedente',
+  targhe_straniere: 'del proprietario',
+}
+
+function nomeAdmin(nome: string, casistica: string | null | undefined): string {
+  const ruolo = casistica ? RUOLO_CASISTICA[casistica] : null
+  const m = nome.match(/^(la tua|il tuo)\s+(.+)$/i)
+  if (m && ruolo) return m[2].charAt(0).toUpperCase() + m[2].slice(1) + ' ' + ruolo
+  return nome
+}
+
 interface Props {
   praticaId: string
   statoPratica: string
@@ -59,6 +87,10 @@ interface Props {
   onToggle: () => void
   onStatoCambiato?: (tuttiApprovati: boolean, totale: number, approvati: number) => void
   onRicaricaPratica?: () => void
+  // ⭐ 26/07 (variante B su mockup): nella TENDINA del CRM il pannello è una
+  // GRIGLIA DI MINIATURE compatta (badge di stato nell'angolo, "Verifica
+  // ora"); il lavoro vero resta nel visore. La card intera vive nel dettaglio.
+  compatta?: boolean
 }
 
 // ---- helper file ----
@@ -133,26 +165,18 @@ function ZoomImg({ src, alt, badge }: { src: string; alt: string; badge?: string
   const [t, setT] = useState({ s: 1, x: 0, y: 0 })
   const drag = useRef<{ x: number; y: number } | null>(null)
 
-  function dblClick(e: React.MouseEvent) {
-    if ((e.target as HTMLElement).closest('[data-barra-zoom]')) return
-    if (t.s === 1) {
-      const r = box.current!.getBoundingClientRect()
-      setT({ s: 2.5, x: (r.width / 2 - (e.clientX - r.left)) * 1.6, y: (r.height / 2 - (e.clientY - r.top)) * 1.6 })
-    } else {
-      setT({ s: 1, x: 0, y: 0 })
-    }
-  }
+  // Il doppio clic è stato TOLTO (26/07, richiesta Davide): con la rotella
+  // sempre attiva non serviva più.
 
-  // La rotella regola lo zoom SOLO quando sei già ingrandito. Listener
-  // manuale non-passivo: React registra onWheel come passivo e il
-  // preventDefault non avrebbe effetto.
+  // La rotella regola lo zoom SEMPRE, appena sei sopra (26/07: prima solo
+  // da ingranditi). Listener manuale non-passivo: React registra onWheel
+  // come passivo e il preventDefault non avrebbe effetto.
   useEffect(() => {
     const el = box.current
     if (!el) return
     const onWheel = (e: WheelEvent) => {
+      e.preventDefault()
       setT(prev => {
-        if (prev.s === 1) return prev
-        e.preventDefault()
         const s = Math.min(5, Math.max(1, prev.s * (e.deltaY < 0 ? 1.15 : 0.87)))
         return s === 1 ? { s: 1, x: 0, y: 0 } : { ...prev, s }
       })
@@ -175,11 +199,10 @@ function ZoomImg({ src, alt, badge }: { src: string; alt: string; badge?: string
   return (
     <div
       ref={box}
-      onDoubleClick={dblClick}
       onPointerDown={e => { if (t.s > 1 && !(e.target as HTMLElement).closest('[data-barra-zoom]')) { drag.current = { x: e.clientX, y: e.clientY }; box.current?.setPointerCapture(e.pointerId) } }}
       onPointerMove={e => { if (drag.current) { const d = drag.current; drag.current = { x: e.clientX, y: e.clientY }; setT(prev => ({ ...prev, x: prev.x + e.clientX - d.x, y: prev.y + e.clientY - d.y })) } }}
       onPointerUp={() => { drag.current = null }}
-      style={{ position: 'relative', width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, overflow: 'hidden', touchAction: 'none', cursor: t.s > 1 ? 'grab' : 'zoom-in' }}
+      style={{ position: 'relative', width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, overflow: 'hidden', touchAction: 'none', cursor: t.s > 1 ? 'grab' : 'default' }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -203,10 +226,81 @@ function ZoomImg({ src, alt, badge }: { src: string; alt: string; badge?: string
 }
 
 // ============================================================
+// PDF NEL VISORE (26/07): le pagine del PDF diventano IMMAGINI e passano
+// nello STESSO visore delle foto (doppio clic, trascina, rotella, barretta).
+// Via il visore integrato del browser con la sua barra grigia.
+// ============================================================
+
+function PdfZoom({ src, badge }: { src: string; badge?: string }) {
+  const [pagine, setPagine] = useState<string[] | null>(null)
+  const [errore, setErrore] = useState(false)
+  const [pagina, setPagina] = useState(0)
+
+  useEffect(() => {
+    let vivo = true
+    async function rendi() {
+      try {
+        const pdfjs = await import('pdfjs-dist')
+        pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
+        const doc = await pdfjs.getDocument({ url: src }).promise
+        const urls: string[] = []
+        const max = Math.min(doc.numPages, 20)
+        for (let i = 1; i <= max; i++) {
+          const page = await doc.getPage(i)
+          const base = page.getViewport({ scale: 1 })
+          const viewport = page.getViewport({ scale: Math.min(3, 1600 / base.width) })
+          const canvas = document.createElement('canvas')
+          canvas.width = viewport.width
+          canvas.height = viewport.height
+          await page.render({ canvasContext: canvas.getContext('2d')!, viewport }).promise
+          urls.push(canvas.toDataURL('image/jpeg', 0.92))
+          if (!vivo) return
+        }
+        if (vivo) setPagine(urls)
+      } catch (e) {
+        console.error('Errore lettura PDF:', e)
+        if (vivo) setErrore(true)
+      }
+    }
+    rendi()
+    return () => { vivo = false }
+  }, [src])
+
+  if (errore) return (
+    <div style={{ width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+      <p style={{ fontSize: 12, color: '#6B7280' }}>Non riesco a mostrare questo PDF qui.</p>
+      <a href={src} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#1D4ED8', textDecoration: 'underline' }}>Aprilo in un&apos;altra scheda</a>
+    </div>
+  )
+  if (!pagine) return (
+    <div style={{ width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  )
+  const bottonePag: React.CSSProperties = { border: 'none', background: 'transparent', color: '#fff', width: 24, height: 24, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <ZoomImg key={pagina} src={pagine[pagina]} alt={`Pagina ${pagina + 1}`} badge={badge} />
+      {pagine.length > 1 && (
+        <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(15,23,42,0.72)', borderRadius: 999, padding: 3, zIndex: 3 }}>
+          <button type="button" onClick={() => setPagina(p => (p - 1 + pagine.length) % pagine.length)} style={bottonePag} aria-label="Pagina precedente">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+          </button>
+          <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '0 4px' }}>Pag. {pagina + 1}/{pagine.length}</span>
+          <button type="button" onClick={() => setPagina(p => (p + 1) % pagine.length)} style={bottonePag} aria-label="Pagina successiva">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ============================================================
 // COMPONENTE
 // ============================================================
 
-export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onStatoCambiato, onRicaricaPratica }: Props) {
+export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onStatoCambiato, onRicaricaPratica, compatta }: Props) {
   const [docs, setDocs] = useState<DocRiga[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [dati, setDati] = useState<DatiPratica | null>(null)
@@ -216,6 +310,19 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
   // VISORE: indice della voce aperta (documenti + foto in un'unica fila)
   const [visoreIdx, setVisoreIdx] = useState<number | null>(null)
   const [modalRifiuto, setModalRifiuto] = useState<{ id: string; titolo: string } | null>(null)
+  const [errRifiuto, setErrRifiuto] = useState<string | null>(null)
+  // ⭐ 27/07 (variante A su mockup): frasi pronte del rifiuto (categoria
+  // 'rifiuto' in messaggi_preimpostati), modificabili dalla nuvoletta stessa
+  const [frasiRifiuto, setFrasiRifiuto] = useState<Preimpostato[]>([])
+  async function caricaFrasiRifiuto() {
+    const { data } = await supabase
+      .from('messaggi_preimpostati')
+      .select('id, testo, ordine')
+      .eq('categoria', 'rifiuto')
+      .order('ordine', { ascending: true })
+    setFrasiRifiuto((data as Preimpostato[]) || [])
+  }
+  useEffect(() => { caricaFrasiRifiuto() }, [])
   const [notaRifiuto, setNotaRifiuto] = useState('')
 
   const onStatoRef = useRef(onStatoCambiato)
@@ -255,9 +362,10 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
       // Non navigare mentre si scrive (es. nota di rifiuto)
       const tag = (document.activeElement?.tagName || '').toLowerCase()
       if (tag === 'textarea' || tag === 'input') return
+      // Frecce A ROTAZIONE (26/07): dall'ultimo si riparte dal primo e viceversa
       if (e.key === 'Escape') setVisoreIdx(null)
-      if (e.key === 'ArrowRight') setVisoreIdx(i => (i === null ? null : Math.min(i + 1, totVoci - 1)))
-      if (e.key === 'ArrowLeft') setVisoreIdx(i => (i === null ? null : Math.max(i - 1, 0)))
+      if (e.key === 'ArrowRight') setVisoreIdx(i => (i === null || totVoci === 0 ? i : (i + 1) % totVoci))
+      if (e.key === 'ArrowLeft') setVisoreIdx(i => (i === null || totVoci === 0 ? i : (i - 1 + totVoci) % totVoci))
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -374,7 +482,8 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
 
   async function confermaRifiuto() {
     if (!modalRifiuto) return
-    if (!notaRifiuto.trim()) { alert('Scrivi una nota per spiegare al cliente cosa rifare.'); return }
+    if (!notaRifiuto.trim()) { setErrRifiuto('Scrivi (o scegli) cosa deve rifare il cliente.'); return }
+    setErrRifiuto(null)
     setAzione(true)
     await supabase.from('pratica_documenti_checklist').update({ stato: 'rifiutato', nota_admin: notaRifiuto.trim(), aggiornato_il: new Date().toISOString() }).eq('id', modalRifiuto.id)
     const aggiornate = docs.map(d => d.id === modalRifiuto.id ? { ...d, stato: 'rifiutato' as const, nota_admin: notaRifiuto.trim() } : d)
@@ -453,10 +562,31 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     ...vociDocs.map(d => ({ tipo: 'doc' as const, doc: d })),
     ...foto.map((f, i) => ({ tipo: 'foto' as const, foto: f, n: i + 1 })),
   ]
+  // Nomi PRECISI per l'admin (26/07): il possessivo del catalogo diventa
+  // il ruolo vero della casistica ("Carta d'identità dell'intestatario")
+  const nomeDoc = (d: DocRiga) => {
+    const base = nomeAdmin(d.nome, dati?.casistica)
+    return d.per_erede && d.indice_erede ? `${base} (${ordinaleErede(d.indice_erede)} erede)` : base
+  }
   const titoloVoce = (v: Voce) => v.tipo === 'foto'
     ? `Foto del veicolo ${v.n}`
-    : (v.doc.per_erede && v.doc.indice_erede ? `${v.doc.nome} (${ordinaleErede(v.doc.indice_erede)} erede)` : v.doc.nome)
+    : nomeDoc(v.doc)
   const apriVisoreDoc = (id: string) => { const i = voci.findIndex(v => v.tipo === 'doc' && v.doc.id === id); if (i >= 0) setVisoreIdx(i) }
+
+  // La NUVOLETTA del rifiuto (27/07): appare ancorata al bottone "Rifiuta"
+  // del documento giusto, ovunque quel bottone sia (visore o riga)
+  const nuvolaRifiutoDi = (docId: string) => (modalRifiuto?.id === docId ? (
+    <NuvolaRifiuto
+      frasi={frasiRifiuto}
+      nota={notaRifiuto}
+      onNota={v => { setNotaRifiuto(v); setErrRifiuto(null) }}
+      err={errRifiuto}
+      occupato={azione}
+      onAnnulla={() => { setModalRifiuto(null); setNotaRifiuto(''); setErrRifiuto(null) }}
+      onConferma={confermaRifiuto}
+      onFrasiCambiate={caricaFrasiRifiuto}
+    />
+  ) : null)
   const apriVisoreFoto = (id: string) => { const i = voci.findIndex(v => v.tipo === 'foto' && v.foto.id === id); if (i >= 0) setVisoreIdx(i) }
 
   // Approva e passa da solo al prossimo documento ancora da verificare
@@ -472,6 +602,81 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
 
   return (
     <>
+      {/* ⭐ GRIGLIA COMPATTA (26/07, variante B su mockup) per la TENDINA:
+          tesserine con badge di stato nell'angolo (verde approvato, blu in
+          verifica, rosso rifiutato, grigio tratteggiato non caricato);
+          "Verifica ora" apre il visore sul primo in attesa, clic su una
+          tessera lo apre su quella. Il lavoro vero resta nel visore. */}
+      {compatta && (
+        <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
+          <div className="flex items-center gap-2 flex-wrap" style={{ marginBottom: 9 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>
+              <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+              Documenti
+              <span style={{ fontWeight: 400, fontSize: 10.5, color: '#64748B' }}>· {approvatiCount} di {daApprovare.length} approvati{daVerificareCount > 0 ? ` · ${daVerificareCount} da verificare` : ''}</span>
+            </span>
+            {daVerificareCount > 0 && (
+              <button
+                onClick={() => { const primo = vociDocs.find(d => d.stato === 'caricato'); if (primo) apriVisoreDoc(primo.id) }}
+                className="ml-auto flex items-center gap-1.5 transition-colors hover:bg-blue-700"
+                style={{ background: '#2563EB', color: '#fff', border: 'none', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
+                Verifica ora
+              </button>
+            )}
+          </div>
+
+          {daContattare && (
+            <p className="text-[11px] rounded-lg px-2.5 py-2 mb-2" style={{ background: '#FDF7EA', color: '#854F0B' }}>
+              <b>Da contattare:</b> {dati?.libretto === 'no' ? 'il cliente non ha il libretto (né denuncia). ' : ''}{dati?.certificato_proprieta === 'nessuno' ? 'il cliente non sa che certificato di proprietà ha. ' : ''}Gli esiti della telefonata si impostano dalla pagina intera.
+            </p>
+          )}
+
+          {loading ? (
+            <div className="flex justify-center py-4"><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>
+          ) : righeVisibili.length === 0 && foto.length === 0 ? (
+            <p className="text-xs" style={{ color: '#9AA7B5' }}>Nessun documento da approvare per questa pratica.</p>
+          ) : (
+            <div className="flex flex-wrap" style={{ gap: 10 }}>
+              {[...daApprovare].sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0)).map(doc => {
+                const files = leggiFile(doc.file_url)
+                const primoFile = files[0]
+                const url = primoFile ? (signedMap[primoFile.url] || primoFile.url) : null
+                const conImg = !!url && !isPdfUrl(primoFile.nome) && !isPdfUrl(primoFile.url)
+                const cliccabile = files.length > 0
+                return (
+                  <div key={doc.id} onClick={() => { if (cliccabile) apriVisoreDoc(doc.id) }} style={{ width: 76, cursor: cliccabile ? 'pointer' : 'default' }} title={nomeDoc(doc)}>
+                    <div className={cliccabile ? 'transition-all hover:!border-blue-300 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.12)]' : ''} style={{ position: 'relative', width: 76, height: 76, borderRadius: 10, background: '#EEF1F5', border: `1.5px ${doc.stato === 'da_fare' ? 'dashed' : 'solid'} #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9AA7B5' }}>
+                      {conImg
+                        ? /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8.5 }} />
+                        : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
+                      <span style={{ position: 'absolute', top: -5, right: -5, width: 17, height: 17, borderRadius: 999, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', background: doc.stato === 'approvato' ? '#16A34A' : doc.stato === 'caricato' ? '#2563EB' : doc.stato === 'rifiutato' ? '#DC2626' : '#C7CCD4' }}>
+                        {doc.stato === 'approvato' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                        {doc.stato === 'rifiutato' && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 600, color: '#4B5563', textAlign: 'center', marginTop: 4, lineHeight: 1.25, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{nomeDoc(doc)}</div>
+                  </div>
+                )
+              })}
+              {foto.length > 0 && (
+                <div onClick={() => apriVisoreFoto(foto[0].id)} style={{ width: 76, cursor: 'pointer' }} title={`Foto del veicolo · ${foto.length}`}>
+                  <div className="transition-all hover:!border-blue-300 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.12)]" style={{ position: 'relative', width: 76, height: 76, borderRadius: 10, border: '1.5px solid #E5E7EB' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={foto[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8.5 }} />
+                    <span style={{ position: 'absolute', bottom: 3, right: 3, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 8.5, fontWeight: 700, borderRadius: 999, padding: '1px 6px' }}>{foto.length}</span>
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 600, color: '#4B5563', textAlign: 'center', marginTop: 4 }}>Foto veicolo · {foto.length}</div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!compatta && (<>
       {/* ⭐ 26/07: da chiusa TUTTA la card è cliccabile (non solo la testata),
           con accensione al passaggio del mouse */}
       <div
@@ -536,8 +741,9 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 azione={azione}
                 onApri={() => apriVisoreDoc(doc.id)}
                 onApprova={() => approva(doc)}
-                onRifiuta={() => { setNotaRifiuto(doc.nota_admin || ''); setModalRifiuto({ id: doc.id, titolo: doc.nome }) }}
+                onRifiuta={() => { setNotaRifiuto(doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: doc.id, titolo: nomeDoc(doc) }) }}
                 onTornaInVerifica={() => tornaInVerifica(doc)}
+                nuvola={nuvolaRifiutoDi(doc.id)}
               />
             ))}
           </div>
@@ -557,6 +763,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
           </div>
         </div>
       )}
+      </>)}
 
       {/* VISORE DOCUMENTI + FOTO: elenco a sinistra, frecce (anche da
           tastiera), Approva/Rifiuta senza mai chiudere la finestra */}
@@ -604,7 +811,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: 15, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</div>
-                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>{visoreIdx + 1} di {voci.length} · frecce per scorrere · doppio clic per ingrandire</div>
+                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>{visoreIdx + 1} di {voci.length}</div>
                   </div>
                   <button onClick={() => setVisoreIdx(null)} className="text-gray-400 hover:text-gray-700" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
                 </div>
@@ -623,12 +830,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                       return (
                         <div key={i} style={{ flex: 1, minWidth: 0 }}>
                           {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
-                            <div style={{ width: '100%', height: '100%', overflow: 'auto', background: '#F6F8FB', borderRadius: 12, position: 'relative' }}>
-                              {f.lato && (
-                                <span style={{ position: 'sticky', top: 8, left: 8, display: 'inline-block', margin: 8, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, borderRadius: 20, padding: '2px 9px', zIndex: 1 }}>{f.lato.toUpperCase()}</span>
-                              )}
-                              <iframe src={url} title={f.nome} style={{ width: '100%', height: '100%', minHeight: 300, border: 'none' }} />
-                            </div>
+                            <PdfZoom key={url} src={url} badge={f.lato ? f.lato.toUpperCase() : undefined} />
                           ) : (
                             <ZoomImg key={url} src={url} alt={f.nome} badge={f.lato ? f.lato.toUpperCase() : undefined} />
                           )}
@@ -636,19 +838,19 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                       )
                     })}
                   </div>
+                  {/* Frecce A ROTAZIONE (26/07): mai bloccate, dall'ultimo si
+                      riparte dal primo e viceversa */}
                   <button
-                    onClick={() => setVisoreIdx(i => Math.max((i ?? 0) - 1, 0))}
-                    disabled={visoreIdx === 0}
+                    onClick={() => setVisoreIdx(i => (i === null || voci.length === 0 ? i : (i - 1 + voci.length) % voci.length))}
                     aria-label="Precedente"
-                    style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', opacity: visoreIdx === 0 ? 0.35 : 1, zIndex: 3 }}
+                    style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', zIndex: 3 }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                   </button>
                   <button
-                    onClick={() => setVisoreIdx(i => Math.min((i ?? 0) + 1, voci.length - 1))}
-                    disabled={visoreIdx === voci.length - 1}
+                    onClick={() => setVisoreIdx(i => (i === null || voci.length === 0 ? i : (i + 1) % voci.length))}
                     aria-label="Successivo"
-                    style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', opacity: visoreIdx === voci.length - 1 ? 0.35 : 1, zIndex: 3 }}
+                    style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', zIndex: 3 }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                   </button>
@@ -659,7 +861,10 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                   <div style={{ flex: 1 }} />
                   {voce.tipo === 'doc' && voce.doc.stato === 'caricato' && (
                     <>
-                      <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setModalRifiuto({ id: voce.doc.id, titolo: voce.doc.nome }) }} disabled={azione} style={{ background: '#fff', color: '#C0392B', border: '1.5px solid #F3C8C8', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
+                      <span style={{ position: 'relative', display: 'inline-flex' }}>
+                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: '#fff', color: '#C0392B', border: '1.5px solid #F3C8C8', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
+                        {nuvolaRifiutoDi(voce.doc.id)}
+                      </span>
                       <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         Approva e avanti
@@ -672,7 +877,10 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         Approvato
                       </span>
-                      <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setModalRifiuto({ id: voce.doc.id, titolo: voce.doc.nome }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Rifiuta</button>
+                      <span style={{ position: 'relative', display: 'inline-flex' }}>
+                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Rifiuta</button>
+                        {nuvolaRifiutoDi(voce.doc.id)}
+                      </span>
                     </>
                   )}
                   {voce.tipo === 'doc' && voce.doc.stato === 'rifiutato' && (
@@ -689,27 +897,145 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
         )
       })()}
 
-      {/* MODAL NOTA RIFIUTO */}
-      {modalRifiuto && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl p-6 max-w-md w-full">
-            <p className="font-semibold text-gray-800 mb-2">Rifiuta: {modalRifiuto.titolo}</p>
-            <p className="text-xs text-gray-500 mb-3">Scrivi al cliente cosa rifare (es. &quot;foto sfocata, rifalla con buona luce&quot;)</p>
-            <textarea
-              value={notaRifiuto}
-              onChange={e => setNotaRifiuto(e.target.value)}
-              rows={3}
-              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm text-gray-900 focus:outline-none focus:border-blue-500"
-              placeholder="Scrivi la nota qui..."
-              autoFocus
-            />
-            <div className="flex gap-2 justify-end mt-4">
-              <button onClick={() => { setModalRifiuto(null); setNotaRifiuto('') }} className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl">Annulla</button>
-              <button onClick={confermaRifiuto} disabled={azione} className="px-4 py-2 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50">Conferma rifiuto</button>
+      {/* Nota 27/07: la finestra centrale del rifiuto è stata SOSTITUITA
+          dalla NUVOLETTA ancorata ai bottoni "Rifiuta" (variante A su
+          mockup), con frasi pronte modificabili lì dentro. */}
+    </>
+  )
+}
+
+// ============================================================
+// NUVOLETTA RIFIUTO (27/07, variante A su mockup): ancorata al bottone
+// "Rifiuta", col becco, il documento resta in vista. Frasi pronte a
+// chips (un tocco riempie il campo, si ritocca e si conferma) e
+// GESTIONE IN LINEA delle frasi (matita → elenco modificabile):
+// niente finestre sopra la pagina. Frasi in messaggi_preimpostati
+// con categoria 'rifiuto' (SQL 2026-07-27-frasi-rifiuto.sql).
+// ============================================================
+
+function NuvolaRifiuto({ frasi, nota, onNota, err, occupato, onAnnulla, onConferma, onFrasiCambiate }: {
+  frasi: Preimpostato[]
+  nota: string
+  onNota: (v: string) => void
+  err: string | null
+  occupato: boolean
+  onAnnulla: () => void
+  onConferma: () => void
+  onFrasiCambiate: () => Promise<void> | void
+}) {
+  const [gestione, setGestione] = useState(false)
+  const [bozze, setBozze] = useState<Record<string, string>>({})
+  const [nuova, setNuova] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function salvaModifica(f: Preimpostato) {
+    const t = (bozze[f.id] ?? f.testo).trim()
+    if (!t || t === f.testo) { setBozze(b => { const n = { ...b }; delete n[f.id]; return n }); return }
+    setBusy(true)
+    const { error } = await supabase.from('messaggi_preimpostati').update({ testo: t }).eq('id', f.id)
+    if (!error) { setBozze(b => { const n = { ...b }; delete n[f.id]; return n }); await onFrasiCambiate() }
+    setBusy(false)
+  }
+
+  async function elimina(f: Preimpostato) {
+    setBusy(true)
+    const { error } = await supabase.from('messaggi_preimpostati').delete().eq('id', f.id)
+    if (!error) await onFrasiCambiate()
+    setBusy(false)
+  }
+
+  async function aggiungi() {
+    const t = nuova.trim()
+    if (!t) return
+    setBusy(true)
+    const ordineMax = frasi.reduce((m, f) => Math.max(m, f.ordine), 0)
+    const { error } = await supabase.from('messaggi_preimpostati').insert({ testo: t, ordine: ordineMax + 1, categoria: 'rifiuto' })
+    if (!error) { setNuova(''); await onFrasiCambiate() }
+    setBusy(false)
+  }
+
+  const campoSlim = 'flex-1 min-w-0 border-[1.5px] border-gray-200 px-3 py-[6px] text-[11.5px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all placeholder:text-gray-400 resize-none'
+
+  return (
+    <>
+      {/* Strato invisibile: clic fuori = chiudi, la pagina resta viva */}
+      <div onClick={() => { if (!occupato && !busy) onAnnulla() }} style={{ position: 'fixed', inset: 0, zIndex: 55 }} />
+      <div style={{ position: 'absolute', bottom: 'calc(100% + 10px)', right: 0, width: 330, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 14px 40px rgba(15,23,42,0.22)', padding: 12, zIndex: 60, textAlign: 'left', cursor: 'default' }}>
+        <div style={{ position: 'absolute', bottom: -6, right: 22, width: 10, height: 10, background: '#fff', borderRight: '1.5px solid #E5E7EB', borderBottom: '1.5px solid #E5E7EB', transform: 'rotate(45deg)' }} />
+
+        {gestione ? (
+          <>
+            {/* GESTIONE FRASI in linea: freccetta per tornare al rifiuto */}
+            <div className="flex items-center gap-2" style={{ marginBottom: 6 }}>
+              <button onClick={() => setGestione(false)} aria-label="Torna al rifiuto" className="flex items-center justify-center transition-colors hover:bg-blue-50" style={{ width: 24, height: 24, borderRadius: 8, background: 'none', border: '1.5px solid #E5E7EB', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+              </button>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>
+                <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+                Frasi pronte del rifiuto
+              </span>
             </div>
-          </div>
-        </div>
-      )}
+            <div className="overflow-y-auto flex flex-col gap-1.5" style={{ maxHeight: 190, marginTop: 4 }}>
+              {frasi.length === 0 && <p style={{ fontSize: 11, color: '#9AA7B5', padding: '4px 0' }}>Nessuna frase salvata: scrivi la prima qui sotto.</p>}
+              {frasi.map(f => {
+                const bozza = bozze[f.id] ?? f.testo
+                const modificata = bozza.trim() !== f.testo
+                return (
+                  <div key={f.id} className="flex gap-1.5 items-center">
+                    <textarea value={bozza} onChange={e => setBozze(b => ({ ...b, [f.id]: e.target.value }))} rows={1} className={campoSlim} style={{ borderRadius: 15 }} />
+                    {modificata && (
+                      <button onClick={() => salvaModifica(f)} disabled={busy} className="flex-shrink-0 transition-colors hover:bg-blue-700 disabled:opacity-40" style={{ background: '#2563eb', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', border: 'none', cursor: 'pointer' }}>Salva</button>
+                    )}
+                    <button onClick={() => elimina(f)} disabled={busy} aria-label="Elimina frase" className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-40" style={{ width: 24, height: 24, borderRadius: 8, background: 'none', border: 'none', color: '#A65D5D', cursor: 'pointer' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="flex gap-1.5 items-center" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #F1F4F8' }}>
+              <textarea value={nuova} onChange={e => setNuova(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aggiungi() } }} rows={1} placeholder="Nuova frase pronta…" className={campoSlim} style={{ borderRadius: 15 }} />
+              <button onClick={aggiungi} disabled={busy || !nuova.trim()} className="flex-shrink-0 transition-colors hover:bg-blue-700 disabled:opacity-40" style={{ background: '#2563eb', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 12px', border: 'none', cursor: 'pointer' }}>Aggiungi</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="flex items-center gap-2" style={{ marginBottom: 7 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#111827', flex: 1 }}>Cosa deve rifare il cliente?</span>
+              <button onClick={() => setGestione(true)} aria-label="Modifica le frasi pronte" title="Modifica le frasi pronte" className="flex items-center justify-center transition-colors hover:bg-blue-50" style={{ width: 24, height: 24, borderRadius: 8, background: 'none', border: '1.5px solid #E5E7EB', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+              </button>
+            </div>
+            {frasi.length > 0 && (
+              <div className="flex flex-wrap" style={{ gap: 5, marginBottom: 8 }}>
+                {frasi.map(f => (
+                  <button key={f.id} onClick={() => onNota(f.testo)} title={f.testo} className="transition-colors hover:bg-red-50 hover:border-red-200 hover:text-red-700" style={{ background: '#fff', border: '1px solid #E5E7EB', color: '#374151', fontSize: 10.5, fontWeight: 600, borderRadius: 999, padding: '4px 10px', cursor: 'pointer', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {f.testo}
+                  </button>
+                ))}
+              </div>
+            )}
+            <div style={{ border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '8px 10px' }} className="focus-within:!border-blue-300">
+              <textarea
+                value={nota}
+                onChange={e => onNota(e.target.value)}
+                rows={2}
+                placeholder="Oppure scrivilo con parole tue…"
+                autoFocus
+                className="w-full outline-none resize-none"
+                style={{ border: 'none', background: 'transparent', fontSize: 12.5, color: '#111827' }}
+              />
+            </div>
+            {err && <div style={{ fontSize: 10.5, color: '#DC2626', marginTop: 6 }}>{err}</div>}
+            <div className="flex items-center justify-end gap-8" style={{ gap: 8, marginTop: 9 }}>
+              <button onClick={onAnnulla} disabled={occupato} className="disabled:opacity-50" style={{ background: 'none', border: 'none', color: '#6B7280', fontSize: 11.5, fontWeight: 600, cursor: 'pointer' }}>Annulla</button>
+              <button onClick={onConferma} disabled={occupato} className="transition-colors hover:!bg-[#D25151] disabled:opacity-50" style={{ background: '#E15E5E', color: '#fff', border: 'none', borderRadius: 999, padding: '6px 14px', fontSize: 11.5, fontWeight: 700, cursor: 'pointer' }}>
+                {occupato ? 'Un attimo…' : 'Rifiuta e avvisa il cliente'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </>
   )
 }
@@ -726,6 +1052,8 @@ function RigaDoc(props: {
   onApprova: () => void
   onRifiuta: () => void
   onTornaInVerifica: () => void
+  // Nuvoletta del rifiuto ancorata al bottone di QUESTA riga (27/07)
+  nuvola?: React.ReactNode
 }) {
   const { doc } = props
   const files = leggiFile(doc.file_url)
@@ -778,13 +1106,19 @@ function RigaDoc(props: {
         {doc.stato === 'caricato' && (
           <div style={{ display: 'flex', gap: 6 }}>
             <button onClick={props.onApprova} disabled={props.azione} style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, opacity: props.azione ? 0.5 : 1 }}>Approva</button>
-            <button onClick={props.onRifiuta} disabled={props.azione} style={{ background: '#fff', color: '#C0392B', border: '1.5px solid #F3C8C8', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, opacity: props.azione ? 0.5 : 1 }}>Rifiuta</button>
+            <span style={{ position: 'relative', display: 'inline-flex' }}>
+              <button onClick={props.onRifiuta} disabled={props.azione} style={{ background: '#fff', color: '#C0392B', border: '1.5px solid #F3C8C8', borderRadius: 9, padding: '8px 14px', fontSize: 12.5, fontWeight: 600, opacity: props.azione ? 0.5 : 1 }}>Rifiuta</button>
+              {props.nuvola}
+            </span>
           </div>
         )}
         {(doc.stato === 'approvato' || doc.stato === 'rifiutato') && (
-          <button onClick={doc.stato === 'approvato' ? props.onRifiuta : props.onTornaInVerifica} disabled={props.azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
-            {doc.stato === 'approvato' ? 'Rifiuta' : 'Rimetti in verifica'}
-          </button>
+          <span style={{ position: 'relative', display: 'inline-flex' }}>
+            <button onClick={doc.stato === 'approvato' ? props.onRifiuta : props.onTornaInVerifica} disabled={props.azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>
+              {doc.stato === 'approvato' ? 'Rifiuta' : 'Rimetti in verifica'}
+            </button>
+            {doc.stato === 'approvato' ? props.nuvola : null}
+          </span>
         )}
       </div>
     </div>

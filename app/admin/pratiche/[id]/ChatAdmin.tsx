@@ -51,11 +51,15 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
   // ⭐ 26/07: TRE canali — Cliente (tu↔cliente), Demolitore (tu↔demolitore,
   // NUOVO) e "Dem. e Cliente" (controllo qualità, sola lettura)
   const [tab, setTab] = useState<'cliente' | 'demolitore' | 'qualita'>('cliente')
-  const [messaggi, setMessaggi] = useState<Messaggio[]>([])
+  // null = primo caricamento in corso: l'area messaggi resta vuota, senza
+  // "Nessun messaggio" che lampeggia all'apertura
+  const [messaggi, setMessaggi] = useState<Messaggio[] | null>(null)
   const [testo, setTesto] = useState('')
   const [inviando, setInviando] = useState(false)
   const [preimpostati, setPreimpostati] = useState<Preimpostato[]>([])
-  const [preimpostatiOk, setPreimpostatiOk] = useState(false)
+  // null = non lo sappiamo ancora (in caricamento): non si mostra NULLA,
+  // né chips né avviso — niente scritte che lampeggiano all'apertura
+  const [preimpostatiOk, setPreimpostatiOk] = useState<boolean | null>(null)
   const [gestisci, setGestisci] = useState(false)
   // Finestrella: altezza SEMPRE uguale (linguette e Gestisci si adattano
   // dentro) + bottone per ingrandirla accanto alla ✕ (26/07)
@@ -102,7 +106,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
       q.eq('mittente_tipo', 'demolitore').eq('conversazione', 'demolitore_noidemoliamo').then(() => {})
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aperta, tab, messaggi.length, praticaId])
+  }, [aperta, tab, messaggi?.length, praticaId])
 
   async function caricaMessaggi() {
     const { data } = await supabase
@@ -118,9 +122,12 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
   }
 
   async function caricaPreimpostati() {
+    // Solo le frasi della CHAT (27/07: la tabella ora ha una categoria,
+    // 'rifiuto' appartiene alla nuvoletta del visore documenti)
     const { data, error } = await supabase
       .from('messaggi_preimpostati')
       .select('*')
+      .or('categoria.eq.chat,categoria.is.null')
       .order('ordine', { ascending: true })
     if (error) { setPreimpostatiOk(false); return }
     setPreimpostatiOk(true)
@@ -152,7 +159,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
 
   // Filtro per canale; i messaggi VECCHI (conversazione NULL) si mostrano
   // col vecchio criterio dei mittenti
-  const visibili = messaggi.filter(m => {
+  const visibili = (messaggi || []).filter(m => {
     if (tab === 'cliente') return m.conversazione === 'cliente_noidemoliamo' || (m.conversazione == null && (m.mittente_tipo === 'admin' || m.mittente_tipo === 'cliente'))
     if (tab === 'demolitore') return m.conversazione === 'demolitore_noidemoliamo'
     return m.conversazione === 'cliente_demolitore' || (m.conversazione == null && (m.mittente_tipo === 'demolitore' || m.mittente_tipo === 'cliente'))
@@ -189,7 +196,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
       {/* MESSAGGI: nella finestrella riempie lo spazio (altezza totale
           fissa), nella card ha l'altezza sua */}
       <div ref={listaRef} className="overflow-y-auto" style={{ background: '#F8FAFC', borderRadius: 10, padding: 9, margin: finestra ? '8px 10px 0' : '8px 0 0', ...(finestra ? { flex: 1, minHeight: 0 } : { height: 220 }) }}>
-        {visibili.length === 0 ? (
+        {messaggi === null ? null : visibili.length === 0 ? (
           <p className="text-xs text-center py-8" style={{ color: '#9AA7B5' }}>
             {tab === 'cliente' ? 'Nessun messaggio: scrivi tu il primo.'
               : tab === 'demolitore' ? `Nessun messaggio con ${demolitoreNome || 'il demolitore'}: scrivi tu il primo.`
@@ -224,7 +231,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
           (nei due canali scrivibili; "Dem. e Cliente" è sola lettura) */}
       {tab !== 'qualita' && (
         <>
-          {tab === 'cliente' && preimpostatiOk && (
+          {tab === 'cliente' && preimpostatiOk === true && (
             <div className="flex items-center gap-1.5 flex-wrap" style={{ padding: finestra ? '7px 10px 0' : '7px 0 0' }}>
               <span style={{ fontSize: 9, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6 }}>RAPIDI</span>
               {preimpostati.map(p => (
@@ -241,7 +248,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
               <button onClick={() => setGestisci(true)} style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: 2, cursor: 'pointer' }}>Gestisci</button>
             </div>
           )}
-          {tab === 'cliente' && !preimpostatiOk && (
+          {tab === 'cliente' && preimpostatiOk === false && (
             <p style={{ fontSize: 10, color: '#9AA7B5', padding: finestra ? '6px 10px 0' : '6px 0 0' }}>
               Per i messaggi rapidi esegui su Supabase l&apos;SQL docs/sql/2026-07-17-attesa-note-preimpostati.sql
             </p>
@@ -315,7 +322,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
           <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
           Chat
           <span style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>
-            {messaggi.length > 0 ? `· ${messaggi.length} messaggi` : '· parla con il cliente'}
+            {(messaggi?.length ?? 0) > 0 ? `· ${messaggi!.length} messaggi` : '· parla con il cliente'}
           </span>
         </p>
         <span className="transition-transform flex-shrink-0" style={{ color: '#9AA7B5', transform: aperta ? 'rotate(180deg)' : 'none' }}>

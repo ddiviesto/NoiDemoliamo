@@ -620,7 +620,7 @@ export default function DettaglioPraticaAdmin() {
                             Elimina solo la pratica
                             <span className="block text-[10.5px] font-normal text-gray-500 mt-0.5">L&apos;account del cliente resta attivo</span>
                           </button>
-                          <button onClick={() => eliminaDefinitiva(true)} className="w-full px-3 py-2 text-[12px] font-semibold text-white bg-red-600 hover:bg-red-700 rounded-lg text-left">
+                          <button onClick={() => eliminaDefinitiva(true)} className="w-full px-3 py-2 text-[12px] font-semibold text-white bg-[#E15E5E] hover:bg-[#D25151] rounded-lg text-left">
                             Elimina pratica e account
                             <span className="block text-[10.5px] font-normal mt-0.5" style={{ color: '#FECACA' }}>Via anche login e accesso (solo se non ha altre pratiche)</span>
                           </button>

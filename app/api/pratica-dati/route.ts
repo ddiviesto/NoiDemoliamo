@@ -23,14 +23,15 @@ const CAMPI_TESTO = new Set([
   'targa', 'marca', 'modello',
   'indirizzo_ritiro', 'comune_ritiro', 'provincia_ritiro', 'cap_ritiro',
   'spazio_carro_attrezzi', 'spazio_carro_attrezzi_note',
-  'fermo_amministrativo',
+  'fermo_amministrativo', 'tipo_cambio',
   // Dichiarazioni modificabili dall'admin (17/07): sincronizzano la checklist
   'libretto', 'delegato_nome', 'delegato_telefono',
   // Attesa (pausa della pratica, 17/07)
   'attesa_motivo', 'attesa_dal',
 ])
 const CAMPI_NUMERO = new Set(['anno', 'km', 'lat', 'lng'])
-const CAMPI_BOOL = new Set(['in_attesa', 'targhe_presenti'])
+// ⭐ 27/07: condizioni del veicolo modificabili dalla tendina del CRM
+const CAMPI_BOOL = new Set(['in_attesa', 'targhe_presenti', 'incidentato', 'marciante', 'va_in_moto', 'parti_mancanti'])
 
 // La delega non è ammessa per queste casistiche (regola del file casistiche)
 const CASISTICHE_SENZA_DELEGA = ['non_intestatario', 'targhe_straniere']
@@ -89,6 +90,9 @@ export async function POST(req: NextRequest) {
     }
     if ('libretto' in update && update.libretto != null && !['si', 'denuncia', 'no'].includes(update.libretto as string)) {
       return NextResponse.json({ error: 'Valore libretto non valido' }, { status: 400 })
+    }
+    if ('tipo_cambio' in update && update.tipo_cambio != null && !['manuale', 'automatico', 'non_so'].includes(update.tipo_cambio as string)) {
+      return NextResponse.json({ error: 'Valore cambio non valido' }, { status: 400 })
     }
     if ('delegato_nome' in update && update.delegato_nome != null && CASISTICHE_SENZA_DELEGA.includes(pratica.casistica || '')) {
       return NextResponse.json({ error: 'La delega non è ammessa per questa casistica' }, { status: 400 })

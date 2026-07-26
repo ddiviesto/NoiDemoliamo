@@ -66,6 +66,13 @@ const CDC_LABEL: Record<string, string> = { digitale: 'Digitale', cartaceo: 'Car
 const FERMO_LABEL: Record<string, string> = { si: 'Sì', no: 'No', non_so: 'Da verificare' }
 const SPAZIO_LABEL: Record<string, string> = { libero: 'Accesso libero', stretto: 'Spazio stretto', no: 'Non passa' }
 
+// Le quattro sezioni della tendina (modifica sul posto, 27/07)
+type SezioneTendina = 'cliente' | 'casistiche' | 'veicolo' | 'ritiro'
+
+// Campo "slim" della modifica sul posto: stessa taglia del valore in
+// lettura, solo il FILO BLU sotto (pattern delle impostazioni cliente)
+const CAMPO_TENDINA = 'w-full h-[22px] bg-transparent border-0 border-b-2 border-blue-300 focus:border-blue-600 rounded-none outline-none text-[11.5px] text-right text-gray-900 px-0.5 transition-colors placeholder:text-gray-400'
+
 // Un'unica lista di campi per il caricamento e le ricariche (stessa forma)
 const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono'
 
@@ -225,6 +232,7 @@ export default function AdminDashboard() {
     setMenuStato(null)
     setMotivoStato('')
     setStatoErr(null)
+    setSezEdit(null)
     setSelId(prev => (prev === p.id ? null : p.id))
     if (p.user_id && emailAccounts[p.id] === undefined) {
       supabase.from('utenti').select('email').eq('id', p.user_id).single()
@@ -261,6 +269,93 @@ export default function AdminDashboard() {
         : r.conversazione === 'demolitore_noidemoliamo'
     ).length
     setNonLetti(prev => ({ ...prev, [praticaId]: n }))
+  }
+
+  // ⭐ MODIFICA SUL POSTO nelle sezioni della tendina (27/07, variante 1 su
+  // mockup): matita per sezione, righe ad altezza fissa, campi col filo blu
+  // in dissolvenza, zero sobbalzi. Salvataggio via server: /api/pratica-dati
+  // (whitelist + sincronizzazione checklist per libretto/fermo/targhe), il
+  // certificato di proprietà passa da /api/pratica-cdc.
+  const [sezEdit, setSezEdit] = useState<SezioneTendina | null>(null)
+  const [bozza, setBozza] = useState<Record<string, unknown>>({})
+  const [salvandoSez, setSalvandoSez] = useState(false)
+  const [erroreSez, setErroreSez] = useState<string | null>(null)
+  const setB = (campo: string, valore: unknown) => setBozza(prev => ({ ...prev, [campo]: valore }))
+  const sb = (campo: string) => (bozza[campo] as string) ?? ''
+
+  function apriSez(p: Pratica, quale: SezioneTendina) {
+    setErroreSez(null)
+    setSezEdit(quale)
+    setBozza({
+      nome_richiedente: p.nome_richiedente || '', telefono: p.telefono || '', codice_fiscale: p.codice_fiscale || '',
+      // Dichiarazioni: nei campi finiscono SOLO gli esiti ammessi (17/07),
+      // gli altri valori restano come "Scegli…" disabilitato
+      libretto: p.libretto === 'si' || p.libretto === 'denuncia' ? p.libretto : '',
+      certificato_proprieta: ['digitale', 'cartaceo', 'smarrito'].includes(p.certificato_proprieta || '') ? p.certificato_proprieta : '',
+      fermo_amministrativo: p.fermo_amministrativo === 'si' || p.fermo_amministrativo === 'no' ? p.fermo_amministrativo : '',
+      targhe_presenti: p.targhe_presenti == null ? '' : p.targhe_presenti ? 'presenti' : 'assenti',
+      targa: p.targa || '', marca: p.marca || '', modello: p.modello || '',
+      anno: p.anno != null ? String(p.anno) : '', km: p.km != null ? String(p.km) : '',
+      tipo_cambio: p.tipo_cambio === 'manuale' || p.tipo_cambio === 'automatico' ? p.tipo_cambio : '',
+      incidentato: p.incidentato, marciante: p.marciante, va_in_moto: p.va_in_moto, parti_mancanti: p.parti_mancanti,
+      indirizzo_ritiro: p.indirizzo_ritiro || '', spazio_carro_attrezzi: p.spazio_carro_attrezzi || '',
+      delegato_nome: p.delegato_nome || '', delegato_telefono: p.delegato_telefono || '',
+    })
+  }
+
+  async function salvaSez(p: Pratica) {
+    if (!sezEdit) return
+    setSalvandoSez(true)
+    setErroreSez(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` }
+      const dati: Record<string, unknown> = {}
+      if (sezEdit === 'cliente') {
+        dati.nome_richiedente = sb('nome_richiedente')
+        dati.telefono = sb('telefono')
+        dati.codice_fiscale = sb('codice_fiscale')
+      } else if (sezEdit === 'casistiche') {
+        if (sb('libretto')) dati.libretto = sb('libretto')
+        if (sb('fermo_amministrativo')) dati.fermo_amministrativo = sb('fermo_amministrativo')
+        if (sb('targhe_presenti')) dati.targhe_presenti = sb('targhe_presenti') === 'presenti'
+        // Il CDC passa dal SUO endpoint: sincronizza la checklist del cliente
+        const cdc = sb('certificato_proprieta')
+        if (cdc && cdc !== (p.certificato_proprieta || '')) {
+          const resCdc = await fetch('/api/pratica-cdc', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, cdc }) })
+          const jCdc = await resCdc.json().catch(() => null)
+          if (!resCdc.ok) throw new Error(jCdc?.error || 'Errore nel salvataggio del certificato')
+        }
+      } else if (sezEdit === 'veicolo') {
+        dati.targa = sb('targa')
+        dati.marca = sb('marca')
+        dati.modello = sb('modello')
+        dati.anno = sb('anno')
+        dati.km = sb('km')
+        if (sb('tipo_cambio')) dati.tipo_cambio = sb('tipo_cambio')
+        for (const c of ['incidentato', 'marciante', 'va_in_moto', 'parti_mancanti']) {
+          if (typeof bozza[c] === 'boolean') dati[c] = bozza[c]
+        }
+      } else {
+        dati.indirizzo_ritiro = sb('indirizzo_ritiro')
+        if (sb('spazio_carro_attrezzi')) dati.spazio_carro_attrezzi = sb('spazio_carro_attrezzi')
+        if (!(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere')) {
+          dati.delegato_nome = sb('delegato_nome')
+          dati.delegato_telefono = sb('delegato_telefono')
+        }
+      }
+      if (Object.keys(dati).length > 0) {
+        const res = await fetch('/api/pratica-dati', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, dati }) })
+        const j = await res.json().catch(() => null)
+        if (!res.ok) throw new Error(j?.error || 'Errore nel salvataggio')
+      }
+      await ricaricaPratiche()
+      aggiornaContatori(p.id)
+      setSezEdit(null)
+    } catch (e) {
+      setErroreSez(e instanceof Error && e.message ? e.message : 'Errore nel salvataggio. Riprova.')
+    }
+    setSalvandoSez(false)
   }
 
   // ---- Cambi di stato dal menu (stessa logica del dettaglio: tutto via server) ----
@@ -637,7 +732,7 @@ export default function AdminDashboard() {
                                     {statoErr && <div className="text-[10.5px] text-red-600 mt-1">{statoErr}</div>}
                                     <div className="flex gap-1.5 justify-end mt-2">
                                       <button onClick={() => { setMenuStato('menu'); setStatoErr(null) }} disabled={statoBusy} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>Indietro</button>
-                                      <button onClick={() => azioneStato(p, menuStato)} disabled={statoBusy} className="transition-colors disabled:opacity-50" style={{ background: menuStato === 'attesa' ? '#B45309' : '#DC2626', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>{statoBusy ? 'Salvo…' : 'Conferma'}</button>
+                                      <button onClick={() => azioneStato(p, menuStato)} disabled={statoBusy} className="transition-colors disabled:opacity-50" style={{ background: menuStato === 'attesa' ? '#B45309' : '#E15E5E', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>{statoBusy ? 'Salvo…' : 'Conferma'}</button>
                                     </div>
                                   </div>
                                 )}
@@ -657,36 +752,131 @@ export default function AdminDashboard() {
                       </div>
 
                       <div style={{ padding: '12px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                        <SezTendina titolo="Cliente" righe={[
-                          ['Nome', p.nome_richiedente || '—'],
-                          ['Telefono', p.telefono || '—'],
-                          [p.casistica === 'societa' || p.casistica === 'societa_fallita' ? 'P.IVA' : 'CF', p.codice_fiscale || '—'],
-                          ['Email', emailAccounts[p.id] === undefined ? '…' : (emailAccounts[p.id] || '—')],
-                        ]} />
-                        <SezTendina titolo="Casistiche" righe={[
-                          ['Casistica', p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : '—'],
-                          ['Libretto', p.libretto ? (LIBRETTO_LABEL[p.libretto] || p.libretto) : '—'],
-                          ['Cert. proprietà', p.certificato_proprieta ? (CDC_LABEL[p.certificato_proprieta] || p.certificato_proprieta) : '—'],
-                          ['Fermo', p.fermo_amministrativo ? (FERMO_LABEL[p.fermo_amministrativo] || p.fermo_amministrativo) : '—'],
-                          ['Targhe', p.targhe_presenti == null ? '—' : p.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite o rubate'],
-                        ]} />
-                        <SezTendina titolo="Veicolo" righe={[
-                          ['Anno · km', `${p.anno || '—'} · ${p.km ? Number(p.km).toLocaleString('it-IT') : '—'}`],
-                          ['Cambio', p.tipo_cambio === 'manuale' ? 'Manuale' : p.tipo_cambio === 'automatico' ? 'Automatico' : p.tipo_cambio === 'non_so' ? 'Non lo sa' : '—'],
-                        ]} extra={
-                          <div style={{ paddingTop: 4 }}>
-                            {p.incidentato != null && <PillCond buono={!p.incidentato}>{p.incidentato ? 'Incidentata' : 'Non incidentata'}</PillCond>}
-                            {p.va_in_moto != null && <PillCond buono={p.va_in_moto}>{p.va_in_moto ? 'Si avvia' : 'Non si avvia'}</PillCond>}
-                            {p.marciante != null && <PillCond buono={p.marciante}>{p.marciante ? 'Cammina' : 'Non cammina'}</PillCond>}
-                            {p.parti_mancanti != null && <PillCond buono={!p.parti_mancanti}>{p.parti_mancanti ? 'Parti mancanti' : 'Completo'}</PillCond>}
-                          </div>
-                        } />
-                        <SezTendina titolo="Ritiro" righe={[
-                          ['Indirizzo', p.indirizzo_ritiro || '—'],
-                          ['Comune', p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}${p.cap_ritiro ? ` · ${p.cap_ritiro}` : ''}` : '—'],
-                          ['Spazio carro', p.spazio_carro_attrezzi ? (SPAZIO_LABEL[p.spazio_carro_attrezzi] || p.spazio_carro_attrezzi) : '—'],
-                          ['Delegato', p.delegato_nome ? `${p.delegato_nome}${p.delegato_telefono ? ` · ${p.delegato_telefono}` : ''}` : 'Consegna in prima persona'],
-                        ]} />
+                        <SezTendinaMod
+                          titolo="Cliente"
+                          inEdit={sezEdit === 'cliente'}
+                          salvando={salvandoSez}
+                          errore={erroreSez}
+                          onMatita={() => apriSez(p, 'cliente')}
+                          onAnnulla={() => { setSezEdit(null); setErroreSez(null) }}
+                          onSalva={() => salvaSez(p)}
+                          righe={[
+                            { k: 'Nome', vista: p.nome_richiedente || '—', campo: <input className={CAMPO_TENDINA} value={sb('nome_richiedente')} onChange={e => setB('nome_richiedente', e.target.value)} /> },
+                            { k: 'Telefono', vista: p.telefono || '—', campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('telefono')} onChange={e => setB('telefono', e.target.value)} /> },
+                            { k: p.casistica === 'societa' || p.casistica === 'societa_fallita' ? 'P.IVA' : 'CF', vista: p.codice_fiscale || '—', campo: <input className={CAMPO_TENDINA} value={sb('codice_fiscale')} onChange={e => setB('codice_fiscale', e.target.value)} /> },
+                            { k: 'Email', vista: emailAccounts[p.id] === undefined ? '…' : (emailAccounts[p.id] || '—') },
+                          ]}
+                        />
+                        <SezTendinaMod
+                          titolo="Casistiche"
+                          inEdit={sezEdit === 'casistiche'}
+                          salvando={salvandoSez}
+                          errore={erroreSez}
+                          onMatita={() => apriSez(p, 'casistiche')}
+                          onAnnulla={() => { setSezEdit(null); setErroreSez(null) }}
+                          onSalva={() => salvaSez(p)}
+                          righe={[
+                            { k: 'Casistica', vista: p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : '—' },
+                            { k: 'Libretto', vista: p.libretto ? (LIBRETTO_LABEL[p.libretto] || p.libretto) : '—', campo: (
+                              <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('libretto')} onChange={e => setB('libretto', e.target.value)}>
+                                <option value="" disabled>Scegli…</option>
+                                <option value="si">Ha l&apos;originale</option>
+                                <option value="denuncia">Denuncia di smarrimento</option>
+                              </select>
+                            ) },
+                            { k: 'Cert. proprietà', vista: p.certificato_proprieta ? (CDC_LABEL[p.certificato_proprieta] || p.certificato_proprieta) : '—', campo: (
+                              <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('certificato_proprieta')} onChange={e => setB('certificato_proprieta', e.target.value)}>
+                                <option value="" disabled>Scegli…</option>
+                                <option value="digitale">Digitale</option>
+                                <option value="cartaceo">Cartaceo</option>
+                                <option value="smarrito">Smarrito</option>
+                              </select>
+                            ) },
+                            { k: 'Fermo', vista: p.fermo_amministrativo ? (FERMO_LABEL[p.fermo_amministrativo] || p.fermo_amministrativo) : '—', campo: (
+                              <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('fermo_amministrativo')} onChange={e => setB('fermo_amministrativo', e.target.value)}>
+                                <option value="" disabled>Scegli…</option>
+                                <option value="no">No</option>
+                                <option value="si">Sì</option>
+                              </select>
+                            ) },
+                            { k: 'Targhe', vista: p.targhe_presenti == null ? '—' : p.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite o rubate', campo: (
+                              <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('targhe_presenti')} onChange={e => setB('targhe_presenti', e.target.value)}>
+                                <option value="" disabled>Scegli…</option>
+                                <option value="presenti">Presenti sul mezzo</option>
+                                <option value="assenti">Smarrite o rubate</option>
+                              </select>
+                            ) },
+                          ]}
+                        />
+                        <SezTendinaMod
+                          titolo="Veicolo"
+                          inEdit={sezEdit === 'veicolo'}
+                          salvando={salvandoSez}
+                          errore={erroreSez}
+                          onMatita={() => apriSez(p, 'veicolo')}
+                          onAnnulla={() => { setSezEdit(null); setErroreSez(null) }}
+                          onSalva={() => salvaSez(p)}
+                          righe={[
+                            { k: 'Targa', vista: p.targa || '—', campo: <input className={CAMPO_TENDINA} value={sb('targa')} onChange={e => setB('targa', e.target.value)} /> },
+                            { k: 'Marca', vista: p.marca || '—', campo: <input className={CAMPO_TENDINA} value={sb('marca')} onChange={e => setB('marca', e.target.value)} /> },
+                            { k: 'Modello', vista: p.modello || '—', campo: <input className={CAMPO_TENDINA} value={sb('modello')} onChange={e => setB('modello', e.target.value)} /> },
+                            { k: 'Anno', vista: p.anno ? String(p.anno) : '—', campo: <input className={CAMPO_TENDINA} inputMode="numeric" value={sb('anno')} onChange={e => setB('anno', e.target.value)} /> },
+                            { k: 'Km', vista: p.km ? Number(p.km).toLocaleString('it-IT') : '—', campo: <input className={CAMPO_TENDINA} inputMode="numeric" value={sb('km')} onChange={e => setB('km', e.target.value)} /> },
+                            { k: 'Cambio', vista: p.tipo_cambio === 'manuale' ? 'Manuale' : p.tipo_cambio === 'automatico' ? 'Automatico' : p.tipo_cambio === 'non_so' ? 'Non lo sa' : '—', campo: (
+                              <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('tipo_cambio')} onChange={e => setB('tipo_cambio', e.target.value)}>
+                                <option value="" disabled>Scegli…</option>
+                                <option value="manuale">Manuale</option>
+                                <option value="automatico">Automatico</option>
+                              </select>
+                            ) },
+                          ]}
+                          extra={
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, paddingTop: 5 }}>
+                              {sezEdit === 'veicolo' ? (
+                                <>
+                                  <PillBool valore={bozza.incidentato as boolean | null} labelSi="Incidentata" labelNo="Non incidentata" buonoSeNo onClick={() => setB('incidentato', bozza.incidentato == null ? true : !bozza.incidentato)} />
+                                  <PillBool valore={bozza.va_in_moto as boolean | null} labelSi="Si avvia" labelNo="Non si avvia" onClick={() => setB('va_in_moto', bozza.va_in_moto == null ? true : !bozza.va_in_moto)} />
+                                  <PillBool valore={bozza.marciante as boolean | null} labelSi="Cammina" labelNo="Non cammina" onClick={() => setB('marciante', bozza.marciante == null ? true : !bozza.marciante)} />
+                                  <PillBool valore={bozza.parti_mancanti as boolean | null} labelSi="Parti mancanti" labelNo="Completo" buonoSeNo onClick={() => setB('parti_mancanti', bozza.parti_mancanti == null ? true : !bozza.parti_mancanti)} />
+                                </>
+                              ) : (
+                                <>
+                                  {p.incidentato != null && <PillCond buono={!p.incidentato}>{p.incidentato ? 'Incidentata' : 'Non incidentata'}</PillCond>}
+                                  {p.va_in_moto != null && <PillCond buono={p.va_in_moto}>{p.va_in_moto ? 'Si avvia' : 'Non si avvia'}</PillCond>}
+                                  {p.marciante != null && <PillCond buono={p.marciante}>{p.marciante ? 'Cammina' : 'Non cammina'}</PillCond>}
+                                  {p.parti_mancanti != null && <PillCond buono={!p.parti_mancanti}>{p.parti_mancanti ? 'Parti mancanti' : 'Completo'}</PillCond>}
+                                </>
+                              )}
+                            </div>
+                          }
+                        />
+                        <SezTendinaMod
+                          titolo="Ritiro"
+                          inEdit={sezEdit === 'ritiro'}
+                          salvando={salvandoSez}
+                          errore={erroreSez}
+                          onMatita={() => apriSez(p, 'ritiro')}
+                          onAnnulla={() => { setSezEdit(null); setErroreSez(null) }}
+                          onSalva={() => salvaSez(p)}
+                          righe={[
+                            { k: 'Indirizzo', vista: p.indirizzo_ritiro || '—', campo: <input className={CAMPO_TENDINA} value={sb('indirizzo_ritiro')} onChange={e => setB('indirizzo_ritiro', e.target.value)} /> },
+                            { k: 'Comune', vista: p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}${p.cap_ritiro ? ` · ${p.cap_ritiro}` : ''}` : '—' },
+                            { k: 'Spazio carro', vista: p.spazio_carro_attrezzi ? (SPAZIO_LABEL[p.spazio_carro_attrezzi] || p.spazio_carro_attrezzi) : '—', campo: (
+                              <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('spazio_carro_attrezzi')} onChange={e => setB('spazio_carro_attrezzi', e.target.value)}>
+                                <option value="" disabled>Scegli…</option>
+                                <option value="libero">Accesso libero</option>
+                                <option value="stretto">Spazio stretto</option>
+                                <option value="no">Non passa</option>
+                              </select>
+                            ) },
+                            ...(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere' ? [
+                              { k: 'Delegato', vista: 'Delega non ammessa' },
+                            ] : [
+                              { k: 'Delegato', vista: p.delegato_nome || 'Consegna in prima persona', campo: <input className={CAMPO_TENDINA} placeholder="Vuoto = in prima persona" value={sb('delegato_nome')} onChange={e => setB('delegato_nome', e.target.value)} /> },
+                              { k: 'Tel. delegato', vista: p.delegato_telefono || '—', campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('delegato_telefono')} onChange={e => setB('delegato_telefono', e.target.value)} /> },
+                            ]),
+                          ]}
+                        />
                       </div>
 
                       {/* DOCUMENTI e CHAT in linea (26/07): le card VERE del
@@ -697,6 +887,7 @@ export default function AdminDashboard() {
                             praticaId={p.id}
                             statoPratica={p.stato}
                             aperta
+                            compatta
                             onToggle={() => setSelDocsAperti(false)}
                             onStatoCambiato={(tutti, totale, approvati) => setDocStats(prev => ({ ...prev, [p.id]: { totale, approvati, daVerificare: prev[p.id]?.daVerificare ?? 0 } }))}
                             onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
@@ -734,23 +925,87 @@ export default function AdminDashboard() {
 // SOTTOCOMPONENTI
 // ============================================================
 
-// Sezione della TENDINA sotto la riga (26/07): card bianca con titoletto
-// a barretta blu e righe etichetta/valore (etichetta scura, valore leggero)
-function SezTendina({ titolo, righe, extra }: { titolo: string; righe: [string, string][]; extra?: React.ReactNode }) {
+// Sezione della TENDINA con MODIFICA SUL POSTO (27/07, variante 1 su
+// mockup): righe ad ALTEZZA FISSA, in modifica il valore diventa un campo
+// slim col filo blu (dissolvenza incrociata), la matita diventa
+// Annulla · Salva in uno spazio già riservato. Zero sobbalzi.
+function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, onSalva, righe, extra }: {
+  titolo: string
+  inEdit: boolean
+  salvando: boolean
+  errore?: string | null
+  onMatita: () => void
+  onAnnulla: () => void
+  onSalva: () => void
+  righe: { k: string; vista: string; campo?: React.ReactNode }[]
+  extra?: React.ReactNode
+}) {
+  const fade = (visibile: boolean): React.CSSProperties => ({
+    opacity: visibile ? 1 : 0,
+    pointerEvents: visibile ? 'auto' : 'none',
+    transition: 'opacity .18s ease',
+  })
   return (
-    <div style={{ flex: 1, minWidth: 200, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33', marginBottom: 7 }}>
-        <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-        {titolo}
+    <div style={{ flex: 1, minWidth: 215, background: '#fff', border: `1.5px solid ${inEdit ? '#93C5FD' : '#E5E7EB'}`, borderRadius: 12, padding: '11px 13px', transition: 'border-color .2s' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33', flex: 1, minWidth: 0 }}>
+          <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+          {titolo}
+        </span>
+        {/* Matita ↔ Annulla · Salva: larghezza riservata, dissolvenza */}
+        <span style={{ position: 'relative', width: 98, height: 22, flexShrink: 0 }}>
+          <span style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'flex-end', ...fade(!inEdit) }}>
+            <button onClick={onMatita} aria-label={`Modifica ${titolo}`} className="flex items-center justify-center transition-colors hover:bg-blue-50 hover:border-blue-200" style={{ width: 22, height: 22, borderRadius: 7, border: '1.5px solid #E5E7EB', background: '#fff', color: '#1D4ED8', cursor: 'pointer' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+            </button>
+          </span>
+          <span style={{ position: 'absolute', inset: 0, display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'center', ...fade(inEdit) }}>
+            <button onClick={onAnnulla} disabled={salvando} className="disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 7px', cursor: 'pointer' }}>Annulla</button>
+            <button onClick={onSalva} disabled={salvando} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 8px', cursor: 'pointer' }}>{salvando ? '…' : 'Salva'}</button>
+          </span>
+        </span>
       </div>
-      {righe.map(([k, v], i) => (
-        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '4px 0', borderBottom: i === righe.length - 1 && !extra ? 'none' : '1px solid #F5F7FA', fontSize: 11.5 }}>
-          <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>{k}</span>
-          <span style={{ color: '#6B7280', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v}>{v}</span>
+      {righe.map((r, i) => (
+        <div key={r.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 27, borderBottom: i === righe.length - 1 && !extra ? 'none' : '1px solid #F5F7FA', fontSize: 11.5 }}>
+          <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.k}</span>
+          <span style={{ position: 'relative', flex: 1, minWidth: 0, height: 22 }}>
+            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...fade(!inEdit || !r.campo) }} title={r.vista}>{r.vista}</span>
+            {r.campo && (
+              <span style={{ position: 'absolute', inset: 0, ...fade(inEdit) }}>{r.campo}</span>
+            )}
+          </span>
         </div>
       ))}
+      {inEdit && errore && <div style={{ fontSize: 10.5, color: '#DC2626', marginTop: 6 }}>{errore}</div>}
       {extra}
     </div>
+  )
+}
+
+// Interruttore a pillolina per le condizioni del veicolo (in modifica):
+// un tocco gira sì/no, grigio finché non è mai stato risposto
+function PillBool({ valore, labelSi, labelNo, buonoSeNo, onClick }: {
+  valore: boolean | null
+  labelSi: string
+  labelNo: string
+  buonoSeNo?: boolean
+  onClick: () => void
+}) {
+  const testo = valore == null ? `${labelSi}?` : valore ? labelSi : labelNo
+  const buono = valore == null ? null : (buonoSeNo ? !valore : valore)
+  return (
+    <button
+      onClick={onClick}
+      className="transition-all hover:opacity-100"
+      style={{
+        background: buono == null ? '#F3F5F9' : buono ? '#EAF3DE' : '#FBE2E2',
+        color: buono == null ? '#6B7280' : buono ? '#27500A' : '#9B1C1C',
+        border: `1px solid ${buono == null ? '#D8DDE5' : 'currentColor'}`,
+        fontSize: 9.5, fontWeight: 600, borderRadius: 20, padding: '2px 8px', cursor: 'pointer', opacity: 0.92,
+      }}
+    >
+      {testo}
+    </button>
   )
 }
 
@@ -760,44 +1015,86 @@ function PillCond({ buono, children }: { buono: boolean; children: React.ReactNo
   )
 }
 
+// ⭐ 27/07: ICONE IDENTICHE al passo "Che veicolo è?" di /inizia — stesso
+// disegno per ogni tipo di mezzo, così cliente e CRM parlano la stessa lingua.
 function IconaVeicolo({ tipo }: { tipo: string | null }) {
-  const common = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' as const, stroke: '#2563eb', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
   const t = (tipo || '').toLowerCase()
+  const colore: React.CSSProperties = { color: '#2563eb' }
 
-  if (t === 'motoveicolo' || t === 'ciclomotore') {
+  if (t === 'motoveicolo') {
     return (
-      <svg {...common}>
-        <circle cx="5.5" cy="17.5" r="2.5" />
-        <circle cx="18.5" cy="17.5" r="2.5" />
-        <path d="M15 6h2.5L20 10.5" />
-        <path d="M5.5 17.5 9 11h5l4.5 6.5" />
-        <path d="M9 11 7.5 8H5" />
+      <svg width="26" height="21" viewBox="0 0 640 512" style={colore}>
+        <path fill="currentColor" d="M280 32c-13.3 0-24 10.7-24 24s10.7 24 24 24h57.7l16.4 30.3L256 192l-45.3-45.3c-12-12-28.3-18.7-45.3-18.7H64c-17.7 0-32 14.3-32 32v32h96c88.4 0 160 71.6 160 160c0 11-1.1 21.7-3.2 32h70.4c-2.1-10.3-3.2-21-3.2-32c0-52.2 25-98.6 63.7-127.8l15.4 28.6C402.4 276.3 384 312 384 352c0 70.7 57.3 128 128 128s128-57.3 128-128s-57.3-128-128-128c-13.5 0-26.5 2.1-38.7 6l-55.1-102H480c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32h-20.4c-7.5 0-14.7 2.6-20.5 7.4l-47.4 39.5l-14-26c-7-12.9-20.5-21-35.2-21zm182.7 279.2l28.2 52.2c6.3 11.7 20.9 16 32.5 9.7s16-20.9 9.7-32.5l-28.2-52.2c2.3-.3 4.7-.4 7.1-.4c35.3 0 64 28.7 64 64s-28.7 64-64 64s-64-28.7-64-64c0-15.5 5.5-29.7 14.7-40.8M187.3 376c-9.5 23.5-32.5 40-59.3 40c-35.3 0-64-28.7-64-64s28.7-64 64-64c26.9 0 49.9 16.5 59.3 40h66.4c-11.2-59.2-63.2-104-125.7-104C57.3 224 0 281.3 0 352s57.3 128 128 128c62.5 0 114.5-44.8 125.8-104h-66.4zm-59.3 8a32 32 0 1 0 0-64a32 32 0 1 0 0 64" />
       </svg>
     )
   }
-  if (t === 'furgone' || t === 'camion') {
+  if (t === 'ciclomotore') {
     return (
-      <svg {...common}>
-        <path d="M13 6v5a1 1 0 0 0 1 1h6.1a1 1 0 0 1 .7.3l.9.9a1 1 0 0 1 .3.7V17a1 1 0 0 1-1 1h-3" />
-        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.2 4.2M9 18h5" />
-        <circle cx="16" cy="18" r="2" />
-        <circle cx="7" cy="18" r="2" />
+      <svg width="24" height="24" viewBox="0 0 24 24" style={colore}>
+        <path fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5a3 3 0 1 0-6 0m6 0h3m-3 0c0 .903-.399 1.713-1.03 2.263M9 5H6m3 0c0 .903.399 1.713 1.03 2.263M14 20h2a2 2 0 0 0 2-2v-5c0-1.692-.859-4.816-4.03-5.737M14 20a2 2 0 0 1-2 2v0a2 2 0 0 1-2-2v0m4 0v-5a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v5m0 0H8a2 2 0 0 1-2-2v-5c0-1.692.859-4.816 4.03-5.737m3.94 0A3 3 0 0 1 12 8a3 3 0 0 1-1.97-.737" />
+      </svg>
+    )
+  }
+  if (t === 'minicar') {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" style={colore}>
+        <path fill="currentColor" d="M18.5 11H17v-1c0-3.31-2.69-6-6-6s-6 2.69-6 6v1.05c-.75.11-1.44.43-1.98.97A3.52 3.52 0 0 0 2 14.5c0 1.42.83 2.63 2.04 3.18c-.01.11-.04.21-.04.32c0 1.65 1.35 3 3 3s3-1.35 3-3h4c0 1.65 1.35 3 3 3s3-1.35 3-3c0-.11-.03-.21-.04-.32c.38-.17.72-.41 1.02-.71A3.52 3.52 0 0 0 22 14.49c0-1.93-1.57-3.5-3.5-3.5ZM12 6.14c1.72.45 3 2 3 3.86v1h-3zM7 10c0-1.86 1.28-3.41 3-3.86V11H7zm0 9c-.55 0-1-.45-1-1c0-.15.04-.31.11-.45c.01-.02.02-.03.03-.05c.28-.47.91-.59 1.35-.35c.15.08.28.2.37.36c.09.15.13.32.13.49c0 .55-.45 1-1 1Zm10 0a1.003 1.003 0 0 1-.87-1.5c.36-.63 1.35-.64 1.73 0c.01.02.02.04.03.05c.07.14.11.29.11.45c0 .55-.45 1-1 1m2.56-3.44c-.13.13-.29.24-.45.31l-.03-.03c-.04-.04-.08-.06-.12-.1c-.14-.12-.28-.23-.43-.32c-.06-.04-.13-.07-.19-.1q-.225-.105-.45-.18l-.2-.06c-.22-.05-.45-.09-.69-.09s-.49.04-.72.09c-.07.02-.14.05-.21.07c-.16.05-.31.11-.45.19c-.07.04-.15.08-.22.13c-.14.09-.26.18-.38.29c-.06.05-.12.1-.18.16c-.02.03-.05.04-.08.07H9.23s-.05-.05-.08-.07c-.05-.06-.11-.1-.17-.16q-.18-.165-.39-.3c-.07-.04-.14-.09-.21-.12c-.15-.08-.3-.14-.46-.19c-.07-.02-.14-.05-.21-.07q-.345-.09-.72-.09c-.375 0-.47.04-.69.09l-.2.06q-.24.075-.45.18c-.07.03-.13.07-.19.1c-.15.09-.3.2-.43.32c-.04.03-.08.06-.11.09l-.03.03c-.53-.23-.89-.76-.89-1.37c0-.4.16-.79.44-1.06c.28-.28.67-.44 1.06-.44h13c.83 0 1.5.67 1.5 1.5c0 .4-.16.79-.44 1.06Z" />
+      </svg>
+    )
+  }
+  if (t === 'furgone') {
+    return (
+      <svg width="26" height="26" viewBox="0 0 24 24" style={colore}>
+        <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+          <path d="M13 6v5a1 1 0 0 0 1 1h6.102a1 1 0 0 1 .712.298l.898.91a1 1 0 0 1 .288.702V17a1 1 0 0 1-1 1h-3" />
+          <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.176 4.2M9 18h5" />
+          <circle cx="16" cy="18" r="2" />
+          <circle cx="7" cy="18" r="2" />
+        </g>
+      </svg>
+    )
+  }
+  if (t === 'pullman') {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" style={colore}>
+        <path fill="currentColor" fillRule="evenodd" d="M12 2C8.229 2 6.343 2 5.172 3.172C4.108 4.235 4.01 5.886 4 9H3a1 1 0 0 0-1 1v1a1 1 0 0 0 .4.8L4 13c.01 3.114.108 4.765 1.172 5.828c.242.243.514.435.828.587V21a1 1 0 0 0 1 1h1.5a1 1 0 0 0 1-1v-1.018C10.227 20 11.054 20 12 20s1.773 0 2.5-.018V21a1 1 0 0 0 1 1H17a1 1 0 0 0 1-1v-1.585a3 3 0 0 0 .828-.587C19.892 17.765 19.991 16.114 20 13l1.6-1.2a1 1 0 0 0 .4-.8v-1a1 1 0 0 0-1-1h-1c-.01-3.114-.108-4.765-1.172-5.828C17.657 2 15.771 2 12 2M5.5 9.5c0 1.414 0 2.121.44 2.56c.439.44 1.146.44 2.56.44h7c1.414 0 2.121 0 2.56-.44c.44-.439.44-1.146.44-2.56V7c0-1.414 0-2.121-.44-2.56C17.622 4 16.915 4 15.5 4h-7c-1.414 0-2.121 0-2.56.44C5.5 4.878 5.5 5.585 5.5 7zm.75 6.5a.75.75 0 0 1 .75-.75h1.5a.75.75 0 0 1 0 1.5H7a.75.75 0 0 1-.75-.75m11.5 0a.75.75 0 0 0-.75-.75h-1.5a.75.75 0 0 0 0 1.5H17a.75.75 0 0 0 .75-.75" clipRule="evenodd" />
+      </svg>
+    )
+  }
+  if (t === 'camion') {
+    return (
+      <svg width="24" height="24" viewBox="0 0 24 24" style={colore}>
+        <path fill="currentColor" d="M1 12.5v5a1 1 0 0 0 1 1h1a3 3 0 0 0 6 0h6a3 3 0 0 0 6 0h1a1 1 0 0 0 1-1v-12a3 3 0 0 0-3-3h-9a3 3 0 0 0-3 3v2H6a3 3 0 0 0-2.4 1.2l-2.4 3.2a.6.6 0 0 0-.07.14l-.06.11a1 1 0 0 0-.07.35m16 6a1 1 0 1 1 1 1a1 1 0 0 1-1-1m-7-13a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1v11h-.78a3 3 0 0 0-4.44 0H10Zm-2 6H4l1.2-1.6a1 1 0 0 1 .8-.4h2Zm-3 7a1 1 0 1 1 1 1a1 1 0 0 1-1-1m-2-5h5v2.78a3 3 0 0 0-4.22.22H3Z" />
       </svg>
     )
   }
   if (t === 'imbarcazione') {
     return (
-      <svg {...common}>
-        <path d="M12 3v14" />
-        <path d="M12 4l7 9H5z" />
-        <path d="M3 19c1.5 1.5 3.5 1.5 5 0s3.5-1.5 5 0 3.5 1.5 5 0 2-1 3 0" />
+      <svg width="22" height="22" viewBox="0 0 36 36" style={colore}>
+        <path fill="currentColor" d="M29.1 27.1c-1.1-.1-2.2.3-3.1 1.1c-1.1 1.1-2.9 1.1-4.1 0c-1-.7-2.1-1.1-3.3-1.1c-1.2-.1-2.4.3-3.3 1.1c-.6.5-1.3.8-2.1.8s-1.5-.3-2.1-.8c-1-.8-2.2-1.2-3.4-1.2s-2.4.4-3.4 1.2c-.6.5-1.5.8-2.3.8v2c1.3.1 2.6-.3 3.6-1.2c.6-.5 1.5-.8 2.3-.8c.7 0 1.5.3 2.1.8c1.8 1.6 4.6 1.6 6.5 0c.6-.5 1.3-.8 2.1-.8c.7 0 1.4.3 2 .8c1.9 1.6 4.6 1.6 6.5 0c.5-.5 1.3-.8 2-.8s1.4.3 1.9.8q1.35 1.05 3 1.2v-2c-1 0-1.2-.4-1.7-.8c-.9-.7-2-1.1-3.2-1.1" />
+        <path fill="currentColor" d="M6 23c0-.6.5-1 1.1-1H32l-3.5 3.1h.2c.8 0 1.6.2 2.2.5l2.5-2.2l.2-.2c.7-.8.6-2.1-.2-2.8c-.4-.2-.8-.4-1.3-.4h-25c-1.7 0-3 1.3-3 3v3.2c.5-.5 1.2-.8 1.9-1.1z" />
+        <path fill="currentColor" d="M8.9 19H15v-7.8c0-.6-.3-1.2-.8-1.6c-.9-.7-2.2-.5-2.8.4l-4.1 5.9c-.4.6-.4 1.4-.1 2.1c.3.6 1 1 1.7 1m4.2-7.8L13 17H8.9z" />
+        <path fill="currentColor" d="M26 18c.4-.6.4-1.4 0-2L19.7 5.6c-.4-.6-1-1-1.7-1c-1.1 0-2 .9-2 2V19h8.3c.7 0 1.4-.4 1.7-1M17.9 6.6l6.4 10.5h-6.4z" />
       </svg>
     )
   }
+  if (t === 'velivolo') {
+    return (
+      <svg width="22" height="22" viewBox="0 0 24 24" style={colore}>
+        <g fill="none">
+          <path fill="currentColor" fillOpacity=".16" d="M10.292 7.043c0-3.478.424-5.043 1.698-5.043c1.273 0 1.708 1.565 1.708 5.043V8.74l6.238 3.957c.425.304.57.804.552 1.304v2l-6.532-2.62a.4.4 0 0 0-.548.345l-.304 4.753l2.376 1.348c.212.13.34.391.34.652L15.507 22l-3.517-1.174L8.483 22l-.313-1.522c0-.26.127-.522.34-.652l2.376-1.348l-.304-4.753a.4.4 0 0 0-.548-.345L3.502 16v-2c-.019-.5.127-1 .551-1.304l6.239-3.957z" />
+          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeMiterlimit="10" strokeWidth="1.5" d="M10.292 7.043c0-3.478.424-5.043 1.698-5.043c1.273 0 1.708 1.565 1.708 5.043V8.74l6.238 3.957c.425.304.57.804.552 1.304v2l-6.532-2.62a.4.4 0 0 0-.548.345l-.304 4.753l2.376 1.348c.212.13.34.391.34.652L15.507 22l-3.517-1.174L8.483 22l-.313-1.522c0-.26.127-.522.34-.652l2.376-1.348l-.304-4.753a.4.4 0 0 0-.548-.345L3.502 16v-2c-.019-.5.127-1 .551-1.304l6.239-3.957z" />
+        </g>
+      </svg>
+    )
+  }
+  // Autovettura (e "altro"): la stessa auto del flusso
   return (
-    <svg {...common}>
-      <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" />
-      <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6" />
+    <svg width="24" height="24" viewBox="0 0 24 24" style={colore}>
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2">
+        <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0" />
+        <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6" />
+      </g>
     </svg>
   )
 }

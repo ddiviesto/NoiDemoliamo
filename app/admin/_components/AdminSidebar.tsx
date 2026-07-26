@@ -9,9 +9,10 @@ import { supabase } from '@/lib/supabase'
 // SIDEBAR CONDIVISA AREA ADMIN
 // ⭐ 23/07 (variante A scelta da Davide su mockup): BLU NoiDemoliamo
 // (gradiente del logo), testo e icone bianche, voce attiva "in vetro".
-// ⭐ 26/07: la voce IMPOSTAZIONI (tendina + pulizia account) vive QUI,
-// così è FISSA su tutte le pagine admin (prima stava solo su Pratiche
-// e cliccando Demolitori spariva).
+// ⭐ 27/07: la voce IMPOSTAZIONI fa il FLIP — clic e la barra ruota
+// mostrando la faccia delle impostazioni (voci di servizio, pronte a
+// crescere); la freccetta in alto riporta alla navigazione. Via la
+// vecchia tendina che si alzava.
 // `extra` = slot opzionale per azioni specifiche della pagina.
 // ============================================================
 
@@ -19,7 +20,8 @@ type Sezione = 'pratiche' | 'demolitori'
 
 export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra?: React.ReactNode }) {
   const router = useRouter()
-  const [impostazioniAperte, setImpostazioniAperte] = useState(false)
+  // false = faccia NAVIGAZIONE, true = faccia IMPOSTAZIONI (flip)
+  const [impostazioni, setImpostazioni] = useState(false)
 
   // Pulizia account senza pratiche (endpoint /api/pulisci-utenti)
   const [pulisciOpen, setPulisciOpen] = useState(false)
@@ -68,6 +70,20 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
     setPulendo(false)
   }
 
+  // Blocco "Esci" in fondo, uguale su entrambe le facce
+  const boxEsci = (
+    <div className="p-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.25)' }}>
+      <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+        Esci
+      </button>
+    </div>
+  )
+
   // ⭐ 23/07 (dosaggio 3 su mockup): blu pieno fino a 3/4, poi la
   // dissolvenza si apre verso un azzurro più chiaro SOLO in fondo
   return (
@@ -80,36 +96,47 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
           <div className="text-[10px] font-semibold uppercase tracking-wide mt-1" style={{ color: '#BFDBFE' }}>Admin</div>
         </div>
       </div>
-      <nav className="flex flex-col gap-1 p-2.5 flex-1">
-        <NavItem attivo={attivo === 'pratiche'} label="Pratiche" onClick={() => router.push('/admin')} icon={<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" />} />
-        <NavItem attivo={attivo === 'demolitori'} label="Demolitori" onClick={() => router.push('/admin/demolitori')} icon={<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>} />
-      </nav>
-      {extra}
 
-      {/* IMPOSTAZIONI in fondo alla barra (23/07): dentro ci vivono le azioni
-          di servizio — per ora "Pulisci account senza pratiche", poi altre */}
-      <div className="mx-2.5 mb-1">
-        <button onClick={() => setImpostazioniAperte(a => !a)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-          Impostazioni
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto transition-transform" style={{ transform: impostazioniAperte ? 'rotate(180deg)' : 'none' }}><polyline points="6 9 12 15 18 9" /></svg>
-        </button>
-        {impostazioniAperte && (
-          <button onClick={apriPulizia} className="w-full text-left rounded-lg py-2 text-[12px] font-medium transition-colors hover:bg-white/15 hover:text-white" style={{ color: '#DBEAFE', paddingLeft: 38, paddingRight: 12 }}>
-            Pulisci account senza pratiche
-          </button>
-        )}
-      </div>
+      {/* Le due FACCE che ruotano (flip 3D): navigazione ↔ impostazioni */}
+      <div style={{ flex: 1, position: 'relative', perspective: 1400 }}>
+        <div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transition: 'transform .55s cubic-bezier(.35,.1,.25,1)', transform: impostazioni ? 'rotateY(180deg)' : 'none' }}>
 
-      <div className="p-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.25)' }}>
-        <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
-          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
-            <polyline points="16 17 21 12 16 7" />
-            <line x1="21" y1="12" x2="9" y2="12" />
-          </svg>
-          Esci
-        </button>
+          {/* FACCIA NAVIGAZIONE */}
+          <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', display: 'flex', flexDirection: 'column' }}>
+            <nav className="flex flex-col gap-1 p-2.5 flex-1">
+              <NavItem attivo={attivo === 'pratiche'} label="Pratiche" onClick={() => router.push('/admin')} icon={<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" />} />
+              <NavItem attivo={attivo === 'demolitori'} label="Demolitori" onClick={() => router.push('/admin/demolitori')} icon={<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>} />
+            </nav>
+            {extra}
+            <div className="mx-2.5 mb-1">
+              <button onClick={() => setImpostazioni(true)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+                Impostazioni
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto"><polyline points="9 18 15 12 9 6" /></svg>
+              </button>
+            </div>
+            {boxEsci}
+          </div>
+
+          {/* FACCIA IMPOSTAZIONI */}
+          <div style={{ position: 'absolute', inset: 0, backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', display: 'flex', flexDirection: 'column' }}>
+            <div className="p-2.5">
+              <button onClick={() => setImpostazioni(false)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-bold transition-colors hover:bg-white/15" style={{ color: '#fff' }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+                Impostazioni
+              </button>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.3)', margin: '4px 8px 8px' }} />
+              <button onClick={apriPulizia} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-white/15 text-left" style={{ color: '#F0F5FF' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><line x1="17" y1="8" x2="22" y2="13" /><line x1="22" y1="8" x2="17" y2="13" /></svg>
+                <span className="leading-tight">Pulisci account senza pratiche</span>
+              </button>
+              {/* Le prossime voci di servizio si aggiungono qui */}
+            </div>
+            <div style={{ flex: 1 }} />
+            {boxEsci}
+          </div>
+
+        </div>
       </div>
 
       {/* MODALE PULIZIA ACCOUNT SENZA PRATICHE */}
@@ -143,7 +170,7 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
                 {risultatoPulizia != null ? 'Chiudi' : 'Annulla'}
               </button>
               {risultatoPulizia == null && candidatiPulizia && candidatiPulizia.length > 0 && (
-                <button onClick={eseguiPulizia} disabled={pulendo} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
+                <button onClick={eseguiPulizia} disabled={pulendo} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-[#E15E5E] hover:bg-[#D25151] rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
                   {pulendo ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Pulisco…</> : `Elimina ${candidatiPulizia.length}`}
                 </button>
               )}
