@@ -192,9 +192,15 @@ export default function GestioneDemolitori() {
     )
   }
 
+  // Durante il caricamento la STRUTTURA resta al suo posto (barra laterale
+  // compresa): la rotellina gira solo nell'area contenuti — niente lampo
+  // grigio passando da una pagina all'altra (26/07)
   if (loading) return (
-    <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
-      <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
+      <AdminSidebar attivo="demolitori" />
+      <div className="flex-1 min-w-0 flex items-center justify-center">
+        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+      </div>
     </main>
   )
 
@@ -208,10 +214,12 @@ export default function GestioneDemolitori() {
             <h1 className="text-lg font-bold text-gray-900 leading-none">Demolitori</h1>
             <p className="text-xs text-gray-400 mt-1">{demolitori.length} registrati · {attivi} attivi</p>
           </div>
-          <div className="flex-1 max-w-xs ml-auto">
-            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 focus-within:border-blue-400 transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA7B5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-              <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca demolitore…" className="flex-1 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400" />
+          {/* Ricerca a PILLOLA (26/07, variante A su mockup): gemella del CRM pratiche */}
+          <div className="ml-auto">
+            <div className="flex items-center gap-2 rounded-full border px-3.5 py-2 w-[210px] focus-within:w-[300px] bg-[#F3F5F9] border-transparent focus-within:bg-white focus-within:border-blue-300 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.10)] transition-all duration-300">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+              <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca…" className="flex-1 min-w-0 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400" />
+              {ricerca && <button onClick={() => setRicerca('')} className="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">×</button>}
             </div>
           </div>
           <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">

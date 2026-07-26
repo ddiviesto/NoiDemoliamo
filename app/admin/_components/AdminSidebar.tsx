@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
@@ -8,6 +9,9 @@ import { supabase } from '@/lib/supabase'
 // SIDEBAR CONDIVISA AREA ADMIN
 // ⭐ 23/07 (variante A scelta da Davide su mockup): BLU NoiDemoliamo
 // (gradiente del logo), testo e icone bianche, voce attiva "in vetro".
+// ⭐ 26/07: la voce IMPOSTAZIONI (tendina + pulizia account) vive QUI,
+// così è FISSA su tutte le pagine admin (prima stava solo su Pratiche
+// e cliccando Demolitori spariva).
 // `extra` = slot opzionale per azioni specifiche della pagina.
 // ============================================================
 
@@ -15,10 +19,53 @@ type Sezione = 'pratiche' | 'demolitori'
 
 export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra?: React.ReactNode }) {
   const router = useRouter()
+  const [impostazioniAperte, setImpostazioniAperte] = useState(false)
+
+  // Pulizia account senza pratiche (endpoint /api/pulisci-utenti)
+  const [pulisciOpen, setPulisciOpen] = useState(false)
+  const [candidatiPulizia, setCandidatiPulizia] = useState<{ id: string; nome: string | null; tipo: string | null }[] | null>(null)
+  const [pulendo, setPulendo] = useState(false)
+  const [risultatoPulizia, setRisultatoPulizia] = useState<number | null>(null)
 
   async function logout() {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  async function apriPulizia() {
+    setPulisciOpen(true)
+    setCandidatiPulizia(null)
+    setRisultatoPulizia(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pulisci-utenti', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ dry_run: true }),
+      })
+      const data = await res.json()
+      setCandidatiPulizia(data.candidati || [])
+    } catch {
+      setCandidatiPulizia([])
+    }
+  }
+
+  async function eseguiPulizia() {
+    setPulendo(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pulisci-utenti', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({}),
+      })
+      const data = await res.json()
+      setRisultatoPulizia(data.eliminati ?? 0)
+      setCandidatiPulizia([])
+    } catch {
+      setRisultatoPulizia(null)
+    }
+    setPulendo(false)
   }
 
   // ⭐ 23/07 (dosaggio 3 su mockup): blu pieno fino a 3/4, poi la
@@ -38,6 +85,22 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
         <NavItem attivo={attivo === 'demolitori'} label="Demolitori" onClick={() => router.push('/admin/demolitori')} icon={<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>} />
       </nav>
       {extra}
+
+      {/* IMPOSTAZIONI in fondo alla barra (23/07): dentro ci vivono le azioni
+          di servizio — per ora "Pulisci account senza pratiche", poi altre */}
+      <div className="mx-2.5 mb-1">
+        <button onClick={() => setImpostazioniAperte(a => !a)} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+          Impostazioni
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="ml-auto transition-transform" style={{ transform: impostazioniAperte ? 'rotate(180deg)' : 'none' }}><polyline points="6 9 12 15 18 9" /></svg>
+        </button>
+        {impostazioniAperte && (
+          <button onClick={apriPulizia} className="w-full text-left rounded-lg py-2 text-[12px] font-medium transition-colors hover:bg-white/15 hover:text-white" style={{ color: '#DBEAFE', paddingLeft: 38, paddingRight: 12 }}>
+            Pulisci account senza pratiche
+          </button>
+        )}
+      </div>
+
       <div className="p-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.25)' }}>
         <button onClick={logout} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -48,6 +111,46 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
           Esci
         </button>
       </div>
+
+      {/* MODALE PULIZIA ACCOUNT SENZA PRATICHE */}
+      {pulisciOpen && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full" style={{ color: '#111827' }}>
+            <p className="font-semibold text-gray-900">Pulisci account senza pratiche</p>
+            <p className="text-sm text-gray-500 mt-1">Verranno cancellati (account + login) solo i <b>clienti senza nessuna pratica</b>. Admin e operatori (demolitori, commercianti) non vengono mai toccati.</p>
+
+            {risultatoPulizia != null ? (
+              <div className="mt-4 rounded-xl p-4 text-center" style={{ background: '#DCF3E4' }}>
+                <p className="text-sm font-semibold" style={{ color: '#1F7A43' }}>{risultatoPulizia} {risultatoPulizia === 1 ? 'account eliminato' : 'account eliminati'}</p>
+              </div>
+            ) : candidatiPulizia == null ? (
+              <div className="flex items-center gap-2 text-sm text-gray-500 py-6 justify-center"><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Controllo in corso…</div>
+            ) : candidatiPulizia.length === 0 ? (
+              <div className="mt-4 text-sm text-gray-400 text-center py-3">Nessun account da pulire. È già tutto in ordine.</div>
+            ) : (
+              <div className="mt-3 max-h-52 overflow-auto border border-gray-100 rounded-xl divide-y divide-gray-100">
+                {candidatiPulizia.map(u => (
+                  <div key={u.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                    <span className="text-gray-800">{u.nome || 'Senza nome'}</span>
+                    <span className="text-[11px] text-gray-400">{u.tipo || 'cliente'}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setPulisciOpen(false)} disabled={pulendo} className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-xl disabled:opacity-50">
+                {risultatoPulizia != null ? 'Chiudi' : 'Annulla'}
+              </button>
+              {risultatoPulizia == null && candidatiPulizia && candidatiPulizia.length > 0 && (
+                <button onClick={eseguiPulizia} disabled={pulendo} className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl disabled:opacity-50 flex items-center justify-center gap-2">
+                  {pulendo ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Pulisco…</> : `Elimina ${candidatiPulizia.length}`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   )
 }
