@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import AdminSidebar from './_components/AdminSidebar'
+// Card vere del dettaglio, aperte IN LINEA dentro la tendina (26/07)
+import DocumentiApprovazione from './pratiche/[id]/DocumentiApprovazione'
+import ChatAdmin from './pratiche/[id]/ChatAdmin'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -37,41 +40,71 @@ interface Pratica {
   attesa_motivo: string | null
   // Scadenza delle 8 ore lavorative per fissare il ritiro (allerta 23/07)
   scadenza_proposta_ritiro: string | null
+  // ⭐ Campi per la TENDINA sotto la riga (26/07): Cliente · Casistiche ·
+  // Veicolo · Ritiro
+  user_id: string | null
+  codice_fiscale: string | null
+  anno: string | number | null
+  km: string | number | null
+  tipo_cambio: string | null
+  incidentato: boolean | null
+  marciante: boolean | null
+  va_in_moto: boolean | null
+  parti_mancanti: boolean | null
+  fermo_amministrativo: string | null
+  targhe_presenti: boolean | null
+  indirizzo_ritiro: string | null
+  cap_ritiro: string | null
+  spazio_carro_attrezzi: string | null
+  delegato_nome: string | null
+  delegato_telefono: string | null
 }
+
+// Etichette leggibili per la tendina
+const LIBRETTO_LABEL: Record<string, string> = { si: "Ha l'originale", denuncia: 'Denuncia di smarrimento', no: 'Non ce l\'ha' }
+const CDC_LABEL: Record<string, string> = { digitale: 'Digitale', cartaceo: 'Cartaceo', documento_unico: 'Documento unico', smarrito: 'Smarrito', nessuno: 'Da chiarire' }
+const FERMO_LABEL: Record<string, string> = { si: 'Sì', no: 'No', non_so: 'Da verificare' }
+const SPAZIO_LABEL: Record<string, string> = { libero: 'Accesso libero', stretto: 'Spazio stretto', no: 'Non passa' }
+
+// Un'unica lista di campi per il caricamento e le ricariche (stessa forma)
+const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono'
 
 // ============================================================
 // METADATI STATO (etichetta + colori pillola + barra colorata)
 // ============================================================
 
-// Etichette ALLINEATE alle 6 fasi del flusso (16/07): la pillola inizia
-// sempre col nome della fase (stesso colore della casella in cima) e dopo
-// il "·" tiene il dettaglio. Rosso solo per le anomalie (da rifare, a mano).
+// ⭐ PALETTE A (26/07, mockup approvato): il FLUSSO è tutto AZZURRO (parla
+// il testo della pillola), le eccezioni vere sono le uniche colorate:
+// verde = completata, ROSSO TENUE = annullata e anomalie, rosso medio
+// pieno = "Da contattare". Via il giallo senape e l'arcobaleno.
+const PILL_FLUSSO = { bg: '#EFF6FF', text: '#1D4ED8' }
+const PILL_ROSSO_TENUE = { bg: '#F3D9D9', text: '#A94444' }
 const STATO_META: Record<string, { label: string; bg: string; text: string; bar: string }> = {
-  // Fase 1 — In attesa documenti (ambra)
-  in_attesa_documenti: { label: 'In attesa documenti', bg: '#FAEEDA', text: '#854F0B', bar: '#EF9F27' },
-  documenti_parzialmente_approvati: { label: 'In attesa documenti · da rifare', bg: '#FBE2E2', text: '#9B1C1C', bar: '#E24B4A' },
-  // Fase 2 — Documenti da verificare (blu)
-  in_attesa_approvazione_admin: { label: 'Documenti da verificare', bg: '#E0EDFB', text: '#1E4E8C', bar: '#378ADD' },
-  // Fase 3 — Da assegnare (corallo)
-  da_assegnare: { label: 'Da assegnare', bg: '#FAECE7', text: '#92500E', bar: '#D85A30' },
-  in_attesa_assegnazione: { label: 'Da assegnare · in corso', bg: '#FAECE7', text: '#92500E', bar: '#D85A30' },
-  in_assegnazione_manuale: { label: 'Da assegnare · a mano', bg: '#FBE2E2', text: '#9B1C1C', bar: '#E24B4A' },
-  // Fase 4 — Assegnata (viola)
-  assegnata: { label: 'Assegnata', bg: '#E4E4FB', text: '#4338CA', bar: '#7F77DD' },
-  in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', bg: '#E4E4FB', text: '#4338CA', bar: '#7F77DD' },
-  ritiro_confermato: { label: 'Assegnata · ritiro fissato', bg: '#E4E4FB', text: '#4338CA', bar: '#7F77DD' },
-  // Fase 5 — Ritirata (teal)
-  ritirata: { label: 'Ritirata', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
-  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
-  in_attesa_cert_rottamazione: { label: 'Ritirata · attesa rottamazione', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
-  in_attesa_cert_radiazione_pra: { label: 'Ritirata · attesa PRA', bg: '#DDF2F0', text: '#0F766E', bar: '#1D9E75' },
-  // Fase 6 — Completata (verde)
+  // Fase 1 — In attesa documenti
+  in_attesa_documenti: { label: 'In attesa documenti', ...PILL_FLUSSO, bar: '#EF9F27' },
+  documenti_parzialmente_approvati: { label: 'In attesa documenti · da rifare', ...PILL_ROSSO_TENUE, bar: '#E24B4A' },
+  // Fase 2 — Documenti da verificare
+  in_attesa_approvazione_admin: { label: 'Documenti da verificare', ...PILL_FLUSSO, bar: '#378ADD' },
+  // Fase 3 — Da assegnare
+  da_assegnare: { label: 'Da assegnare', ...PILL_FLUSSO, bar: '#D85A30' },
+  in_attesa_assegnazione: { label: 'Da assegnare · in corso', ...PILL_FLUSSO, bar: '#D85A30' },
+  in_assegnazione_manuale: { label: 'Da assegnare · a mano', ...PILL_ROSSO_TENUE, bar: '#E24B4A' },
+  // Fase 4 — Assegnata
+  assegnata: { label: 'Assegnata', ...PILL_FLUSSO, bar: '#7F77DD' },
+  in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', ...PILL_FLUSSO, bar: '#7F77DD' },
+  ritiro_confermato: { label: 'Assegnata · ritiro fissato', ...PILL_FLUSSO, bar: '#7F77DD' },
+  // Fase 5 — Ritirata
+  ritirata: { label: 'Ritirata', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_cert_rottamazione: { label: 'Ritirata · attesa rottamazione', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_cert_radiazione_pra: { label: 'Ritirata · attesa PRA', ...PILL_FLUSSO, bar: '#1D9E75' },
+  // Fase 6 — Completata (verde, l'unico traguardo)
   completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43', bar: '#639922' },
-  annullata: { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563', bar: '#C0C7D1' },
+  annullata: { label: 'Annullata', ...PILL_ROSSO_TENUE, bar: '#C0C7D1' },
 }
 
 function metaStato(stato: string) {
-  return STATO_META[stato] || { label: stato, bg: '#E7EAEE', text: '#4B5563', bar: '#C0C7D1' }
+  return STATO_META[stato] || { label: stato, bg: '#EDF0F5', text: '#64748B', bar: '#C0C7D1' }
 }
 
 const NOMI_CASISTICHE: Record<string, string> = {
@@ -84,7 +117,6 @@ const NOMI_CASISTICHE: Record<string, string> = {
   non_intestatario: 'Non intestatario',
   targhe_straniere: 'Targhe straniere',
 }
-
 // ============================================================
 // HELPER PRIORITÀ / TEMPO
 // ============================================================
@@ -167,6 +199,106 @@ export default function AdminDashboard() {
   // 26/07: Impostazioni (tendina + pulizia account) vive in AdminSidebar,
   // così è fissa su tutte le pagine admin
 
+  // ⭐ TENDINA SOTTO LA RIGA (26/07, scelta di Davide): clic su una pratica
+  // = sotto si apre un pannello con transizione morbida (grid 0fr→1fr),
+  // ritocco = si richiude. I dati dentro li detta Davide, un pezzo alla volta.
+  const [selId, setSelId] = useState<string | null>(null)
+  // Email dell'account (da `utenti`): caricata al primo giro di apertura
+  const [emailAccounts, setEmailAccounts] = useState<Record<string, string>>({})
+  // ⭐ BOTTONI AZIONE nella tendina (26/07): Documenti e Chat si aprono
+  // IN LINEA dentro il blocco (niente finestre sopra la pagina); il menu
+  // Stato pratica è una nuvoletta attaccata al bottone, col motivo scritto
+  // lì dentro per attesa e annullo.
+  const [selDocsAperti, setSelDocsAperti] = useState(false)
+  const [selChatAperta, setSelChatAperta] = useState(false)
+  const [menuStato, setMenuStato] = useState<null | 'menu' | 'attesa' | 'annulla'>(null)
+  const [motivoStato, setMotivoStato] = useState('')
+  const [statoBusy, setStatoBusy] = useState(false)
+  const [statoErr, setStatoErr] = useState<string | null>(null)
+  // Contatori per i bottoni (caricati all'apertura della tendina)
+  const [docStats, setDocStats] = useState<Record<string, { totale: number; approvati: number; daVerificare: number }>>({})
+  const [nonLetti, setNonLetti] = useState<Record<string, number>>({})
+
+  function apriPratica(p: Pratica) {
+    setSelDocsAperti(false)
+    setSelChatAperta(false)
+    setMenuStato(null)
+    setMotivoStato('')
+    setStatoErr(null)
+    setSelId(prev => (prev === p.id ? null : p.id))
+    if (p.user_id && emailAccounts[p.id] === undefined) {
+      supabase.from('utenti').select('email').eq('id', p.user_id).single()
+        .then(({ data }) => setEmailAccounts(prev => ({ ...prev, [p.id]: data?.email || '' })))
+    }
+    aggiornaContatori(p.id)
+  }
+
+  // Contatori dei bottoni: documenti (approvati/totale + da verificare) e
+  // messaggi del cliente non letti
+  async function aggiornaContatori(praticaId: string) {
+    const { data } = await supabase
+      .from('pratica_documenti_checklist')
+      .select('stato, casistiche_documenti(richiede_upload)')
+      .eq('pratica_id', praticaId)
+    const righe = ((data || []) as { stato: string; casistiche_documenti: { richiede_upload?: boolean } | null }[])
+      .filter(r => r.casistiche_documenti?.richiede_upload)
+    setDocStats(prev => ({ ...prev, [praticaId]: {
+      totale: righe.length,
+      approvati: righe.filter(r => r.stato === 'approvato').length,
+      daVerificare: righe.filter(r => r.stato === 'caricato').length,
+    } }))
+    const { count } = await supabase
+      .from('messaggi_chat')
+      .select('id', { count: 'exact', head: true })
+      .eq('pratica_id', praticaId)
+      .eq('mittente_tipo', 'cliente')
+      .eq('letto', false)
+    setNonLetti(prev => ({ ...prev, [praticaId]: count || 0 }))
+  }
+
+  // ---- Cambi di stato dal menu (stessa logica del dettaglio: tutto via server) ----
+  async function notaAutomatica(praticaId: string, testo: string) {
+    try { await supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo }) } catch { /* tabella assente */ }
+  }
+
+  async function azioneStato(p: Pratica, azione: 'attiva' | 'attesa' | 'annulla') {
+    setStatoBusy(true)
+    setStatoErr(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` }
+      if (azione === 'attiva') {
+        if (p.stato === 'annullata') {
+          const res = await fetch('/api/pratica-annulla', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, riattiva: true }) })
+          if (!res.ok) { const d = await res.json().catch(() => null); throw new Error(d?.error || 'Errore') }
+          await notaAutomatica(p.id, 'Pratica riattivata')
+        } else if (p.in_attesa) {
+          const res = await fetch('/api/pratica-dati', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, dati: { in_attesa: false, attesa_motivo: null, attesa_dal: null } }) })
+          if (!res.ok) throw new Error('Errore')
+          await notaAutomatica(p.id, 'Pratica ripresa')
+        }
+      } else if (azione === 'attesa') {
+        const motivo = motivoStato.trim()
+        if (!motivo) { setStatoErr('Scrivi il motivo: resterà nella cronologia.'); setStatoBusy(false); return }
+        const res = await fetch('/api/pratica-dati', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, dati: { in_attesa: true, attesa_motivo: motivo, attesa_dal: new Date().toISOString() } }) })
+        if (!res.ok) throw new Error('Errore')
+        await notaAutomatica(p.id, `Messa in attesa: ${motivo}`)
+      } else {
+        const motivo = motivoStato.trim()
+        if (!motivo) { setStatoErr('Scrivi il motivo dell\'annullamento: resterà nella cronologia.'); setStatoBusy(false); return }
+        const res = await fetch('/api/pratica-annulla', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, motivo }) })
+        if (!res.ok) { const d = await res.json().catch(() => null); throw new Error(d?.error || 'Errore') }
+        await notaAutomatica(p.id, `Pratica annullata: ${motivo}`)
+      }
+      await ricaricaPratiche()
+      setMenuStato(null)
+      setMotivoStato('')
+    } catch (e) {
+      setStatoErr(e instanceof Error && e.message !== 'Errore' ? e.message : 'Errore nel salvataggio. Riprova.')
+    }
+    setStatoBusy(false)
+  }
+
   useEffect(() => {
     async function carica() {
       const { data: { session } } = await supabase.auth.getSession()
@@ -175,7 +307,7 @@ export default function AdminDashboard() {
 
       const { data: praticheData } = await supabase
         .from('pratiche')
-        .select('id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro')
+        .select(CAMPI_LISTA)
         .order('creato_il', { ascending: false })
 
       const { data: demoData } = await supabase.from('demolitori').select('id, ragione_sociale')
@@ -194,7 +326,7 @@ export default function AdminDashboard() {
   const ricaricaPratiche = async () => {
     const { data: praticheData } = await supabase
       .from('pratiche')
-      .select('id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo')
+      .select(CAMPI_LISTA)
       .order('creato_il', { ascending: false })
     if (praticheData) setPratiche(praticheData as Pratica[])
   }
@@ -228,6 +360,7 @@ export default function AdminDashboard() {
     if (r !== 0) return r
     return minutiAttesa(b) - minutiAttesa(a)
   })
+
 
   // Durante il caricamento la STRUTTURA resta al suo posto (barra laterale
   // compresa): la rotellina gira solo nell'area contenuti — niente lampo
@@ -334,7 +467,10 @@ export default function AdminDashboard() {
             <ChipFiltro attivo={filtro === 'annullate'} onClick={() => setFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}>Annullate {conta('annullate')}</ChipFiltro>
           </div>
 
-          {/* LISTA PRATICHE A CARD */}
+          {/* LISTA PRATICHE A CARD — ⭐ TENDINA SOTTO LA RIGA (26/07):
+              clic sulla pratica = sotto si srotola il pannello coi dati
+              principali (transizione morbida), ritocco = si richiude.
+              Il contenuto del pannello lo detta Davide un pezzo alla volta. */}
           {ordinate.length === 0 ? (
             <div className="card-admin px-4 py-10 text-center text-sm text-gray-500">Nessuna pratica in questa vista.</div>
           ) : (
@@ -346,12 +482,19 @@ export default function AdminDashboard() {
                 const rosso = rango(p) <= 2 && min > SOGLIA_ROSSO_MIN
                 const chiusa = !isAttiva(p.stato)
                 const azioneRichiesta = rango(p) <= 2
+                const aperta = p.id === selId
+                // BLOCCO UNICO (26/07, variante 3 su mockup): da aperta la
+                // cornice blu ingloba riga e tendina; la riga si tinge
+                // d'azzurro e fa da testata
                 return (
                   <div
                     key={p.id}
-                    onClick={() => router.push(`/admin/pratiche/${p.id}`)}
-                    className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
-                    style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa ? 0.82 : 1 }}
+                    style={{ border: `2px solid ${aperta ? '#2563EB' : 'transparent'}`, borderRadius: 16, background: aperta ? '#F7F8FB' : 'transparent', boxShadow: aperta ? '0 4px 16px rgba(37,99,235,0.16)' : 'none', transition: 'all .28s ease' }}
+                  >
+                  <div
+                    onClick={() => apriPratica(p)}
+                    className={`group cursor-pointer transition-all ${aperta ? '' : 'hover:shadow-md hover:-translate-y-[1px]'}`}
+                    style={{ background: aperta ? '#EFF6FF' : '#fff', border: `1.5px solid ${aperta ? 'transparent' : '#E5E7EB'}`, borderRadius: aperta ? '13px 13px 0 0' : 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: aperta ? 'none' : '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa && !aperta ? 0.82 : 1 }}
                   >
                     {/* Quadratino icona veicolo (o spunta se chiusa) */}
                     <div style={{ width: 46, height: 46, borderRadius: 12, background: p.stato === 'completata' ? '#DCF3E4' : '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -362,7 +505,7 @@ export default function AdminDashboard() {
 
                     {/* Veicolo */}
                     <div style={{ flex: 1.6, minWidth: 0 }}>
-                      <div className="text-[15px] font-bold text-gray-900 truncate">{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}</div>
+                      <div className="text-[15px] font-bold truncate" style={{ color: aperta ? '#1D4ED8' : '#111827' }}>{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}</div>
                       <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
                         {p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : (p.tipo_mezzo || '—')}
                         {p.comune_ritiro && ` · ${p.comune_ritiro}`}{p.provincia_ritiro && ` (${p.provincia_ritiro})`}
@@ -377,12 +520,12 @@ export default function AdminDashboard() {
 
                     {/* Stato + demolitore */}
                     <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: (p.in_attesa && !chiusa) ? '#FAEEDA' : contatta ? '#FDF7EA' : m.bg, color: (p.in_attesa && !chiusa) ? '#854F0B' : contatta ? '#854F0B' : m.text, padding: '4px 12px' }}>
+                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#E15E5E' : m.bg, color: (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#fff' : m.text, padding: '4px 12px' }}>
                         {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
                       </span>
                       {/* Il PERCHÉ dell'attesa, sempre sott'occhio in lista */}
                       {p.in_attesa && !chiusa && p.attesa_motivo && (
-                        <div className="text-[11px] mt-1 truncate" style={{ color: '#B45309' }} title={p.attesa_motivo}>
+                        <div className="text-[11px] mt-1 truncate" style={{ color: '#5B6779' }} title={p.attesa_motivo}>
                           {p.attesa_motivo}
                         </div>
                       )}
@@ -405,6 +548,169 @@ export default function AdminDashboard() {
                     )}
 
                   </div>
+
+                  {/* TENDINA SOTTO LA RIGA (26/07, ordine 2 su mockup):
+                      Cliente · Casistiche · Veicolo · Ritiro, si srotola
+                      morbida (grid 0fr→1fr) */}
+                  <div style={{ display: 'grid', gridTemplateRows: aperta ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
+                    <div style={{ overflow: 'hidden' }}>
+
+                      {/* FILA AZIONI (26/07, layout B su mockup): seconda riga
+                          della testata azzurra. Documenti e Chat aprono IN
+                          LINEA qui sotto; Stato è una nuvoletta ancorata. */}
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', background: '#EFF6FF', padding: '0 16px 12px' }}>
+                        <button
+                          onClick={() => { setMenuStato(null); setSelDocsAperti(a => !a) }}
+                          className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
+                          style={{ background: selDocsAperti ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                          Documenti
+                          <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{docStats[p.id] ? `${docStats[p.id].approvati}/${docStats[p.id].totale}` : '…'}</span>
+                          {(docStats[p.id]?.daVerificare ?? 0) > 0 && <span style={{ background: '#DC2626', color: '#fff', borderRadius: 999, fontSize: 9.5, fontWeight: 800, minWidth: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{docStats[p.id].daVerificare}</span>}
+                        </button>
+                        <button
+                          onClick={() => { setMenuStato(null); setSelChatAperta(a => !a); if (selChatAperta) aggiornaContatori(p.id) }}
+                          className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
+                          style={{ background: selChatAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" /></svg>
+                          Chat
+                          {(nonLetti[p.id] ?? 0) > 0 && <span style={{ background: '#DC2626', color: '#fff', borderRadius: 999, fontSize: 9.5, fontWeight: 800, minWidth: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{nonLetti[p.id]}</span>}
+                        </button>
+                        <span style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => { setMenuStato(m => (m ? null : 'menu')); setMotivoStato(''); setStatoErr(null) }}
+                            className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
+                            style={{ background: menuStato ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                            Stato pratica
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: menuStato ? 'rotate(180deg)' : 'none', transition: 'transform .2s' }}><polyline points="6 9 12 15 18 9" /></svg>
+                          </button>
+                          {menuStato && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => { if (!statoBusy) setMenuStato(null) }} />
+                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 260, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: 8, zIndex: 6 }}>
+                                {menuStato === 'menu' ? (
+                                  <>
+                                    <button onClick={() => azioneStato(p, 'attiva')} disabled={statoBusy || (!p.in_attesa && p.stato !== 'annullata')} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-blue-50 disabled:opacity-40 disabled:hover:bg-transparent" style={{ background: 'none', border: 'none' }}>
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
+                                      <span>
+                                        <span className="block text-[12px] font-bold" style={{ color: '#1D4ED8' }}>Attiva</span>
+                                        <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>{p.stato === 'annullata' ? 'riattiva: torna dov\'era rimasta' : p.in_attesa ? 'riprendi da dov\'era rimasta' : 'la pratica è già attiva'}</span>
+                                      </span>
+                                    </button>
+                                    <button onClick={() => { setMenuStato('attesa'); setStatoErr(null) }} disabled={statoBusy || p.stato === 'annullata' || !!p.in_attesa} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-amber-50 disabled:opacity-40 disabled:hover:bg-transparent" style={{ background: 'none', border: 'none' }}>
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                      <span>
+                                        <span className="block text-[12px] font-bold" style={{ color: '#854F0B' }}>Metti in attesa</span>
+                                        <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>pausa col motivo · si riprende quando vuoi</span>
+                                      </span>
+                                    </button>
+                                    <button onClick={() => { setMenuStato('annulla'); setStatoErr(null) }} disabled={statoBusy || p.stato === 'annullata'} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent" style={{ background: 'none', border: 'none' }}>
+                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9B1C1C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
+                                      <span>
+                                        <span className="block text-[12px] font-bold" style={{ color: '#9B1C1C' }}>Annulla pratica</span>
+                                        <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>col motivo · riattivabile in futuro</span>
+                                      </span>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <div style={{ padding: 4 }}>
+                                    <div className="text-[12px] font-bold" style={{ color: menuStato === 'attesa' ? '#854F0B' : '#9B1C1C' }}>{menuStato === 'attesa' ? 'Metti in attesa' : 'Annulla pratica'}</div>
+                                    <textarea
+                                      value={motivoStato}
+                                      onChange={e => setMotivoStato(e.target.value)}
+                                      placeholder="Motivo (resta nella cronologia)…"
+                                      rows={2}
+                                      className="w-full mt-1.5 rounded-lg px-2.5 py-2 text-[12px] outline-none resize-none"
+                                      style={{ border: '1.5px solid #E5E7EB', color: '#111827' }}
+                                    />
+                                    {statoErr && <div className="text-[10.5px] text-red-600 mt-1">{statoErr}</div>}
+                                    <div className="flex gap-1.5 justify-end mt-2">
+                                      <button onClick={() => { setMenuStato('menu'); setStatoErr(null) }} disabled={statoBusy} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>Indietro</button>
+                                      <button onClick={() => azioneStato(p, menuStato)} disabled={statoBusy} className="transition-colors disabled:opacity-50" style={{ background: menuStato === 'attesa' ? '#B45309' : '#DC2626', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>{statoBusy ? 'Salvo…' : 'Conferma'}</button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </>
+                          )}
+                        </span>
+                        <span style={{ flex: 1 }} />
+                        <button
+                          onClick={() => router.push(`/admin/pratiche/${p.id}`)}
+                          className="flex items-center gap-1.5 transition-colors hover:bg-blue-700"
+                          style={{ background: '#2563EB', border: '1.5px solid #2563EB', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 13px', whiteSpace: 'nowrap' }}
+                        >
+                          Apri la pratica intera
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                        </button>
+                      </div>
+
+                      <div style={{ padding: '12px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        <SezTendina titolo="Cliente" righe={[
+                          ['Nome', p.nome_richiedente || '—'],
+                          ['Telefono', p.telefono || '—'],
+                          [p.casistica === 'societa' || p.casistica === 'societa_fallita' ? 'P.IVA' : 'CF', p.codice_fiscale || '—'],
+                          ['Email', emailAccounts[p.id] === undefined ? '…' : (emailAccounts[p.id] || '—')],
+                        ]} />
+                        <SezTendina titolo="Casistiche" righe={[
+                          ['Casistica', p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : '—'],
+                          ['Libretto', p.libretto ? (LIBRETTO_LABEL[p.libretto] || p.libretto) : '—'],
+                          ['Cert. proprietà', p.certificato_proprieta ? (CDC_LABEL[p.certificato_proprieta] || p.certificato_proprieta) : '—'],
+                          ['Fermo', p.fermo_amministrativo ? (FERMO_LABEL[p.fermo_amministrativo] || p.fermo_amministrativo) : '—'],
+                          ['Targhe', p.targhe_presenti == null ? '—' : p.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite o rubate'],
+                        ]} />
+                        <SezTendina titolo="Veicolo" righe={[
+                          ['Anno · km', `${p.anno || '—'} · ${p.km ? Number(p.km).toLocaleString('it-IT') : '—'}`],
+                          ['Cambio', p.tipo_cambio === 'manuale' ? 'Manuale' : p.tipo_cambio === 'automatico' ? 'Automatico' : p.tipo_cambio === 'non_so' ? 'Non lo sa' : '—'],
+                        ]} extra={
+                          <div style={{ paddingTop: 4 }}>
+                            {p.incidentato != null && <PillCond buono={!p.incidentato}>{p.incidentato ? 'Incidentata' : 'Non incidentata'}</PillCond>}
+                            {p.va_in_moto != null && <PillCond buono={p.va_in_moto}>{p.va_in_moto ? 'Si avvia' : 'Non si avvia'}</PillCond>}
+                            {p.marciante != null && <PillCond buono={p.marciante}>{p.marciante ? 'Cammina' : 'Non cammina'}</PillCond>}
+                            {p.parti_mancanti != null && <PillCond buono={!p.parti_mancanti}>{p.parti_mancanti ? 'Parti mancanti' : 'Completo'}</PillCond>}
+                          </div>
+                        } />
+                        <SezTendina titolo="Ritiro" righe={[
+                          ['Indirizzo', p.indirizzo_ritiro || '—'],
+                          ['Comune', p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}${p.cap_ritiro ? ` · ${p.cap_ritiro}` : ''}` : '—'],
+                          ['Spazio carro', p.spazio_carro_attrezzi ? (SPAZIO_LABEL[p.spazio_carro_attrezzi] || p.spazio_carro_attrezzi) : '—'],
+                          ['Delegato', p.delegato_nome ? `${p.delegato_nome}${p.delegato_telefono ? ` · ${p.delegato_telefono}` : ''}` : 'Consegna in prima persona'],
+                        ]} />
+                      </div>
+
+                      {/* DOCUMENTI e CHAT in linea (26/07): le card VERE del
+                          dettaglio, aperte dentro la tendina — niente finestre */}
+                      {aperta && selDocsAperti && (
+                        <div style={{ padding: '0 12px 12px' }}>
+                          <DocumentiApprovazione
+                            praticaId={p.id}
+                            statoPratica={p.stato}
+                            aperta
+                            onToggle={() => setSelDocsAperti(false)}
+                            onStatoCambiato={(tutti, totale, approvati) => setDocStats(prev => ({ ...prev, [p.id]: { totale, approvati, daVerificare: prev[p.id]?.daVerificare ?? 0 } }))}
+                            onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
+                          />
+                        </div>
+                      )}
+                      {/* CHAT A FINESTRELLA (26/07, variante A su mockup):
+                          fissa in basso a destra, la pagina resta usabile */}
+                      {aperta && selChatAperta && (
+                        <ChatAdmin
+                          praticaId={p.id}
+                          demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
+                          aperta
+                          onToggle={() => { setSelChatAperta(false); aggiornaContatori(p.id) }}
+                          finestra
+                          titolo={`${p.nome_richiedente || 'Cliente'} · ${p.targa || 'senza targa'}`}
+                        />
+                      )}
+                    </div>
+                  </div>
+                  </div>
                 )
               })}
             </div>
@@ -420,6 +726,32 @@ export default function AdminDashboard() {
 // ============================================================
 // SOTTOCOMPONENTI
 // ============================================================
+
+// Sezione della TENDINA sotto la riga (26/07): card bianca con titoletto
+// a barretta blu e righe etichetta/valore (etichetta scura, valore leggero)
+function SezTendina({ titolo, righe, extra }: { titolo: string; righe: [string, string][]; extra?: React.ReactNode }) {
+  return (
+    <div style={{ flex: 1, minWidth: 200, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33', marginBottom: 7 }}>
+        <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+        {titolo}
+      </div>
+      {righe.map(([k, v], i) => (
+        <div key={k} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, padding: '4px 0', borderBottom: i === righe.length - 1 && !extra ? 'none' : '1px solid #F5F7FA', fontSize: 11.5 }}>
+          <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>{k}</span>
+          <span style={{ color: '#6B7280', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={v}>{v}</span>
+        </div>
+      ))}
+      {extra}
+    </div>
+  )
+}
+
+function PillCond({ buono, children }: { buono: boolean; children: React.ReactNode }) {
+  return (
+    <span style={{ display: 'inline-block', background: buono ? '#EAF3DE' : '#FBE2E2', color: buono ? '#27500A' : '#9B1C1C', fontSize: 9.5, fontWeight: 600, borderRadius: 20, padding: '2px 8px', margin: '3px 3px 0 0' }}>{children}</span>
+  )
+}
 
 function IconaVeicolo({ tipo }: { tipo: string | null }) {
   const common = { width: 24, height: 24, viewBox: '0 0 24 24', fill: 'none' as const, stroke: '#2563eb', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }

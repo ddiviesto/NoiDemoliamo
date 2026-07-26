@@ -75,22 +75,26 @@ interface Candidato {
 
 // Etichette ALLINEATE alle 6 fasi del flusso del CRM (16/07): stessa
 // nomenclatura della lista pratiche (fase · dettaglio).
+// ⭐ PALETTE A (26/07, mockup approvato, gemella della lista): flusso tutto
+// AZZURRO, verde solo Completata, ROSSO TENUE per annullata e anomalie
+const PILL_FLUSSO = { bg: '#EFF6FF', text: '#1D4ED8' }
+const PILL_ROSSO_TENUE = { bg: '#F3D9D9', text: '#A94444' }
 const STATO_META: Record<string, { label: string; bg: string; text: string }> = {
-  in_attesa_documenti: { label: 'In attesa documenti', bg: '#FAEEDA', text: '#854F0B' },
-  documenti_parzialmente_approvati: { label: 'In attesa documenti · da rifare', bg: '#FBE2E2', text: '#9B1C1C' },
-  in_attesa_approvazione_admin: { label: 'Documenti da verificare', bg: '#E0EDFB', text: '#1E4E8C' },
-  da_assegnare: { label: 'Da assegnare', bg: '#FAECE7', text: '#92500E' },
-  in_attesa_assegnazione: { label: 'Da assegnare · in corso', bg: '#FAECE7', text: '#92500E' },
-  in_assegnazione_manuale: { label: 'Da assegnare · a mano', bg: '#FBE2E2', text: '#9B1C1C' },
-  assegnata: { label: 'Assegnata', bg: '#E4E4FB', text: '#4338CA' },
-  in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', bg: '#E4E4FB', text: '#4338CA' },
-  ritiro_confermato: { label: 'Assegnata · ritiro fissato', bg: '#E4E4FB', text: '#4338CA' },
-  ritirata: { label: 'Ritirata', bg: '#DDF2F0', text: '#0F766E' },
-  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', bg: '#DDF2F0', text: '#0F766E' },
-  in_attesa_cert_rottamazione: { label: 'Ritirata · attesa rottamazione', bg: '#DDF2F0', text: '#0F766E' },
-  in_attesa_cert_radiazione_pra: { label: 'Ritirata · attesa PRA', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_documenti: { label: 'In attesa documenti', ...PILL_FLUSSO },
+  documenti_parzialmente_approvati: { label: 'In attesa documenti · da rifare', ...PILL_ROSSO_TENUE },
+  in_attesa_approvazione_admin: { label: 'Documenti da verificare', ...PILL_FLUSSO },
+  da_assegnare: { label: 'Da assegnare', ...PILL_FLUSSO },
+  in_attesa_assegnazione: { label: 'Da assegnare · in corso', ...PILL_FLUSSO },
+  in_assegnazione_manuale: { label: 'Da assegnare · a mano', ...PILL_ROSSO_TENUE },
+  assegnata: { label: 'Assegnata', ...PILL_FLUSSO },
+  in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', ...PILL_FLUSSO },
+  ritiro_confermato: { label: 'Assegnata · ritiro fissato', ...PILL_FLUSSO },
+  ritirata: { label: 'Ritirata', ...PILL_FLUSSO },
+  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', ...PILL_FLUSSO },
+  in_attesa_cert_rottamazione: { label: 'Ritirata · attesa rottamazione', ...PILL_FLUSSO },
+  in_attesa_cert_radiazione_pra: { label: 'Ritirata · attesa PRA', ...PILL_FLUSSO },
   completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43' },
-  annullata: { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563' },
+  annullata: { label: 'Annullata', ...PILL_ROSSO_TENUE },
 }
 
 const NOMI_CASISTICHE: Record<string, string> = {
@@ -460,7 +464,7 @@ export default function DettaglioPraticaAdmin() {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0">
               {pratica.in_attesa && (
-                <span className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ background: '#FAEEDA', color: '#854F0B' }}>In attesa</span>
+                <span className="text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ background: '#E8ECF3', color: '#5B6779' }}>In attesa</span>
               )}
               <span className="text-[11.5px] font-bold px-3.5 py-1.5 rounded-full" style={{ background: m.bg, color: m.text }}>{m.label}</span>
 
