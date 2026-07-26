@@ -97,8 +97,11 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
         </div>
       </div>
 
-      {/* Le due FACCE che ruotano (flip 3D): navigazione ↔ impostazioni */}
-      <div style={{ flex: 1, position: 'relative', perspective: 1400 }}>
+      {/* Le due FACCE che ruotano (flip 3D): navigazione ↔ impostazioni.
+          ⭐ 27/07: overflow hidden — durante la rotazione la faccia "sporge"
+          in 3D e senza il contenimento faceva comparire la barra di
+          scorrimento della pagina (sobbalzo) */}
+      <div style={{ flex: 1, position: 'relative', perspective: 1400, overflow: 'hidden' }}>
         <div style={{ position: 'absolute', inset: 0, transformStyle: 'preserve-3d', transition: 'transform .55s cubic-bezier(.35,.1,.25,1)', transform: impostazioni ? 'rotateY(180deg)' : 'none' }}>
 
           {/* FACCIA NAVIGAZIONE */}

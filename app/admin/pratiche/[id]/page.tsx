@@ -566,6 +566,9 @@ export default function DettaglioPraticaAdmin() {
               onToggle={() => setDocsAperti(a => !a)}
               onStatoCambiato={(tutti, totale, approvati) => setDocStats({ totale, approvati })}
               onRicaricaPratica={ricaricaPratica}
+              targa={pratica.targa}
+              veicolo={[[pratica.marca, pratica.modello].filter(Boolean).join(' '), pratica.anno].filter(Boolean).join(' · ') || null}
+              cliente={pratica.nome_richiedente}
             />
             <ChatAdmin praticaId={pratica.id} demolitoreNome={demolitoreNome} aperta={chatAperta} onToggle={() => setChatAperta(a => !a)} />
             <CronologiaNote praticaId={pratica.id} praticaCreataIl={pratica.creato_il} refreshKey={noteVersion} aperta={cronoAperta} onToggle={() => setCronoAperta(a => !a)} />

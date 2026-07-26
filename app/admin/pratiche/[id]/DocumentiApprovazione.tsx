@@ -91,6 +91,11 @@ interface Props {
   // GRIGLIA DI MINIATURE compatta (badge di stato nell'angolo, "Verifica
   // ora"); il lavoro vero resta nel visore. La card intera vive nel dettaglio.
   compatta?: boolean
+  // ⭐ 27/07 (mockup definitivo): la testata del visore mostra sempre di chi
+  // sono i documenti — targhetta, veicolo e cliente
+  targa?: string | null
+  veicolo?: string | null
+  cliente?: string | null
 }
 
 // ---- helper file ----
@@ -120,6 +125,18 @@ function isPdfUrl(url: string | null | undefined): boolean {
 function ordinaleErede(n: number): string {
   const o = ['', '1°', '2°', '3°', '4°', '5°', '6°', '7°', '8°', '9°', '10°']
   return o[n] || `${n}°`
+}
+
+// ---- helper scarico PDF (27/07) ----
+function bytesDaDataUrl(dataUrl: string): Uint8Array {
+  const bin = atob(dataUrl.split(',')[1])
+  const arr = new Uint8Array(bin.length)
+  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
+  return arr
+}
+
+function nomeFileSicuro(s: string): string {
+  return s.replace(/[\\/:*?"<>|]/g, '').trim()
 }
 
 // Stile card condiviso (identico alle card della lista pratiche)
@@ -202,7 +219,7 @@ function ZoomImg({ src, alt, badge }: { src: string; alt: string; badge?: string
       onPointerDown={e => { if (t.s > 1 && !(e.target as HTMLElement).closest('[data-barra-zoom]')) { drag.current = { x: e.clientX, y: e.clientY }; box.current?.setPointerCapture(e.pointerId) } }}
       onPointerMove={e => { if (drag.current) { const d = drag.current; drag.current = { x: e.clientX, y: e.clientY }; setT(prev => ({ ...prev, x: prev.x + e.clientX - d.x, y: prev.y + e.clientY - d.y })) } }}
       onPointerUp={() => { drag.current = null }}
-      style={{ position: 'relative', width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, overflow: 'hidden', touchAction: 'none', cursor: t.s > 1 ? 'grab' : 'default' }}
+      style={{ position: 'relative', width: '100%', height: '100%', background: 'transparent', borderRadius: 12, overflow: 'hidden', touchAction: 'none', cursor: t.s > 1 ? 'grab' : 'default' }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -252,7 +269,7 @@ function PdfZoom({ src, badge }: { src: string; badge?: string }) {
           const canvas = document.createElement('canvas')
           canvas.width = viewport.width
           canvas.height = viewport.height
-          await page.render({ canvasContext: canvas.getContext('2d')!, viewport }).promise
+          await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise
           urls.push(canvas.toDataURL('image/jpeg', 0.92))
           if (!vivo) return
         }
@@ -266,15 +283,16 @@ function PdfZoom({ src, badge }: { src: string; badge?: string }) {
     return () => { vivo = false }
   }, [src])
 
+  // Sul palco scuro (27/07): niente sfondi chiari, testi e rotellina in chiaro
   if (errore) return (
-    <div style={{ width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-      <p style={{ fontSize: 12, color: '#6B7280' }}>Non riesco a mostrare questo PDF qui.</p>
-      <a href={src} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#1D4ED8', textDecoration: 'underline' }}>Aprilo in un&apos;altra scheda</a>
+    <div style={{ width: '100%', height: '100%', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+      <p style={{ fontSize: 12, color: '#E2E8F0' }}>Non riesco a mostrare questo PDF qui.</p>
+      <a href={src} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#BFDBFE', textDecoration: 'underline' }}>Aprilo in un&apos;altra scheda</a>
     </div>
   )
   if (!pagine) return (
-    <div style={{ width: '100%', height: '100%', background: '#F6F8FB', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+    <div style={{ width: '100%', height: '100%', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="w-5 h-5 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
     </div>
   )
   const bottonePag: React.CSSProperties = { border: 'none', background: 'transparent', color: '#fff', width: 24, height: 24, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }
@@ -300,7 +318,7 @@ function PdfZoom({ src, badge }: { src: string; badge?: string }) {
 // COMPONENTE
 // ============================================================
 
-export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onStatoCambiato, onRicaricaPratica, compatta }: Props) {
+export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onStatoCambiato, onRicaricaPratica, compatta, targa, veicolo, cliente }: Props) {
   const [docs, setDocs] = useState<DocRiga[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [dati, setDati] = useState<DatiPratica | null>(null)
@@ -309,6 +327,20 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
   const [azione, setAzione] = useState(false)
   // VISORE: indice della voce aperta (documenti + foto in un'unica fila)
   const [visoreIdx, setVisoreIdx] = useState<number | null>(null)
+  // ⭐ 27/07 (mockup definitivo): scarico PDF dal visore — menu del bottone
+  // Scarica, selezione con le caselle nell'elenco, PDF unico da inoltrare
+  const [menuScarica, setMenuScarica] = useState(false)
+  const [selezione, setSelezione] = useState(false)
+  const [scelte, setScelte] = useState<Set<string>>(new Set())
+  const [pdfInCorso, setPdfInCorso] = useState(false)
+  const [pdfErrore, setPdfErrore] = useState<string | null>(null)
+  function chiudiVisore() {
+    setVisoreIdx(null)
+    setMenuScarica(false)
+    setSelezione(false)
+    setScelte(new Set())
+    setPdfErrore(null)
+  }
   const [modalRifiuto, setModalRifiuto] = useState<{ id: string; titolo: string } | null>(null)
   const [errRifiuto, setErrRifiuto] = useState<string | null>(null)
   // ⭐ 27/07 (variante A su mockup): frasi pronte del rifiuto (categoria
@@ -354,6 +386,16 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     onStatoRef.current?.(tutti, totale, approvati)
   }, [docs])
 
+  // Col visore aperto la pagina dietro NON scorre (27/07): con la rotella
+  // sull'elenco arrivato in fondo lo scroll trapassava alla pagina sotto
+  const visoreAperto = visoreIdx !== null
+  useEffect(() => {
+    if (!visoreAperto) return
+    const prima = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prima }
+  }, [visoreAperto])
+
   // VISORE: navigazione da tastiera (← → per scorrere, Esc per chiudere)
   const totVoci = docs.filter(d => d.richiede_upload && leggiFile(d.file_url).length > 0).length + foto.length
   useEffect(() => {
@@ -363,7 +405,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
       const tag = (document.activeElement?.tagName || '').toLowerCase()
       if (tag === 'textarea' || tag === 'input') return
       // Frecce A ROTAZIONE (26/07): dall'ultimo si riparte dal primo e viceversa
-      if (e.key === 'Escape') setVisoreIdx(null)
+      if (e.key === 'Escape') chiudiVisore()
       if (e.key === 'ArrowRight') setVisoreIdx(i => (i === null || totVoci === 0 ? i : (i + 1) % totVoci))
       if (e.key === 'ArrowLeft') setVisoreIdx(i => (i === null || totVoci === 0 ? i : (i - 1 + totVoci) % totVoci))
     }
@@ -573,6 +615,93 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     : nomeDoc(v.doc)
   const apriVisoreDoc = (id: string) => { const i = voci.findIndex(v => v.tipo === 'doc' && v.doc.id === id); if (i >= 0) setVisoreIdx(i) }
 
+  // ⭐ 27/07: SCARICO PDF (mockup definitivo). "Questo documento" oppure
+  // selezione dall'elenco → UN PDF unico pronto da inoltrare (WhatsApp,
+  // email a un commerciante). Immagini su pagina A4 con l'etichetta del
+  // documento in alto; i PDF caricati dal cliente copiati pagina per pagina.
+  const chiaveVoce = (v: Voce) => v.tipo === 'doc' ? `doc:${v.doc.id}` : `foto:${v.foto.id}`
+  const toggleScelta = (v: Voce) => setScelte(prev => {
+    const nuove = new Set(prev)
+    const k = chiaveVoce(v)
+    if (nuove.has(k)) nuove.delete(k); else nuove.add(k)
+    return nuove
+  })
+
+  async function scaricaPdf(daIncludere: Voce[]) {
+    if (daIncludere.length === 0 || pdfInCorso) return
+    setPdfInCorso(true)
+    setPdfErrore(null)
+    try {
+      const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib')
+      const out = await PDFDocument.create()
+      const font = await out.embedFont(StandardFonts.Helvetica)
+      const falliti: string[] = []
+      for (const v of daIncludere) {
+        const titolo = titoloVoce(v)
+        const files: { url: string; nome: string; lato?: string }[] = v.tipo === 'doc'
+          ? leggiFile(v.doc.file_url).map(f => ({ url: signedMap[f.url] || f.url, nome: f.nome, lato: f.lato }))
+          : [{ url: v.foto.url, nome: titolo }]
+        for (const f of files) {
+          const etichetta = f.lato ? `${titolo} (${f.lato})` : titolo
+          try {
+            const res = await fetch(f.url)
+            if (!res.ok) throw new Error(`HTTP ${res.status}`)
+            const blob = await res.blob()
+            const bytes = new Uint8Array(await blob.arrayBuffer())
+            if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
+              // È un PDF: pagine copiate così come sono
+              const src = await PDFDocument.load(bytes, { ignoreEncryption: true })
+              for (const pg of await out.copyPages(src, src.getPageIndices())) out.addPage(pg)
+            } else {
+              let img
+              if (bytes[0] === 0xFF && bytes[1] === 0xD8) img = await out.embedJpg(bytes)
+              else if (bytes[0] === 0x89 && bytes[1] === 0x50) img = await out.embedPng(bytes)
+              else {
+                // Formato non nativo per pdf-lib (es. WebP): passa dal canvas
+                const bmp = await createImageBitmap(blob)
+                const canvas = document.createElement('canvas')
+                canvas.width = bmp.width
+                canvas.height = bmp.height
+                canvas.getContext('2d')!.drawImage(bmp, 0, 0)
+                img = await out.embedJpg(bytesDaDataUrl(canvas.toDataURL('image/jpeg', 0.9)))
+              }
+              // Pagina A4 verticale con l'etichetta del documento in alto
+              const A4W = 595.28, A4H = 841.89, margine = 36
+              const page = out.addPage([A4W, A4H])
+              page.drawText(etichetta.slice(0, 95), { x: margine, y: A4H - 26, size: 9, font, color: rgb(0.42, 0.47, 0.55) })
+              const areaW = A4W - margine * 2
+              const areaH = A4H - margine * 2 - 14
+              const k = Math.min(areaW / img.width, areaH / img.height)
+              page.drawImage(img, { x: (A4W - img.width * k) / 2, y: margine + (areaH - img.height * k) / 2, width: img.width * k, height: img.height * k })
+            }
+          } catch (e) {
+            console.error('File saltato nel PDF:', f.nome, e)
+            falliti.push(etichetta)
+          }
+        }
+      }
+      if (out.getPageCount() === 0) throw new Error('Nessun file incluso')
+      const base = daIncludere.length === 1 ? titoloVoce(daIncludere[0]) : 'Documenti'
+      const nomeFile = nomeFileSicuro(`${base}${targa ? ` ${targa}` : ''}`) + '.pdf'
+      const blobOut = new Blob([await out.save() as BlobPart], { type: 'application/pdf' })
+      const link = document.createElement('a')
+      link.href = URL.createObjectURL(blobOut)
+      link.download = nomeFile
+      link.click()
+      URL.revokeObjectURL(link.href)
+      if (falliti.length > 0) {
+        setPdfErrore(`PDF scaricato, ma senza: ${falliti.join(', ')}.`)
+      } else {
+        setSelezione(false)
+        setScelte(new Set())
+      }
+    } catch (e) {
+      console.error('Errore creazione PDF:', e)
+      setPdfErrore('Non sono riuscito a creare il PDF. Riprova.')
+    }
+    setPdfInCorso(false)
+  }
+
   // La NUVOLETTA del rifiuto (27/07): appare ancorata al bottone "Rifiuta"
   // del documento giusto, ovunque quel bottone sia (visore o riga)
   const nuvolaRifiutoDi = (docId: string) => (modalRifiuto?.id === docId ? (
@@ -771,30 +900,95 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
         const voce = voci[visoreIdx]
         const files = voce.tipo === 'doc' ? leggiFile(voce.doc.file_url) : []
         const primaFotoIdx = voci.findIndex(v => v.tipo === 'foto')
+        const nScelte = voci.filter(v => scelte.has(chiaveVoce(v))).length
+        const miStile: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', gap: 9, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderRadius: 8, padding: '8px 10px', fontSize: 12.5, color: '#1E293B', fontWeight: 600, cursor: 'pointer' }
+        const mdescStile: React.CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 400, color: '#8A94A3', marginTop: 1 }
         return (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={() => setVisoreIdx(null)}>
-            <div className="bg-white rounded-2xl w-full flex overflow-hidden" style={{ maxWidth: 1000, height: '85vh' }} onClick={e => e.stopPropagation()}>
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={chiudiVisore}>
+            <div className="bg-white rounded-2xl w-full flex flex-col overflow-hidden" style={{ maxWidth: 1000, height: '85vh' }} onClick={e => { e.stopPropagation(); if (menuScarica) setMenuScarica(false) }}>
 
-              {/* ELENCO A SINISTRA */}
-              <div style={{ width: 250, borderRight: '1px solid #EEF1F5', background: '#FAFBFD', overflowY: 'auto', padding: '12px 0', flexShrink: 0 }}>
+              {/* ⭐ TESTATA (27/07, mockup definitivo): targhetta, veicolo e
+                  cliente sempre in vista + bottone Scarica con le due strade */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: '1px solid #EEF1F5', background: '#FAFBFD', flexShrink: 0 }}>
+                {targa && (
+                  <span style={{ display: 'inline-flex', alignItems: 'stretch', border: '1.5px solid #94A3B8', borderRadius: 6, overflow: 'hidden', background: '#fff', flexShrink: 0 }}>
+                    <span style={{ width: 8, background: '#1D4ED8' }} />
+                    <span style={{ fontWeight: 800, letterSpacing: 1.6, fontSize: 13, padding: '3px 9px', color: '#111827' }}>{targa}</span>
+                  </span>
+                )}
+                {veicolo && <span style={{ fontSize: 13.5, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{veicolo}</span>}
+                {cliente && (
+                  <>
+                    <span style={{ color: '#C3CBD6', fontSize: 12, flexShrink: 0 }}>·</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: '#5B6779', minWidth: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cliente}</span>
+                    </span>
+                  </>
+                )}
+                <span style={{ flex: 1 }} />
+                <span style={{ position: 'relative', flexShrink: 0 }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setMenuScarica(m => !m) }}
+                    disabled={pdfInCorso}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '1.5px solid #D8DDE5', borderRadius: 9, padding: '7px 13px', fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', cursor: 'pointer', opacity: pdfInCorso ? 0.6 : 1 }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                    {pdfInCorso ? 'Preparo il PDF…' : 'Scarica'}
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+                  </button>
+                  {menuScarica && (
+                    <span onClick={e => e.stopPropagation()} style={{ position: 'absolute', top: 'calc(100% + 7px)', right: 0, background: '#fff', border: '1px solid #E2E8F0', borderRadius: 12, boxShadow: '0 10px 30px rgba(15,23,42,0.16)', padding: 5, minWidth: 240, zIndex: 20, display: 'block' }}>
+                      <button className="transition-colors hover:bg-blue-50" onClick={() => { setMenuScarica(false); scaricaPdf([voce]) }} style={miStile}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                        <span>{voce.tipo === 'foto' ? 'Questa foto' : 'Questo documento'}<span style={mdescStile}>PDF di: {titoloVoce(voce)}</span></span>
+                      </button>
+                      <button className="transition-colors hover:bg-blue-50" onClick={() => { setMenuScarica(false); setSelezione(true); setScelte(new Set([chiaveVoce(voce)])) }} style={miStile}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><rect x="3" y="3" width="18" height="18" rx="4" /><polyline points="8 12 11 15 16 9" /></svg>
+                        <span>Scegli cosa scaricare<span style={mdescStile}>Un unico PDF con documenti e foto scelti</span></span>
+                      </button>
+                    </span>
+                  )}
+                </span>
+                <button onClick={chiudiVisore} className="text-gray-400 hover:text-gray-700" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>×</button>
+              </div>
+
+              <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+
+              {/* ELENCO A SINISTRA con le MINIATURE (27/07); in modalità
+                  selezione compaiono le caselle e il clic sceglie la voce */}
+              <div style={{ width: 262, borderRight: '1px solid #EEF1F5', background: '#FAFBFD', overflowY: 'auto', overscrollBehavior: 'contain', padding: '10px 0', flexShrink: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '0 16px 8px' }}>DOCUMENTI · {vociDocs.length}</div>
                 {voci.map((v, i) => {
                   const attiva = i === visoreIdx
+                  const primoFile = v.tipo === 'doc' ? leggiFile(v.doc.file_url)[0] : null
+                  const thumbUrl = v.tipo === 'foto'
+                    ? v.foto.url
+                    : primoFile && !isPdfUrl(primoFile.nome) && !isPdfUrl(primoFile.url) ? (signedMap[primoFile.url] || primoFile.url) : null
                   return (
                     <div key={v.tipo === 'doc' ? v.doc.id : v.foto.id}>
                       {i === primaFotoIdx && (
                         <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '10px 16px 8px', borderTop: '1px solid #EEF1F5', marginTop: 8 }}>FOTO DEL VEICOLO · {foto.length}</div>
                       )}
                       <button
-                        onClick={() => setVisoreIdx(i)}
+                        onClick={() => { if (selezione) toggleScelta(v); else setVisoreIdx(i) }}
                         style={{
-                          width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                          padding: attiva ? '9px 16px 9px 13px' : '9px 16px', fontSize: 12.5, border: 'none', cursor: 'pointer',
-                          background: attiva ? '#EFF6FF' : 'transparent', borderLeft: attiva ? '3px solid #2563eb' : 'none',
+                          width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
+                          padding: '7px 14px', fontSize: 12.5, border: 'none', cursor: 'pointer',
+                          background: attiva ? '#EFF6FF' : 'transparent', boxShadow: attiva ? 'inset 3px 0 0 #2563eb' : 'none',
                           color: attiva ? '#0C447C' : '#374151', fontWeight: attiva ? 700 : 400,
                         }}
                       >
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(v)}</span>
+                        {selezione && (
+                          <input type="checkbox" readOnly checked={scelte.has(chiaveVoce(v))} style={{ accentColor: '#2563EB', width: 15, height: 15, flexShrink: 0, pointerEvents: 'none' }} />
+                        )}
+                        <span style={{ width: 30, height: 38, borderRadius: 5, flexShrink: 0, border: '1px solid #E2E8F0', background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9AA7B5' }}>
+                          {thumbUrl
+                            ? /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
+                        </span>
+                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(v)}</span>
                         {v.tipo === 'doc' && (
                           <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 8px', ...(v.doc.stato === 'approvato' ? { background: '#DCF3E4', color: '#1F7A43' } : v.doc.stato === 'rifiutato' ? { background: '#FBDADA', color: '#C0392B' } : { background: '#E0EDFB', color: '#1E4E8C' }) }}>
                             {v.doc.stato === 'approvato' ? 'Approvato' : v.doc.stato === 'rifiutato' ? 'Rifiutato' : 'In verifica'}
@@ -807,20 +1001,17 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
               </div>
 
               {/* AREA PRINCIPALE */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '14px 18px', minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: 15, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</div>
-                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>{visoreIdx + 1} di {voci.length}</div>
-                  </div>
-                  <button onClick={() => setVisoreIdx(null)} className="text-gray-400 hover:text-gray-700" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0 }}>×</button>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px 16px', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, minWidth: 0 }}>
+                  <span style={{ fontWeight: 700, fontSize: 14.5, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</span>
+                  <span style={{ fontSize: 11.5, color: '#6B7280', flexShrink: 0 }}>{visoreIdx + 1} di {voci.length}</span>
                 </div>
 
-                {/* PALCO (26/07, mockup approvato): FILE (fronte/retro
-                    affiancati) o FOTO zoomabili, FRECCE AI LATI a metà
-                    altezza (restano anche ← → da tastiera) */}
-                <div style={{ flex: 1, position: 'relative', minHeight: 0 }}>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 10 }}>
+                {/* ⭐ PALCO grigio ardesia (27/07, dosaggio 3 su mockup): FILE
+                    (fronte/retro affiancati) o FOTO zoomabili, FRECCE AI LATI
+                    trasparenti a metà altezza (restano anche ← → da tastiera) */}
+                <div style={{ flex: 1, position: 'relative', minHeight: 0, borderRadius: 12, background: '#5D6A7E', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', inset: 12, display: 'flex', gap: 10 }}>
                     {voce.tipo === 'foto' ? (
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <ZoomImg key={voce.foto.url} src={voce.foto.url} alt={titoloVoce(voce)} />
@@ -843,21 +1034,24 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                   <button
                     onClick={() => setVisoreIdx(i => (i === null || voci.length === 0 ? i : (i - 1 + voci.length) % voci.length))}
                     aria-label="Precedente"
-                    style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', zIndex: 3 }}
+                    style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', zIndex: 3 }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                   </button>
                   <button
                     onClick={() => setVisoreIdx(i => (i === null || voci.length === 0 ? i : (i + 1) % voci.length))}
                     aria-label="Successivo"
-                    style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', border: '1px solid #E5E7EB', boxShadow: '0 2px 10px rgba(15,23,42,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#374151', cursor: 'pointer', zIndex: 3 }}
+                    style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,0.16)', border: '1px solid rgba(255,255,255,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', zIndex: 3 }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                   </button>
                 </div>
 
-                {/* AZIONI */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                {pdfErrore && <p style={{ fontSize: 11.5, fontWeight: 600, color: '#C0392B', marginTop: 8, marginBottom: -4 }}>{pdfErrore}</p>}
+
+                {/* AZIONI (nascoste mentre si sceglie cosa scaricare) */}
+                {!selezione && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, minHeight: 34 }}>
                   <div style={{ flex: 1 }} />
                   {voce.tipo === 'doc' && voce.doc.stato === 'caricato' && (
                     <>
@@ -890,6 +1084,24 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                     </>
                   )}
                 </div>
+                )}
+
+                {/* ⭐ BARRA DI SELEZIONE (27/07, mockup definitivo): solo
+                    Annulla e Scarica PDF col conteggio, allineati a destra */}
+                {selezione && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14, marginTop: 12, minHeight: 34 }}>
+                    <button onClick={() => { setSelezione(false); setScelte(new Set()); setPdfErrore(null) }} style={{ background: 'none', border: 'none', color: '#5B6779', fontSize: 12.5, fontWeight: 600, cursor: 'pointer' }}>Annulla</button>
+                    <button
+                      onClick={() => scaricaPdf(voci.filter(v => scelte.has(chiaveVoce(v))))}
+                      disabled={nScelte === 0 || pdfInCorso}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#2563EB', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 15px', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', opacity: nScelte === 0 || pdfInCorso ? 0.5 : 1 }}
+                    >
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+                      {pdfInCorso ? 'Preparo il PDF…' : `Scarica PDF (${nScelte})`}
+                    </button>
+                  </div>
+                )}
+              </div>
               </div>
 
             </div>

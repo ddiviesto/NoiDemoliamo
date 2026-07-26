@@ -469,7 +469,7 @@ export default function AdminDashboard() {
   // grigio passando da una pagina all'altra (26/07)
   if (loading) {
     return (
-      <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
+      <main className="h-screen overflow-hidden flex" style={{ background: '#ECEEF2' }}>
         <AdminSidebar attivo="pratiche" />
         <div className="flex-1 min-w-0 flex items-center justify-center">
           <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -480,8 +480,10 @@ export default function AdminDashboard() {
 
   // ⭐ 23/07 (variante A su mockup): via il lilla — sfondo GRIGIO chiaro,
   // barre (laterale + "Pratiche") nel blu NoiDemoliamo
+  // ⭐ 27/07: pagina ad ALTEZZA SCHERMO — barra laterale, testata, flusso e
+  // filtri restano fermi; scorre SOLO la lista delle pratiche
   return (
-    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
+    <main className="h-screen overflow-hidden flex" style={{ background: '#ECEEF2' }}>
 
       {/* SIDEBAR (condivisa: Impostazioni e pulizia account vivono lì) */}
       <AdminSidebar attivo="pratiche" />
@@ -507,7 +509,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="p-6 overflow-auto">
+        <div className="px-6 pt-6 flex-1 min-h-0 flex flex-col">
 
           {/* PIPELINE DEL FLUSSO PRATICHE — pillole tonde in una riga
               (variante B scelta da Davide su mockup 23/07). Sotto "Assegnata"
@@ -516,6 +518,13 @@ export default function AdminDashboard() {
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
           <div className="mb-3 overflow-x-auto">
             <div className="flex items-start">
+              {/* ⭐ 27/07 (mockup approvato): "Da contattare" è una pillola
+                  gemella delle fasi, PRIMA di "In attesa documenti" — bianca
+                  a zero, rossa coi casi. Non è una fase: niente freccia,
+                  solo uno stacco. Via il vecchio riquadro rosso. */}
+              <PillolaFase nome="Da contattare" valore={conta('contattare')} rossa={conta('contattare') > 0} attivo={filtro === 'contattare'} onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
+                title={conta('contattare') > 0 ? 'Da chiamare per i documenti (libretto o certificato da chiarire)' : 'Nessun cliente da chiamare per i documenti'} />
+              <div style={{ width: 14, flexShrink: 0 }} />
               <PillolaFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
               <FrecciaFase />
               <PillolaFase nome="Documenti da verificare" valore={conta('approvare')} attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
@@ -534,21 +543,10 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* ALLERTE FUORI DAL FLUSSO (l'allerta 8 ore ora vive sotto la
-              casella "Assegnata", dentro la fila) */}
-          {(conta('contattare') > 0 || conta('attesa') > 0) && (
+          {/* ALLERTE FUORI DAL FLUSSO (l'allerta 8 ore vive sotto "Assegnata"
+              e "Da contattare" è una pillola in testa alla fila) */}
+          {conta('attesa') > 0 && (
           <div className="flex flex-wrap gap-2.5 mb-3">
-              {conta('contattare') > 0 && (
-                <button
-                  onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
-                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left transition-all hover:shadow-md"
-                  style={{ background: '#FEF6F6', border: `1.5px solid ${filtro === 'contattare' ? '#2563eb' : '#F3C8C8'}` }}
-                >
-                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-                  <span className="text-[12.5px] font-bold" style={{ color: '#9B1C1C' }}>Da contattare · {conta('contattare')}</span>
-                  <span className="text-[11.5px]" style={{ color: '#B03A2E' }}>da chiamare per i documenti</span>
-                </button>
-              )}
               {conta('attesa') > 0 && (
                 <button
                   onClick={() => setFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
@@ -572,7 +570,9 @@ export default function AdminDashboard() {
           {/* LISTA PRATICHE A CARD — ⭐ TENDINA SOTTO LA RIGA (26/07):
               clic sulla pratica = sotto si srotola il pannello coi dati
               principali (transizione morbida), ritocco = si richiude.
-              Il contenuto del pannello lo detta Davide un pezzo alla volta. */}
+              Il contenuto del pannello lo detta Davide un pezzo alla volta.
+              ⭐ 27/07: la lista è l'UNICA zona che scorre della pagina. */}
+          <div className="flex-1 min-h-0 overflow-y-auto pb-6 px-1 -mx-1">
           {ordinate.length === 0 ? (
             <div className="card-admin px-4 py-10 text-center text-sm text-gray-500">Nessuna pratica in questa vista.</div>
           ) : (
@@ -622,7 +622,9 @@ export default function AdminDashboard() {
 
                     {/* Stato + demolitore */}
                     <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#E15E5E' : m.bg, color: (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#fff' : m.text, padding: '4px 12px' }}>
+                      {/* ⭐ 27/07: rosso TENUE anche qui — gli stessi colori
+                          della pillola "Da contattare" accesa nel flusso */}
+                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#FBDADA' : m.bg, color: (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#9B1C1C' : m.text, padding: '4px 12px' }}>
                         {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
                       </span>
                       {/* Il PERCHÉ dell'attesa, sempre sott'occhio in lista */}
@@ -888,6 +890,9 @@ export default function AdminDashboard() {
                             statoPratica={p.stato}
                             aperta
                             compatta
+                            targa={p.targa}
+                            veicolo={[[p.marca, p.modello].filter(Boolean).join(' '), p.anno].filter(Boolean).join(' · ') || null}
+                            cliente={p.nome_richiedente}
                             onToggle={() => setSelDocsAperti(false)}
                             onStatoCambiato={(tutti, totale, approvati) => setDocStats(prev => ({ ...prev, [p.id]: { totale, approvati, daVerificare: prev[p.id]?.daVerificare ?? 0 } }))}
                             onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
@@ -913,6 +918,7 @@ export default function AdminDashboard() {
               })}
             </div>
           )}
+          </div>
 
         </div>
       </div>

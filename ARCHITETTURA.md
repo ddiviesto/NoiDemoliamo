@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **22 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **27 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -878,7 +878,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **BLOCCO UNICO (variante 3)**: da aperta la cornice blu 2px ingloba riga+tendina (fondo grigino, ombra); la riga si tinge d'azzurro `#EFF6FF` con targa blu e fa da testata.
 - ⭐⭐ **FILA AZIONI nella testata** (layout B): bottoni a pillolina **Documenti** (contatore approvati/totale + pallino rosso da verificare), **Chat** (pallino non letti), **Stato pratica** (nuvoletta ancorata con Attiva/Metti in attesa/Annulla, MOTIVO scritto nella nuvoletta — niente modali centrali; stessa logica server del dettaglio, note in cronologia), **Apri la pratica intera** (blu pieno, → pagina completa). I Documenti si aprono IN LINEA nella tendina (card vera con visore e zoom).
 - ⭐⭐ **CHAT A FINESTRELLA** (2 giri di mockup: stile A + posizione A): fissa in basso a destra (340×430 FISSI: non balla cambiando linguetta o aprendo Gestisci), testata blu con nome+targa, bottone **ingrandisci** (470×600) accanto alla ✕. Dentro: chat COMPATTA con pilloline "Cliente / Demolitore (solo lettura)" (via i linguettoni e le frecce ↔), bolle piccole con orario, frasi rapide a chips sottili, campo a pillola con bottone tondo. **"Gestisci" NON apre finestre**: il corpo si trasforma nella gestione frasi (freccetta per tornare, campo slim + Salva solo se modificata + cestino discreto). La stessa card compatta vale nel dettaglio pratica. ⭐ All'apertura i messaggi del cliente si SEGNANO LETTI (il pallino si azzera davvero). Prop `finestra` su `ChatAdmin`.
-- ⭐⭐ **PALETTE A PILLOLE DI STATO** (mockup + rifinitura): FLUSSO tutto AZZURRO `#EFF6FF`/`#1D4ED8` (parla il testo), **verde solo Completata**, **ROSSO TENUE** `#F3D9D9`/`#A94444` per Annullata e anomalie (· da rifare, · a mano), **ROSSO MEDIO PIENO** `#E15E5E`/bianco per "Da contattare", **azzurro spento** `#E8ECF3`/`#5B6779` per "In attesa" (pausa). Via giallo senape e arcobaleno. Applicata a lista, tendina e dettaglio (costanti `PILL_FLUSSO`/`PILL_ROSSO_TENUE`).
+- ⭐⭐ **PALETTE A PILLOLE DI STATO** (mockup + rifinitura): FLUSSO tutto AZZURRO `#EFF6FF`/`#1D4ED8` (parla il testo), **verde solo Completata**, **ROSSO TENUE** `#F3D9D9`/`#A94444` per Annullata e anomalie (· da rifare, · a mano), **azzurro spento** `#E8ECF3`/`#5B6779` per "In attesa" (pausa). Via giallo senape e arcobaleno. Applicata a lista, tendina e dettaglio (costanti `PILL_FLUSSO`/`PILL_ROSSO_TENUE`). ⭐ 27/07 sera: anche "Da contattare" in riga è passata al **rosso tenue** `#FBDADA`/`#9B1C1C` (il rosso medio pieno `#E15E5E` resta SOLO ai bottoni di rifiuto/eliminazione).
 
 **Quarta parte — ⭐⭐⭐ CHAT A TRE CANALI (dettato da Davide, SQL eseguito):**
 - Vedi 3.8 per il modello dati. **Admin** (finestrella CRM e card dettaglio): TRE linguette — **Cliente** e **Demolitore** scrivibili, "**Dem. e Cliente**" controllo qualità in sola lettura; il pallino rosso conta i non letti diretti a lui (cliente + demolitore) e si azzera aprendo la linguetta giusta. **Demolitore** (scheda pratica, `ChatDemolitore` rimontata dalla dispensa): pilloline **Cliente / NoiDemoliamo**, stile gemello, endpoint `/api/demolitore-chat` con param `canale`. **Cliente**: invariato alla vista (i suoi 2 canali), invii etichettati e contatore che esclude il canale riservato.
@@ -900,6 +900,14 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **SIDEBAR ADMIN COL FLIP**: clic su Impostazioni = la barra ruota (flip 3D) sulla faccia impostazioni ("‹ Impostazioni" per tornare, dentro Pulisci account e le prossime voci); via la tendina che si alzava.
 - ⭐⭐⭐ **MODIFICA SUL POSTO nella tendina** (variante 1 su mockup: matita per sezione): ogni sezione (Cliente, Casistiche, Veicolo, Ritiro) ha la matita → righe ad ALTEZZA FISSA, valori che diventano campi slim col FILO BLU in dissolvenza, matita → Annulla·Salva in spazio riservato, bordo sezione azzurrino. Modificabile TUTTO: nome/telefono/CF, libretto/CDC/fermo/targhe (tendine con "Scegli…" disabilitato), targa/marca/modello/anno/km/cambio + condizioni a INTERRUTTORE (pilloline che si girano, grigie col "?" se mai risposte), indirizzo/spazio/delegato. Sola lettura: casistica, email, comune di ritiro (decide la copertura demolitori). Server: `/api/pratica-dati` (whitelist estesa: tipo_cambio + condizioni bool) e `/api/pratica-cdc` per il CDC; libretto/fermo/targhe sincronizzano la checklist come sempre.
 - **PIANO DICHIARATO**: "Apri la pratica intera" verrà TOLTO appena la tendina copre anche assegnazione, importo e eliminazione (prossimi pezzi); a quel punto il CRM è davvero tutto in una pagina.
+
+**Seconda parte (27/07 sera) — VISORE RIFATTO (mockup definitivo) + SCARICO PDF + CRM ad altezza schermo:**
+- ⭐⭐ **VISORE, mockup definitivo approvato**: **TESTATA con la pratica in vista** (targhetta vera con banda blu, veicolo con anno, cliente — nuove prop `targa`/`veicolo`/`cliente` di `DocumentiApprovazione`, passate da dettaglio e tendina); **elenco con le MINIATURE** (immagine vera per foto e documenti, icona foglio per i PDF); **PALCO grigio ardesia `#5D6A7E`** ("dosaggio 3" scelto tra tre su mockup) con frecce trasparenti bianche; ✕ e Scarica in testata.
+- ⭐⭐ **SCARICO PDF dal visore** (bottone Scarica, due strade): "**Questo documento**"/"Questa foto" = PDF singolo; "**Scegli cosa scaricare**" = caselle nell'elenco (parte con la voce corrente spuntata), in basso SOLO Annulla e "Scarica PDF (n)" (barra azzurra e scorciatoie BOCCIATE da Davide). Ne esce **UN PDF unico pronto da inoltrare** (es. solo le foto a un commerciante): pdf-lib lato browser, immagini su A4 con l'etichetta del documento (ruolo casistica + fronte/retro), PDF del cliente copiati pagina per pagina, nome file "Documenti TARGA.pdf"; se un file non entra il PDF esce comunque con l'avviso di cosa manca.
+- ⭐ **Pagina dietro BLOCCATA col visore aperto** (bug trovato da Davide: rotella sull'elenco = scorreva la pagina sotto): `body.overflow=hidden` finché è aperto + `overscroll-behavior: contain` sull'elenco.
+- ⭐⭐ **CRM AD ALTEZZA SCHERMO**: pagina `h-screen overflow-hidden` — sidebar, barra "Pratiche", flusso, allerte e filtri restano FERMI, **scorre solo la lista pratiche** (regola per quando saranno decine).
+- ⭐ **FIX flip sidebar**: la faccia che ruota "sporgeva" in 3D e faceva comparire la barra di scorrimento (sobbalzo) — `overflow: hidden` sul contenitore del flip.
+- ⭐⭐ **"DA CONTATTARE" PILLOLA DEL FLUSSO** (mockup approvato): via il riquadro rosso lungo — pillola gemella delle fasi PRIMA di "In attesa documenti" (non è una fase: niente freccia, solo uno stacco), **bianca a zero, rossa coi casi**, clic = filtro (come l'Allerta 8 ore). In riga la pillola "Da contattare" è passata al **rosso tenue** `#FBDADA`/`#9B1C1C` (via il rosso pieno).
 
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 
@@ -1323,4 +1331,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 22 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 27 luglio 2026.**
