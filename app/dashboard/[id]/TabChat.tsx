@@ -13,6 +13,8 @@ interface Messaggio {
   testo: string
   letto: boolean
   creato_il: string
+  // ⭐ 26/07: canale del messaggio (NULL = messaggio vecchio, criterio mittenti)
+  conversazione?: 'cliente_noidemoliamo' | 'cliente_demolitore' | 'demolitore_noidemoliamo' | null
 }
 
 interface Props {
@@ -215,25 +217,29 @@ function Chat({
     if (!session) return
     setUserId(session.user.id)
 
-    const tipiVisibili = destinatarioTipo === 'admin'
-      ? ['admin', 'cliente']
-      : ['demolitore', 'cliente']
-
     const { data } = await supabase
       .from('messaggi_chat')
       .select('*')
       .eq('pratica_id', pratica.id)
-      .in('mittente_tipo', tipiVisibili)
       .order('creato_il', { ascending: true })
 
-    const json = JSON.stringify(data || [])
+    // ⭐ 26/07: filtro per CANALE — i messaggi vecchi (conversazione NULL)
+    // seguono il criterio dei mittenti; il canale demolitore↔NoiDemoliamo
+    // non riguarda il cliente e non passa mai di qui
+    const visibili = ((data || []) as Messaggio[]).filter(m =>
+      destinatarioTipo === 'admin'
+        ? m.conversazione === 'cliente_noidemoliamo' || (m.conversazione == null && (m.mittente_tipo === 'admin' || m.mittente_tipo === 'cliente'))
+        : m.conversazione === 'cliente_demolitore' || (m.conversazione == null && (m.mittente_tipo === 'demolitore' || m.mittente_tipo === 'cliente'))
+    )
+
+    const json = JSON.stringify(visibili)
     if (json !== messaggiJson.current) {
       messaggiJson.current = json
-      setMessaggi(data || [])
+      setMessaggi(visibili)
     }
 
-    if (data && data.length > 0) {
-      const daSegnarLetti = data
+    if (visibili.length > 0) {
+      const daSegnarLetti = visibili
         .filter(m => !m.letto && m.mittente_id !== session.user.id)
         .map(m => m.id)
       if (daSegnarLetti.length > 0) {
@@ -273,6 +279,7 @@ function Chat({
         mittente_tipo: 'cliente',
         testo: testo.trim(),
         letto: false,
+        conversazione: destinatarioTipo === 'admin' ? 'cliente_noidemoliamo' : 'cliente_demolitore',
       })
       .select('*')
       .single()

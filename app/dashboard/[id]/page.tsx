@@ -291,12 +291,15 @@ export default function DettaglioPraticaCliente() {
     async function contaNonLetti() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session || !pratica) return
+      // ⭐ 26/07: il canale demolitore↔NoiDemoliamo non riguarda il cliente
+      // e non deve gonfiare il suo contatore
       const { count } = await supabase
         .from('messaggi_chat')
         .select('id', { count: 'exact', head: true })
         .eq('pratica_id', pratica.id)
         .eq('letto', false)
         .neq('mittente_id', session.user.id)
+        .or('conversazione.is.null,conversazione.neq.demolitore_noidemoliamo')
       setChatNonLetti(count || 0)
     }
     if (pratica) contaNonLetti()

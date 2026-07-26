@@ -20,6 +20,9 @@ interface Messaggio {
   mittente_tipo: 'cliente' | 'admin' | 'demolitore' | 'commerciante'
   testo: string
   creato_il: string
+  // ⭐ 26/07: canale del messaggio (SQL 2026-07-26-chat-conversazioni.sql).
+  // NULL = messaggio vecchio: si mostra col criterio dei mittenti.
+  conversazione: 'cliente_noidemoliamo' | 'cliente_demolitore' | 'demolitore_noidemoliamo' | null
 }
 
 interface Preimpostato {
@@ -45,7 +48,9 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
   finestra?: boolean
   titolo?: string
 }) {
-  const [tab, setTab] = useState<'cliente' | 'demolitore'>('cliente')
+  // ⭐ 26/07: TRE canali — Cliente (tu↔cliente), Demolitore (tu↔demolitore,
+  // NUOVO) e "Dem. e Cliente" (controllo qualità, sola lettura)
+  const [tab, setTab] = useState<'cliente' | 'demolitore' | 'qualita'>('cliente')
   const [messaggi, setMessaggi] = useState<Messaggio[]>([])
   const [testo, setTesto] = useState('')
   const [inviando, setInviando] = useState(false)
@@ -82,23 +87,27 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
     if (listaRef.current) listaRef.current.scrollTop = listaRef.current.scrollHeight
   }, [messaggi, tab])
 
-  // ⭐ 26/07: a chat aperta i messaggi del CLIENTE si segnano come letti,
-  // così il pallino rosso dei non letti (tendina CRM) si azzera davvero
+  // ⭐ 26/07: aprire una linguetta = leggere QUEL canale — i messaggi
+  // diretti a te si segnano letti (il pallino rosso si azzera davvero).
+  // La linguetta "Dem. e Cliente" non segna nulla: non è posta tua.
   useEffect(() => {
-    if (!aperta) return
-    supabase.from('messaggi_chat')
+    if (!aperta || tab === 'qualita') return
+    const q = supabase.from('messaggi_chat')
       .update({ letto: true })
       .eq('pratica_id', praticaId)
-      .eq('mittente_tipo', 'cliente')
       .eq('letto', false)
-      .then(() => {})
+    if (tab === 'cliente') {
+      q.eq('mittente_tipo', 'cliente').or('conversazione.eq.cliente_noidemoliamo,conversazione.is.null').then(() => {})
+    } else {
+      q.eq('mittente_tipo', 'demolitore').eq('conversazione', 'demolitore_noidemoliamo').then(() => {})
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aperta, messaggi.length, praticaId])
+  }, [aperta, tab, messaggi.length, praticaId])
 
   async function caricaMessaggi() {
     const { data } = await supabase
       .from('messaggi_chat')
-      .select('id, mittente_tipo, testo, creato_il')
+      .select('id, mittente_tipo, testo, creato_il, conversazione')
       .eq('pratica_id', praticaId)
       .order('creato_il', { ascending: true })
     const json = JSON.stringify(data || [])
@@ -120,7 +129,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
 
   async function invia() {
     const t = testo.trim()
-    if (!t || inviando) return
+    if (!t || inviando || tab === 'qualita') return
     setInviando(true)
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) { setInviando(false); return }
@@ -130,6 +139,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
       mittente_tipo: 'admin',
       testo: t,
       letto: false,
+      conversazione: tab === 'demolitore' ? 'demolitore_noidemoliamo' : 'cliente_noidemoliamo',
     })
     if (error) {
       alert('Errore nell\'invio del messaggio. Riprova.')
@@ -140,11 +150,13 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
     setInviando(false)
   }
 
-  // Stessa regola della chat del cliente: la conversazione è definita dai mittenti
-  const visibili = messaggi.filter(m =>
-    tab === 'cliente' ? (m.mittente_tipo === 'admin' || m.mittente_tipo === 'cliente')
-      : (m.mittente_tipo === 'demolitore' || m.mittente_tipo === 'cliente')
-  )
+  // Filtro per canale; i messaggi VECCHI (conversazione NULL) si mostrano
+  // col vecchio criterio dei mittenti
+  const visibili = messaggi.filter(m => {
+    if (tab === 'cliente') return m.conversazione === 'cliente_noidemoliamo' || (m.conversazione == null && (m.mittente_tipo === 'admin' || m.mittente_tipo === 'cliente'))
+    if (tab === 'demolitore') return m.conversazione === 'demolitore_noidemoliamo'
+    return m.conversazione === 'cliente_demolitore' || (m.conversazione == null && (m.mittente_tipo === 'demolitore' || m.mittente_tipo === 'cliente'))
+  })
 
   // ---- CORPO COMPATTO (26/07, identico in card e finestrella) ----
   // "Gestisci" NON apre finestre: il corpo della chat si trasforma nella
@@ -158,23 +170,20 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
     />
   ) : (
     <>
-      {/* Pilloline Cliente / Demolitore (variante A su mockup) */}
-      <div className="flex gap-1.5" style={{ marginTop: finestra ? 8 : 10, padding: finestra ? '0 10px' : 0 }}>
-        <button
-          onClick={() => setTab('cliente')}
-          className="transition-all"
-          style={{ border: `1.5px solid ${tab === 'cliente' ? '#2563EB' : '#E5E7EB'}`, background: tab === 'cliente' ? '#EFF6FF' : '#fff', color: tab === 'cliente' ? '#1D4ED8' : '#4B5563', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}
-        >
-          Cliente
-        </button>
-        <button
-          onClick={() => setTab('demolitore')}
-          className="flex items-center gap-1.5 transition-all"
-          style={{ border: `1.5px solid ${tab === 'demolitore' ? '#2563EB' : '#E5E7EB'}`, background: tab === 'demolitore' ? '#EFF6FF' : '#fff', color: tab === 'demolitore' ? '#1D4ED8' : '#4B5563', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}
-        >
-          Demolitore
-          <span style={{ fontSize: 8.5, fontWeight: 700, background: '#EEF1F5', color: '#8B95A5', borderRadius: 999, padding: '1px 6px' }}>solo lettura</span>
-        </button>
+      {/* Pilloline dei TRE canali (26/07): Cliente e Demolitore scrivibili,
+          "Dem. e Cliente" = controllo qualità in sola lettura */}
+      <div className="flex gap-1.5 flex-wrap" style={{ marginTop: finestra ? 8 : 10, padding: finestra ? '0 10px' : 0 }}>
+        {([['cliente', 'Cliente', null], ['demolitore', 'Demolitore', null], ['qualita', 'Dem. e Cliente', 'solo lettura']] as const).map(([id, label, occhio]) => (
+          <button
+            key={id}
+            onClick={() => setTab(id)}
+            className="flex items-center gap-1.5 transition-all"
+            style={{ border: `1.5px solid ${tab === id ? '#2563EB' : '#E5E7EB'}`, background: tab === id ? '#EFF6FF' : '#fff', color: tab === id ? '#1D4ED8' : '#4B5563', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}
+          >
+            {label}
+            {occhio && <span style={{ fontSize: 8.5, fontWeight: 700, background: '#EEF1F5', color: '#8B95A5', borderRadius: 999, padding: '1px 6px' }}>{occhio}</span>}
+          </button>
+        ))}
       </div>
 
       {/* MESSAGGI: nella finestrella riempie lo spazio (altezza totale
@@ -182,18 +191,22 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
       <div ref={listaRef} className="overflow-y-auto" style={{ background: '#F8FAFC', borderRadius: 10, padding: 9, margin: finestra ? '8px 10px 0' : '8px 0 0', ...(finestra ? { flex: 1, minHeight: 0 } : { height: 220 }) }}>
         {visibili.length === 0 ? (
           <p className="text-xs text-center py-8" style={{ color: '#9AA7B5' }}>
-            {tab === 'cliente' ? 'Nessun messaggio: scrivi tu il primo.' : `Nessun messaggio tra ${demolitoreNome || 'il demolitore'} e il cliente.`}
+            {tab === 'cliente' ? 'Nessun messaggio: scrivi tu il primo.'
+              : tab === 'demolitore' ? `Nessun messaggio con ${demolitoreNome || 'il demolitore'}: scrivi tu il primo.`
+                : `Nessun messaggio tra ${demolitoreNome || 'il demolitore'} e il cliente.`}
           </p>
         ) : (
           visibili.map(msg => {
             const mio = msg.mittente_tipo === 'admin'
             const dem = msg.mittente_tipo === 'demolitore'
+            // A destra: i tuoi; nel controllo qualità il demolitore fa da "mittente"
+            const aDestra = mio || (dem && tab === 'qualita')
             return (
-              <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: (mio || dem) ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
+              <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: aDestra ? 'flex-end' : 'flex-start', marginBottom: 6 }}>
                 <div style={{
                   maxWidth: '75%', borderRadius: 11, padding: '6px 10px', fontSize: 12, lineHeight: 1.45, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
                   ...(mio ? { background: '#2563eb', color: '#fff', borderBottomRightRadius: 4 }
-                    : dem ? { background: '#E4E4FB', color: '#3730A3', borderBottomRightRadius: 4 }
+                    : dem ? { background: '#E4E4FB', color: '#3730A3', ...(aDestra ? { borderBottomRightRadius: 4 } : { borderBottomLeftRadius: 4 }) }
                       : { background: '#fff', border: '1px solid #E5E7EB', color: '#111827', borderBottomLeftRadius: 4 }),
                 }}>
                   {msg.testo}
@@ -207,10 +220,11 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
         )}
       </div>
 
-      {/* RAPIDI a chips sottili + campo a pillola (solo col cliente) */}
-      {tab === 'cliente' && (
+      {/* RAPIDI a chips sottili (solo col cliente) + campo a pillola
+          (nei due canali scrivibili; "Dem. e Cliente" è sola lettura) */}
+      {tab !== 'qualita' && (
         <>
-          {preimpostatiOk && (
+          {tab === 'cliente' && preimpostatiOk && (
             <div className="flex items-center gap-1.5 flex-wrap" style={{ padding: finestra ? '7px 10px 0' : '7px 0 0' }}>
               <span style={{ fontSize: 9, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6 }}>RAPIDI</span>
               {preimpostati.map(p => (
@@ -227,7 +241,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
               <button onClick={() => setGestisci(true)} style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: 2, cursor: 'pointer' }}>Gestisci</button>
             </div>
           )}
-          {!preimpostatiOk && (
+          {tab === 'cliente' && !preimpostatiOk && (
             <p style={{ fontSize: 10, color: '#9AA7B5', padding: finestra ? '6px 10px 0' : '6px 0 0' }}>
               Per i messaggi rapidi esegui su Supabase l&apos;SQL docs/sql/2026-07-17-attesa-note-preimpostati.sql
             </p>
@@ -238,7 +252,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
               onChange={e => setTesto(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); invia() } }}
               rows={testo.includes('\n') || testo.length > 60 ? 3 : 1}
-              placeholder="Scrivi un messaggio al cliente…"
+              placeholder={tab === 'cliente' ? 'Scrivi un messaggio al cliente…' : `Scrivi a ${demolitoreNome || 'al demolitore'}…`}
               className="flex-1 min-w-0 border-[1.5px] border-gray-200 px-3.5 py-[7px] text-[12px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all placeholder:text-gray-400 resize-none"
               style={{ borderRadius: 17 }}
             />

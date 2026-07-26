@@ -1,12 +1,13 @@
 /**
- * Endpoint AREA DEMOLITORE: chat col cliente (23/07/2026).
+ * Endpoint AREA DEMOLITORE: chat a DUE canali (23/07, canali 26/07).
  *
- * POST { pratica_id }                    → elenco messaggi demolitore↔cliente
- *                                          (e segna letti quelli del cliente)
- * POST { pratica_id, testo }             → invia un messaggio come demolitore
+ * POST { pratica_id, canale? }           → elenco messaggi del canale
+ *                                          (e segna letti quelli diretti al demolitore)
+ * POST { pratica_id, canale?, testo }    → invia un messaggio come demolitore
  *
- * Il cliente vede questi messaggi nella sua linguetta "Demolitore";
- * l'admin li legge (sola lettura) dalla chat del dettaglio pratica.
+ * canale: 'cliente' (default, demolitore↔cliente) oppure 'noidemoliamo'
+ * (demolitore↔admin, canale 26/07 — SQL 2026-07-26-chat-conversazioni.sql).
+ * I messaggi vecchi (conversazione NULL) valgono come demolitore↔cliente.
  * Sicurezza: la pratica deve essere assegnata al demolitore autenticato.
  */
 
@@ -22,6 +23,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const praticaId: string | undefined = body.pratica_id
     const testo: string | undefined = typeof body.testo === 'string' ? body.testo.trim() : undefined
+    const canale: 'cliente' | 'noidemoliamo' = body.canale === 'noidemoliamo' ? 'noidemoliamo' : 'cliente'
     if (!praticaId) return NextResponse.json({ error: 'Manca la pratica' }, { status: 400 })
 
     const { pratica, errore } = await praticaDelDemolitore(supabase, praticaId, demolitoreId, 'id, stato')
@@ -38,6 +40,7 @@ export async function POST(req: NextRequest) {
         mittente_tipo: 'demolitore',
         testo: testo.slice(0, 2000),
         letto: false,
+        conversazione: canale === 'noidemoliamo' ? 'demolitore_noidemoliamo' : 'cliente_demolitore',
       })
       if (error) {
         console.error('Errore invio messaggio demolitore:', error)
@@ -46,26 +49,42 @@ export async function POST(req: NextRequest) {
     }
 
     // ===== ELENCO (sempre, anche dopo l'invio) =====
-    const { data: messaggi, error: errM } = await supabase
+    const { data, error: errM } = await supabase
       .from('messaggi_chat')
-      .select('id, mittente_tipo, testo, creato_il')
+      .select('id, mittente_tipo, testo, creato_il, conversazione')
       .eq('pratica_id', praticaId)
-      .in('mittente_tipo', ['demolitore', 'cliente'])
       .order('creato_il', { ascending: true })
     if (errM) {
       console.error('Errore lettura chat demolitore:', errM)
       return NextResponse.json({ error: 'Errore nel caricamento dei messaggi' }, { status: 500 })
     }
+    type Riga = { id: string; mittente_tipo: string; testo: string; creato_il: string; conversazione: string | null }
+    const messaggi = ((data || []) as Riga[]).filter(m =>
+      canale === 'cliente'
+        ? m.conversazione === 'cliente_demolitore' || (m.conversazione == null && (m.mittente_tipo === 'demolitore' || m.mittente_tipo === 'cliente'))
+        : m.conversazione === 'demolitore_noidemoliamo'
+    )
 
-    // Aprire la chat = leggere: i messaggi del cliente vengono segnati letti
-    await supabase
-      .from('messaggi_chat')
-      .update({ letto: true })
-      .eq('pratica_id', praticaId)
-      .eq('mittente_tipo', 'cliente')
-      .eq('letto', false)
+    // Aprire il canale = leggere: si segnano letti i messaggi diretti al demolitore
+    if (canale === 'cliente') {
+      await supabase
+        .from('messaggi_chat')
+        .update({ letto: true })
+        .eq('pratica_id', praticaId)
+        .eq('mittente_tipo', 'cliente')
+        .eq('letto', false)
+        .or('conversazione.eq.cliente_demolitore,conversazione.is.null')
+    } else {
+      await supabase
+        .from('messaggi_chat')
+        .update({ letto: true })
+        .eq('pratica_id', praticaId)
+        .eq('mittente_tipo', 'admin')
+        .eq('conversazione', 'demolitore_noidemoliamo')
+        .eq('letto', false)
+    }
 
-    return NextResponse.json({ success: true, messaggi: messaggi || [] })
+    return NextResponse.json({ success: true, messaggi })
   } catch (err) {
     console.error('Errore endpoint demolitore-chat:', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })

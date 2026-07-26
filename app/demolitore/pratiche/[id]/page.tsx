@@ -16,6 +16,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { chiamataDemolitore, nomeVeicolo } from '../../_lib/api'
 import SidebarDemolitore from '../../_components/SidebarDemolitore'
 import PannelloAnagrafica from '../../_components/PannelloAnagrafica'
+import ChatDemolitore from '../../_components/ChatDemolitore'
 
 interface PraticaDettaglio {
   id: string
@@ -120,6 +121,11 @@ export default function SchedaPraticaDemolitore() {
           </div>
           <div className="text-[12px] mt-1" style={{ color: '#8A94A1' }}>
             {nomeVeicolo(p)}{p.anno ? ` ${p.anno}` : ''} · {[p.comune_ritiro, p.provincia_ritiro ? `(${p.provincia_ritiro})` : ''].filter(Boolean).join(' ')}
+          </div>
+
+          {/* ⭐ 26/07 (dettato da Davide): CHAT con Cliente e con NoiDemoliamo */}
+          <div className="mt-5" style={{ maxWidth: 520 }}>
+            <ChatDemolitore praticaId={p.id} bloccata={p.stato === 'annullata' || p.stato === 'completata'} />
           </div>
         </div>
       </div>

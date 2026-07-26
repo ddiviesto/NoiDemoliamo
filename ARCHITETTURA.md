@@ -277,8 +277,15 @@ Tracking granulare del vecchio sistema. TabDocumenti la legge ancora per lo stat
 ## 3.8 Tabella `messaggi_chat`
 
 Chat persistente tra cliente, admin, demolitore, commerciante.
-`id`, `pratica_id`, `mittente_id`, `mittente_tipo` ('cliente'|'admin'|'demolitore'|'commerciante'), `testo`, `letto`, `creato_il`.
+`id`, `pratica_id`, `mittente_id`, `mittente_tipo` ('cliente'|'admin'|'demolitore'|'commerciante'), `testo`, `letto`, `creato_il`, ⭐ `conversazione`.
 ✅ **Tempo reale ATTIVO dal 22/07/2026** (vedi 5.7): i messaggi appaiono da soli, il bottone "Aggiorna" della chat admin è stato rimosso.
+
+⭐ **TRE CANALI (26/07/2026, SQL `docs/sql/2026-07-26-chat-conversazioni.sql` ESEGUITO)**: colonna `conversazione` con CHECK sui tre valori:
+- `cliente_noidemoliamo` → cliente ↔ admin
+- `cliente_demolitore` → cliente ↔ demolitore
+- `demolitore_noidemoliamo` → demolitore ↔ admin (canale diretto)
+
+I messaggi VECCHI restano con `conversazione` NULL e le interfacce li mostrano col vecchio criterio dei mittenti (nessuna migrazione azzardata). **Privacy**: policy RESTRITTIVA in SELECT (`messaggi_chat_canale_riservato`): il canale demolitore↔NoiDemoliamo è visibile solo all'admin (email) e al server (service role) — mai al cliente, che ha anche filtri UI e contatore che lo escludono. **Regola `letto`**: con i canali ogni messaggio ha UN destinatario, quindi il flag è pulito: ognuno segna letti i messaggi del proprio canale quando lo apre (admin per linguetta, demolitore via endpoint, cliente in TabChat).
 
 ## 3.9 Tabella `impostazioni`
 
@@ -872,6 +879,10 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐⭐ **FILA AZIONI nella testata** (layout B): bottoni a pillolina **Documenti** (contatore approvati/totale + pallino rosso da verificare), **Chat** (pallino non letti), **Stato pratica** (nuvoletta ancorata con Attiva/Metti in attesa/Annulla, MOTIVO scritto nella nuvoletta — niente modali centrali; stessa logica server del dettaglio, note in cronologia), **Apri la pratica intera** (blu pieno, → pagina completa). I Documenti si aprono IN LINEA nella tendina (card vera con visore e zoom).
 - ⭐⭐ **CHAT A FINESTRELLA** (2 giri di mockup: stile A + posizione A): fissa in basso a destra (340×430 FISSI: non balla cambiando linguetta o aprendo Gestisci), testata blu con nome+targa, bottone **ingrandisci** (470×600) accanto alla ✕. Dentro: chat COMPATTA con pilloline "Cliente / Demolitore (solo lettura)" (via i linguettoni e le frecce ↔), bolle piccole con orario, frasi rapide a chips sottili, campo a pillola con bottone tondo. **"Gestisci" NON apre finestre**: il corpo si trasforma nella gestione frasi (freccetta per tornare, campo slim + Salva solo se modificata + cestino discreto). La stessa card compatta vale nel dettaglio pratica. ⭐ All'apertura i messaggi del cliente si SEGNANO LETTI (il pallino si azzera davvero). Prop `finestra` su `ChatAdmin`.
 - ⭐⭐ **PALETTE A PILLOLE DI STATO** (mockup + rifinitura): FLUSSO tutto AZZURRO `#EFF6FF`/`#1D4ED8` (parla il testo), **verde solo Completata**, **ROSSO TENUE** `#F3D9D9`/`#A94444` per Annullata e anomalie (· da rifare, · a mano), **ROSSO MEDIO PIENO** `#E15E5E`/bianco per "Da contattare", **azzurro spento** `#E8ECF3`/`#5B6779` per "In attesa" (pausa). Via giallo senape e arcobaleno. Applicata a lista, tendina e dettaglio (costanti `PILL_FLUSSO`/`PILL_ROSSO_TENUE`).
+
+**Quarta parte — ⭐⭐⭐ CHAT A TRE CANALI (dettato da Davide, SQL eseguito):**
+- Vedi 3.8 per il modello dati. **Admin** (finestrella CRM e card dettaglio): TRE linguette — **Cliente** e **Demolitore** scrivibili, "**Dem. e Cliente**" controllo qualità in sola lettura; il pallino rosso conta i non letti diretti a lui (cliente + demolitore) e si azzera aprendo la linguetta giusta. **Demolitore** (scheda pratica, `ChatDemolitore` rimontata dalla dispensa): pilloline **Cliente / NoiDemoliamo**, stile gemello, endpoint `/api/demolitore-chat` con param `canale`. **Cliente**: invariato alla vista (i suoi 2 canali), invii etichettati e contatore che esclude il canale riservato.
+- ⚠️ La PAGINA demolitore (scheda pratica) è ancora da rivedere con Davide: la chat è il primo pezzo montato sulla tela bianca.
 
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 

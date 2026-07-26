@@ -247,13 +247,20 @@ export default function AdminDashboard() {
       approvati: righe.filter(r => r.stato === 'approvato').length,
       daVerificare: righe.filter(r => r.stato === 'caricato').length,
     } }))
-    const { count } = await supabase
+    // Non letti DIRETTI A TE: dal cliente (canale cliente↔NoiDemoliamo,
+    // vecchi inclusi) e dal demolitore (canale demolitore↔NoiDemoliamo)
+    const { data: nonLettiRighe } = await supabase
       .from('messaggi_chat')
-      .select('id', { count: 'exact', head: true })
+      .select('mittente_tipo, conversazione')
       .eq('pratica_id', praticaId)
-      .eq('mittente_tipo', 'cliente')
       .eq('letto', false)
-    setNonLetti(prev => ({ ...prev, [praticaId]: count || 0 }))
+      .in('mittente_tipo', ['cliente', 'demolitore'])
+    const n = ((nonLettiRighe || []) as { mittente_tipo: string; conversazione: string | null }[]).filter(r =>
+      r.mittente_tipo === 'cliente'
+        ? (r.conversazione == null || r.conversazione === 'cliente_noidemoliamo')
+        : r.conversazione === 'demolitore_noidemoliamo'
+    ).length
+    setNonLetti(prev => ({ ...prev, [praticaId]: n }))
   }
 
   // ---- Cambi di stato dal menu (stessa logica del dettaglio: tutto via server) ----
