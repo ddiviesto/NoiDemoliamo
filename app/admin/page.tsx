@@ -875,15 +875,17 @@ export default function AdminDashboard() {
                         {/* ⭐ 27/07 sera (mockup approvato): la pillola Documenti
                             TORNA e apre DIRETTAMENTE il visore sul primo da
                             verificare (le miniature si caricano lì dentro, la
-                            tendina non balla). Ordine: Documenti · Chat ·
-                            Stato pratica · Trattativa Extra · Assegnazione. */}
+                            tendina non balla). Ordine: Documenti e Foto · Chat ·
+                            Stato pratica · Trattativa Extra · Assegnazione.
+                            ⭐ 28/07 (richiesta Davide): la pillola dice anche
+                            "Foto" perché nel visore ci sono pure le foto. */}
                         <button
                           onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); if (selAssegnaAperta) setAssegnaChiudi(x => x + 1); setDocTrigger(prev => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 })) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
                           style={{ position: 'relative', background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                          Documenti
+                          Documenti e Foto
                           <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{docStats[p.id] ? `${docStats[p.id].approvati}/${docStats[p.id].totale}` : '…'}</span>
                           {(docStats[p.id]?.daVerificare ?? 0) > 0 && <span style={{ position: 'absolute', top: -3, right: -1, width: 10, height: 10, borderRadius: 999, background: '#DC2626', border: '2px solid #EFF6FF' }} />}
                         </button>
