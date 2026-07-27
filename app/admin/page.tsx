@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
@@ -272,6 +272,9 @@ export default function AdminDashboard() {
   // definitivo): pannello assegnazione a DESTRA delle schede, importo a
   // nuvoletta sulla pillola, cestino tondo con nuvoletta a due scelte
   const [selAssegnaAperta, setSelAssegnaAperta] = useState(false)
+  // ⭐ Riclic sulla pillola Assegnazione col pannello aperto: incrementa il
+  // segnale e il pannello scivola via con l'animazione prima di smontarsi
+  const [assegnaChiudi, setAssegnaChiudi] = useState(0)
   const [nuvolaImporto, setNuvolaImporto] = useState(false)
   const [importoVal, setImportoVal] = useState('')
   const [importoBusy, setImportoBusy] = useState(false)
@@ -873,7 +876,7 @@ export default function AdminDashboard() {
                             tendina non balla). Ordine: Documenti · Chat ·
                             Stato pratica · Trattativa Extra · Assegnazione. */}
                         <button
-                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelAssegnaAperta(false); setDocTrigger(prev => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 })) }}
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); if (selAssegnaAperta) setAssegnaChiudi(x => x + 1); setDocTrigger(prev => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 })) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
                           style={{ position: 'relative', background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
@@ -1029,7 +1032,7 @@ export default function AdminDashboard() {
                         {/* ⭐ ASSEGNAZIONE (27/07, mockup definitivo): apre il
                             pannello a DESTRA delle schede nella tendina */}
                         <button
-                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelAssegnaAperta(a => !a) }}
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); if (selAssegnaAperta) setAssegnaChiudi(x => x + 1); else setSelAssegnaAperta(true) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
                           style={{ background: selAssegnaAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
@@ -1259,6 +1262,7 @@ export default function AdminDashboard() {
                           demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
                           onFatto={ricaricaPratiche}
                           onChiudi={() => setSelAssegnaAperta(false)}
+                          chiudiSegnale={assegnaChiudi}
                         />
                       )}
                       </div>
@@ -1491,11 +1495,14 @@ function IconaVeicolo({ tipo }: { tipo: string | null }) {
 // ⭐ 27/07 notte (variante B su mockup): PANNELLO DA DESTRA gemello del
 // visore — scivola a tutta altezza sopra la pagina (che non si muove),
 // clic fuori, ✕ o Esc chiudono. Dentro: classifica a schedine.
-function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiudi }: {
+function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiudi, chiudiSegnale }: {
   pratica: Pratica
   demolitoreNome: string | null
   onFatto: () => void
   onChiudi: () => void
+  // ⭐ Riclic sulla pillola Assegnazione: il padre incrementa il segnale e
+  // il pannello si chiude CON l'animazione (scivola via verso destra)
+  chiudiSegnale?: number
 }) {
   const assegnata = !!pratica.demolitore_id
   const puoAssegnare = ['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(pratica.stato)
@@ -1509,6 +1516,22 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
   const [errore, setErrore] = useState<string | null>(null)
   const [confermaRimuovi, setConfermaRimuovi] = useState(false)
   const [rimuovendo, setRimuovendo] = useState(false)
+  // ⭐ Chiusura CON animazione (scivola via verso destra), poi si smonta
+  const [chiudendo, setChiudendo] = useState(false)
+  function chiudi() {
+    if (chiudendo) return
+    setChiudendo(true)
+    setTimeout(onChiudi, 240)
+  }
+  // Riclic sulla pillola mentre è aperto → chiusura animata
+  const segnaleGestito = useRef(chiudiSegnale ?? 0)
+  useEffect(() => {
+    if (chiudiSegnale != null && chiudiSegnale > segnaleGestito.current) {
+      segnaleGestito.current = chiudiSegnale
+      chiudi()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chiudiSegnale])
 
   async function caricaClassifica() {
     setVista('classifica')
@@ -1544,7 +1567,7 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
   useEffect(() => {
     const prima = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    const suTasto = (e: KeyboardEvent) => { if (e.key === 'Escape') onChiudi() }
+    const suTasto = (e: KeyboardEvent) => { if (e.key === 'Escape') chiudi() }
     window.addEventListener('keydown', suTasto)
     return () => { document.body.style.overflow = prima; window.removeEventListener('keydown', suTasto) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1634,11 +1657,13 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
   }
 
   return (
-    <div className="fixed inset-0 z-50" onClick={onChiudi}>
-      <style>{'@keyframes assegna-drawer{from{transform:translateX(48px);opacity:0}to{transform:none;opacity:1}}'}</style>
+    <div className="fixed inset-0 z-50" onClick={chiudi}>
+      {/* ⭐ Entra scivolando DA DESTRA e esce riscivolando VERSO DESTRA
+          (richiesta Davide): animazione al montaggio + transizione in uscita */}
+      <style>{'@keyframes assegna-drawer{from{transform:translateX(105%)}to{transform:none}}'}</style>
       <div
         className="absolute top-0 right-0 bottom-0 bg-white flex flex-col overflow-hidden"
-        style={{ width: 'min(470px, calc(100vw - 230px))', borderLeft: '1.5px solid #E5E7EB', boxShadow: '-18px 0 44px rgba(15,23,42,0.22)', animation: 'assegna-drawer .22s ease' }}
+        style={{ width: 'min(470px, calc(100vw - 230px))', borderLeft: '1.5px solid #E5E7EB', boxShadow: '-18px 0 44px rgba(15,23,42,0.22)', animation: 'assegna-drawer .24s ease', transition: 'transform .24s ease', transform: chiudendo ? 'translateX(105%)' : undefined }}
         onClick={e => e.stopPropagation()}
       >
         {/* Testata azzurra gemella del visore */}
@@ -1658,7 +1683,7 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
             </span>
           </span>
           <span style={{ flex: 1 }} />
-          <button onClick={onChiudi} aria-label="Chiudi" className="text-gray-400 hover:text-gray-700" style={{ fontSize: 21, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>×</button>
+          <button onClick={chiudi} aria-label="Chiudi" className="text-gray-400 hover:text-gray-700" style={{ fontSize: 21, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>×</button>
         </div>
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '12px 14px' }}>

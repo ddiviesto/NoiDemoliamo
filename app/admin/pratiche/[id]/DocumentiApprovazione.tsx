@@ -347,6 +347,15 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     setScelte(new Set())
     setPdfErrore(null)
   }
+  // ⭐ 27/07 notte (richiesta Davide): chiusura CON animazione — il pannello
+  // riscivola verso destra e poi si smonta (clic fuori, ✕, Esc o riclic
+  // sulla pillola Documenti)
+  const [visoreChiudendo, setVisoreChiudendo] = useState(false)
+  function chiudiVisoreAnimato() {
+    if (visoreIdx === null || visoreChiudendo) return
+    setVisoreChiudendo(true)
+    setTimeout(() => { setVisoreChiudendo(false); chiudiVisore() }, 240)
+  }
   const [modalRifiuto, setModalRifiuto] = useState<{ id: string; titolo: string } | null>(null)
   const [errRifiuto, setErrRifiuto] = useState<string | null>(null)
   // ⭐ 27/07 (variante A su mockup): frasi pronte del rifiuto (categoria
@@ -402,6 +411,8 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
   useEffect(() => {
     if (loading || apriTrigger == null || apriTrigger <= triggerGestito.current) return
     triggerGestito.current = apriTrigger
+    // ⭐ Riclic sulla pillola col visore aperto = chiusura animata (toggle)
+    if (visoreIdx !== null) { chiudiVisoreAnimato(); return }
     const ordinati = docs
       .filter(d => d.richiede_upload && leggiFile(d.file_url).length > 0)
       .sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
@@ -430,7 +441,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
       const tag = (document.activeElement?.tagName || '').toLowerCase()
       if (tag === 'textarea' || tag === 'input') return
       // Frecce A ROTAZIONE (26/07): dall'ultimo si riparte dal primo e viceversa
-      if (e.key === 'Escape') chiudiVisore()
+      if (e.key === 'Escape') chiudiVisoreAnimato()
       if (e.key === 'ArrowRight') setVisoreIdx(i => (i === null || totVoci === 0 ? i : (i + 1) % totVoci))
       if (e.key === 'ArrowLeft') setVisoreIdx(i => (i === null || totVoci === 0 ? i : (i - 1 + totVoci) % totVoci))
     }
@@ -948,11 +959,13 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
           // SCIVOLA DA DESTRA a tutta altezza (via la finestra centrata con lo
           // sfondo scuro) — la pagina resta visibile a sinistra, clic fuori
           // o ✕ chiude. Overlay trasparente solo per il clic-fuori.
-          <div className="fixed inset-0 z-50" onClick={chiudiVisore}>
-            <style>{'@keyframes visore-drawer{from{transform:translateX(48px);opacity:0}to{transform:none;opacity:1}}'}</style>
+          <div className="fixed inset-0 z-50" onClick={chiudiVisoreAnimato}>
+            {/* ⭐ Entra scivolando DA DESTRA e esce riscivolando VERSO DESTRA
+                (richiesta Davide): animazione al montaggio + transizione in uscita */}
+            <style>{'@keyframes visore-drawer{from{transform:translateX(105%)}to{transform:none}}'}</style>
             <div
               className="absolute top-0 right-0 bottom-0 bg-white flex flex-col overflow-hidden"
-              style={{ width: 'min(960px, calc(100vw - 230px))', borderLeft: '1.5px solid #E5E7EB', boxShadow: '-18px 0 44px rgba(15,23,42,0.22)', animation: 'visore-drawer .22s ease' }}
+              style={{ width: 'min(960px, calc(100vw - 230px))', borderLeft: '1.5px solid #E5E7EB', boxShadow: '-18px 0 44px rgba(15,23,42,0.22)', animation: 'visore-drawer .24s ease', transition: 'transform .24s ease', transform: visoreChiudendo ? 'translateX(105%)' : undefined }}
               onClick={e => { e.stopPropagation(); if (menuScarica) setMenuScarica(false) }}
             >
 
@@ -991,7 +1004,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                     </span>
                   )}
                 </span>
-                <button onClick={chiudiVisore} className="text-gray-400 hover:text-gray-700" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>×</button>
+                <button onClick={chiudiVisoreAnimato} className="text-gray-400 hover:text-gray-700" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>×</button>
               </div>
 
               <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
