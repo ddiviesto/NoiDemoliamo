@@ -678,11 +678,11 @@ export default function AdminDashboard() {
               <div style={{ width: 14, flexShrink: 0 }} />
               <PillolaFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => cambiaFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
               {/* ⭐ 27/07 sera (richiesta Davide): le pratiche IN PAUSA hanno la
-                  loro pillola QUI (via il riquadro giallo) — quieta, azzurro
-                  spento, non è una fase del flusso: niente freccia, solo uno
+                  loro pillola QUI (via il riquadro giallo) — identica alle
+                  altre; non è una fase del flusso: niente freccia, solo uno
                   stacco */}
               <div style={{ width: 14, flexShrink: 0 }} />
-              <PillolaFase nome="In attesa" valore={conta('attesa')} quieta attivo={filtro === 'attesa'} onClick={() => cambiaFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
+              <PillolaFase nome="In attesa" valore={conta('attesa')} attivo={filtro === 'attesa'} onClick={() => cambiaFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
                 title={conta('attesa') > 0 ? 'In pausa, fuori dal flusso finché non riprendono' : 'Nessuna pratica in pausa'} />
               <FrecciaFase />
               <PillolaFase nome="Documenti da verificare" valore={conta('approvare')} attivo={filtro === 'approvare'} onClick={() => cambiaFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
@@ -1686,13 +1686,11 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
   )
 }
 
-function PillolaFase({ nome, valore, attivo, rossa, quieta, title, onClick }: {
+function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
   nome: string
   valore: number
   attivo: boolean
   rossa?: boolean
-  // ⭐ 27/07 sera: variante QUIETA (azzurro spento della pausa) per "In attesa"
-  quieta?: boolean
   title?: string
   onClick: () => void
 }) {
@@ -1710,11 +1708,8 @@ function PillolaFase({ nome, valore, attivo, rossa, quieta, title, onClick }: {
         boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
       }}
     >
-      {/* ⭐ 27/07 sera: il tondino resta AZZURRO come le sorelle anche nella
-          variante quieta (il grigio spento sembrava scolorito) — la pausa
-          la dice solo l'etichetta grigia */}
       <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : '#EFF4FF', color: rossa ? '#C0392B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
-      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : quieta ? '#5B6779' : '#374151' }}>{nome}</span>
+      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : '#374151' }}>{nome}</span>
     </button>
   )
 }
