@@ -120,14 +120,14 @@ const STATO_META: Record<string, { label: string; bg: string; text: string; bar:
   // Fase 4 — Assegnata
   assegnata: { label: 'Assegnata', ...PILL_FLUSSO, bar: '#7F77DD' },
   in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', ...PILL_FLUSSO, bar: '#7F77DD' },
-  // ⭐ 27/07 (rinomine di Davide): "Ritiro Programmato" secco e famiglia
-  // "Mezzo Ritirato" al posto di "Ritirata"
+  // ⭐ 27/07 (rinomine di Davide): "Ritiro Programmato" secco; la famiglia
+  // del ritiro resta "Ritirata" (il "Mezzo Ritirato" è stato ripensato)
   ritiro_confermato: { label: 'Ritiro Programmato', ...PILL_FLUSSO, bar: '#7F77DD' },
-  // Fase 5 — Mezzo Ritirato
-  ritirata: { label: 'Mezzo Ritirato · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_recensione_cliente: { label: 'Mezzo Ritirato · attesa recensione', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_cert_rottamazione: { label: 'Mezzo Ritirato · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_cert_radiazione_pra: { label: 'Mezzo Ritirato · Attesa PRA', ...PILL_FLUSSO, bar: '#1D9E75' },
+  // Fase 5 — Ritirata
+  ritirata: { label: 'Ritirata · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_cert_rottamazione: { label: 'Ritirata · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_cert_radiazione_pra: { label: 'Ritirata · Attesa PRA', ...PILL_FLUSSO, bar: '#1D9E75' },
   // Fase 6 — Completata (verde, l'unico traguardo)
   completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43', bar: '#639922' },
   annullata: { label: 'Annullata', ...PILL_ROSSO_TENUE, bar: '#C0C7D1' },
