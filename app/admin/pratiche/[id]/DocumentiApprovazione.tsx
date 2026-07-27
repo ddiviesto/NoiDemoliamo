@@ -940,7 +940,6 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
       {visoreIdx !== null && voci[visoreIdx] && (() => {
         const voce = voci[visoreIdx]
         const files = voce.tipo === 'doc' ? leggiFile(voce.doc.file_url) : []
-        const primaFotoIdx = voci.findIndex(v => v.tipo === 'foto')
         const nScelte = voci.filter(v => scelte.has(chiaveVoce(v))).length
         const miStile: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', gap: 9, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderRadius: 8, padding: '8px 10px', fontSize: 12.5, color: '#1E293B', fontWeight: 600, cursor: 'pointer' }
         const mdescStile: React.CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 400, color: '#8A94A3', marginTop: 1 }
@@ -1001,48 +1000,70 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                   selezione compaiono le caselle e il clic sceglie la voce */}
               <div style={{ width: 262, borderRight: '1px solid #EEF1F5', background: '#FAFBFD', overflowY: 'auto', overscrollBehavior: 'contain', padding: '10px 0', flexShrink: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '0 16px 8px' }}>DOCUMENTI · {vociDocs.length}</div>
-                {voci.map((v, i) => {
+                {/* ⭐ 27/07 notte (variante A su mockup): nomi a peso normale
+                    (600 solo sull'attiva) e stato a PALLINO colorato — verde
+                    approvato, blu in verifica, rosso rifiutato */}
+                {vociDocs.map((doc, i) => {
+                  const v = voci[i]
                   const attiva = i === visoreIdx
-                  const primoFile = v.tipo === 'doc' ? leggiFile(v.doc.file_url)[0] : null
-                  const thumbUrl = v.tipo === 'foto'
-                    ? v.foto.url
-                    : primoFile && !isPdfUrl(primoFile.nome) && !isPdfUrl(primoFile.url) ? (signedMap[primoFile.url] || primoFile.url) : null
+                  const primoFile = leggiFile(doc.file_url)[0]
+                  const thumbUrl = primoFile && !isPdfUrl(primoFile.nome) && !isPdfUrl(primoFile.url) ? (signedMap[primoFile.url] || primoFile.url) : null
                   return (
-                    <div key={v.tipo === 'doc' ? v.doc.id : v.foto.id}>
-                      {i === primaFotoIdx && (
-                        <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '10px 16px 8px', borderTop: '1px solid #EEF1F5', marginTop: 8 }}>FOTO DEL VEICOLO · {foto.length}</div>
+                    <button
+                      key={doc.id}
+                      onClick={() => { if (selezione) toggleScelta(v); else setVisoreIdx(i) }}
+                      title={`${nomeDoc(doc)} · ${doc.stato === 'approvato' ? 'Approvato' : doc.stato === 'rifiutato' ? 'Rifiutato' : 'In verifica'}`}
+                      style={{
+                        width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
+                        padding: '7px 14px', fontSize: 12, border: 'none', cursor: 'pointer',
+                        background: attiva ? '#EFF6FF' : 'transparent', boxShadow: attiva ? 'inset 3px 0 0 #2563eb' : 'none',
+                        color: attiva ? '#1D4ED8' : '#374151', fontWeight: attiva ? 600 : 400,
+                      }}
+                    >
+                      {selezione && (
+                        <input type="checkbox" readOnly checked={scelte.has(chiaveVoce(v))} style={{ accentColor: '#2563EB', width: 15, height: 15, flexShrink: 0, pointerEvents: 'none' }} />
                       )}
-                      {/* ⭐ 27/07 notte (variante A su mockup): nomi a peso
-                          normale (600 solo sull'attiva) e stato a PALLINO
-                          colorato — verde approvato, blu in verifica, rosso
-                          rifiutato (il dettaglio lo dicono le azioni sotto) */}
-                      <button
-                        onClick={() => { if (selezione) toggleScelta(v); else setVisoreIdx(i) }}
-                        title={v.tipo === 'doc' ? `${titoloVoce(v)} · ${v.doc.stato === 'approvato' ? 'Approvato' : v.doc.stato === 'rifiutato' ? 'Rifiutato' : 'In verifica'}` : titoloVoce(v)}
-                        style={{
-                          width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
-                          padding: '7px 14px', fontSize: 12, border: 'none', cursor: 'pointer',
-                          background: attiva ? '#EFF6FF' : 'transparent', boxShadow: attiva ? 'inset 3px 0 0 #2563eb' : 'none',
-                          color: attiva ? '#1D4ED8' : '#374151', fontWeight: attiva ? 600 : 400,
-                        }}
-                      >
-                        {selezione && (
-                          <input type="checkbox" readOnly checked={scelte.has(chiaveVoce(v))} style={{ accentColor: '#2563EB', width: 15, height: 15, flexShrink: 0, pointerEvents: 'none' }} />
-                        )}
-                        <span style={{ width: 28, height: 36, borderRadius: 5, flexShrink: 0, border: '1px solid #E2E8F0', background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B6BFCC' }}>
-                          {thumbUrl
-                            ? /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
-                        </span>
-                        <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(v)}</span>
-                        {v.tipo === 'doc' && (
-                          <span style={{ width: 9, height: 9, borderRadius: 999, flexShrink: 0, background: v.doc.stato === 'approvato' ? '#16A34A' : v.doc.stato === 'rifiutato' ? '#DC2626' : '#2563EB' }} />
-                        )}
-                      </button>
-                    </div>
+                      <span style={{ width: 28, height: 36, borderRadius: 5, flexShrink: 0, border: '1px solid #E2E8F0', background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B6BFCC' }}>
+                        {thumbUrl
+                          ? /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
+                      </span>
+                      <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{nomeDoc(doc)}</span>
+                      <span style={{ width: 9, height: 9, borderRadius: 999, flexShrink: 0, background: doc.stato === 'approvato' ? '#16A34A' : doc.stato === 'rifiutato' ? '#DC2626' : '#2563EB' }} />
+                    </button>
                   )
                 })}
+                {/* ⭐ 27/07 notte (richiesta Davide): le FOTO sono SOLO
+                    MINIATURE, niente descrizioni — griglia pulita di immagini */}
+                {foto.length > 0 && (
+                  <>
+                    <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '10px 16px 8px', borderTop: '1px solid #EEF1F5', marginTop: 8 }}>FOTO DEL VEICOLO · {foto.length}</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '0 14px 8px' }}>
+                      {foto.map((f, idx) => {
+                        const i = vociDocs.length + idx
+                        const v = voci[i]
+                        const attiva = i === visoreIdx
+                        return (
+                          <button
+                            key={f.id}
+                            onClick={() => { if (selezione) toggleScelta(v); else setVisoreIdx(i) }}
+                            title={`Foto del veicolo ${idx + 1}`}
+                            style={{ position: 'relative', width: 48, height: 48, borderRadius: 8, overflow: 'hidden', border: attiva ? '2px solid #2563EB' : '1px solid #E2E8F0', boxShadow: attiva ? '0 0 0 3px rgba(37,99,235,0.15)' : 'none', padding: 0, background: '#EEF1F5', cursor: 'pointer', flexShrink: 0 }}
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            {selezione && (
+                              <span style={{ position: 'absolute', top: 3, left: 3 }}>
+                                <input type="checkbox" readOnly checked={scelte.has(chiaveVoce(v))} style={{ accentColor: '#2563EB', width: 14, height: 14, pointerEvents: 'none' }} />
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* AREA PRINCIPALE */}
