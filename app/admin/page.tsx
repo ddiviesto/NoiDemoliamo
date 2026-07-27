@@ -873,7 +873,7 @@ export default function AdminDashboard() {
                             tendina non balla). Ordine: Documenti · Chat ·
                             Stato pratica · Trattativa Extra · Assegnazione. */}
                         <button
-                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setDocTrigger(prev => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 })) }}
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelAssegnaAperta(false); setDocTrigger(prev => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 })) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
                           style={{ position: 'relative', background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
@@ -1250,11 +1250,15 @@ export default function AdminDashboard() {
                           onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
                         />
                       )}
+                      {/* ⭐ 27/07 notte (variante B su mockup): l'assegnazione è
+                          un PANNELLO DA DESTRA gemello del visore — copre la
+                          parte destra, la tendina sotto non si muove */}
                       {aperta && selAssegnaAperta && (
                         <PannelloAssegnazioneTendina
                           pratica={p}
                           demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
                           onFatto={ricaricaPratiche}
+                          onChiudi={() => setSelAssegnaAperta(false)}
                         />
                       )}
                       </div>
@@ -1484,10 +1488,14 @@ function IconaVeicolo({ tipo }: { tipo: string | null }) {
 // attivi nello stesso riquadro. L'elenco scorre DENTRO il riquadro.
 // ============================================================
 
-function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
+// ⭐ 27/07 notte (variante B su mockup): PANNELLO DA DESTRA gemello del
+// visore — scivola a tutta altezza sopra la pagina (che non si muove),
+// clic fuori, ✕ o Esc chiudono. Dentro: classifica a schedine.
+function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiudi }: {
   pratica: Pratica
   demolitoreNome: string | null
   onFatto: () => void
+  onChiudi: () => void
 }) {
   const assegnata = !!pratica.demolitore_id
   const puoAssegnare = ['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(pratica.stato)
@@ -1529,6 +1537,16 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
   // All'apertura del pannello la classifica si carica da sola
   useEffect(() => {
     if (!assegnata && puoAssegnare) caricaClassifica()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Col pannello aperto la pagina dietro non scorre; Esc chiude (come il visore)
+  useEffect(() => {
+    const prima = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const suTasto = (e: KeyboardEvent) => { if (e.key === 'Escape') onChiudi() }
+    window.addEventListener('keydown', suTasto)
+    return () => { document.body.style.overflow = prima; window.removeEventListener('keydown', suTasto) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -1582,29 +1600,24 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
     setRimuovendo(false)
   }
 
-  const chipCarico = (n: number | undefined) => (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: (n ?? 0) >= 10 ? '#FDF7EA' : '#F1F5F9', color: (n ?? 0) >= 10 ? '#854F0B' : '#475569', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="2" y="9" width="12" height="6" rx="1" /><path d="M14 10h4l3 3v2h-2" /><circle cx="6" cy="17" r="1.6" /><circle cx="17" cy="17" r="1.6" /></svg>
-      {n ?? 0} da ritirare
-    </span>
-  )
   const ZONA_LABEL: Record<string, string> = { concordato: 'Importo concordato per questa pratica', comune: 'Tariffa del comune', provincia: 'Tariffa della provincia', regione: 'Tariffa della regione', base: 'Fee base' }
 
+  // Schedina del candidato (mockup B): bordo proprio, consigliato con
+  // bordo celeste e Assegna blu pieno; il carico sta nel testo informativo
   const rigaCandidato = (c: CandidatoTendina, i: number, daClassifica: boolean) => {
     const top = daClassifica && vincitoreId === c.id
     const vel = c.velocita_media_giorni != null && c.velocita_media_giorni < 999 ? `${c.velocita_media_giorni.toFixed(1)} gg` : 'nuovo'
     return (
-      <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 9px', borderBottom: '1px solid #F5F7FA', fontSize: 12, background: top ? '#F8FAFF' : 'transparent' }}>
+      <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 11px', fontSize: 12, border: `1.5px solid ${top ? '#BFDBFE' : '#E5E7EB'}`, borderRadius: 10, background: top ? '#F8FAFF' : '#fff', flexShrink: 0 }}>
         {daClassifica && <span style={{ width: 19, height: 19, borderRadius: 999, background: '#EFF4FF', color: '#1D4ED8', fontSize: 10.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>}
         <span style={{ flex: 1, minWidth: 0 }}>
           <span style={{ display: 'block', fontWeight: 700, color: '#111827', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.ragione_sociale}</span>
           <span style={{ display: 'block', color: '#6B7280', fontSize: 10.5, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
             {c.citta || ''}
             {c.distanza_km != null && <> · <b style={{ color: '#374151' }}>{Math.round(c.distanza_km)} km</b></>}
-            {daClassifica && <> · {vel}</>}
+            {daClassifica && <> · {vel} · {c.da_ritirare ?? 0} da ritirare</>}
           </span>
         </span>
-        {daClassifica && chipCarico(c.da_ritirare)}
         {daClassifica && c.fee_applicabile != null && (
           <span title={c.zona_fee ? ZONA_LABEL[c.zona_fee] : undefined} style={{ fontWeight: 800, color: '#111827', fontSize: 12, flexShrink: 0 }}>{c.fee_applicabile}€</span>
         )}
@@ -1621,28 +1634,46 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
   }
 
   return (
-    <div style={{ flex: 1.3, minWidth: 440, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '10px 12px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, flexWrap: 'wrap' }}>
-        <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>
-          Assegnazione
-          {vista === 'classifica' && !caricando && candidati.length > 0 && <span style={{ fontWeight: 400, fontSize: 10.5, color: '#64748B' }}> · {candidati.length} {candidati.length === 1 ? 'demolitore copre' : 'demolitori coprono'} la zona</span>}
-        </span>
-        <span style={{ flex: 1 }} />
-        {assegnata ? (
-          !confermaRimuovi && (
-            <>
-              <button onClick={caricaClassifica} disabled={rimuovendo} className="transition-colors hover:bg-blue-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Riassegna</button>
-              <button onClick={() => setConfermaRimuovi(true)} disabled={rimuovendo} className="transition-colors hover:bg-red-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Rimuovi</button>
-            </>
-          )
-        ) : puoAssegnare ? (
-          <>
-            <button onClick={() => vincitoreId && assegna(vincitoreId, false)} disabled={busyId != null || caricando || !vincitoreId} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: '1.5px solid #2563EB', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Assegna in automatico</button>
-            <button onClick={caricaTutti} disabled={busyId != null} className="transition-colors hover:bg-blue-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Scegli tu</button>
-          </>
-        ) : null}
-      </div>
+    <div className="fixed inset-0 z-50" onClick={onChiudi}>
+      <style>{'@keyframes assegna-drawer{from{transform:translateX(48px);opacity:0}to{transform:none;opacity:1}}'}</style>
+      <div
+        className="absolute top-0 right-0 bottom-0 bg-white flex flex-col overflow-hidden"
+        style={{ width: 'min(470px, calc(100vw - 230px))', borderLeft: '1.5px solid #E5E7EB', boxShadow: '-18px 0 44px rgba(15,23,42,0.22)', animation: 'assegna-drawer .22s ease' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Testata azzurra gemella del visore */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: '1px solid #DBEAFE', background: '#EFF6FF', flexShrink: 0 }}>
+          <span style={{ width: 34, height: 34, borderRadius: 9, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#2563EB' }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
+          </span>
+          <span style={{ minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1D4ED8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Assegnazione{pratica.targa ? ` · ${pratica.targa}` : ''}</span>
+            <span style={{ display: 'block', fontSize: 11, color: '#4B5563', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {assegnata ? `Assegnata a ${demolitoreNome || 'un demolitore'}`
+                : !puoAssegnare ? 'Prima approva tutti i documenti'
+                : vista === 'tutti' ? 'Tutti i demolitori attivi'
+                : caricando ? 'Calcolo la classifica…'
+                : candidati.length > 0 ? `${candidati.length} ${candidati.length === 1 ? 'demolitore copre' : 'demolitori coprono'} la zona`
+                : 'Scegli il demolitore'}
+            </span>
+          </span>
+          <span style={{ flex: 1 }} />
+          <button onClick={onChiudi} aria-label="Chiudi" className="text-gray-400 hover:text-gray-700" style={{ fontSize: 21, background: 'none', border: 'none', cursor: 'pointer', flexShrink: 0, lineHeight: 1 }}>×</button>
+        </div>
+
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '12px 14px' }}>
+      {puoAssegnare && !assegnata && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexShrink: 0 }}>
+          <button onClick={() => vincitoreId && assegna(vincitoreId, false)} disabled={busyId != null || caricando || !vincitoreId} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: '1.5px solid #2563EB', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Assegna in automatico</button>
+          <button onClick={caricaTutti} disabled={busyId != null} className="transition-colors hover:bg-blue-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Scegli tu</button>
+        </div>
+      )}
+      {assegnata && !confermaRimuovi && (
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexShrink: 0 }}>
+          <button onClick={caricaClassifica} disabled={rimuovendo} className="transition-colors hover:bg-blue-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Riassegna</button>
+          <button onClick={() => setConfermaRimuovi(true)} disabled={rimuovendo} className="transition-colors hover:bg-red-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Rimuovi</button>
+        </div>
+      )}
 
       {/* Già assegnata: demolitore in vista + rimozione con conferma in linea */}
       {assegnata && (
@@ -1674,8 +1705,7 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
 
       {errore && <div style={{ fontSize: 10.5, color: '#C0392B', fontWeight: 600, marginBottom: 6 }}>{errore}</div>}
 
-      {/* ELENCO con scroll DENTRO il riquadro (mockup: rotella sull'elenco,
-          la pagina non si muove) */}
+      {/* ELENCO a schedine: scorre dentro il pannello, a tutta altezza */}
       {(vista === 'classifica' || vista === 'tutti') && (!assegnata || vista === 'classifica') && (
         caricando ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', padding: '14px 0', fontSize: 11.5, color: '#6B7280' }}>
@@ -1685,7 +1715,7 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
           tutti.length === 0 ? (
             <p style={{ fontSize: 11.5, color: '#9AA7B5', padding: '4px 2px' }}>Nessun demolitore attivo nel sistema.</p>
           ) : (
-            <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', border: '1px solid #EEF1F5', borderRadius: 10, maxHeight: 150 }}>
+            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', display: 'flex', flexDirection: 'column', gap: 6 }}>
               {tutti.map((c, i) => rigaCandidato(c, i, false))}
             </div>
           )
@@ -1695,11 +1725,13 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
             <button onClick={caricaTutti} style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>Mostra tutti i demolitori attivi</button>
           </div>
         ) : (
-          <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', border: '1px solid #EEF1F5', borderRadius: 10, maxHeight: 150 }}>
+          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', display: 'flex', flexDirection: 'column', gap: 6 }}>
             {candidati.map((c, i) => rigaCandidato(c, i, true))}
           </div>
         )
       )}
+        </div>
+      </div>
     </div>
   )
 }
