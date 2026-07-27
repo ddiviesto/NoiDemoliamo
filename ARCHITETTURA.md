@@ -938,6 +938,13 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **SIDEBAR: Esci FUORI dal flip** (richiesta Davide): il blocco Esci resta fermo in fondo mentre la barra gira; via la freccetta da "Impostazioni"; il bottone in testa alla faccia impostazioni dice "**‹ Menu Admin**".
 - ⭐⭐ **VIA IL RIQUADRO DOCUMENTI DALLA TENDINA** (mockup approvato — il riquadro caricava in ritardo i signed URL delle miniature e dava una "botta" alla fila, bocciata da Davide): la **CRONOLOGIA E NOTE è la PRIMA SCHEDA della fila** (prop `scheda` di `CronologiaNote`: timeline con scroll interno max 150px, campo nota; via pillola e finestrella cronologia) e la pillola "**Documenti**" (contatore + pallino spia) apre **DIRETTAMENTE IL VISORE** sul primo documento da verificare: `DocumentiApprovazione` in modalità `soloVisore` (in pagina non disegna nulla, niente spinner; prop `apriTrigger` incrementata dalla pillola). Le miniature si caricano dentro al visore, dove l'attesa è normale. Fila azioni: **Documenti · Chat · Stato pratica · Trattativa Extra · Assegnazione**.
 
+**Sesta parte (27/07 tarda sera) — RIFINITURE CRONOLOGIA E FLUSSO (mockup approvati):**
+- ⭐ **PILLOLA "In attesa" NEL FLUSSO** (via il riquadro giallo): dopo "In attesa documenti", separata da uno stacco (non è una fase), variante **quieta** di `PillolaFase` (azzurro spento `#E8ECF3`/`#5B6779`), clic = filtro attesa.
+- ⭐ **FIX visore che si apriva da solo**: `apriTrigger` restava "armato" e al rimontaggio del componente (cambio filtro) riapriva il visore — ora un ref parte dal valore del montaggio e apre SOLO sugli incrementi nuovi.
+- ⭐ **Cambio filtro = tendina chiusa** (`cambiaFiltro`): spostarsi sul flusso chiude pratica aperta, chat e nuvolette. Vale per tutte le pillole e chip.
+- ⭐ **CRONOLOGIA rifinita** (richieste Davide): titolo "**Cronologia e Note**"; la pillola dice il tipo e il testo NON lo ripete più (via i prefissi automatici "Messa in attesa/Pratica annullata/ripresa/riattivata": resta solo il motivo, o parla la pillola da sola); motivo dell'attesa in riga allineato al testo della pillola; **campo nota** con placeholder corto "Scrivi una nota…" e bottone TONDO BLU PIENO con la MATITA (opzione B su mockup, gemello del tondo della chat).
+- ⭐ **COLORI PILLOLE CRONOLOGIA** (proposta approvata): AZZURRO `#DBEAFE`/`#1D4ED8` per Nota, Demolitore, Ripresa e Riattivata (via il verde: è solo della Completata), grigio spento per In attesa e Creata, **rosso tenue** `#F3D9D9`/`#A94444` per Annullata.
+
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 
 > ⚠️ **METODO SPECIALE PER QUEST'AREA** (dopo 3 tentativi di design bocciati): Davide DETTA

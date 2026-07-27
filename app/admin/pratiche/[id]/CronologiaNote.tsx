@@ -116,12 +116,25 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               : n.testo.startsWith(PREFISSO_ANNULLATA) ? 'annullata'
               : null
             // Ogni riga ha la sua pillola (20/07): le note manuali hanno "Nota"
-            const stilePillola = tipo === 'attesa' ? { bg: '#FAEEDA', col: '#854F0B', label: 'In attesa' }
-              : tipo === 'ripresa' ? { bg: '#DCF3E4', col: '#1F7A43', label: 'Ripresa' }
-              : tipo === 'riattivata' ? { bg: '#DCF3E4', col: '#1F7A43', label: 'Riattivata' }
-              : tipo === 'annullata' ? { bg: '#FBE2E2', col: '#9B1C1C', label: 'Annullata' }
+            // ⭐ 27/07 sera (richiesta Davide): la pillola dice già il TIPO,
+            // quindi il testo NON lo ripete — via i prefissi automatici,
+            // resta solo il motivo (se non c'è, parla la pillola da sola)
+            const testoMostrato = tipo === 'attesa' ? n.testo.replace(/^Messa in attesa[.:]?\s*/, '')
+              : tipo === 'ripresa' ? n.testo.replace(/^Pratica ripresa[.:]?\s*/, '')
+              : tipo === 'riattivata' ? n.testo.replace(/^Pratica riattivata[.:]?\s*/, '')
+              : tipo === 'annullata' ? n.testo.replace(/^Pratica annullata[.:]?\s*/, '')
+              : n.testo
+            // ⭐ 27/07 sera (proposta approvata): colori con le regole
+            // dell'app — AZZURRO per ciò che è in corso o torna in corso
+            // (Nota, Demolitore, Ripresa, Riattivata: via il verde, che è
+            // solo della Completata), grigio spento per pausa e nascita,
+            // ROSSO TENUE delle pillole di stato per l'annullo
+            const stilePillola = tipo === 'attesa' ? { bg: '#E8ECF3', col: '#5B6779', label: 'In attesa' }
+              : tipo === 'ripresa' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Ripresa' }
+              : tipo === 'riattivata' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Riattivata' }
+              : tipo === 'annullata' ? { bg: '#F3D9D9', col: '#A94444', label: 'Annullata' }
               : tipo === 'demolitore' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Demolitore' }
-              : { bg: '#E0EDFB', col: '#1E4E8C', label: 'Nota' }
+              : { bg: '#DBEAFE', col: '#1D4ED8', label: 'Nota' }
             return (
               <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
                 <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
@@ -151,7 +164,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
                       {stilePillola.label}
                     </span>
                   )}
-                  {n.testo}
+                  {testoMostrato}
                 </div>
               </div>
             )
@@ -163,7 +176,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               {fmtGiorno(praticaCreataIl)}<br />{fmtOra(praticaCreataIl)}
             </div>
             <div style={{ flex: 1, fontSize: 12.5, color: '#94A3B8', lineHeight: 1.5 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EEF2F7', color: '#475569', fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EEF1F5', color: '#5B6779', fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
                 <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                 Creata
               </span>
@@ -172,23 +185,25 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
           </div>
           </div>
 
-          {/* Aggiungi nota */}
-          <div className="flex gap-2 mt-2">
+          {/* Aggiungi nota — ⭐ 27/07 sera (opzione B su mockup): placeholder
+              corto sempre leggibile e bottone TONDO BLU PIENO con la matita
+              (richiama la pillola "Nota"), gemello del tondo della chat */}
+          <div className="flex gap-1.5 mt-2 items-center">
             <input
               value={nuova}
               onChange={e => setNuova(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') aggiungi() }}
-              placeholder="Aggiungi una nota… (data e ora si salvano da sole)"
-              className="flex-1 min-w-0 border-[1.5px] border-gray-200 rounded-[11px] px-3 py-2 text-[12.5px] text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
+              placeholder="Scrivi una nota…"
+              className="flex-1 min-w-0 border-[1.5px] border-gray-200 rounded-full px-3.5 py-[7px] text-[12.5px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all placeholder:text-gray-400"
             />
             <button
               onClick={aggiungi}
               disabled={salvando || !nuova.trim()}
-              className="flex-shrink-0 rounded-[10px] px-3.5 text-white font-bold text-lg transition-all disabled:opacity-40"
-              style={{ background: '#2563eb' }}
+              className="flex-shrink-0 flex items-center justify-center transition-all disabled:opacity-40 hover:bg-blue-700"
+              style={{ background: '#2563eb', width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer' }}
               aria-label="Aggiungi nota"
             >
-              +
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
             </button>
           </div>
         </div>
@@ -201,7 +216,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
       <div style={{ flex: 1.25, minWidth: 250, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px', display: 'flex', flexDirection: 'column' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
           <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-          <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>Cronologia e note</span>
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>Cronologia e Note</span>
         </div>
         {corpo}
       </div>

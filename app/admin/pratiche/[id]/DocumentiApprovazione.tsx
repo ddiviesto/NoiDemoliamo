@@ -394,9 +394,14 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
 
   // ⭐ Apertura del visore SU COMANDO dall'esterno (27/07 sera): la pillola
   // Documenti della tendina incrementa `apriTrigger` e il visore si apre sul
-  // primo documento da verificare (altrimenti il primo caricato, poi le foto)
+  // primo documento da verificare (altrimenti il primo caricato, poi le foto).
+  // ⚠️ Il ref memorizza il valore GIÀ GESTITO partendo da quello del montaggio:
+  // se il componente si rimonta (cambio filtro, ricarica lista) il trigger
+  // vecchio non deve riaprire il visore da solo.
+  const triggerGestito = useRef(apriTrigger ?? 0)
   useEffect(() => {
-    if (!apriTrigger || loading) return
+    if (loading || apriTrigger == null || apriTrigger <= triggerGestito.current) return
+    triggerGestito.current = apriTrigger
     const ordinati = docs
       .filter(d => d.richiede_upload && leggiFile(d.file_url).length > 0)
       .sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))

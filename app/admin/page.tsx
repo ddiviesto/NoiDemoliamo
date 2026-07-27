@@ -277,6 +277,18 @@ export default function AdminDashboard() {
   const [docStats, setDocStats] = useState<Record<string, { totale: number; approvati: number; daVerificare: number }>>({})
   const [nonLetti, setNonLetti] = useState<Record<string, number>>({})
 
+  // ⭐ 27/07 sera (richiesta Davide): spostarsi sul flusso CHIUDE la pratica
+  // aperta (tendina, chat e nuvolette) — niente tendine rimaste appese
+  function cambiaFiltro(f: Filtro) {
+    setSelId(null)
+    setSelChatAperta(false)
+    setSelAssegnaAperta(false)
+    setMenuStato(null)
+    setNuvolaImporto(false)
+    setNuvolaElimina(false)
+    setFiltro(f)
+  }
+
   function apriPratica(p: Pratica) {
     setSelChatAperta(false)
     setMenuStato(null)
@@ -639,57 +651,50 @@ export default function AdminDashboard() {
                   gemella delle fasi, PRIMA di "In attesa documenti" — bianca
                   a zero, rossa coi casi. Non è una fase: niente freccia,
                   solo uno stacco. Via il vecchio riquadro rosso. */}
-              <PillolaFase nome="Da contattare" valore={conta('contattare')} rossa={conta('contattare') > 0} attivo={filtro === 'contattare'} onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
+              <PillolaFase nome="Da contattare" valore={conta('contattare')} rossa={conta('contattare') > 0} attivo={filtro === 'contattare'} onClick={() => cambiaFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
                 title={conta('contattare') > 0 ? 'Da chiamare: libretto, certificato o fermo da chiarire' : 'Nessun cliente da chiamare per i documenti'} />
               <div style={{ width: 14, flexShrink: 0 }} />
-              <PillolaFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
+              <PillolaFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => cambiaFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
+              {/* ⭐ 27/07 sera (richiesta Davide): le pratiche IN PAUSA hanno la
+                  loro pillola QUI (via il riquadro giallo) — quieta, azzurro
+                  spento, non è una fase del flusso: niente freccia, solo uno
+                  stacco */}
+              <div style={{ width: 14, flexShrink: 0 }} />
+              <PillolaFase nome="In attesa" valore={conta('attesa')} quieta attivo={filtro === 'attesa'} onClick={() => cambiaFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
+                title={conta('attesa') > 0 ? 'In pausa, fuori dal flusso finché non riprendono' : 'Nessuna pratica in pausa'} />
               <FrecciaFase />
-              <PillolaFase nome="Documenti da verificare" valore={conta('approvare')} attivo={filtro === 'approvare'} onClick={() => setFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
+              <PillolaFase nome="Documenti da verificare" valore={conta('approvare')} attivo={filtro === 'approvare'} onClick={() => cambiaFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
               <FrecciaFase />
-              <PillolaFase nome="Da assegnare" valore={conta('assegnare')} attivo={filtro === 'assegnare'} onClick={() => setFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} />
+              <PillolaFase nome="Da assegnare" valore={conta('assegnare')} attivo={filtro === 'assegnare'} onClick={() => cambiaFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} />
               <FrecciaFase />
               <div className="flex flex-col items-stretch gap-1.5">
-                <PillolaFase nome="Assegnata" valore={conta('assegnate')} attivo={filtro === 'assegnate'} onClick={() => setFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} />
-                <PillolaFase nome="Allerta 8 ore" valore={nAllerta8h} rossa={nAllerta8h > 0} attivo={filtro === 'allerta8h'} onClick={() => setFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h')}
+                <PillolaFase nome="Assegnata" valore={conta('assegnate')} attivo={filtro === 'assegnate'} onClick={() => cambiaFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} />
+                <PillolaFase nome="Allerta 8 ore" valore={nAllerta8h} rossa={nAllerta8h > 0} attivo={filtro === 'allerta8h'} onClick={() => cambiaFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h')}
                   title={nAllerta8h > 0 ? 'Il demolitore non ha fissato il ritiro nei tempi' : 'Demolitori nei tempi: nessun ritiro in ritardo'} />
               </div>
               <FrecciaFase />
               {/* ⭐ 27/07 (variante B su mockup): Ritiro Programmato in fila e
                   colonnina "Ritirata" = somma di Attesa Certificati + Attesa PRA */}
-              <PillolaFase nome="Ritiro Programmato" valore={conta('programmato')} attivo={filtro === 'programmato'} onClick={() => setFiltro(filtro === 'programmato' ? 'tutte' : 'programmato')} />
+              <PillolaFase nome="Ritiro Programmato" valore={conta('programmato')} attivo={filtro === 'programmato'} onClick={() => cambiaFiltro(filtro === 'programmato' ? 'tutte' : 'programmato')} />
               <FrecciaFase />
               <div className="flex flex-col items-stretch gap-1.5">
-                <PillolaFase nome="Ritirata" valore={conta('certificati') + conta('pra')} attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
-                <PillolaFase nome="Attesa Certificati" valore={conta('certificati')} attivo={filtro === 'certificati'} onClick={() => setFiltro(filtro === 'certificati' ? 'tutte' : 'certificati')} />
-                <PillolaFase nome="Attesa PRA" valore={conta('pra')} attivo={filtro === 'pra'} onClick={() => setFiltro(filtro === 'pra' ? 'tutte' : 'pra')} />
+                <PillolaFase nome="Ritirata" valore={conta('certificati') + conta('pra')} attivo={filtro === 'ritirate'} onClick={() => cambiaFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
+                <PillolaFase nome="Attesa Certificati" valore={conta('certificati')} attivo={filtro === 'certificati'} onClick={() => cambiaFiltro(filtro === 'certificati' ? 'tutte' : 'certificati')} />
+                <PillolaFase nome="Attesa PRA" valore={conta('pra')} attivo={filtro === 'pra'} onClick={() => cambiaFiltro(filtro === 'pra' ? 'tutte' : 'pra')} />
               </div>
               <FrecciaFase />
-              <PillolaFase nome="Completata" valore={conta('completate')} attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
+              <PillolaFase nome="Completata" valore={conta('completate')} attivo={filtro === 'completate'} onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
             </div>
           </div>
 
-          {/* ALLERTE FUORI DAL FLUSSO (l'allerta 8 ore vive sotto "Assegnata"
-              e "Da contattare" è una pillola in testa alla fila) */}
-          {conta('attesa') > 0 && (
-          <div className="flex flex-wrap gap-2.5 mb-3">
-              {conta('attesa') > 0 && (
-                <button
-                  onClick={() => setFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
-                  className="flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-left transition-all hover:shadow-md"
-                  style={{ background: '#FDF7EA', border: `1.5px solid ${filtro === 'attesa' ? '#2563eb' : '#F0DFB8'}` }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                  <span className="text-[12.5px] font-bold" style={{ color: '#854F0B' }}>In attesa · {conta('attesa')}</span>
-                  <span className="text-[11.5px]" style={{ color: '#B45309' }}>in pausa, fuori dal flusso finché non riprendono</span>
-                </button>
-              )}
-          </div>
-          )}
+          {/* Nota 27/07 sera: il riquadro giallo "In attesa" è stato TOLTO —
+              le pratiche in pausa hanno la pillola quieta nella fila del
+              flusso, dopo "In attesa documenti". */}
 
           {/* FILTRI RAPIDI */}
           <div className="flex gap-1.5 mb-3 flex-wrap text-xs">
-            <ChipFiltro attivo={filtro === 'tutte'} onClick={() => setFiltro('tutte')}>Tutte {pratiche.filter(p => bucketDi(p) !== 'annullate').length}</ChipFiltro>
-            <ChipFiltro attivo={filtro === 'annullate'} onClick={() => setFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}>Annullate {conta('annullate')}</ChipFiltro>
+            <ChipFiltro attivo={filtro === 'tutte'} onClick={() => cambiaFiltro('tutte')}>Tutte {pratiche.filter(p => bucketDi(p) !== 'annullate').length}</ChipFiltro>
+            <ChipFiltro attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}>Annullate {conta('annullate')}</ChipFiltro>
           </div>
 
           {/* LISTA PRATICHE A CARD — ⭐ TENDINA SOTTO LA RIGA (26/07):
@@ -759,9 +764,10 @@ export default function AdminDashboard() {
                       <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#FBDADA' : m.bg, color: (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#9B1C1C' : m.text, padding: '4px 12px' }}>
                         {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
                       </span>
-                      {/* Il PERCHÉ dell'attesa, sempre sott'occhio in lista */}
+                      {/* Il PERCHÉ dell'attesa, sempre sott'occhio in lista —
+                          ⭐ 27/07 sera: allineato al TESTO della pillola */}
                       {p.in_attesa && !chiusa && p.attesa_motivo && (
-                        <div className="text-[11px] mt-1 truncate" style={{ color: '#5B6779' }} title={p.attesa_motivo}>
+                        <div className="text-[11px] mt-1 truncate" style={{ color: '#5B6779', paddingLeft: 12 }} title={p.attesa_motivo}>
                           {p.attesa_motivo}
                         </div>
                       )}
@@ -1651,11 +1657,13 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
   )
 }
 
-function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
+function PillolaFase({ nome, valore, attivo, rossa, quieta, title, onClick }: {
   nome: string
   valore: number
   attivo: boolean
   rossa?: boolean
+  // ⭐ 27/07 sera: variante QUIETA (azzurro spento della pausa) per "In attesa"
+  quieta?: boolean
   title?: string
   onClick: () => void
 }) {
@@ -1671,8 +1679,8 @@ function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
         boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
       }}
     >
-      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : '#EFF4FF', color: rossa ? '#C0392B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
-      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : '#374151' }}>{nome}</span>
+      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : quieta ? '#E8ECF3' : '#EFF4FF', color: rossa ? '#C0392B' : quieta ? '#5B6779' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
+      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : quieta ? '#5B6779' : '#374151' }}>{nome}</span>
     </button>
   )
 }
