@@ -348,7 +348,7 @@ export default function DettaglioPraticaCliente() {
             onClick={() => router.push('/dashboard')}
             className="bg-white/85 hover:bg-white text-blue-700 rounded-lg px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0 shadow-sm transition-all"
           >
-            ‹ Pratiche
+            ← Pratiche
           </button>
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">La tua pratica</div>
