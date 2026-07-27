@@ -71,7 +71,9 @@ const RUOLO_CASISTICA: Record<string, string> = {
   targhe_straniere: 'del proprietario',
 }
 
-function nomeAdmin(nome: string, casistica: string | null | undefined): string {
+// Esportata: la usa anche la scheda Ritiro del CRM (28/07) per la lista
+// degli originali da consegnare, così i nomi parlano sempre col ruolo
+export function nomeAdmin(nome: string, casistica: string | null | undefined): string {
   const ruolo = casistica ? RUOLO_CASISTICA[casistica] : null
   const m = nome.match(/^(la tua|il tuo)\s+(.+)$/i)
   if (m && ruolo) return m[2].charAt(0).toUpperCase() + m[2].slice(1) + ' ' + ruolo
