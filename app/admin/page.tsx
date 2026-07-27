@@ -1683,7 +1683,9 @@ function PillolaFase({ nome, valore, attivo, rossa, quieta, title, onClick }: {
       title={title}
       className="flex items-center gap-2 transition-all hover:shadow-md flex-shrink-0"
       style={{
-        background: rossa ? '#FEF6F6' : '#fff',
+        // ⭐ 27/07 sera (richiesta Davide): la pillola ATTIVA si tinge dello
+        // stesso azzurro dell'apertura — si vede subito dove sei
+        background: rossa ? '#FEF6F6' : attivo ? '#EFF6FF' : '#fff',
         border: `1.5px solid ${attivo ? '#2563eb' : rossa ? '#F3C8C8' : '#E5E7EB'}`,
         borderRadius: 999, padding: '8px 14px 8px 9px', whiteSpace: 'nowrap',
         boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
