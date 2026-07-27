@@ -248,6 +248,10 @@ export default function AdminDashboard() {
   // = sotto si apre un pannello con transizione morbida (grid 0fr→1fr),
   // ritocco = si richiude. I dati dentro li detta Davide, un pezzo alla volta.
   const [selId, setSelId] = useState<string | null>(null)
+  // ⭐ 27/07 sera: riga sotto il mouse — serve alla pillola di stato per
+  // diventare bianca anche in hover (la riga si tinge d'azzurro e la
+  // pillola azzurra si mimetizzerebbe)
+  const [hoverId, setHoverId] = useState<string | null>(null)
   // Email dell'account (da `utenti`): caricata al primo giro di apertura
   const [emailAccounts, setEmailAccounts] = useState<Record<string, string>>({})
   // ⭐ BOTTONI AZIONE nella tendina (26/07): Documenti e Chat si aprono
@@ -749,6 +753,8 @@ export default function AdminDashboard() {
                       si tinge dell'azzurro dell'apertura (#EFF6FF) */}
                   <div
                     onClick={() => apriPratica(p)}
+                    onMouseEnter={() => setHoverId(p.id)}
+                    onMouseLeave={() => setHoverId(null)}
                     className={`group cursor-pointer transition-all ${aperta ? '' : 'hover:!bg-[#EFF6FF] hover:!border-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]'}`}
                     style={{ background: aperta ? '#EFF6FF' : '#fff', border: `1.5px solid ${aperta ? 'transparent' : '#E5E7EB'}`, borderRadius: aperta ? '13px 13px 0 0' : 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: aperta ? 'none' : '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa && !aperta ? 0.82 : 1 }}
                   >
@@ -789,8 +795,11 @@ export default function AdminDashboard() {
                       {(() => {
                         const pillBg = (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#FBDADA' : m.bg
                         const pillText = (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#9B1C1C' : m.text
+                        // Bianca col bordino sia da APERTA che al passaggio
+                        // del mouse: la riga in entrambi i casi è azzurra
+                        const evidenzia = aperta || hoverId === p.id
                         return (
-                          <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: aperta ? '#fff' : pillBg, color: pillText, border: `1px solid ${aperta ? `${pillText}55` : 'transparent'}`, padding: '3px 11px' }}>
+                          <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ background: evidenzia ? '#fff' : pillBg, color: pillText, border: `1px solid ${evidenzia ? `${pillText}55` : 'transparent'}`, padding: '3px 11px' }}>
                             {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
                           </span>
                         )
