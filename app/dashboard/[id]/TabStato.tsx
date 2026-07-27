@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Pratica } from './page'
+import IconaVeicolo from '../../components/IconaVeicolo'
 
 interface Props {
   pratica: Pratica
@@ -20,16 +21,9 @@ function IconaPin() {
   )
 }
 
-function IconaAuto() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 17h14"/>
-      <path d="M3 17v-4l2-5a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 8l2 5v4"/>
-      <circle cx="7" cy="17" r="2" fill="#1d4ed8" stroke="none"/>
-      <circle cx="17" cy="17" r="2" fill="#1d4ed8" stroke="none"/>
-    </svg>
-  )
-}
+// ⭐ 28/07 (richiesta Davide): l'icona della card "Dati del veicolo" è
+// quella ORIGINALE di /inizia e dipende dal tipo di mezzo — componente
+// condiviso app/components/IconaVeicolo.tsx
 
 function IconaSpuntaTimeline() {
   return (
@@ -252,7 +246,7 @@ export default function TabStato({ pratica }: Props) {
           className="w-full px-4 py-3.5 flex items-center justify-between"
         >
           <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
-            <IconaAuto />
+            <IconaVeicolo tipo={pratica.tipo_mezzo} />
             Dati del veicolo
           </span>
           <IconaChevron aperto={datiAperti} />

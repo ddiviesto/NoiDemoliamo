@@ -6,6 +6,7 @@ import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { pillolaStato } from '@/lib/statiCliente'
+import IconaVeicolo from '../components/IconaVeicolo'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
 
@@ -28,48 +29,9 @@ interface Pratica {
 // ICONE SVG
 // ============================================================
 
-function IconaVeicolo({ tipo }: { tipo: string | null }) {
-  const common = { width: 20, height: 20, viewBox: '0 0 24 24', fill: 'none' as const, stroke: '#2563eb', strokeWidth: 1.8, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
-  const t = (tipo || '').toLowerCase()
-
-  if (t === 'motoveicolo' || t === 'ciclomotore') {
-    return (
-      <svg {...common}>
-        <circle cx="5.5" cy="17.5" r="2.5"/>
-        <circle cx="18.5" cy="17.5" r="2.5"/>
-        <path d="M15 6h2.5L20 10.5"/>
-        <path d="M5.5 17.5 9 11h5l4.5 6.5"/>
-        <path d="M9 11 7.5 8H5"/>
-      </svg>
-    )
-  }
-  if (t === 'furgone' || t === 'camion') {
-    return (
-      <svg {...common}>
-        <path d="M13 6v5a1 1 0 0 0 1 1h6.1a1 1 0 0 1 .7.3l.9.9a1 1 0 0 1 .3.7V17a1 1 0 0 1-1 1h-3"/>
-        <path d="M5 18H3a1 1 0 0 1-1-1V8a2 2 0 0 1 2-2h12c1.1 0 2.1.8 2.4 1.8l1.2 4.2M9 18h5"/>
-        <circle cx="16" cy="18" r="2"/>
-        <circle cx="7" cy="18" r="2"/>
-      </svg>
-    )
-  }
-  if (t === 'imbarcazione') {
-    return (
-      <svg {...common}>
-        <path d="M12 3v14"/>
-        <path d="M12 4l7 9H5z"/>
-        <path d="M3 19c1.5 1.5 3.5 1.5 5 0s3.5-1.5 5 0 3.5 1.5 5 0 2-1 3 0"/>
-      </svg>
-    )
-  }
-  // default: autovettura / minicar / altro
-  return (
-    <svg {...common}>
-      <path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/>
-      <path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6"/>
-    </svg>
-  )
-}
+// ⭐ 28/07: le icone dei mezzi sono quelle ORIGINALI di /inizia, in un
+// componente condiviso (app/components/IconaVeicolo.tsx) — via la copia
+// ridotta che stava qui
 
 function IconaPinPiccola() {
   return (
