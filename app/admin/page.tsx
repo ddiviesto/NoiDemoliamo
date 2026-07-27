@@ -567,19 +567,22 @@ export default function AdminDashboard() {
   const conta = (b: Filtro) => pratiche.filter(p => bucketDi(p) === b).length
 
   // Filtro + ricerca ("Tutte" = tutto il flusso, escluse le annullate)
+  // ⭐ 27/07 sera (richiesta Davide): la RICERCA vale DAPPERTUTTO — appena
+  // scrivi, il filtro attivo si ignora e si cerca su TUTTE le pratiche
+  // (annullate comprese), da qualsiasi casella del flusso tu stia guardando
   const q = ricerca.trim().toLowerCase()
   const nAllerta8h = pratiche.filter(allerta8h).length
   const filtrate = pratiche.filter(p => {
+    if (q) {
+      const blob = [p.targa, p.nome_richiedente, p.telefono, p.marca, p.modello, p.comune_ritiro].filter(Boolean).join(' ').toLowerCase()
+      return blob.includes(q)
+    }
     const b = bucketDi(p)
     if (filtro === 'tutte') { if (b === 'annullate') return false }
     else if (filtro === 'allerta8h') { if (!allerta8h(p)) return false }
     // "Ritirata" è il macro-filtro della colonnina: somma certificati + PRA
     else if (filtro === 'ritirate') { if (b !== 'certificati' && b !== 'pra') return false }
     else if (b !== filtro) return false
-    if (q) {
-      const blob = [p.targa, p.nome_richiedente, p.telefono, p.marca, p.modello, p.comune_ritiro].filter(Boolean).join(' ').toLowerCase()
-      if (!blob.includes(q)) return false
-    }
     return true
   })
 
