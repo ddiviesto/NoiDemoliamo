@@ -301,6 +301,13 @@ export default function AdminDashboard() {
     setImportoErr(null)
     setNuvolaElimina(false)
     setEliminaErr(null)
+    // ⭐ 27/07 sera (richiesta Davide): se stavi CERCANDO, cliccare la pratica
+    // vuol dire "trovata" — il testo del cerca si cancella e il flusso si
+    // sposta NELLA SUA CASELLA (così sei dove la pratica vive davvero)
+    if (ricerca.trim() && selId !== p.id) {
+      setRicerca('')
+      setFiltro(bucketDi(p))
+    }
     setSelId(prev => (prev === p.id ? null : p.id))
     if (p.user_id && emailAccounts[p.id] === undefined) {
       supabase.from('utenti').select('email').eq('id', p.user_id).single()
