@@ -947,7 +947,7 @@ export default function AdminDashboard() {
                               <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 295, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: '13px 14px', zIndex: 6 }}>
                                 <div className="text-[12px] font-bold" style={{ color: '#0F1B33' }}>Trattativa Extra</div>
                                 <div className="text-[11px] mt-1" style={{ color: '#5B6779', lineHeight: 1.55 }}>
-                                  Importo concordato con il demolitore <b>solo per questa pratica</b>: sostituisce la sua tariffa e a fine mese va in prefattura così.
+                                  Importo concordato con il demolitore <b>solo per questa pratica</b>: sostituisce la sua tariffa e a fine mese entra così in proforma fattura.
                                 </div>
                                 <div className="flex items-center gap-2 mt-2.5">
                                   <label className="text-[11.5px] font-semibold whitespace-nowrap" style={{ color: '#1E293B' }}>Importo concordato</label>
