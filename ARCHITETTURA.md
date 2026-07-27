@@ -929,6 +929,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **Anche il FERMO "non lo sa" fa scattare "Da contattare"** (decisione Davide): il predicato `daContattare` ora copre libretto no + CDC nessuno + fermo non_so — pillola del flusso, filtro, pillola in riga e priorità inclusi. Corretto il valore → la pratica rientra nel flusso.
 - ⭐ **"Fermo" rinominato "Fermo Amministrativo"** nella scheda Casistiche.
 - ⭐ **FINESTRELLE AFFIANCATE**: chat e cronologia vivono in un contenitore fisso UNICO in basso a destra (flex, gap 12, allineate in basso) — la cronologia si mette a sinistra della chat e non si sovrappongono mai, anche ingrandite. Le due componenti non sono più `position: fixed` da sole.
+- ⭐ **NUVOLETTA "Trattativa Extra" SEMPLICE** (mockup approvato dopo 2 giri bocciati — la regola: sobria, professionale, comprensibile): titolo, UNA frase che spiega il concetto ("importo concordato col demolitore SOLO per questa pratica: sostituisce la sua tariffa e a fine mese va in prefattura così"), campo con etichetta "Importo concordato" + €, Salva blu; con la trattativa attiva compare il link "Rimuovi" (rosso spento). Il significato business: la trattativa BYPASSA ogni tariffa di zona per la singola pratica e finisce in prefattura così com'è.
 
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 

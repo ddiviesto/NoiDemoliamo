@@ -878,32 +878,37 @@ export default function AdminDashboard() {
                           {nuvolaImporto && (
                             <>
                               <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => { if (!importoBusy) setNuvolaImporto(false) }} />
-                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 250, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: 12, zIndex: 6 }}>
+                              {/* ⭐ 27/07 (mockup approvato): nuvoletta SEMPLICE —
+                                  titolo, una frase che spiega il bypass (solo per
+                                  questa pratica, va in prefattura così), campo con
+                                  etichetta, Salva; "Rimuovi" quando è attiva */}
+                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 295, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: '13px 14px', zIndex: 6 }}>
                                 <div className="text-[12px] font-bold" style={{ color: '#0F1B33' }}>Trattativa Extra</div>
-                                <div className="text-[10.5px] mt-0.5" style={{ color: '#8B95A5' }}>
-                                  {p.fee_concordata != null ? 'Per questa pratica vale questo importo, non le tariffe di zona.' : 'Ora vale la tariffa di zona del demolitore. Se serve un accordo speciale, scrivi l\'importo.'}
+                                <div className="text-[11px] mt-1" style={{ color: '#5B6779', lineHeight: 1.55 }}>
+                                  Importo concordato con il demolitore <b>solo per questa pratica</b>: sostituisce la sua tariffa e a fine mese va in prefattura così.
                                 </div>
-                                <div className="flex items-center gap-1.5 mt-2">
+                                <div className="flex items-center gap-2 mt-2.5">
+                                  <label className="text-[11.5px] font-semibold whitespace-nowrap" style={{ color: '#1E293B' }}>Importo concordato</label>
                                   <input
                                     value={importoVal}
                                     onChange={e => { setImportoVal(e.target.value); setImportoErr(null) }}
                                     inputMode="numeric"
-                                    placeholder="Es. 300"
-                                    className="w-full rounded-lg px-2.5 py-1.5 text-[12px] outline-none"
+                                    placeholder="0"
+                                    className="flex-1 min-w-0 rounded-[9px] px-2.5 py-1.5 text-[12px] text-right outline-none focus:border-blue-300"
                                     style={{ border: '1.5px solid #E5E7EB', color: '#111827' }}
                                   />
                                   <span className="text-[12px] font-bold" style={{ color: '#4B5563' }}>€</span>
                                 </div>
                                 {importoErr && <div className="text-[10.5px] text-red-600 mt-1">{importoErr}</div>}
-                                <div className="flex items-center gap-1.5 justify-end mt-2">
+                                <div className="flex items-center justify-end gap-3 mt-2.5">
                                   {p.fee_concordata != null && (
-                                    <button onClick={() => salvaImporto(p, null)} disabled={importoBusy} className="mr-auto disabled:opacity-50" style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 10.5, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Torna alla tariffa di zona</button>
+                                    <button onClick={() => salvaImporto(p, null)} disabled={importoBusy} className="mr-auto disabled:opacity-50" style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 11, fontWeight: 500, textDecoration: 'underline', cursor: 'pointer' }}>Rimuovi</button>
                                   )}
                                   <button
                                     onClick={() => { const n = parseFloat(importoVal.replace(',', '.')); if (isNaN(n) || n <= 0) { setImportoErr('Scrivi un importo valido.'); return } salvaImporto(p, n) }}
                                     disabled={importoBusy}
                                     className="transition-colors hover:bg-blue-700 disabled:opacity-50"
-                                    style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}
+                                    style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 8, padding: '6px 15px', cursor: 'pointer' }}
                                   >
                                     {importoBusy ? 'Salvo…' : 'Salva'}
                                   </button>
