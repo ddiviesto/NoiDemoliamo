@@ -1710,7 +1710,10 @@ function PillolaFase({ nome, valore, attivo, rossa, quieta, title, onClick }: {
         boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
       }}
     >
-      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : quieta ? '#E8ECF3' : '#EFF4FF', color: rossa ? '#C0392B' : quieta ? '#5B6779' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
+      {/* ⭐ 27/07 sera: il tondino resta AZZURRO come le sorelle anche nella
+          variante quieta (il grigio spento sembrava scolorito) — la pausa
+          la dice solo l'etichetta grigia */}
+      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : '#EFF4FF', color: rossa ? '#C0392B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
       <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : quieta ? '#5B6779' : '#374151' }}>{nome}</span>
     </button>
   )
