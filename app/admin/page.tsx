@@ -1491,8 +1491,11 @@ function IconaVeicolo({ tipo }: { tipo: string | null }) {
 // ⭐ PANNELLO ASSEGNAZIONE nella tendina (27/07, mockup definitivo):
 // colonna DESTRA accanto alle schede. All'apertura carica da solo la
 // classifica (dry-run arricchito dal server: km, giorni, carico "da
-// ritirare", fee applicabile); "Scegli tu" mostra tutti i demolitori
-// attivi nello stesso riquadro. L'elenco scorre DENTRO il riquadro.
+// ritirare", fee applicabile). ⭐ 28/07 (richiesta Davide): via il
+// bottone "Scegli tu" — la lista è UNA sola con TUTTI i demolitori
+// attivi: prima la classifica di chi copre la zona, sotto la voce
+// "Non coprono la zona" con gli altri, ognuno col suo Assegna.
+// L'elenco scorre DENTRO il riquadro.
 // ============================================================
 
 // ⭐ 27/07 notte (variante B su mockup): PANNELLO DA DESTRA gemello del
@@ -1509,12 +1512,13 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
 }) {
   const assegnata = !!pratica.demolitore_id
   const puoAssegnare = ['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(pratica.stato)
-  const [vista, setVista] = useState<'ferma' | 'classifica' | 'tutti'>('ferma')
+  const [vista, setVista] = useState<'ferma' | 'classifica'>('ferma')
   const [caricando, setCaricando] = useState(false)
   const [candidati, setCandidati] = useState<CandidatoTendina[]>([])
   const [vincitoreId, setVincitoreId] = useState<string | null>(null)
   const [motivo, setMotivo] = useState<string | null>(null)
-  const [tutti, setTutti] = useState<CandidatoTendina[]>([])
+  // ⭐ 28/07: i demolitori attivi che NON coprono la zona, in coda alla lista
+  const [altri, setAltri] = useState<CandidatoTendina[]>([])
   const [busyId, setBusyId] = useState<string | null>(null)
   const [errore, setErrore] = useState<string | null>(null)
   const [confermaRimuovi, setConfermaRimuovi] = useState(false)
@@ -1542,17 +1546,25 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
     setErrore(null)
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/assegna-pratica', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
-        body: JSON.stringify({ pratica_id: pratica.id, dry_run: true }),
-      })
+      // Classifica dal server e lista completa degli attivi insieme:
+      // chi non copre la zona finisce in coda sotto "Non coprono la zona"
+      const [res, attivi] = await Promise.all([
+        fetch('/api/assegna-pratica', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+          body: JSON.stringify({ pratica_id: pratica.id, dry_run: true }),
+        }),
+        supabase.from('demolitori').select('id, ragione_sociale, citta').eq('stato', 'attivo').order('ragione_sociale'),
+      ])
       const data = await res.json().catch(() => null)
-      if (!res.ok) { setErrore(data?.error || 'Errore nel calcolo'); setCandidati([]) }
+      if (!res.ok) { setErrore(data?.error || 'Errore nel calcolo'); setCandidati([]); setAltri([]) }
       else {
-        setCandidati(data.candidati || [])
+        const classifica: CandidatoTendina[] = data.candidati || []
+        setCandidati(classifica)
         setVincitoreId(data.vincitore?.id ?? null)
         setMotivo(data.motivo ?? null)
+        const inClassifica = new Set(classifica.map(c => c.id))
+        setAltri(((attivi.data as CandidatoTendina[]) || []).filter(d => !inClassifica.has(d.id)))
       }
     } catch {
       setErrore('Errore di rete durante il calcolo.')
@@ -1575,15 +1587,6 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
     return () => { document.body.style.overflow = prima; window.removeEventListener('keydown', suTasto) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-
-  async function caricaTutti() {
-    setVista('tutti')
-    setCaricando(true)
-    setErrore(null)
-    const { data } = await supabase.from('demolitori').select('id, ragione_sociale, citta').eq('stato', 'attivo').order('ragione_sociale')
-    setTutti((data as CandidatoTendina[]) || [])
-    setCaricando(false)
-  }
 
   async function assegna(demolitoreId: string, manuale: boolean) {
     setBusyId(demolitoreId)
@@ -1679,9 +1682,9 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
             <span style={{ display: 'block', fontSize: 11, color: '#4B5563', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {assegnata ? `Assegnata a ${demolitoreNome || 'un demolitore'}`
                 : !puoAssegnare ? 'Prima approva tutti i documenti'
-                : vista === 'tutti' ? 'Tutti i demolitori attivi'
                 : caricando ? 'Calcolo la classifica…'
                 : candidati.length > 0 ? `${candidati.length} ${candidati.length === 1 ? 'demolitore copre' : 'demolitori coprono'} la zona`
+                : vista === 'classifica' ? 'Nessun demolitore copre la zona'
                 : 'Scegli il demolitore'}
             </span>
           </span>
@@ -1690,10 +1693,11 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
         </div>
 
         <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '12px 14px' }}>
+      {/* ⭐ 28/07 (richiesta Davide): via "Scegli tu" — è superfluo, per
+          assegnare a mano basta cliccare Assegna nella lista qui sotto */}
       {puoAssegnare && !assegnata && (
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexShrink: 0 }}>
           <button onClick={() => vincitoreId && assegna(vincitoreId, false)} disabled={busyId != null || caricando || !vincitoreId} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: '1.5px solid #2563EB', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Assegna in automatico</button>
-          <button onClick={caricaTutti} disabled={busyId != null} className="transition-colors hover:bg-blue-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Scegli tu</button>
         </div>
       )}
       {assegnata && !confermaRimuovi && (
@@ -1733,28 +1737,28 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
 
       {errore && <div style={{ fontSize: 10.5, color: '#C0392B', fontWeight: 600, marginBottom: 6 }}>{errore}</div>}
 
-      {/* ELENCO a schedine: scorre dentro il pannello, a tutta altezza */}
-      {(vista === 'classifica' || vista === 'tutti') && (!assegnata || vista === 'classifica') && (
+      {/* ⭐ ELENCO UNICO a schedine (28/07): prima la classifica di chi copre
+          la zona, sotto "Non coprono la zona" con gli altri attivi. Scorre
+          dentro il pannello, a tutta altezza. */}
+      {vista === 'classifica' && (
         caricando ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', padding: '14px 0', fontSize: 11.5, color: '#6B7280' }}>
             <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Calcolo in corso…
           </div>
-        ) : vista === 'tutti' ? (
-          tutti.length === 0 ? (
-            <p style={{ fontSize: 11.5, color: '#9AA7B5', padding: '4px 2px' }}>Nessun demolitore attivo nel sistema.</p>
-          ) : (
-            <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {tutti.map((c, i) => rigaCandidato(c, i, false))}
-            </div>
-          )
-        ) : candidati.length === 0 ? (
-          <div style={{ fontSize: 11.5, color: '#6B7280', padding: '4px 2px' }}>
-            <p style={{ marginBottom: 6 }}>{motivo || 'Nessun demolitore copre questa zona.'}</p>
-            <button onClick={caricaTutti} style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>Mostra tutti i demolitori attivi</button>
-          </div>
+        ) : candidati.length === 0 && altri.length === 0 ? (
+          <p style={{ fontSize: 11.5, color: '#9AA7B5', padding: '4px 2px' }}>Nessun demolitore attivo nel sistema.</p>
         ) : (
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {candidati.length === 0 && (
+              <p style={{ fontSize: 11.5, color: '#6B7280', padding: '2px 2px 0', flexShrink: 0 }}>{motivo || 'Nessun demolitore copre questa zona.'}</p>
+            )}
             {candidati.map((c, i) => rigaCandidato(c, i, true))}
+            {altri.length > 0 && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.4, textTransform: 'uppercase', padding: '6px 2px 0', flexShrink: 0 }}>Non coprono la zona</div>
+                {altri.map((c, i) => rigaCandidato(c, i, false))}
+              </>
+            )}
           </div>
         )
       )}
