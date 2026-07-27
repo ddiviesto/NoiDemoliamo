@@ -464,6 +464,11 @@ export default function AdminDashboard() {
         dati.nome_richiedente = sb('nome_richiedente')
         dati.telefono = sb('telefono')
         dati.codice_fiscale = sb('codice_fiscale')
+        // ⭐ 28/07: il delegato si modifica dalla scheda Cliente (righe spostate lì)
+        if (!(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere')) {
+          dati.delegato_nome = sb('delegato_nome')
+          dati.delegato_telefono = sb('delegato_telefono')
+        }
       } else if (sezEdit === 'casistiche') {
         if (sb('libretto')) dati.libretto = sb('libretto')
         if (sb('fermo_amministrativo')) dati.fermo_amministrativo = sb('fermo_amministrativo')
@@ -488,10 +493,6 @@ export default function AdminDashboard() {
       } else {
         dati.indirizzo_ritiro = sb('indirizzo_ritiro')
         if (sb('spazio_carro_attrezzi')) dati.spazio_carro_attrezzi = sb('spazio_carro_attrezzi')
-        if (!(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere')) {
-          dati.delegato_nome = sb('delegato_nome')
-          dati.delegato_telefono = sb('delegato_telefono')
-        }
       }
       if (Object.keys(dati).length > 0) {
         const res = await fetch('/api/pratica-dati', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, dati }) })
@@ -1130,6 +1131,14 @@ export default function AdminDashboard() {
                             { k: 'Telefono', vista: p.telefono || '—', campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('telefono')} onChange={e => setB('telefono', e.target.value)} /> },
                             { k: p.casistica === 'societa' || p.casistica === 'societa_fallita' ? 'P.IVA' : 'CF', vista: p.codice_fiscale || '—', campo: <input className={CAMPO_TENDINA} value={sb('codice_fiscale')} onChange={e => setB('codice_fiscale', e.target.value)} /> },
                             { k: 'Email', vista: emailAccounts[p.id] === undefined ? '…' : (emailAccounts[p.id] || '—') },
+                            // ⭐ 28/07 (richiesta Davide): il delegato vive QUI, sotto
+                            // l'email — è una persona, non un dato del ritiro
+                            ...(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere' ? [
+                              { k: 'Delegato', vista: 'Delega non ammessa' },
+                            ] : [
+                              { k: 'Delegato', vista: p.delegato_nome || 'Consegna in prima persona', campo: <input className={CAMPO_TENDINA} placeholder="Vuoto = in prima persona" value={sb('delegato_nome')} onChange={e => setB('delegato_nome', e.target.value)} /> },
+                              { k: 'Tel. delegato', vista: p.delegato_telefono || '—', campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('delegato_telefono')} onChange={e => setB('delegato_telefono', e.target.value)} /> },
+                            ]),
                           ]}
                         />
                         <SezTendinaMod
@@ -1246,12 +1255,6 @@ export default function AdminDashboard() {
                                 <option value="no">Non passa</option>
                               </select>
                             ) },
-                            ...(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere' ? [
-                              { k: 'Delegato', vista: 'Delega non ammessa' },
-                            ] : [
-                              { k: 'Delegato', vista: p.delegato_nome || 'Consegna in prima persona', campo: <input className={CAMPO_TENDINA} placeholder="Vuoto = in prima persona" value={sb('delegato_nome')} onChange={e => setB('delegato_nome', e.target.value)} /> },
-                              { k: 'Tel. delegato', vista: p.delegato_telefono || '—', campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('delegato_telefono')} onChange={e => setB('delegato_telefono', e.target.value)} /> },
-                            ]),
                           ]}
                           extra={(daPortare[p.id]?.length ?? 0) > 0 ? (
                             // ⭐ 28/07 (variante B su mockup): gli ORIGINALI che il
