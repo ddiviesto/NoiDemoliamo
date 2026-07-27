@@ -62,6 +62,9 @@ interface Pratica {
   // ⭐ Assegnazione e importo nella tendina (27/07)
   fee_concordata: number | null
   data_assegnazione: string | null
+  // ⭐ Date del demolitore in riga (27/07, mockup approvato)
+  data_ritiro_prevista: string | null
+  data_ritiro_effettuato: string | null
 }
 
 // Candidato del pannello assegnazione (27/07): la classifica del dry-run
@@ -92,7 +95,7 @@ type SezioneTendina = 'cliente' | 'casistiche' | 'veicolo' | 'ritiro'
 const CAMPO_TENDINA = 'w-full h-[22px] bg-transparent border-0 border-b-2 border-blue-300 focus:border-blue-600 rounded-none outline-none text-[11.5px] text-right text-gray-900 px-0.5 transition-colors placeholder:text-gray-400'
 
 // Un'unica lista di campi per il caricamento e le ricariche (stessa forma)
-const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione'
+const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione, data_ritiro_prevista, data_ritiro_effettuato'
 
 // ============================================================
 // METADATI STATO (etichetta + colori pillola + barra colorata)
@@ -117,12 +120,14 @@ const STATO_META: Record<string, { label: string; bg: string; text: string; bar:
   // Fase 4 — Assegnata
   assegnata: { label: 'Assegnata', ...PILL_FLUSSO, bar: '#7F77DD' },
   in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', ...PILL_FLUSSO, bar: '#7F77DD' },
-  ritiro_confermato: { label: 'Assegnata · ritiro fissato', ...PILL_FLUSSO, bar: '#7F77DD' },
-  // Fase 5 — Ritirata
-  ritirata: { label: 'Ritirata', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_cert_rottamazione: { label: 'Ritirata · attesa rottamazione', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_cert_radiazione_pra: { label: 'Ritirata · attesa PRA', ...PILL_FLUSSO, bar: '#1D9E75' },
+  // ⭐ 27/07 (rinomine di Davide): "Ritiro Programmato" secco e famiglia
+  // "Mezzo Ritirato" al posto di "Ritirata"
+  ritiro_confermato: { label: 'Ritiro Programmato', ...PILL_FLUSSO, bar: '#7F77DD' },
+  // Fase 5 — Mezzo Ritirato
+  ritirata: { label: 'Mezzo Ritirato · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_recensione_cliente: { label: 'Mezzo Ritirato · attesa recensione', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_cert_rottamazione: { label: 'Mezzo Ritirato · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
+  in_attesa_cert_radiazione_pra: { label: 'Mezzo Ritirato · Attesa PRA', ...PILL_FLUSSO, bar: '#1D9E75' },
   // Fase 6 — Completata (verde, l'unico traguardo)
   completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43', bar: '#639922' },
   annullata: { label: 'Annullata', ...PILL_ROSSO_TENUE, bar: '#C0C7D1' },
@@ -130,6 +135,11 @@ const STATO_META: Record<string, { label: string; bg: string; text: string; bar:
 
 function metaStato(stato: string) {
   return STATO_META[stato] || { label: stato, bg: '#EDF0F5', text: '#64748B', bar: '#C0C7D1' }
+}
+
+// Data corta con l'anno per i boxini di riga (gg/mm/aa)
+function fmtDataBox(x: string) {
+  return new Date(x).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: '2-digit' })
 }
 
 const NOMI_CASISTICHE: Record<string, string> = {
@@ -743,8 +753,27 @@ export default function AdminDashboard() {
                       )}
                     </div>
 
-                    {/* Attesa */}
-                    {!chiusa ? (
+                    {/* ⭐ DATE DI RITIRO in riga (27/07, mockup approvato):
+                        quando il demolitore le mette si vedono anche qui —
+                        "Ritiro Programmato" quieto e "Ritiro Effettivo"
+                        azzurro, affiancati (con l'anno). Senza date resta
+                        il countdown di sempre. */}
+                    {(p.data_ritiro_prevista || p.data_ritiro_effettuato) && p.stato !== 'annullata' ? (
+                      <>
+                        {p.data_ritiro_prevista && (
+                          <div style={{ flexShrink: 0, textAlign: 'center', background: '#E8ECF3', borderRadius: 10, padding: '6px 11px', minWidth: 96 }}>
+                            <div className="text-[13px] font-extrabold" style={{ color: '#5B6779' }}>{fmtDataBox(p.data_ritiro_prevista)}</div>
+                            <div className="text-[8px] font-bold uppercase" style={{ color: '#5B6779', letterSpacing: 0.4 }}>Ritiro Programmato</div>
+                          </div>
+                        )}
+                        {p.data_ritiro_effettuato && (
+                          <div style={{ flexShrink: 0, textAlign: 'center', background: '#EFF6FF', borderRadius: 10, padding: '6px 11px', minWidth: 96 }}>
+                            <div className="text-[13px] font-extrabold" style={{ color: '#1D4ED8' }}>{fmtDataBox(p.data_ritiro_effettuato)}</div>
+                            <div className="text-[8px] font-bold uppercase" style={{ color: '#1D4ED8', letterSpacing: 0.4 }}>Ritiro Effettivo</div>
+                          </div>
+                        )}
+                      </>
+                    ) : !chiusa ? (
                       <div style={{ flexShrink: 0, textAlign: 'center', background: rosso ? '#FCEBEB' : '#F3F5F9', borderRadius: 10, padding: '6px 12px', minWidth: 74 }}>
                         <div className="text-[14px] font-bold" style={{ color: rosso ? '#A32D2D' : '#374151' }}>{formatAttesa(min)}</div>
                         <div className="text-[10px] font-semibold uppercase" style={{ color: rosso ? '#A32D2D' : '#6B7280' }}>{azioneRichiesta ? 'in attesa' : 'in corso'}</div>
