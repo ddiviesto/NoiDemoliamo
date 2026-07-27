@@ -693,12 +693,15 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 canvas.getContext('2d')!.drawImage(bmp, 0, 0)
                 img = await out.embedJpg(bytesDaDataUrl(canvas.toDataURL('image/jpeg', 0.9)))
               }
-              // Pagina A4 verticale con l'etichetta del documento in alto
+              // Pagina A4 verticale; l'etichetta in alto SOLO sui documenti —
+              // le FOTO vanno pulite, senza scritte (richiesta Davide 27/07:
+              // "solo anteprima, più ordinato")
+              const conEtichetta = v.tipo === 'doc'
               const A4W = 595.28, A4H = 841.89, margine = 36
               const page = out.addPage([A4W, A4H])
-              page.drawText(etichetta.slice(0, 95), { x: margine, y: A4H - 26, size: 9, font, color: rgb(0.42, 0.47, 0.55) })
+              if (conEtichetta) page.drawText(etichetta.slice(0, 95), { x: margine, y: A4H - 26, size: 9, font, color: rgb(0.42, 0.47, 0.55) })
               const areaW = A4W - margine * 2
-              const areaH = A4H - margine * 2 - 14
+              const areaH = A4H - margine * 2 - (conEtichetta ? 14 : 0)
               const k = Math.min(areaW / img.width, areaH / img.height)
               page.drawImage(img, { x: (A4W - img.width * k) / 2, y: margine + (areaH - img.height * k) / 2, width: img.width * k, height: img.height * k })
             }
@@ -709,7 +712,11 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
         }
       }
       if (out.getPageCount() === 0) throw new Error('Nessun file incluso')
-      const base = daIncludere.length === 1 ? titoloVoce(daIncludere[0]) : 'Documenti'
+      // ⭐ 27/07 notte (richiesta Davide): il nome racconta il contenuto —
+      // SOLO FOTO (tutte o alcune) = "Foto", un documento solo = il suo
+      // nome, misto = "Documenti"
+      const soloFoto = daIncludere.every(v => v.tipo === 'foto')
+      const base = daIncludere.length === 1 && !soloFoto ? titoloVoce(daIncludere[0]) : soloFoto ? 'Foto' : 'Documenti'
       const nomeFile = nomeFileSicuro(`${base}${targa ? ` ${targa}` : ''}`) + '.pdf'
       const blobOut = new Blob([await out.save() as BlobPart], { type: 'application/pdf' })
       const link = document.createElement('a')
