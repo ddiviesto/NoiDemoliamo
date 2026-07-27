@@ -35,7 +35,7 @@ function fmtOra(x: string) {
 // ⭐ 23/07: card A SCOMPARSA — chiusa all'apertura, la testata apre e chiude
 // ⭐ 27/07: modalità `finestra` (scelta B su mockup): finestrella fissa in
 // basso a destra come la Chat, con l'ingrandisci — usata dalla tendina CRM
-export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey, aperta, onToggle, finestra, titolo }: {
+export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey, aperta, onToggle, finestra, titolo, scheda }: {
   praticaId: string
   praticaCreataIl: string
   refreshKey: number
@@ -43,6 +43,9 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
   onToggle: () => void
   finestra?: boolean
   titolo?: string
+  // ⭐ 27/07 sera (mockup approvato): modalità SCHEDA — prima card della
+  // fila nella tendina del CRM (timeline con scroll interno, campo nota)
+  scheda?: boolean
 }) {
   const [note, setNote] = useState<Nota[]>([])
   const [tabellaAssente, setTabellaAssente] = useState(false)
@@ -102,7 +105,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
         <div className={finestra ? undefined : 'mt-2'} style={finestra ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '10px 12px 12px' } : undefined}>
           {/* Riquadro a altezza FISSA: si scorre dentro (mouse/dito), la
               pagina non si allunga (richiesta Davide 21/07) */}
-          <div className="overflow-y-auto" style={finestra ? { flex: 1, minHeight: 0, overscrollBehavior: 'contain' } : { maxHeight: 300 }}>
+          <div className="overflow-y-auto" style={finestra ? { flex: 1, minHeight: 0, overscrollBehavior: 'contain' } : scheda ? { maxHeight: 150, overscrollBehavior: 'contain' } : { maxHeight: 300 }}>
           {note.map(n => {
             // Pillola per le voci automatiche (attesa/ripresa/annullo/riattivo)
             // e per le note del DEMOLITORE (23/07: quadratino celeste come in chat)
@@ -190,6 +193,20 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
           </div>
         </div>
   )
+
+  // ---- SCHEDA nella fila della tendina (27/07 sera, mockup approvato):
+  // prima card, gemella delle sezioni, sempre aperta ----
+  if (scheda) {
+    return (
+      <div style={{ flex: 1.25, minWidth: 250, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+          <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+          <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>Cronologia e note</span>
+        </div>
+        {corpo}
+      </div>
+    )
+  }
 
   // ---- FINESTRELLA fissa in basso a destra (27/07, gemella della Chat):
   // misure fisse, bottone ingrandisci accanto alla ✕ ----

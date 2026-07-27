@@ -96,6 +96,12 @@ interface Props {
   targa?: string | null
   veicolo?: string | null
   cliente?: string | null
+  // ⭐ 27/07 sera (mockup approvato): modalità SOLO VISORE per la tendina —
+  // in pagina non si disegna NULLA (niente riquadro che arriva in ritardo e
+  // fa scattare la fila); il visore si apre quando `apriTrigger` cambia
+  // (la pillola Documenti lo incrementa), sul primo documento da verificare
+  soloVisore?: boolean
+  apriTrigger?: number
 }
 
 // ---- helper file ----
@@ -318,7 +324,7 @@ function PdfZoom({ src, badge }: { src: string; badge?: string }) {
 // COMPONENTE
 // ============================================================
 
-export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onStatoCambiato, onRicaricaPratica, compatta, targa, veicolo, cliente }: Props) {
+export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onStatoCambiato, onRicaricaPratica, compatta, targa, veicolo, cliente, soloVisore, apriTrigger }: Props) {
   const [docs, setDocs] = useState<DocRiga[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [dati, setDati] = useState<DatiPratica | null>(null)
@@ -385,6 +391,20 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     const tutti = totale > 0 && approvati === totale
     onStatoRef.current?.(tutti, totale, approvati)
   }, [docs])
+
+  // ⭐ Apertura del visore SU COMANDO dall'esterno (27/07 sera): la pillola
+  // Documenti della tendina incrementa `apriTrigger` e il visore si apre sul
+  // primo documento da verificare (altrimenti il primo caricato, poi le foto)
+  useEffect(() => {
+    if (!apriTrigger || loading) return
+    const ordinati = docs
+      .filter(d => d.richiede_upload && leggiFile(d.file_url).length > 0)
+      .sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0))
+    const primo = ordinati.find(d => d.stato === 'caricato') || ordinati[0]
+    if (primo) setVisoreIdx(ordinati.findIndex(d => d.id === primo.id))
+    else if (foto.length > 0) setVisoreIdx(ordinati.length)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apriTrigger, loading])
 
   // Col visore aperto la pagina dietro NON scorre (27/07): con la rotella
   // sull'elenco arrivato in fondo lo scroll trapassava alla pagina sotto
@@ -577,6 +597,9 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
   // -----------------------------
 
   if (loading) {
+    // In modalità solo-visore niente spinner in pagina: il caricamento
+    // avviene invisibile e la tendina non balla (27/07 sera)
+    if (soloVisore) return null
     return (
       <div className="p-6 flex items-center justify-center" style={STILE_CARD}>
         <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -737,7 +760,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
           Tesserine piccole senza nome (il nome al passaggio del mouse),
           badge di stato nell'angolo, "Verifica" nella testata apre il visore
           sul primo in attesa, clic su una tessera lo apre su quella. */}
-      {compatta && (
+      {compatta && !soloVisore && (
         <div style={{ flex: 1, minWidth: 245, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
           <div className="flex items-center gap-2" style={{ marginBottom: 9 }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33', minWidth: 0 }}>
@@ -811,7 +834,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
         </div>
       )}
 
-      {!compatta && (<>
+      {!compatta && !soloVisore && (<>
       {/* ⭐ 26/07: da chiusa TUTTA la card è cliccabile (non solo la testata),
           con accensione al passaggio del mouse */}
       <div

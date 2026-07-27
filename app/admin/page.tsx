@@ -252,9 +252,11 @@ export default function AdminDashboard() {
   // IN LINEA dentro il blocco (niente finestre sopra la pagina); il menu
   // Stato pratica è una nuvoletta attaccata al bottone, col motivo scritto
   // lì dentro per attesa e annullo.
-  // ⭐ 27/07: la pillola Documenti non c'è più (scheda sempre in vista);
-  // la Cronologia si apre a FINESTRELLA come la chat (scelta B su mockup)
-  const [selCronoAperta, setSelCronoAperta] = useState(false)
+  // ⭐ 27/07 sera (mockup approvato): la CRONOLOGIA è la prima SCHEDA della
+  // fila (via pillola e finestrella); la pillola Documenti apre DIRETTAMENTE
+  // il visore (niente riquadro che arriva in ritardo e fa scattare la fila):
+  // incrementa il trigger e il visore si apre sul primo da verificare
+  const [docTrigger, setDocTrigger] = useState<Record<string, number>>({})
   const [selChatAperta, setSelChatAperta] = useState(false)
   const [menuStato, setMenuStato] = useState<null | 'menu' | 'attesa' | 'annulla'>(null)
   const [motivoStato, setMotivoStato] = useState('')
@@ -276,7 +278,6 @@ export default function AdminDashboard() {
   const [nonLetti, setNonLetti] = useState<Record<string, number>>({})
 
   function apriPratica(p: Pratica) {
-    setSelCronoAperta(false)
     setSelChatAperta(false)
     setMenuStato(null)
     setMotivoStato('')
@@ -813,18 +814,20 @@ export default function AdminDashboard() {
                           della testata azzurra. Documenti e Chat aprono IN
                           LINEA qui sotto; Stato è una nuvoletta ancorata. */}
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', background: '#EFF6FF', padding: '0 16px 12px' }}>
-                        {/* ⭐ 27/07 (variante 3 su mockup): la pillola Documenti
-                            è SPARITA — la scheda Documenti sta sempre in vista
-                            in fila con le altre, dentro la tendina.
-                            ⭐ Ordine delle pillole deciso da Davide: Cronologia ·
-                            Chat · Stato pratica · Trattativa Extra · Assegnazione */}
+                        {/* ⭐ 27/07 sera (mockup approvato): la pillola Documenti
+                            TORNA e apre DIRETTAMENTE il visore sul primo da
+                            verificare (le miniature si caricano lì dentro, la
+                            tendina non balla). Ordine: Documenti · Chat ·
+                            Stato pratica · Trattativa Extra · Assegnazione. */}
                         <button
-                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelCronoAperta(a => !a) }}
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setDocTrigger(prev => ({ ...prev, [p.id]: (prev[p.id] ?? 0) + 1 })) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
-                          style={{ background: selCronoAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                          style={{ position: 'relative', background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 7 12 12 15.5 13.5" /></svg>
-                          Cronologia
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+                          Documenti
+                          <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{docStats[p.id] ? `${docStats[p.id].approvati}/${docStats[p.id].totale}` : '…'}</span>
+                          {(docStats[p.id]?.daVerificare ?? 0) > 0 && <span style={{ position: 'absolute', top: -3, right: -1, width: 10, height: 10, borderRadius: 999, background: '#DC2626', border: '2px solid #EFF6FF' }} />}
                         </button>
                         <button
                           onClick={() => { setMenuStato(null); setSelChatAperta(a => !a); if (selChatAperta) aggiornaContatori(p.id) }}
@@ -1025,6 +1028,19 @@ export default function AdminDashboard() {
                           pannello occupa la colonna DESTRA */}
                       <div style={{ padding: '12px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
                       <div style={{ flex: 1.55, minWidth: 0, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                        {/* ⭐ 27/07 sera (mockup approvato): la CRONOLOGIA è la
+                            PRIMA scheda della fila (al posto del riquadro
+                            documenti che caricava in ritardo) */}
+                        {aperta && (
+                          <CronologiaNote
+                            praticaId={p.id}
+                            praticaCreataIl={p.creato_il}
+                            refreshKey={0}
+                            aperta
+                            onToggle={() => {}}
+                            scheda
+                          />
+                        )}
                         <SezTendinaMod
                           titolo="Cliente"
                           inEdit={sezEdit === 'cliente'}
@@ -1162,23 +1178,25 @@ export default function AdminDashboard() {
                             ]),
                           ]}
                         />
-                        {/* ⭐ QUINTA SCHEDA Documenti (27/07, variante 3 su
-                            mockup): sempre in vista, in fila con le altre */}
-                        {aperta && (
-                          <DocumentiApprovazione
-                            praticaId={p.id}
-                            statoPratica={p.stato}
-                            aperta
-                            compatta
-                            targa={p.targa}
-                            veicolo={[[p.marca, p.modello].filter(Boolean).join(' '), p.anno].filter(Boolean).join(' · ') || null}
-                            cliente={p.nome_richiedente}
-                            onToggle={() => {}}
-                            onStatoCambiato={(tutti, totale, approvati) => setDocStats(prev => ({ ...prev, [p.id]: { totale, approvati, daVerificare: prev[p.id]?.daVerificare ?? 0 } }))}
-                            onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
-                          />
-                        )}
                       </div>
+                      {/* ⭐ DOCUMENTI SOLO-VISORE (27/07 sera): in pagina non
+                          disegna nulla — la pillola Documenti apre il visore
+                          via `apriTrigger`, le miniature si caricano lì */}
+                      {aperta && (
+                        <DocumentiApprovazione
+                          praticaId={p.id}
+                          statoPratica={p.stato}
+                          aperta
+                          soloVisore
+                          apriTrigger={docTrigger[p.id] ?? 0}
+                          targa={p.targa}
+                          veicolo={[[p.marca, p.modello].filter(Boolean).join(' '), p.anno].filter(Boolean).join(' · ') || null}
+                          cliente={p.nome_richiedente}
+                          onToggle={() => {}}
+                          onStatoCambiato={(tutti, totale, approvati) => setDocStats(prev => ({ ...prev, [p.id]: { totale, approvati, daVerificare: prev[p.id]?.daVerificare ?? 0 } }))}
+                          onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
+                        />
+                      )}
                       {aperta && selAssegnaAperta && (
                         <PannelloAssegnazioneTendina
                           pratica={p}
@@ -1188,33 +1206,20 @@ export default function AdminDashboard() {
                       )}
                       </div>
 
-                      {/* ⭐ FINESTRELLE (27/07): chat e cronologia vivono in un
-                          contenitore fisso UNICO in basso a destra, AFFIANCATE
-                          (cronologia a sinistra della chat) — mai sovrapposte,
-                          anche quando una delle due si ingrandisce */}
-                      {aperta && (selChatAperta || selCronoAperta) && (
-                        <div style={{ position: 'fixed', right: 16, bottom: 16, display: 'flex', gap: 12, alignItems: 'flex-end', zIndex: 50 }}>
-                          {selCronoAperta && (
-                            <CronologiaNote
-                              praticaId={p.id}
-                              praticaCreataIl={p.creato_il}
-                              refreshKey={0}
-                              aperta
-                              onToggle={() => setSelCronoAperta(false)}
-                              finestra
-                              titolo={`Cronologia · ${p.targa || 'senza targa'}`}
-                            />
-                          )}
-                          {selChatAperta && (
-                            <ChatAdmin
-                              praticaId={p.id}
-                              demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
-                              aperta
-                              onToggle={() => { setSelChatAperta(false); aggiornaContatori(p.id) }}
-                              finestra
-                              titolo={`${p.nome_richiedente || 'Cliente'} · ${p.targa || 'senza targa'}`}
-                            />
-                          )}
+                      {/* CHAT A FINESTRELLA (26/07, variante A su mockup):
+                          fissa in basso a destra, la pagina resta usabile.
+                          27/07 sera: la cronologia non è più finestrella,
+                          vive come prima scheda della fila. */}
+                      {aperta && selChatAperta && (
+                        <div style={{ position: 'fixed', right: 16, bottom: 16, display: 'flex', alignItems: 'flex-end', zIndex: 50 }}>
+                          <ChatAdmin
+                            praticaId={p.id}
+                            demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
+                            aperta
+                            onToggle={() => { setSelChatAperta(false); aggiornaContatori(p.id) }}
+                            finestra
+                            titolo={`${p.nome_richiedente || 'Cliente'} · ${p.targa || 'senza targa'}`}
+                          />
                         </div>
                       )}
                     </div>
