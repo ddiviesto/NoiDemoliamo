@@ -782,10 +782,19 @@ export default function AdminDashboard() {
                     {/* Stato + demolitore */}
                     <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
                       {/* ⭐ 27/07: rosso TENUE anche qui — gli stessi colori
-                          della pillola "Da contattare" accesa nel flusso */}
-                      <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#FBDADA' : m.bg, color: (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#9B1C1C' : m.text, padding: '4px 12px' }}>
-                        {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
-                      </span>
+                          della pillola "Da contattare" accesa nel flusso.
+                          ⭐ 27/07 sera: a pratica APERTA la testata è azzurra
+                          come la pillola del flusso — per non mimetizzarsi la
+                          pillola diventa BIANCA col bordino del suo colore */}
+                      {(() => {
+                        const pillBg = (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#FBDADA' : m.bg
+                        const pillText = (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#9B1C1C' : m.text
+                        return (
+                          <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: aperta ? '#fff' : pillBg, color: pillText, border: `1px solid ${aperta ? `${pillText}55` : 'transparent'}`, padding: '3px 11px' }}>
+                            {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
+                          </span>
+                        )
+                      })()}
                       {/* Il PERCHÉ dell'attesa, sempre sott'occhio in lista —
                           ⭐ 27/07 sera: allineato al TESTO della pillola */}
                       {p.in_attesa && !chiusa && p.attesa_motivo && (
