@@ -58,6 +58,23 @@ interface Pratica {
   spazio_carro_attrezzi: string | null
   delegato_nome: string | null
   delegato_telefono: string | null
+  // ⭐ Assegnazione e importo nella tendina (27/07)
+  fee_concordata: number | null
+  data_assegnazione: string | null
+}
+
+// Candidato del pannello assegnazione (27/07): la classifica del dry-run
+// arricchita dal server con fee applicabile, zona della tariffa e carico
+interface CandidatoTendina {
+  id: string
+  ragione_sociale: string
+  citta?: string | null
+  distanza_km?: number
+  durata_minuti?: number
+  velocita_media_giorni?: number
+  fee_applicabile?: number | null
+  zona_fee?: string | null
+  da_ritirare?: number
 }
 
 // Etichette leggibili per la tendina
@@ -74,7 +91,7 @@ type SezioneTendina = 'cliente' | 'casistiche' | 'veicolo' | 'ritiro'
 const CAMPO_TENDINA = 'w-full h-[22px] bg-transparent border-0 border-b-2 border-blue-300 focus:border-blue-600 rounded-none outline-none text-[11.5px] text-right text-gray-900 px-0.5 transition-colors placeholder:text-gray-400'
 
 // Un'unica lista di campi per il caricamento e le ricariche (stessa forma)
-const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono'
+const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione'
 
 // ============================================================
 // METADATI STATO (etichetta + colori pillola + barra colorata)
@@ -222,6 +239,17 @@ export default function AdminDashboard() {
   const [motivoStato, setMotivoStato] = useState('')
   const [statoBusy, setStatoBusy] = useState(false)
   const [statoErr, setStatoErr] = useState<string | null>(null)
+  // ⭐ ASSEGNAZIONE, IMPORTO ed ELIMINAZIONE nella tendina (27/07, mockup
+  // definitivo): pannello assegnazione a DESTRA delle schede, importo a
+  // nuvoletta sulla pillola, cestino tondo con nuvoletta a due scelte
+  const [selAssegnaAperta, setSelAssegnaAperta] = useState(false)
+  const [nuvolaImporto, setNuvolaImporto] = useState(false)
+  const [importoVal, setImportoVal] = useState('')
+  const [importoBusy, setImportoBusy] = useState(false)
+  const [importoErr, setImportoErr] = useState<string | null>(null)
+  const [nuvolaElimina, setNuvolaElimina] = useState(false)
+  const [eliminando, setEliminando] = useState<null | 'pratica' | 'account'>(null)
+  const [eliminaErr, setEliminaErr] = useState<string | null>(null)
   // Contatori per i bottoni (caricati all'apertura della tendina)
   const [docStats, setDocStats] = useState<Record<string, { totale: number; approvati: number; daVerificare: number }>>({})
   const [nonLetti, setNonLetti] = useState<Record<string, number>>({})
@@ -233,6 +261,12 @@ export default function AdminDashboard() {
     setMotivoStato('')
     setStatoErr(null)
     setSezEdit(null)
+    setSelAssegnaAperta(false)
+    setNuvolaImporto(false)
+    setImportoVal('')
+    setImportoErr(null)
+    setNuvolaElimina(false)
+    setEliminaErr(null)
     setSelId(prev => (prev === p.id ? null : p.id))
     if (p.user_id && emailAccounts[p.id] === undefined) {
       supabase.from('utenti').select('email').eq('id', p.user_id).single()
@@ -269,6 +303,53 @@ export default function AdminDashboard() {
         : r.conversazione === 'demolitore_noidemoliamo'
     ).length
     setNonLetti(prev => ({ ...prev, [praticaId]: n }))
+  }
+
+  // ⭐ IMPORTO una tantum dalla nuvoletta (27/07): stesso server del
+  // dettaglio (/api/pratica-fee); vuoto o rimosso = tariffa di zona
+  async function salvaImporto(p: Pratica, fee: number | null) {
+    setImportoBusy(true)
+    setImportoErr(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/pratica-fee', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: p.id, fee }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setImportoErr(data?.error || 'Errore nel salvataggio'); setImportoBusy(false); return }
+      setNuvolaImporto(false)
+      setImportoVal('')
+      await ricaricaPratiche()
+    } catch {
+      setImportoErr('Errore di rete.')
+    }
+    setImportoBusy(false)
+  }
+
+  // ⭐ ELIMINAZIONE dalla tendina (27/07): nuvoletta a due scelte sul
+  // cestino della fila azioni, stesso endpoint del dettaglio
+  async function eliminaDallaTendina(p: Pratica, eliminaAccount: boolean) {
+    setEliminando(eliminaAccount ? 'account' : 'pratica')
+    setEliminaErr(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/elimina-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: p.id, elimina_account: eliminaAccount }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setEliminaErr(data?.error || 'Errore durante l\'eliminazione'); setEliminando(null); return }
+      if (eliminaAccount && data?.account_non_eliminato_motivo) alert(data.account_non_eliminato_motivo)
+      setNuvolaElimina(false)
+      setSelId(null)
+      await ricaricaPratiche()
+    } catch {
+      setEliminaErr('Errore di rete.')
+    }
+    setEliminando(null)
   }
 
   // ⭐ MODIFICA SUL POSTO nelle sezioni della tendina (27/07, variante 1 su
@@ -742,7 +823,100 @@ export default function AdminDashboard() {
                             </>
                           )}
                         </span>
+                        {/* ⭐ ASSEGNAZIONE (27/07, mockup definitivo): apre il
+                            pannello a DESTRA delle schede nella tendina */}
+                        <button
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelAssegnaAperta(a => !a) }}
+                          className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
+                          style={{ background: selAssegnaAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
+                          Assegnazione
+                          {p.demolitore_id && (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                          )}
+                        </button>
+                        {/* ⭐ IMPORTO una tantum: nuvoletta ancorata alla pillola */}
+                        <span style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => { setMenuStato(null); setNuvolaElimina(false); setNuvolaImporto(v => { const nv = !v; if (nv) { setImportoVal(p.fee_concordata != null ? String(p.fee_concordata) : ''); setImportoErr(null) } return nv }) }}
+                            className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
+                            style={{ background: nuvolaImporto ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
+                            Importo
+                            {p.fee_concordata != null && <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{p.fee_concordata}€</span>}
+                          </button>
+                          {nuvolaImporto && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => { if (!importoBusy) setNuvolaImporto(false) }} />
+                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 250, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: 12, zIndex: 6 }}>
+                                <div className="text-[12px] font-bold" style={{ color: '#0F1B33' }}>Importo una tantum</div>
+                                <div className="text-[10.5px] mt-0.5" style={{ color: '#8B95A5' }}>
+                                  {p.fee_concordata != null ? 'Per questa pratica vale questo importo, non le tariffe di zona.' : 'Ora vale la tariffa di zona del demolitore. Se serve un accordo speciale, scrivi l\'importo.'}
+                                </div>
+                                <div className="flex items-center gap-1.5 mt-2">
+                                  <input
+                                    value={importoVal}
+                                    onChange={e => { setImportoVal(e.target.value); setImportoErr(null) }}
+                                    inputMode="numeric"
+                                    placeholder="Es. 300"
+                                    className="w-full rounded-lg px-2.5 py-1.5 text-[12px] outline-none"
+                                    style={{ border: '1.5px solid #E5E7EB', color: '#111827' }}
+                                  />
+                                  <span className="text-[12px] font-bold" style={{ color: '#4B5563' }}>€</span>
+                                </div>
+                                {importoErr && <div className="text-[10.5px] text-red-600 mt-1">{importoErr}</div>}
+                                <div className="flex items-center gap-1.5 justify-end mt-2">
+                                  {p.fee_concordata != null && (
+                                    <button onClick={() => salvaImporto(p, null)} disabled={importoBusy} className="mr-auto disabled:opacity-50" style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 10.5, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Torna alla tariffa di zona</button>
+                                  )}
+                                  <button
+                                    onClick={() => { const n = parseFloat(importoVal.replace(',', '.')); if (isNaN(n) || n <= 0) { setImportoErr('Scrivi un importo valido.'); return } salvaImporto(p, n) }}
+                                    disabled={importoBusy}
+                                    className="transition-colors hover:bg-blue-700 disabled:opacity-50"
+                                    style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}
+                                  >
+                                    {importoBusy ? 'Salvo…' : 'Salva'}
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </span>
                         <span style={{ flex: 1 }} />
+                        {/* ⭐ CESTINO (27/07): nuvoletta a due scelte, come nel dettaglio */}
+                        <span style={{ position: 'relative' }}>
+                          <button
+                            onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(v => !v); setEliminaErr(null) }}
+                            aria-label="Elimina definitivamente"
+                            title="Elimina definitivamente"
+                            className="transition-colors hover:bg-red-50"
+                            style={{ width: 29, height: 29, borderRadius: 999, background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          >
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+                          </button>
+                          {nuvolaElimina && (
+                            <>
+                              <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => { if (!eliminando) setNuvolaElimina(false) }} />
+                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, width: 260, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: 8, zIndex: 6 }}>
+                                <button onClick={() => eliminaDallaTendina(p, false)} disabled={!!eliminando} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-red-50 disabled:opacity-40" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                  <span>
+                                    <span className="block text-[12px] font-bold" style={{ color: '#A94444' }}>{eliminando === 'pratica' ? 'Elimino…' : 'Elimina solo la pratica'}</span>
+                                    <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>documenti e foto compresi · l&apos;account resta</span>
+                                  </span>
+                                </button>
+                                <button onClick={() => eliminaDallaTendina(p, true)} disabled={!!eliminando} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-red-50 disabled:opacity-40" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                                  <span>
+                                    <span className="block text-[12px] font-bold" style={{ color: '#A94444' }}>{eliminando === 'account' ? 'Elimino…' : 'Elimina pratica e account'}</span>
+                                    <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>solo se il cliente non ha altre pratiche</span>
+                                  </span>
+                                </button>
+                                {eliminaErr && <div className="text-[10.5px] text-red-600 px-3 pb-1.5">{eliminaErr}</div>}
+                              </div>
+                            </>
+                          )}
+                        </span>
                         <button
                           onClick={() => router.push(`/admin/pratiche/${p.id}`)}
                           className="flex items-center gap-1.5 transition-colors hover:bg-blue-700"
@@ -753,7 +927,11 @@ export default function AdminDashboard() {
                         </button>
                       </div>
 
-                      <div style={{ padding: '12px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                      {/* ⭐ 27/07 (mockup definitivo): col pannello assegnazione
+                          aperto le 4 schede vanno a SINISTRA (su due file) e il
+                          pannello occupa la colonna DESTRA */}
+                      <div style={{ padding: '12px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                      <div style={{ flex: 1.55, minWidth: 0, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                         <SezTendinaMod
                           titolo="Cliente"
                           inEdit={sezEdit === 'cliente'}
@@ -879,6 +1057,14 @@ export default function AdminDashboard() {
                             ]),
                           ]}
                         />
+                      </div>
+                      {aperta && selAssegnaAperta && (
+                        <PannelloAssegnazioneTendina
+                          pratica={p}
+                          demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
+                          onFatto={ricaricaPratiche}
+                        />
+                      )}
                       </div>
 
                       {/* DOCUMENTI e CHAT in linea (26/07): le card VERE del
@@ -1108,6 +1294,234 @@ function IconaVeicolo({ tipo }: { tipo: string | null }) {
 // Fase del flusso come PILLOLA TONDA (variante B scelta da Davide su
 // mockup 23/07): numero nel tondino, nome accanto, tutto in una riga
 // bassa. `rossa` = versione allerta (stessa forma, colorata di rosso).
+// ============================================================
+// ⭐ PANNELLO ASSEGNAZIONE nella tendina (27/07, mockup definitivo):
+// colonna DESTRA accanto alle schede. All'apertura carica da solo la
+// classifica (dry-run arricchito dal server: km, giorni, carico "da
+// ritirare", fee applicabile); "Scegli tu" mostra tutti i demolitori
+// attivi nello stesso riquadro. L'elenco scorre DENTRO il riquadro.
+// ============================================================
+
+function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto }: {
+  pratica: Pratica
+  demolitoreNome: string | null
+  onFatto: () => void
+}) {
+  const assegnata = !!pratica.demolitore_id
+  const puoAssegnare = ['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(pratica.stato)
+  const [vista, setVista] = useState<'ferma' | 'classifica' | 'tutti'>('ferma')
+  const [caricando, setCaricando] = useState(false)
+  const [candidati, setCandidati] = useState<CandidatoTendina[]>([])
+  const [vincitoreId, setVincitoreId] = useState<string | null>(null)
+  const [motivo, setMotivo] = useState<string | null>(null)
+  const [tutti, setTutti] = useState<CandidatoTendina[]>([])
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [errore, setErrore] = useState<string | null>(null)
+  const [confermaRimuovi, setConfermaRimuovi] = useState(false)
+  const [rimuovendo, setRimuovendo] = useState(false)
+
+  async function caricaClassifica() {
+    setVista('classifica')
+    setCaricando(true)
+    setErrore(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/assegna-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, dry_run: true }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setErrore(data?.error || 'Errore nel calcolo'); setCandidati([]) }
+      else {
+        setCandidati(data.candidati || [])
+        setVincitoreId(data.vincitore?.id ?? null)
+        setMotivo(data.motivo ?? null)
+      }
+    } catch {
+      setErrore('Errore di rete durante il calcolo.')
+    }
+    setCaricando(false)
+  }
+
+  // All'apertura del pannello la classifica si carica da sola
+  useEffect(() => {
+    if (!assegnata && puoAssegnare) caricaClassifica()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  async function caricaTutti() {
+    setVista('tutti')
+    setCaricando(true)
+    setErrore(null)
+    const { data } = await supabase.from('demolitori').select('id, ragione_sociale, citta').eq('stato', 'attivo').order('ragione_sociale')
+    setTutti((data as CandidatoTendina[]) || [])
+    setCaricando(false)
+  }
+
+  async function assegna(demolitoreId: string, manuale: boolean) {
+    setBusyId(demolitoreId)
+    setErrore(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/assegna-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, demolitore_id: demolitoreId, manuale }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setErrore(data?.error || 'Errore assegnazione'); setBusyId(null); return }
+      setVista('ferma')
+      onFatto()
+    } catch {
+      setErrore('Errore di rete durante l\'assegnazione.')
+    }
+    setBusyId(null)
+  }
+
+  async function rimuovi() {
+    setRimuovendo(true)
+    setErrore(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/assegna-pratica', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, disassegna: true }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) { setErrore(data?.error || 'Errore durante la rimozione'); setRimuovendo(false); return }
+      setConfermaRimuovi(false)
+      onFatto()
+      caricaClassifica()
+    } catch {
+      setErrore('Errore di rete.')
+    }
+    setRimuovendo(false)
+  }
+
+  const chipCarico = (n: number | undefined) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: (n ?? 0) >= 10 ? '#FDF7EA' : '#F1F5F9', color: (n ?? 0) >= 10 ? '#854F0B' : '#475569', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '2px 8px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><rect x="2" y="9" width="12" height="6" rx="1" /><path d="M14 10h4l3 3v2h-2" /><circle cx="6" cy="17" r="1.6" /><circle cx="17" cy="17" r="1.6" /></svg>
+      {n ?? 0} da ritirare
+    </span>
+  )
+  const ZONA_LABEL: Record<string, string> = { concordato: 'Importo concordato per questa pratica', comune: 'Tariffa del comune', provincia: 'Tariffa della provincia', regione: 'Tariffa della regione', base: 'Fee base' }
+
+  const rigaCandidato = (c: CandidatoTendina, i: number, daClassifica: boolean) => {
+    const top = daClassifica && vincitoreId === c.id
+    const vel = c.velocita_media_giorni != null && c.velocita_media_giorni < 999 ? `${c.velocita_media_giorni.toFixed(1)} gg` : 'nuovo'
+    return (
+      <div key={c.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 9px', borderBottom: '1px solid #F5F7FA', fontSize: 12, background: top ? '#F8FAFF' : 'transparent' }}>
+        {daClassifica && <span style={{ width: 19, height: 19, borderRadius: 999, background: '#EFF4FF', color: '#1D4ED8', fontSize: 10.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>}
+        <span style={{ flex: 1, minWidth: 0 }}>
+          <span style={{ display: 'block', fontWeight: 700, color: '#111827', fontSize: 12, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.ragione_sociale}</span>
+          <span style={{ display: 'block', color: '#6B7280', fontSize: 10.5, marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            {c.citta || ''}
+            {c.distanza_km != null && <> · <b style={{ color: '#374151' }}>{Math.round(c.distanza_km)} km</b></>}
+            {daClassifica && <> · {vel}</>}
+          </span>
+        </span>
+        {daClassifica && chipCarico(c.da_ritirare)}
+        {daClassifica && c.fee_applicabile != null && (
+          <span title={c.zona_fee ? ZONA_LABEL[c.zona_fee] : undefined} style={{ fontWeight: 800, color: '#111827', fontSize: 12, flexShrink: 0 }}>{c.fee_applicabile}€</span>
+        )}
+        <button
+          onClick={() => assegna(c.id, daClassifica ? c.id !== vincitoreId : true)}
+          disabled={busyId != null}
+          className="transition-colors disabled:opacity-50"
+          style={top ? { background: '#2563EB', border: '1.5px solid #2563EB', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 10px', flexShrink: 0, cursor: 'pointer' } : { background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 10px', flexShrink: 0, cursor: 'pointer' }}
+        >
+          {busyId === c.id ? 'Assegno…' : 'Assegna'}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ flex: 1.3, minWidth: 440, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '10px 12px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6, flexWrap: 'wrap' }}>
+        <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>
+          Assegnazione
+          {vista === 'classifica' && !caricando && candidati.length > 0 && <span style={{ fontWeight: 400, fontSize: 10.5, color: '#64748B' }}> · {candidati.length} {candidati.length === 1 ? 'demolitore copre' : 'demolitori coprono'} la zona</span>}
+        </span>
+        <span style={{ flex: 1 }} />
+        {assegnata ? (
+          !confermaRimuovi && (
+            <>
+              <button onClick={caricaClassifica} disabled={rimuovendo} className="transition-colors hover:bg-blue-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Riassegna</button>
+              <button onClick={() => setConfermaRimuovi(true)} disabled={rimuovendo} className="transition-colors hover:bg-red-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Rimuovi</button>
+            </>
+          )
+        ) : puoAssegnare ? (
+          <>
+            <button onClick={() => vincitoreId && assegna(vincitoreId, false)} disabled={busyId != null || caricando || !vincitoreId} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: '1.5px solid #2563EB', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Assegna in automatico</button>
+            <button onClick={caricaTutti} disabled={busyId != null} className="transition-colors hover:bg-blue-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', whiteSpace: 'nowrap', cursor: 'pointer' }}>Scegli tu</button>
+          </>
+        ) : null}
+      </div>
+
+      {/* Già assegnata: demolitore in vista + rimozione con conferma in linea */}
+      {assegnata && (
+        <div style={{ borderRadius: 10, padding: '9px 11px', background: '#E6F1FB', border: '1px solid #B5D4F4', marginBottom: vista === 'classifica' ? 8 : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1E4E8C" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: '#0C447C' }}>{demolitoreNome || 'Demolitore'}</span>
+            {pratica.data_assegnazione && (
+              <span style={{ fontSize: 10.5, color: '#1E4E8C' }}>· assegnata il {new Date(pratica.data_assegnazione).toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit' })}</span>
+            )}
+          </div>
+          {confermaRimuovi && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10.5, color: '#1E4E8C', flex: 1, minWidth: 160 }}>La pratica torna da assegnare e il cliente vedrà &quot;stiamo scegliendo un nuovo demolitore&quot;.</span>
+              <button onClick={() => setConfermaRimuovi(false)} disabled={rimuovendo} style={{ background: 'none', border: 'none', color: '#5B6779', fontSize: 10.5, fontWeight: 600, cursor: 'pointer' }}>Annulla</button>
+              <button onClick={rimuovi} disabled={rimuovendo} className="transition-colors hover:!bg-[#D25151] disabled:opacity-50" style={{ background: '#E15E5E', border: 'none', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer' }}>{rimuovendo ? 'Rimuovo…' : 'Sì, rimuovi'}</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Non ancora assegnabile: i documenti prima di tutto */}
+      {!assegnata && !puoAssegnare && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 11.5, color: '#9AA7B5', padding: '6px 2px' }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
+          Prima approva tutti i documenti
+        </div>
+      )}
+
+      {errore && <div style={{ fontSize: 10.5, color: '#C0392B', fontWeight: 600, marginBottom: 6 }}>{errore}</div>}
+
+      {/* ELENCO con scroll DENTRO il riquadro (mockup: rotella sull'elenco,
+          la pagina non si muove) */}
+      {(vista === 'classifica' || vista === 'tutti') && (!assegnata || vista === 'classifica') && (
+        caricando ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', padding: '14px 0', fontSize: 11.5, color: '#6B7280' }}>
+            <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />Calcolo in corso…
+          </div>
+        ) : vista === 'tutti' ? (
+          tutti.length === 0 ? (
+            <p style={{ fontSize: 11.5, color: '#9AA7B5', padding: '4px 2px' }}>Nessun demolitore attivo nel sistema.</p>
+          ) : (
+            <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', border: '1px solid #EEF1F5', borderRadius: 10, maxHeight: 150 }}>
+              {tutti.map((c, i) => rigaCandidato(c, i, false))}
+            </div>
+          )
+        ) : candidati.length === 0 ? (
+          <div style={{ fontSize: 11.5, color: '#6B7280', padding: '4px 2px' }}>
+            <p style={{ marginBottom: 6 }}>{motivo || 'Nessun demolitore copre questa zona.'}</p>
+            <button onClick={caricaTutti} style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>Mostra tutti i demolitori attivi</button>
+          </div>
+        ) : (
+          <div style={{ overflowY: 'auto', overscrollBehavior: 'contain', border: '1px solid #EEF1F5', borderRadius: 10, maxHeight: 150 }}>
+            {candidati.map((c, i) => rigaCandidato(c, i, true))}
+          </div>
+        )
+      )}
+    </div>
+  )
+}
+
 function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
   nome: string
   valore: number

@@ -115,7 +115,7 @@ export async function POST(req: NextRequest) {
     // Carico la pratica
     const { data: pratica, error: errPratica } = await supabase
       .from('pratiche')
-      .select('id, comune_ritiro, provincia_ritiro, lat, lng, stato, demolitore_id')
+      .select('id, comune_ritiro, provincia_ritiro, lat, lng, stato, demolitore_id, fee_concordata')
       .eq('id', praticaId)
       .single()
     if (errPratica || !pratica) {
@@ -209,13 +209,45 @@ export async function POST(req: NextRequest) {
     }
     const risultato = await calcolaAssegnazione(supabase, praticaInput, googleKey, regioneRitiro)
 
-    // MODALITÀ "CALCOLA E MOSTRA" (dry-run): restituisce la classifica senza scrivere nulla
+    // MODALITÀ "CALCOLA E MOSTRA" (dry-run): restituisce la classifica senza
+    // scrivere nulla. ⭐ 27/07 (pannello tendina): ogni candidato è arricchito
+    // con la FEE APPLICABILE (fee_concordata della pratica, altrimenti tariffa
+    // più specifica comune→provincia→regione, altrimenti fee base), la zona
+    // della tariffa e il CARICO "da ritirare" (assegnate non ancora ritirate).
     if (dryRun) {
+      const cands = risultato.candidati_valutati
+      const ids = cands.map(c => c.id)
+      let candidatiArricchiti: unknown[] = cands
+      if (ids.length > 0) {
+        const [{ data: tariffe }, { data: basi }, { data: nonRitirate }] = await Promise.all([
+          supabase.from('demolitori_tariffe').select('demolitore_id, tipo, nome, fee').in('demolitore_id', ids),
+          supabase.from('demolitori').select('id, fee_per_pratica').in('id', ids),
+          supabase.from('pratiche').select('demolitore_id').in('demolitore_id', ids).is('data_ritiro_effettuato', null).not('stato', 'in', '(completata,annullata)'),
+        ])
+        const basiMap = new Map((basi || []).map(b => [b.id as string, b.fee_per_pratica as number | null]))
+        const carico = new Map<string, number>()
+        for (const r of nonRitirate || []) carico.set(r.demolitore_id as string, (carico.get(r.demolitore_id as string) || 0) + 1)
+        const stesso = (a?: string | null, b?: string | null) => !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase()
+        candidatiArricchiti = cands.map(c => {
+          const mie = (tariffe || []).filter(t => t.demolitore_id === c.id)
+          let fee: number | null = null
+          let zonaFee: string | null = null
+          const tComune = mie.find(t => t.tipo === 'comune' && stesso(t.nome, pratica.comune_ritiro))
+          const tProvincia = mie.find(t => t.tipo === 'provincia' && stesso(t.nome, provinciaNome))
+          const tRegione = mie.find(t => t.tipo === 'regione' && stesso(t.nome, regioneRitiro))
+          if (pratica.fee_concordata != null) { fee = pratica.fee_concordata; zonaFee = 'concordato' }
+          else if (tComune) { fee = tComune.fee; zonaFee = 'comune' }
+          else if (tProvincia) { fee = tProvincia.fee; zonaFee = 'provincia' }
+          else if (tRegione) { fee = tRegione.fee; zonaFee = 'regione' }
+          else { fee = basiMap.get(c.id) ?? null; zonaFee = 'base' }
+          return { ...c, fee_applicabile: fee, zona_fee: zonaFee, da_ritirare: carico.get(c.id) ?? 0 }
+        })
+      }
       return NextResponse.json({
         success: true,
         dry_run: true,
         vincitore: risultato.vincitore,
-        candidati: risultato.candidati_valutati,
+        candidati: candidatiArricchiti,
         motivo: risultato.motivo_fallimento ?? null,
       })
     }
