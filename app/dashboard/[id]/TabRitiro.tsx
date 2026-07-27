@@ -89,7 +89,6 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
   const [docs, setDocs] = useState<DocConsegna[]>([])
   const [loading, setLoading] = useState(true)
   const [scaricandoId, setScaricandoId] = useState<string | null>(null)
-  const [nomeDemolitore, setNomeDemolitore] = useState<string | null>(null)
 
   const carica = useCallback(async (spinnerIniziale = false) => {
     if (spinnerIniziale) setLoading(true)
@@ -128,13 +127,6 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
     tabelle: [{ tabella: 'pratica_documenti_checklist', filtro: `pratica_id=eq.${pratica.id}` }],
     onCambio: () => carica(),
   })
-
-  // Il nome del demolitore per il riquadro blu (se non leggibile: frase generica)
-  useEffect(() => {
-    if (!pratica.demolitore_id) { setNomeDemolitore(null); return }
-    supabase.from('demolitori').select('ragione_sociale').eq('id', pratica.demolitore_id).maybeSingle()
-      .then(({ data }) => setNomeDemolitore(data?.ragione_sociale || null))
-  }, [pratica.demolitore_id])
 
   // Scarica un modulo PDF (l'endpoint traccia anche scaricato_il)
   async function scaricaModulo(doc: DocConsegna) {
@@ -188,7 +180,9 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
           <span style={{ flex: 1, minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: '#BFDBFE' }}>Ritiro programmato</span>
             <span style={{ display: 'block', fontSize: 14.5, fontWeight: 800, marginTop: 1 }}>{formattaDataRitiro(pratica.data_ritiro_prevista!)}</span>
-            <span style={{ display: 'block', fontSize: 11, color: '#DBEAFE', marginTop: 1 }}>{nomeDemolitore || 'Il demolitore'} passa a ritirare il mezzo</span>
+            {/* Decisione Davide 28/07: il cliente non deve vedere CHI è il
+                demolitore — frase generica, niente nomi */}
+            <span style={{ display: 'block', fontSize: 11, color: '#DBEAFE', marginTop: 1 }}>Il demolitore passa a ritirare il mezzo</span>
           </span>
         </div>
       )}
