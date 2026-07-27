@@ -203,12 +203,15 @@ function formatAttesa(min: number): string {
 // COMPONENTE
 // ============================================================
 
-type Filtro = 'tutte' | 'moduli' | 'contattare' | 'attesa' | 'approvare' | 'assegnare' | 'assegnate' | 'ritirate' | 'completate' | 'annullate' | 'allerta8h'
+type Filtro = 'tutte' | 'moduli' | 'contattare' | 'attesa' | 'approvare' | 'assegnare' | 'assegnate' | 'programmato' | 'ritirate' | 'certificati' | 'pra' | 'completate' | 'annullate' | 'allerta8h'
 
 // ============================================================
 // PIPELINE: ogni pratica appartiene a UN solo riquadro del flusso.
 // 1 Moduli inseriti → 2 Da contattare → 3 Documenti da approvare →
-// 4 Da assegnare → 5 Assegnate → 6 Ritirate (fatturazione) → 7 Completate
+// 4 Da assegnare → 5 Assegnate → 6 Ritiro Programmato → 7 Ritirate
+// (Attesa Certificati / Attesa PRA, fatturazione) → 8 Completate.
+// ⭐ 27/07 (variante B su mockup): "Ritirata" nella fila è la SOMMA di
+// Attesa Certificati + Attesa PRA (colonnina come Assegnata/Allerta).
 // La pratica è COMPLETATA solo col certificato di cancellazione targhe PRA.
 // ============================================================
 
@@ -217,8 +220,10 @@ function bucketDi(p: Pratica): Filtro {
   if (p.stato === 'completata') return 'completate'
   // In attesa (pausa dell'admin): fuori dal flusso finché non riprende
   if (p.in_attesa) return 'attesa'
-  if (['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra'].includes(p.stato)) return 'ritirate'
-  if (['assegnata', 'in_attesa_conferma_cliente', 'ritiro_confermato'].includes(p.stato)) return 'assegnate'
+  if (p.stato === 'in_attesa_cert_radiazione_pra') return 'pra'
+  if (['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione'].includes(p.stato)) return 'certificati'
+  if (p.stato === 'ritiro_confermato') return 'programmato'
+  if (['assegnata', 'in_attesa_conferma_cliente'].includes(p.stato)) return 'assegnate'
   if (['da_assegnare', 'in_assegnazione_manuale', 'in_attesa_assegnazione'].includes(p.stato)) return 'assegnare'
   if (daContattare(p)) return 'contattare'
   if (p.stato === 'in_attesa_approvazione_admin') return 'approvare'
@@ -555,6 +560,8 @@ export default function AdminDashboard() {
     const b = bucketDi(p)
     if (filtro === 'tutte') { if (b === 'annullate') return false }
     else if (filtro === 'allerta8h') { if (!allerta8h(p)) return false }
+    // "Ritirata" è il macro-filtro della colonnina: somma certificati + PRA
+    else if (filtro === 'ritirate') { if (b !== 'certificati' && b !== 'pra') return false }
     else if (b !== filtro) return false
     if (q) {
       const blob = [p.targa, p.nome_richiedente, p.telefono, p.marca, p.modello, p.comune_ritiro].filter(Boolean).join(' ').toLowerCase()
@@ -644,7 +651,15 @@ export default function AdminDashboard() {
                   title={nAllerta8h > 0 ? 'Il demolitore non ha fissato il ritiro nei tempi' : 'Demolitori nei tempi: nessun ritiro in ritardo'} />
               </div>
               <FrecciaFase />
-              <PillolaFase nome="Ritirata" valore={conta('ritirate')} attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
+              {/* ⭐ 27/07 (variante B su mockup): Ritiro Programmato in fila e
+                  colonnina "Ritirata" = somma di Attesa Certificati + Attesa PRA */}
+              <PillolaFase nome="Ritiro Programmato" valore={conta('programmato')} attivo={filtro === 'programmato'} onClick={() => setFiltro(filtro === 'programmato' ? 'tutte' : 'programmato')} />
+              <FrecciaFase />
+              <div className="flex flex-col items-stretch gap-1.5">
+                <PillolaFase nome="Ritirata" valore={conta('certificati') + conta('pra')} attivo={filtro === 'ritirate'} onClick={() => setFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
+                <PillolaFase nome="Attesa Certificati" valore={conta('certificati')} attivo={filtro === 'certificati'} onClick={() => setFiltro(filtro === 'certificati' ? 'tutte' : 'certificati')} />
+                <PillolaFase nome="Attesa PRA" valore={conta('pra')} attivo={filtro === 'pra'} onClick={() => setFiltro(filtro === 'pra' ? 'tutte' : 'pra')} />
+              </div>
               <FrecciaFase />
               <PillolaFase nome="Completata" valore={conta('completate')} attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
             </div>
