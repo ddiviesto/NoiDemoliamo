@@ -1,9 +1,20 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { Pratica } from './page'
+
+// ⭐ 28/07 (richiesta Davide): nella chat il logo VERO di NoiDemoliamo
+// al posto della "N" nel tondino scuro
+function LogoNoiDemoliamo({ size }: { size: number }) {
+  return (
+    <span style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: '#fff', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={size} height={size} style={{ objectFit: 'contain' }} />
+    </span>
+  )
+}
 
 interface Messaggio {
   id: string
@@ -104,7 +115,7 @@ export default function TabChat({ pratica, onMessaggiLetti }: Props) {
               : 'bg-gray-100 border-2 border-transparent text-gray-600'
           }`}
         >
-          <div className="w-6 h-6 bg-[#0d2144] rounded-full flex items-center justify-center text-white text-[10px] font-bold">N</div>
+          <LogoNoiDemoliamo size={24} />
           NoiDemoliamo
         </button>
         <button
@@ -302,12 +313,13 @@ function Chat({
     <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col" style={{ minHeight: 380 }}>
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2.5">
-        <div
-          className="w-9 h-9 flex items-center justify-center text-white text-sm font-bold flex-shrink-0"
-          style={isAdmin ? { backgroundColor: '#0d2144', borderRadius: '50%' } : { background: '#DBEAFE', borderRadius: 10 }}
-        >
-          {isAdmin ? 'N' : <IconaDemolitore size={20} color="#2563eb" />}
-        </div>
+        {isAdmin ? (
+          <LogoNoiDemoliamo size={36} />
+        ) : (
+          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0" style={{ background: '#DBEAFE', borderRadius: 10 }}>
+            <IconaDemolitore size={20} color="#2563eb" />
+          </div>
+        )}
         <div className="flex-1 min-w-0">
           <div className="text-sm font-semibold text-gray-900">{headerNome}</div>
           <div className="text-[11px] text-green-600 font-medium">{headerSubtitle}</div>

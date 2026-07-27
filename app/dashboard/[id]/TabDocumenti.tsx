@@ -264,9 +264,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const [inviandoId, setInviandoId] = useState<string | null>(null)
   const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
   const [sistematiAperti, setSistematiAperti] = useState(false)
-  const [ritiroAperto, setRitiroAperto] = useState(false)
-  // Download di un modulo PDF compilato (box verde)
-  const [scaricandoId, setScaricandoId] = useState<string | null>(null)
+  // ⭐ 28/07: il box "da portare al ritiro" (e il download dei moduli) si è
+  // trasferito nella nuova tab Ritiro (TabRitiro.tsx)
   // Card di caricamento foto: si apre toccando il banner giallo, la chiude
   // il cliente con "Ho finito con le foto"
   const [cardFotoAperta, setCardFotoAperta] = useState(false)
@@ -522,38 +521,6 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
     }
   }
 
-  // Scarica un modulo PDF già compilato coi dati della pratica
-  // (l'endpoint traccia anche scaricato_il)
-  async function scaricaModulo(doc: DocChecklist) {
-    setScaricandoId(doc.id)
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) throw new Error('Sessione scaduta')
-      const res = await fetch(`/api/modulo-pdf?checklist_id=${encodeURIComponent(doc.id)}`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      })
-      if (!res.ok) {
-        // Mostra il motivo vero del rifiuto (es. sessione scaduta), non un generico "riprova"
-        const corpo = await res.json().catch(() => null)
-        throw new Error(corpo?.error ? `${corpo.error} (${res.status})` : `Download fallito (${res.status})`)
-      }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${doc.nome}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
-      await carica() // aggiorna scaricato_il nella lista
-    } catch (err) {
-      console.error('Errore download modulo:', err)
-      alert(err instanceof Error && err.message ? `Errore nel download del modulo: ${err.message}` : 'Errore nel download del modulo. Riprova.')
-    }
-    setScaricandoId(null)
-  }
-
   async function uploadFotoExtra(files: File[]) {
     for (let i = 0; i < files.length; i++) {
       const file = files[i]
@@ -607,7 +574,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const docUpload = docsAttivi.filter(d => d.richiede_upload && !d.template_pdf)
   const inviatiCount = docUpload.filter(d => d.stato === 'caricato' || d.stato === 'approvato').length
   const totaleDocWizard = docUpload.length
-  const daConsegnare = docsAttivi.filter(d => d.richiede_consegna)
+  // (la lista "da consegnare al ritiro" ora vive nella tab Ritiro)
 
   // Contatori e stati basati SOLO sui documenti da fotografare: i moduli PDF
   // non si caricano (si scaricano dal box verde, si firmano e si consegnano
@@ -750,106 +717,9 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           onFinito={() => setCardFotoAperta(false)} />
       )}
 
-      {/* Nota: la card "Modulo — disponibile a breve" è stata RIMOSSA (10/07):
-          i moduli PDF si scaricano già compilati dal box verde qui sotto,
-          si firmano e si consegnano in originale al ritiro. */}
-
-      {/* ====== DOCUMENTI ORIGINALI DA PORTARE AL RITIRO ====== */}
-      {daConsegnare.length > 0 && (
-        <div style={{ background: 'linear-gradient(135deg, #0F766E 0%, #14B8A6 100%)', borderRadius: 16, padding: 16, boxShadow: '0 4px 14px rgba(20,184,166,0.3)' }}>
-          <button onClick={() => setRitiroAperto(a => !a)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            <span style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" />
-                <rect x="8" y="2" width="8" height="4" rx="1" />
-                <line x1="9" y1="12" x2="15" y2="12" />
-                <line x1="9" y1="16" x2="13" y2="16" />
-              </svg>
-            </span>
-            <div style={{ flex: 1, textAlign: 'left' }}>
-              <div style={{ color: '#fff', fontWeight: 800, fontSize: 16.5, lineHeight: 1.25 }}>Documenti originali da portare al ritiro</div>
-              <div style={{ marginTop: 5 }}>
-                <span style={{ display: 'inline-block', background: 'rgba(255,255,255,0.92)', color: '#0F766E', fontSize: 11, fontWeight: 800, borderRadius: 999, padding: '3px 10px' }}>CONSEGNALI IL GIORNO DEL RITIRO</span>
-              </div>
-            </div>
-            <span style={{ background: '#fff', color: '#0F766E', fontSize: 12.5, fontWeight: 800, borderRadius: 999, padding: '3px 11px', flexShrink: 0 }}>{daConsegnare.length}</span>
-            <span style={{ transform: ritiroAperto ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><IcoChevronDown color="#CCFBF1" /></span>
-          </button>
-          {ritiroAperto && (
-            <div style={{ marginTop: 14 }}>
-              <div style={{ background: '#fff', borderRadius: 12, padding: '4px 14px' }}>
-                {daConsegnare.map((d, i) => (
-                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 0', borderBottom: i < daConsegnare.length - 1 ? '1px solid #EEF1F5' : 'none' }}>
-                    {d.template_pdf && d.scaricato_il ? (
-                      <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#DCF3E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                      </span>
-                    ) : (
-                      <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#CCFBF1', color: '#0F766E', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</span>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeRitiro(d)}</span>
-                      {/* Deleghe e dichiarazioni eredità "portano con sé" le fotocopie
-                          (delegato 16/07, eredi 22/07): la spiegazione arriva dal
-                          catalogo, frasi chiave in evidenza */}
-                      {mostraDescrizioneRitiro(d) && (
-                        <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3, lineHeight: 1.5 }}>{descrizioneModulo(d.descrizione!)}</div>
-                      )}
-                      {/* L'atto di morte è l'eccezione tra gli originali: basta una copia */}
-                      {d.codice === 'ATTO_MORTE' && (
-                        <div style={{ fontSize: 11, color: '#4B5563', marginTop: 3, lineHeight: 1.5 }}>Basta una copia o fotocopia.</div>
-                      )}
-                      {d.template_pdf && (
-                        <div style={{ marginTop: 3 }}>
-                          {d.scaricato_il ? (
-                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 600, color: '#1F7A43', background: '#DCF3E4', borderRadius: 20, padding: '2px 9px' }}>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                              Scaricata · ora compilala e firmala
-                            </span>
-                          ) : (
-                            <span style={{ fontSize: 10, fontWeight: 600, color: '#0F766E', background: '#CCFBF1', borderRadius: 20, padding: '2px 9px' }}>
-                              Scaricala, compilala e firmala
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    {/* Modulo PDF: scarica già compilato coi dati della pratica.
-                        Bloccato fino alla verifica — TRANNE la dichiarazione del
-                        fermo, che serve subito per l'attestazione del Comune. */}
-                    {d.template_pdf && (
-                      d.scaricato_il ? (
-                        <button
-                          onClick={() => scaricaModulo(d)}
-                          disabled={scaricandoId === d.id}
-                          style={{ flexShrink: 0, background: 'none', border: 'none', padding: 0, fontSize: 11.5, fontWeight: 600, color: '#0F766E', textDecoration: 'underline', cursor: 'pointer', opacity: scaricandoId === d.id ? 0.6 : 1 }}
-                        >
-                          {scaricandoId === d.id ? 'Scarico…' : 'Scarica di nuovo'}
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => scaricaModulo(d)}
-                          disabled={scaricandoId === d.id}
-                          className="active:scale-[0.97]"
-                          style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6, background: '#0F766E', color: '#fff', border: 'none', borderRadius: 9, padding: '8px 13px', fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: scaricandoId === d.id ? 0.7 : 1, transition: 'all 0.15s' }}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                          {scaricandoId === d.id ? 'Scarico…' : 'Scarica'}
-                        </button>
-                      )
-                    )}
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 12, padding: '0 2px' }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#CCFBF1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-                <span style={{ color: '#CCFBF1', fontSize: 11.5, lineHeight: 1.5 }}>Servono <b style={{ color: '#fff' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.{daConsegnare.some(d => d.template_pdf) && <> Scarica i moduli, <b style={{ color: '#fff' }}>compilali e firmali</b>.</>}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
+      {/* ⭐ 28/07: il box "Documenti originali da portare al ritiro" (col
+          download dei moduli PDF) si è TRASFERITO nella nuova tab Ritiro
+          (TabRitiro.tsx) — questa tab resta solo per caricare. */}
 
       {/* ====== MODALE ANTEPRIMA ====== */}
       {anteprima && (
@@ -955,41 +825,8 @@ function nomeRitiro(d: DocChecklist): string {
   return d.nome
 }
 
-// Descrizioni dei moduli nel box verde (delega e dichiarazioni eredità):
-// le frasi chiave vanno in evidenza (fotocopie in grassetto — richiesta
-// Davide 16/07 — e l'avviso rosso per chi ha rinunciato — 22/07)
-const FRASI_MODULO: { frase: string; colore?: string }[] = [
-  { frase: "fotocopie fronte e retro di carta d'identità e codice fiscale del delegato" },
-  { frase: "fotocopie fronte e retro della carta d'identità (o patente) e del codice fiscale di ogni erede che ha accettato" },
-  { frase: "fotocopie fronte e retro della carta d'identità (o patente) e del codice fiscale di ogni erede" },
-  { frase: 'Chi ha rinunciato NON firma nulla e NON allega i suoi documenti.', colore: '#9B1C1C' },
-  { frase: 'solo tu' },
-]
-
-function descrizioneModulo(desc: string): React.ReactNode {
-  const parti: React.ReactNode[] = []
-  let resto = desc
-  let key = 0
-  while (resto.length) {
-    let primo: { i: number; f: { frase: string; colore?: string } } | null = null
-    for (const f of FRASI_MODULO) {
-      const i = resto.toLowerCase().indexOf(f.frase.toLowerCase())
-      if (i !== -1 && (!primo || i < primo.i || (i === primo.i && f.frase.length > primo.f.frase.length))) primo = { i, f }
-    }
-    if (!primo) { parti.push(resto); break }
-    if (primo.i > 0) parti.push(resto.slice(0, primo.i))
-    parti.push(<b key={key++} style={{ color: primo.f.colore || '#111827', fontWeight: 700 }}>{resto.slice(primo.i, primo.i + primo.f.frase.length)}</b>)
-    resto = resto.slice(primo.i + primo.f.frase.length)
-  }
-  return <>{parti}</>
-}
-
-// Nel box verde la descrizione si mostra solo per i moduli che "portano
-// con sé" istruzioni di consegna: deleghe e dichiarazioni eredità
-function mostraDescrizioneRitiro(d: DocChecklist): boolean {
-  if (!d.descrizione) return false
-  return !!d.template_pdf && (d.template_pdf.startsWith('DELEGA') || d.template_pdf.startsWith('DICHIARAZIONE_SOSTITUTIVA_EREDITA'))
-}
+// (Le descrizioni dei moduli con le frasi in evidenza si sono trasferite
+// nella tab Ritiro insieme al box degli originali — vedi TabRitiro.tsx)
 
 // ============================================================
 // DOCUMENTI FRONTE / RETRO

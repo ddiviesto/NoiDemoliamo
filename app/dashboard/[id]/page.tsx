@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { pillolaStato } from '@/lib/statiCliente'
 import TabDocumenti from './TabDocumenti'
+import TabRitiro from './TabRitiro'
 import TabStato from './TabStato'
 import TabChat from './TabChat'
 import AiutoWhatsApp from '../../components/AiutoWhatsApp'
@@ -44,7 +45,10 @@ export interface Pratica {
   creato_il: string
 }
 
-type Tab = 'documenti' | 'stato' | 'chat'
+// ⭐ 28/07 (mockup approvato, idea di Davide): quarta linguetta "Ritiro"
+// tra Documenti e Stato — la casa degli originali da consegnare e della
+// data fissata dal demolitore
+type Tab = 'documenti' | 'ritiro' | 'stato' | 'chat'
 
 function chatDemolitoreVisibile(stato: string): boolean {
   const statiVisibili = [
@@ -197,6 +201,18 @@ function IconaDocumenti({ attivo }: { attivo: boolean }) {
   )
 }
 
+function IconaRitiro({ attivo }: { attivo: boolean }) {
+  // Blocco appunti: la lista degli originali da consegnare
+  return (
+    <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke={attivo ? '#fff' : '#8a98a8'} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+      <rect x="8" y="2" width="8" height="4" rx="1"/>
+      <line x1="9" y1="12" x2="15" y2="12"/>
+      <line x1="9" y1="16" x2="13" y2="16"/>
+    </svg>
+  )
+}
+
 function IconaStato({ attivo }: { attivo: boolean }) {
   // Timeline a tappe: rappresenta l'avanzamento della pratica
   return (
@@ -230,6 +246,9 @@ export default function DettaglioPraticaCliente() {
   const [tab, setTab] = useState<Tab>('documenti')
   const [docRifiutati, setDocRifiutati] = useState(0)
   const [chatNonLetti, setChatNonLetti] = useState(0)
+  // ⭐ Pallino sulla linguetta Ritiro: data fissata non ancora vista
+  // (memoria in localStorage, si spegne aprendo la tab)
+  const [ritiroNuovo, setRitiroNuovo] = useState(false)
 
   const handleDocRifiutatiCambiati = useCallback((numero: number) => {
     setDocRifiutati(prev => prev === numero ? prev : numero)
@@ -241,6 +260,22 @@ export default function DettaglioPraticaCliente() {
     const { data } = await supabase.from('pratiche').select('*').eq('id', id).single()
     if (data) setPratica(data)
   }, [id])
+
+  // La data fissata è "nuova" finché il cliente non apre la tab Ritiro:
+  // pallino rosso sulla linguetta, memoria in localStorage
+  useEffect(() => {
+    if (!pratica) { setRitiroNuovo(false); return }
+    const attesa = ['assegnata', 'in_attesa_conferma_cliente', 'ritiro_confermato'].includes(pratica.stato)
+    if (!pratica.data_ritiro_prevista || !attesa) { setRitiroNuovo(false); return }
+    const visto = localStorage.getItem(`ritiroVisto:${pratica.id}`)
+    setRitiroNuovo(visto !== pratica.data_ritiro_prevista)
+  }, [pratica])
+
+  function apriTabRitiro() {
+    setTab('ritiro')
+    if (pratica?.data_ritiro_prevista) localStorage.setItem(`ritiroVisto:${pratica.id}`, pratica.data_ritiro_prevista)
+    setRitiroNuovo(false)
+  }
 
   // Aggiornamento automatico (22/07): stato/banner e contatore chat si
   // aggiornano da soli quando l'admin o il demolitore cambiano qualcosa
@@ -341,6 +376,7 @@ export default function DettaglioPraticaCliente() {
           {/* TAB BAR a pillole */}
           <div className="rounded-2xl p-1 flex gap-1" style={{ background: '#EFF3F9' }}>
             <TabButton attivo={tab === 'documenti'} onClick={() => setTab('documenti')} Icona={IconaDocumenti} label="Documenti" badge={docRifiutati > 0 ? docRifiutati : 0} />
+            <TabButton attivo={tab === 'ritiro'} onClick={apriTabRitiro} Icona={IconaRitiro} label="Ritiro" puntino={ritiroNuovo} />
             <TabButton attivo={tab === 'stato'} onClick={() => setTab('stato')} Icona={IconaStato} label="Stato" />
             <TabButton attivo={tab === 'chat'} onClick={() => setTab('chat')} Icona={IconaChat} label="Chat" badge={chatNonLetti} />
           </div>
@@ -349,6 +385,7 @@ export default function DettaglioPraticaCliente() {
           {tab === 'documenti' && (
             <TabDocumenti pratica={pratica} onDocRifiutatiCambiati={handleDocRifiutatiCambiati} onStatoCambiato={ricaricaPratica} />
           )}
+          {tab === 'ritiro' && <TabRitiro pratica={pratica} />}
           {tab === 'stato' && <TabStato pratica={pratica} />}
           {tab === 'chat' && (
             <TabChat
@@ -373,6 +410,8 @@ function TabButton(props: {
   Icona: React.ComponentType<{ attivo: boolean }>
   label: string
   badge?: number
+  // Pallino spia senza numero (es. "data del ritiro fissata, non ancora vista")
+  puntino?: boolean
 }) {
   const { Icona } = props
   const mostraBadge = (props.badge ?? 0) > 0
@@ -395,6 +434,12 @@ function TabButton(props: {
           >
             {props.badge}
           </span>
+        )}
+        {!mostraBadge && props.puntino && (
+          <span
+            className="absolute w-[12px] h-[12px] rounded-full bg-red-500"
+            style={{ top: -4, right: -8, border: `2px solid ${props.attivo ? '#2563eb' : '#EFF3F9'}` }}
+          />
         )}
       </span>
       <span className="text-xs font-medium">{props.label}</span>
