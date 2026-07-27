@@ -65,6 +65,8 @@ interface Pratica {
   // ⭐ Date del demolitore in riga (27/07, mockup approvato)
   data_ritiro_prevista: string | null
   data_ritiro_effettuato: string | null
+  // ⭐ Il PERCHÉ dell'annullo in riga (27/07 sera, come il motivo dell'attesa)
+  motivo_annullamento: string | null
 }
 
 // Candidato del pannello assegnazione (27/07): la classifica del dry-run
@@ -95,7 +97,7 @@ type SezioneTendina = 'cliente' | 'casistiche' | 'veicolo' | 'ritiro'
 const CAMPO_TENDINA = 'w-full h-[22px] bg-transparent border-0 border-b-2 border-blue-300 focus:border-blue-600 rounded-none outline-none text-[11.5px] text-right text-gray-900 px-0.5 transition-colors placeholder:text-gray-400'
 
 // Un'unica lista di campi per il caricamento e le ricariche (stessa forma)
-const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione, data_ritiro_prevista, data_ritiro_effettuato'
+const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione, data_ritiro_prevista, data_ritiro_effettuato, motivo_annullamento'
 
 // ============================================================
 // METADATI STATO (etichetta + colori pillola + barra colorata)
@@ -789,6 +791,13 @@ export default function AdminDashboard() {
                       {p.in_attesa && !chiusa && p.attesa_motivo && (
                         <div className="text-[11px] mt-1 truncate" style={{ color: '#5B6779', paddingLeft: 12 }} title={p.attesa_motivo}>
                           {p.attesa_motivo}
+                        </div>
+                      )}
+                      {/* ⭐ 27/07 sera: anche il PERCHÉ dell'annullo si legge in
+                          riga, senza aprire la cronologia */}
+                      {p.stato === 'annullata' && p.motivo_annullamento && (
+                        <div className="text-[11px] mt-1 truncate" style={{ color: '#5B6779', paddingLeft: 12 }} title={p.motivo_annullamento}>
+                          {p.motivo_annullamento}
                         </div>
                       )}
                       {p.demolitore_id && demolitori[p.demolitore_id] && (
