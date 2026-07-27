@@ -702,19 +702,24 @@ export default function AdminDashboard() {
                         : <IconaVeicolo tipo={p.tipo_mezzo} />}
                     </div>
 
-                    {/* Veicolo */}
+                    {/* Veicolo — ⭐ 27/07 (variante B su mockup): anno di
+                        immatricolazione dopo il modello, sotto solo il comune */}
                     <div style={{ flex: 1.6, minWidth: 0 }}>
-                      <div className="text-[15px] font-bold truncate" style={{ color: aperta ? '#1D4ED8' : '#111827' }}>{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}</div>
+                      <div className="text-[15px] font-bold truncate" style={{ color: aperta ? '#1D4ED8' : '#111827' }}>{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}{p.anno ? ` · ${p.anno}` : ''}</div>
                       <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
-                        {p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : (p.tipo_mezzo || '—')}
-                        {p.comune_ritiro && ` · ${p.comune_ritiro}`}{p.provincia_ritiro && ` (${p.provincia_ritiro})`}
+                        {p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}` : (p.tipo_mezzo || '—')}
                       </div>
                     </div>
 
-                    {/* Cliente */}
+                    {/* Cliente — ⭐ 27/07: via il telefono (vive nella tendina,
+                        dove si copia); sotto il nome la casistica e l'eventuale
+                        DELEGATO alla consegna */}
                     <div style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
                       <div className="text-[13.5px] font-semibold text-gray-900 truncate">{p.nome_richiedente || '—'}</div>
-                      <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>{p.telefono || ''}</div>
+                      <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
+                        {p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : (p.tipo_mezzo || '—')}
+                        {p.delegato_nome && <> · delega a <b style={{ color: '#374151', fontWeight: 600 }}>{p.delegato_nome}</b></>}
+                      </div>
                     </div>
 
                     {/* Stato + demolitore */}

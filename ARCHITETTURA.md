@@ -930,6 +930,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **"Fermo" rinominato "Fermo Amministrativo"** nella scheda Casistiche.
 - ⭐ **FINESTRELLE AFFIANCATE**: chat e cronologia vivono in un contenitore fisso UNICO in basso a destra (flex, gap 12, allineate in basso) — la cronologia si mette a sinistra della chat e non si sovrappongono mai, anche ingrandite. Le due componenti non sono più `position: fixed` da sole.
 - ⭐ **NUVOLETTA "Trattativa Extra" SEMPLICE** (mockup approvato dopo 2 giri bocciati — la regola: sobria, professionale, comprensibile): titolo, UNA frase che spiega il concetto ("importo concordato col demolitore SOLO per questa pratica: sostituisce la sua tariffa e a fine mese va in prefattura così"), campo con etichetta "Importo concordato" + €, Salva blu; con la trattativa attiva compare il link "Rimuovi" (rosso spento). Il significato business: la trattativa BYPASSA ogni tariffa di zona per la singola pratica e finisce in prefattura così com'è.
+- ⭐ **RIGA DELLA LISTA rifatta** (variante B su mockup): prima riga **targa · marca modello · ANNO di immatricolazione**; sotto solo il comune di ritiro. Colonna cliente: **via il TELEFONO** (vive nella tendina, dove si copia) — sotto il nome ci sono la casistica e l'eventuale **"delega a [nome]"** col delegato in leggera evidenza.
 
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 
