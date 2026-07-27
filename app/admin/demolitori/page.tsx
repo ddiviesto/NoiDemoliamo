@@ -209,14 +209,15 @@ export default function GestioneDemolitori() {
       <AdminSidebar attivo="demolitori" />
 
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
+        {/* ⭐ 27/07: barra AZZURRA gemella del CRM pratiche (mockup approvato) */}
+        <div className="border-b px-6 py-3 flex items-center gap-4" style={{ background: '#EFF6FF', borderColor: '#DBEAFE' }}>
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-none">Demolitori</h1>
-            <p className="text-xs text-gray-400 mt-1">{demolitori.length} registrati · {attivi} attivi</p>
+            <p className="text-xs mt-1" style={{ color: '#5B6779' }}>{demolitori.length} registrati · {attivi} attivi</p>
           </div>
           {/* Ricerca a PILLOLA (26/07, variante A su mockup): gemella del CRM pratiche */}
           <div className="ml-auto">
-            <div className="flex items-center gap-2 rounded-full border px-3.5 py-2 w-[210px] focus-within:w-[300px] bg-[#F3F5F9] border-transparent focus-within:bg-white focus-within:border-blue-300 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.10)] transition-all duration-300">
+            <div className="flex items-center gap-2 rounded-full border px-3.5 py-2 w-[210px] focus-within:w-[300px] bg-white border-[#DBEAFE] focus-within:border-blue-300 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.10)] transition-all duration-300">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
               <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca…" className="flex-1 min-w-0 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400" />
               {ricerca && <button onClick={() => setRicerca('')} className="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">×</button>}

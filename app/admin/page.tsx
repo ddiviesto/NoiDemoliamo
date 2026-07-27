@@ -605,9 +605,10 @@ export default function AdminDashboard() {
       {/* MAIN */}
       <div className="flex-1 min-w-0 flex flex-col">
 
-        {/* TOP BAR con ricerca — bianca (23/07: Davide la vuole come nella
-            pagina Demolitori; il blu resta solo sulla barra laterale) */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3 flex items-center gap-4">
+        {/* TOP BAR con ricerca — ⭐ 27/07 (mockup approvato): AZZURRA come
+            la testata della pratica aperta (#EFF6FF), un solo colore per
+            barra, hover delle righe e apertura */}
+        <div className="border-b px-6 py-3 flex items-center gap-4" style={{ background: '#EFF6FF', borderColor: '#DBEAFE' }}>
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-none">Pratiche</h1>
             <p className="text-xs text-gray-500 mt-1">{pratiche.length} totali</p>
@@ -615,7 +616,8 @@ export default function AdminDashboard() {
           {/* Ricerca a PILLOLA (26/07, variante A su mockup): corta a riposo,
               si allarga dolcemente e si accende di blu quando ci scrivi */}
           <div className="ml-auto">
-            <div className="flex items-center gap-2 rounded-full border px-3.5 py-2 w-[210px] focus-within:w-[300px] bg-[#F3F5F9] border-transparent focus-within:bg-white focus-within:border-blue-300 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.10)] transition-all duration-300">
+            {/* Sulla barra azzurra la pillola è BIANCA col bordo celeste */}
+            <div className="flex items-center gap-2 rounded-full border px-3.5 py-2 w-[210px] focus-within:w-[300px] bg-white border-[#DBEAFE] focus-within:border-blue-300 focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.10)] transition-all duration-300">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
               <input value={ricerca} onChange={e => setRicerca(e.target.value)} placeholder="Cerca…" className="flex-1 min-w-0 bg-transparent outline-none text-sm text-gray-900 placeholder:text-gray-400" />
               {ricerca && <button onClick={() => setRicerca('')} className="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">×</button>}
@@ -715,9 +717,11 @@ export default function AdminDashboard() {
                     key={p.id}
                     style={{ border: `2px solid ${aperta ? '#2563EB' : 'transparent'}`, borderRadius: 16, background: aperta ? '#F7F8FB' : 'transparent', boxShadow: aperta ? '0 4px 16px rgba(37,99,235,0.16)' : 'none', transition: 'all .28s ease' }}
                   >
+                  {/* ⭐ 27/07 (mockup approvato): al passaggio del mouse la riga
+                      si tinge dell'azzurro dell'apertura (#EFF6FF) */}
                   <div
                     onClick={() => apriPratica(p)}
-                    className={`group cursor-pointer transition-all ${aperta ? '' : 'hover:shadow-md hover:-translate-y-[1px]'}`}
+                    className={`group cursor-pointer transition-all ${aperta ? '' : 'hover:!bg-[#EFF6FF] hover:!border-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]'}`}
                     style={{ background: aperta ? '#EFF6FF' : '#fff', border: `1.5px solid ${aperta ? 'transparent' : '#E5E7EB'}`, borderRadius: aperta ? '13px 13px 0 0' : 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: aperta ? 'none' : '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa && !aperta ? 0.82 : 1 }}
                   >
                     {/* Quadratino icona veicolo (o spunta se chiusa) */}
