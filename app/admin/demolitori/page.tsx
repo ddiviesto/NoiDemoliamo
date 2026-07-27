@@ -150,7 +150,9 @@ export default function GestioneDemolitori() {
       <div
         key={d.id}
         onClick={() => router.push(`/admin/demolitori/${d.id}`)}
-        className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
+        // ⭐ 27/07: hover AZZURRO gemello delle righe pratiche (#EFF6FF);
+        // la barretta colorata a sinistra (stato) resta com'è
+        className="group bg-white cursor-pointer transition-all hover:!bg-[#EFF6FF] hover:!border-t-[#BFDBFE] hover:!border-r-[#BFDBFE] hover:!border-b-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]"
         style={{ border: '1.5px solid #E5E7EB', borderLeft: `4px solid ${barColor}`, borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}
       >
         {/* Quadratino iniziali */}
