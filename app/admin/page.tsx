@@ -8,6 +8,7 @@ import AdminSidebar from './_components/AdminSidebar'
 // Card vere del dettaglio, aperte IN LINEA dentro la tendina (26/07)
 import DocumentiApprovazione from './pratiche/[id]/DocumentiApprovazione'
 import ChatAdmin from './pratiche/[id]/ChatAdmin'
+import CronologiaNote from './pratiche/[id]/CronologiaNote'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -233,7 +234,9 @@ export default function AdminDashboard() {
   // IN LINEA dentro il blocco (niente finestre sopra la pagina); il menu
   // Stato pratica è una nuvoletta attaccata al bottone, col motivo scritto
   // lì dentro per attesa e annullo.
-  const [selDocsAperti, setSelDocsAperti] = useState(false)
+  // ⭐ 27/07: la pillola Documenti non c'è più (scheda sempre in vista);
+  // la Cronologia si apre a FINESTRELLA come la chat (scelta B su mockup)
+  const [selCronoAperta, setSelCronoAperta] = useState(false)
   const [selChatAperta, setSelChatAperta] = useState(false)
   const [menuStato, setMenuStato] = useState<null | 'menu' | 'attesa' | 'annulla'>(null)
   const [motivoStato, setMotivoStato] = useState('')
@@ -255,7 +258,7 @@ export default function AdminDashboard() {
   const [nonLetti, setNonLetti] = useState<Record<string, number>>({})
 
   function apriPratica(p: Pratica) {
-    setSelDocsAperti(false)
+    setSelCronoAperta(false)
     setSelChatAperta(false)
     setMenuStato(null)
     setMotivoStato('')
@@ -500,8 +503,18 @@ export default function AdminDashboard() {
       if (praticheData) setPratiche(praticheData as Pratica[])
       setDemolitori(mappaDemo)
       setLoading(false)
+
+      // ⭐ 27/07: /admin?apri=<id> apre subito la TENDINA di quella pratica
+      // (ci arriva la scheda demolitore, ora che la pagina intera non c'è più)
+      const apriId = new URLSearchParams(window.location.search).get('apri')
+      if (apriId && praticheData) {
+        const daAprire = (praticheData as Pratica[]).find(x => x.id === apriId)
+        if (daAprire) apriPratica(daAprire)
+        window.history.replaceState(null, '', '/admin')
+      }
     }
     carica()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router])
 
   // Aggiornamento automatico (22/07): il CRM si aggiorna da solo quando i
@@ -744,24 +757,17 @@ export default function AdminDashboard() {
                           della testata azzurra. Documenti e Chat aprono IN
                           LINEA qui sotto; Stato è una nuvoletta ancorata. */}
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', background: '#EFF6FF', padding: '0 16px 12px' }}>
-                        <button
-                          onClick={() => { setMenuStato(null); setSelDocsAperti(a => !a) }}
-                          className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
-                          style={{ background: selDocsAperti ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
-                          Documenti
-                          <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{docStats[p.id] ? `${docStats[p.id].approvati}/${docStats[p.id].totale}` : '…'}</span>
-                          {(docStats[p.id]?.daVerificare ?? 0) > 0 && <span style={{ background: '#DC2626', color: '#fff', borderRadius: 999, fontSize: 9.5, fontWeight: 800, minWidth: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{docStats[p.id].daVerificare}</span>}
-                        </button>
+                        {/* ⭐ 27/07 (variante 3 su mockup): la pillola Documenti
+                            è SPARITA — la scheda Documenti sta sempre in vista
+                            in fila con le altre, dentro la tendina */}
                         <button
                           onClick={() => { setMenuStato(null); setSelChatAperta(a => !a); if (selChatAperta) aggiornaContatori(p.id) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
-                          style={{ background: selChatAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                          style={{ position: 'relative', background: selChatAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
                           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z" /></svg>
                           Chat
-                          {(nonLetti[p.id] ?? 0) > 0 && <span style={{ background: '#DC2626', color: '#fff', borderRadius: 999, fontSize: 9.5, fontWeight: 800, minWidth: 15, height: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 4px' }}>{nonLetti[p.id]}</span>}
+                          {(nonLetti[p.id] ?? 0) > 0 && <span style={{ position: 'absolute', top: -3, right: -1, width: 10, height: 10, borderRadius: 999, background: '#DC2626', border: '2px solid #EFF6FF' }} />}
                         </button>
                         <span style={{ position: 'relative' }}>
                           <button
@@ -884,6 +890,16 @@ export default function AdminDashboard() {
                             </>
                           )}
                         </span>
+                        {/* ⭐ CRONOLOGIA (27/07, scelta B su mockup): finestrella
+                            fissa in basso a destra, gemella della Chat */}
+                        <button
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelCronoAperta(a => !a) }}
+                          className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
+                          style={{ background: selCronoAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 7 12 12 15.5 13.5" /></svg>
+                          Cronologia
+                        </button>
                         <span style={{ flex: 1 }} />
                         {/* ⭐ CESTINO (27/07): nuvoletta a due scelte, come nel dettaglio */}
                         <span style={{ position: 'relative' }}>
@@ -917,14 +933,8 @@ export default function AdminDashboard() {
                             </>
                           )}
                         </span>
-                        <button
-                          onClick={() => router.push(`/admin/pratiche/${p.id}`)}
-                          className="flex items-center gap-1.5 transition-colors hover:bg-blue-700"
-                          style={{ background: '#2563EB', border: '1.5px solid #2563EB', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 13px', whiteSpace: 'nowrap' }}
-                        >
-                          Apri la pratica intera
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                        </button>
+                        {/* ⭐ 27/07: "Apri la pratica intera" ELIMINATO — il CRM
+                            è tutto in una pagina, la tendina copre tutto */}
                       </div>
 
                       {/* ⭐ 27/07 (mockup definitivo): col pannello assegnazione
@@ -1057,6 +1067,22 @@ export default function AdminDashboard() {
                             ]),
                           ]}
                         />
+                        {/* ⭐ QUINTA SCHEDA Documenti (27/07, variante 3 su
+                            mockup): sempre in vista, in fila con le altre */}
+                        {aperta && (
+                          <DocumentiApprovazione
+                            praticaId={p.id}
+                            statoPratica={p.stato}
+                            aperta
+                            compatta
+                            targa={p.targa}
+                            veicolo={[[p.marca, p.modello].filter(Boolean).join(' '), p.anno].filter(Boolean).join(' · ') || null}
+                            cliente={p.nome_richiedente}
+                            onToggle={() => {}}
+                            onStatoCambiato={(tutti, totale, approvati) => setDocStats(prev => ({ ...prev, [p.id]: { totale, approvati, daVerificare: prev[p.id]?.daVerificare ?? 0 } }))}
+                            onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
+                          />
+                        )}
                       </div>
                       {aperta && selAssegnaAperta && (
                         <PannelloAssegnazioneTendina
@@ -1067,24 +1093,6 @@ export default function AdminDashboard() {
                       )}
                       </div>
 
-                      {/* DOCUMENTI e CHAT in linea (26/07): le card VERE del
-                          dettaglio, aperte dentro la tendina — niente finestre */}
-                      {aperta && selDocsAperti && (
-                        <div style={{ padding: '0 12px 12px' }}>
-                          <DocumentiApprovazione
-                            praticaId={p.id}
-                            statoPratica={p.stato}
-                            aperta
-                            compatta
-                            targa={p.targa}
-                            veicolo={[[p.marca, p.modello].filter(Boolean).join(' '), p.anno].filter(Boolean).join(' · ') || null}
-                            cliente={p.nome_richiedente}
-                            onToggle={() => setSelDocsAperti(false)}
-                            onStatoCambiato={(tutti, totale, approvati) => setDocStats(prev => ({ ...prev, [p.id]: { totale, approvati, daVerificare: prev[p.id]?.daVerificare ?? 0 } }))}
-                            onRicaricaPratica={() => { ricaricaPratiche(); aggiornaContatori(p.id) }}
-                          />
-                        </div>
-                      )}
                       {/* CHAT A FINESTRELLA (26/07, variante A su mockup):
                           fissa in basso a destra, la pagina resta usabile */}
                       {aperta && selChatAperta && (
@@ -1095,6 +1103,19 @@ export default function AdminDashboard() {
                           onToggle={() => { setSelChatAperta(false); aggiornaContatori(p.id) }}
                           finestra
                           titolo={`${p.nome_richiedente || 'Cliente'} · ${p.targa || 'senza targa'}`}
+                        />
+                      )}
+                      {/* ⭐ CRONOLOGIA A FINESTRELLA (27/07, scelta B su
+                          mockup): gemella della chat, con l'ingrandisci */}
+                      {aperta && selCronoAperta && (
+                        <CronologiaNote
+                          praticaId={p.id}
+                          praticaCreataIl={p.creato_il}
+                          refreshKey={0}
+                          aperta
+                          onToggle={() => setSelCronoAperta(false)}
+                          finestra
+                          titolo={`Cronologia · ${p.targa || 'senza targa'}`}
                         />
                       )}
                     </div>

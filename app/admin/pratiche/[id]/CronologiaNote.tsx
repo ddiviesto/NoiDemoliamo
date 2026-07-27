@@ -33,17 +33,22 @@ function fmtOra(x: string) {
 }
 
 // ⭐ 23/07: card A SCOMPARSA — chiusa all'apertura, la testata apre e chiude
-export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey, aperta, onToggle }: {
+// ⭐ 27/07: modalità `finestra` (scelta B su mockup): finestrella fissa in
+// basso a destra come la Chat, con l'ingrandisci — usata dalla tendina CRM
+export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey, aperta, onToggle, finestra, titolo }: {
   praticaId: string
   praticaCreataIl: string
   refreshKey: number
   aperta: boolean
   onToggle: () => void
+  finestra?: boolean
+  titolo?: string
 }) {
   const [note, setNote] = useState<Nota[]>([])
   const [tabellaAssente, setTabellaAssente] = useState(false)
   const [nuova, setNuova] = useState('')
   const [salvando, setSalvando] = useState(false)
+  const [espansa, setEspansa] = useState(false)
 
   async function carica() {
     const { data, error } = await supabase
@@ -87,35 +92,17 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
     setSalvando(false)
   }
 
-  return (
-    // ⭐ 26/07: da chiusa TUTTA la card è cliccabile, con accensione al mouse
-    <div
-      className={`p-5 ${aperta ? '' : 'cursor-pointer transition-all hover:!border-blue-200 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.10)]'}`}
-      style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}
-      onClick={aperta ? undefined : onToggle}
-    >
-      <div className="flex items-center gap-2 cursor-pointer select-none" onClick={e => { e.stopPropagation(); onToggle() }}>
-        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0, flex: 1, minWidth: 0 }}>
-          <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-          Cronologia e note
-          <span className="truncate" style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>
-            {note.length > 0 ? `· ultima: ${fmtGiorno(note[0].creato_il)} ${fmtOra(note[0].creato_il)}` : '· le vedi solo tu'}
-          </span>
-        </p>
-        <span className="transition-transform flex-shrink-0" style={{ color: '#9AA7B5', transform: aperta ? 'rotate(180deg)' : 'none' }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
-        </span>
-      </div>
-
-      {aperta && (tabellaAssente ? (
-        <p className="text-xs mt-3" style={{ color: '#854F0B', background: '#FDF7EA', border: '1px solid #F0DFB8', borderRadius: 10, padding: '8px 12px' }}>
-          Per attivare le note esegui su Supabase l&apos;SQL <b>docs/sql/2026-07-17-attesa-note-preimpostati.sql</b>
-        </p>
-      ) : (
-        <div className="mt-2">
+  // Corpo unico (timeline + campo nota): la CARD lo mostra sotto la testata,
+  // la FINESTRELLA lo riempie in altezza (27/07)
+  const corpo = tabellaAssente ? (
+    <p className="text-xs mt-3" style={{ color: '#854F0B', background: '#FDF7EA', border: '1px solid #F0DFB8', borderRadius: 10, padding: '8px 12px', margin: finestra ? 12 : undefined }}>
+      Per attivare le note esegui su Supabase l&apos;SQL <b>docs/sql/2026-07-17-attesa-note-preimpostati.sql</b>
+    </p>
+  ) : (
+        <div className={finestra ? undefined : 'mt-2'} style={finestra ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '10px 12px 12px' } : undefined}>
           {/* Riquadro a altezza FISSA: si scorre dentro (mouse/dito), la
               pagina non si allunga (richiesta Davide 21/07) */}
-          <div className="overflow-y-auto" style={{ maxHeight: 300 }}>
+          <div className="overflow-y-auto" style={finestra ? { flex: 1, minHeight: 0, overscrollBehavior: 'contain' } : { maxHeight: 300 }}>
           {note.map(n => {
             // Pillola per le voci automatiche (attesa/ripresa/annullo/riattivo)
             // e per le note del DEMOLITORE (23/07: quadratino celeste come in chat)
@@ -189,7 +176,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               onChange={e => setNuova(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') aggiungi() }}
               placeholder="Aggiungi una nota… (data e ora si salvano da sole)"
-              className="flex-1 border-[1.5px] border-gray-200 rounded-[11px] px-3 py-2 text-[12.5px] text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
+              className="flex-1 min-w-0 border-[1.5px] border-gray-200 rounded-[11px] px-3 py-2 text-[12.5px] text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400"
             />
             <button
               onClick={aggiungi}
@@ -202,7 +189,57 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
             </button>
           </div>
         </div>
-      ))}
+  )
+
+  // ---- FINESTRELLA fissa in basso a destra (27/07, gemella della Chat):
+  // misure fisse, bottone ingrandisci accanto alla ✕ ----
+  if (finestra) {
+    if (!aperta) return null
+    return (
+      <div style={{ position: 'fixed', right: 16, bottom: 16, width: espansa ? 470 : 340, height: espansa ? 'min(600px, calc(100vh - 32px))' : 430, maxWidth: 'calc(100vw - 32px)', zIndex: 50, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, boxShadow: '0 16px 44px rgba(15,23,42,0.28)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'width .2s ease, height .2s ease' }}>
+        <div style={{ background: 'linear-gradient(90deg,#1D4ED8,#2563EB)', color: '#fff', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="text-[12.5px] font-bold truncate">{titolo || 'Cronologia e note'}</div>
+            <div className="text-[10px]" style={{ color: '#BFDBFE' }}>la vedi solo tu</div>
+          </div>
+          <button onClick={() => setEspansa(e => !e)} aria-label={espansa ? 'Rimpicciolisci' : 'Ingrandisci'} title={espansa ? 'Rimpicciolisci' : 'Ingrandisci'} className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-white/30" style={{ width: 22, height: 22, borderRadius: 7, background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer' }}>
+            {espansa ? (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 14 10 14 10 20" /><polyline points="20 10 14 10 14 4" /></svg>
+            ) : (
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /></svg>
+            )}
+          </button>
+          <button onClick={onToggle} aria-label="Chiudi" className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-white/30" style={{ width: 22, height: 22, borderRadius: 7, background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer' }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+          </button>
+        </div>
+        <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          {corpo}
+        </div>
+      </div>
+    )
+  }
+
+  // ---- CARD a scomparsa (26/07: da chiusa TUTTA cliccabile) ----
+  return (
+    <div
+      className={`p-5 ${aperta ? '' : 'cursor-pointer transition-all hover:!border-blue-200 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.10)]'}`}
+      style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}
+      onClick={aperta ? undefined : onToggle}
+    >
+      <div className="flex items-center gap-2 cursor-pointer select-none" onClick={e => { e.stopPropagation(); onToggle() }}>
+        <p style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, fontWeight: 700, color: '#0F1B33', margin: 0, flex: 1, minWidth: 0 }}>
+          <span style={{ width: 3, height: 15, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+          Cronologia e note
+          <span className="truncate" style={{ fontWeight: 400, fontSize: 11, color: '#64748b' }}>
+            {note.length > 0 ? `· ultima: ${fmtGiorno(note[0].creato_il)} ${fmtOra(note[0].creato_il)}` : '· le vedi solo tu'}
+          </span>
+        </p>
+        <span className="transition-transform flex-shrink-0" style={{ color: '#9AA7B5', transform: aperta ? 'rotate(180deg)' : 'none' }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+        </span>
+      </div>
+      {aperta && corpo}
     </div>
   )
 }

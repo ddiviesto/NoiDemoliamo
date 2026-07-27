@@ -942,7 +942,7 @@ export default function DettaglioDemolitore() {
               {praticheAnnullate.map(p => (
                 <button
                   key={p.id}
-                  onClick={() => router.push(`/admin/pratiche/${p.id}`)}
+                  onClick={() => router.push(`/admin?apri=${p.id}`)}
                   className="text-left rounded-xl p-3.5 transition-all hover:shadow-md"
                   style={{ border: '1.5px solid #E5E7EB', borderLeft: '4px solid #C0C7D1', background: '#fff' }}
                 >

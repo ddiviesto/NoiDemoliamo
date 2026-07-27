@@ -731,35 +731,45 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
 
   return (
     <>
-      {/* ⭐ GRIGLIA COMPATTA (26/07, variante B su mockup) per la TENDINA:
-          tesserine con badge di stato nell'angolo (verde approvato, blu in
-          verifica, rosso rifiutato, grigio tratteggiato non caricato);
-          "Verifica ora" apre il visore sul primo in attesa, clic su una
-          tessera lo apre su quella. Il lavoro vero resta nel visore. */}
+      {/* ⭐ QUINTA SCHEDA "Documenti" (27/07, variante 3 su mockup): sta IN
+          FILA con Cliente · Casistiche · Veicolo · Ritiro, sempre in vista
+          appena si apre la tendina (la pillola Documenti è sparita).
+          Tesserine piccole senza nome (il nome al passaggio del mouse),
+          badge di stato nell'angolo, "Verifica" nella testata apre il visore
+          sul primo in attesa, clic su una tessera lo apre su quella. */}
       {compatta && (
-        <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
-          <div className="flex items-center gap-2 flex-wrap" style={{ marginBottom: 9 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>
+        <div style={{ flex: 1, minWidth: 245, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: 9 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12, fontWeight: 700, color: '#0F1B33', minWidth: 0 }}>
               <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
               Documenti
-              <span style={{ fontWeight: 400, fontSize: 10.5, color: '#64748B' }}>· {approvatiCount} di {daApprovare.length} approvati{daVerificareCount > 0 ? ` · ${daVerificareCount} da verificare` : ''}</span>
+              <span style={{ fontWeight: 400, fontSize: 10.5, color: '#64748B', whiteSpace: 'nowrap' }}>· {approvatiCount} di {daApprovare.length}{daVerificareCount > 0 ? ` · ${daVerificareCount} da verificare` : ''}</span>
             </span>
             {daVerificareCount > 0 && (
               <button
                 onClick={() => { const primo = vociDocs.find(d => d.stato === 'caricato'); if (primo) apriVisoreDoc(primo.id) }}
                 className="ml-auto flex items-center gap-1.5 transition-colors hover:bg-blue-700"
-                style={{ background: '#2563EB', color: '#fff', border: 'none', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 12px', cursor: 'pointer' }}
+                style={{ background: '#2563EB', color: '#fff', border: 'none', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}
               >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
-                Verifica ora
+                {/* Spunta nel cerchietto (27/07, scelta su mockup): via il play */}
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><polyline points="16 9.5 10.7 14.8 8 12.2" /></svg>
+                Verifica
               </button>
             )}
           </div>
 
+          {/* Da contattare: ora anche gli ESITI della telefonata vivono qui
+              (la pagina intera non c'è più) */}
           {daContattare && (
-            <p className="text-[11px] rounded-lg px-2.5 py-2 mb-2" style={{ background: '#FDF7EA', color: '#854F0B' }}>
-              <b>Da contattare:</b> {dati?.libretto === 'no' ? 'il cliente non ha il libretto (né denuncia). ' : ''}{dati?.certificato_proprieta === 'nessuno' ? 'il cliente non sa che certificato di proprietà ha. ' : ''}Gli esiti della telefonata si impostano dalla pagina intera.
-            </p>
+            <div className="text-[11px] rounded-lg px-2.5 py-2 mb-2" style={{ background: '#FDF7EA', color: '#854F0B' }}>
+              <b>Da contattare:</b> {dati?.libretto === 'no' ? 'il cliente non ha il libretto (né denuncia). ' : ''}{dati?.certificato_proprieta === 'nessuno' ? 'il cliente non sa che certificato di proprietà ha. ' : ''}Chiamalo per capire la situazione.
+              {dati?.certificato_proprieta === 'nessuno' && (
+                <div className="flex items-center flex-wrap gap-1.5 mt-2">
+                  <span className="font-semibold">Dopo la verifica:</span>
+                  <BottoniCdc azione={azione} onScegli={impostaCdc} />
+                </div>
+              )}
+            </div>
           )}
 
           {loading ? (
@@ -767,7 +777,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
           ) : righeVisibili.length === 0 && foto.length === 0 ? (
             <p className="text-xs" style={{ color: '#9AA7B5' }}>Nessun documento da approvare per questa pratica.</p>
           ) : (
-            <div className="flex flex-wrap" style={{ gap: 10 }}>
+            <div className="flex flex-wrap" style={{ gap: 8 }}>
               {[...daApprovare].sort((a, b) => a.ordine - b.ordine || (a.indice_erede ?? 0) - (b.indice_erede ?? 0)).map(doc => {
                 const files = leggiFile(doc.file_url)
                 const primoFile = files[0]
@@ -775,29 +785,34 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 const conImg = !!url && !isPdfUrl(primoFile.nome) && !isPdfUrl(primoFile.url)
                 const cliccabile = files.length > 0
                 return (
-                  <div key={doc.id} onClick={() => { if (cliccabile) apriVisoreDoc(doc.id) }} style={{ width: 76, cursor: cliccabile ? 'pointer' : 'default' }} title={nomeDoc(doc)}>
-                    <div className={cliccabile ? 'transition-all hover:!border-blue-300 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.12)]' : ''} style={{ position: 'relative', width: 76, height: 76, borderRadius: 10, background: '#EEF1F5', border: `1.5px ${doc.stato === 'da_fare' ? 'dashed' : 'solid'} #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9AA7B5' }}>
-                      {conImg
-                        ? /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8.5 }} />
-                        : <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
-                      <span style={{ position: 'absolute', top: -5, right: -5, width: 17, height: 17, borderRadius: 999, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', background: doc.stato === 'approvato' ? '#16A34A' : doc.stato === 'caricato' ? '#2563EB' : doc.stato === 'rifiutato' ? '#DC2626' : '#C7CCD4' }}>
-                        {doc.stato === 'approvato' && <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
-                        {doc.stato === 'rifiutato' && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 9, fontWeight: 600, color: '#4B5563', textAlign: 'center', marginTop: 4, lineHeight: 1.25, overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{nomeDoc(doc)}</div>
+                  <div
+                    key={doc.id}
+                    onClick={() => { if (cliccabile) apriVisoreDoc(doc.id) }}
+                    title={nomeDoc(doc)}
+                    className={cliccabile ? 'transition-all hover:!border-blue-300' : ''}
+                    style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, background: '#EEF1F5', border: `1.5px ${doc.stato === 'da_fare' ? 'dashed' : 'solid'} #E5E7EB`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9AA7B5', cursor: cliccabile ? 'pointer' : 'default', overflow: 'visible', flexShrink: 0 }}
+                  >
+                    {conImg
+                      ? /* eslint-disable-next-line @next/next/no-img-element */
+                        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6.5 }} />
+                      : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
+                    <span style={{ position: 'absolute', top: -4, right: -4, width: 13, height: 13, borderRadius: 999, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', background: doc.stato === 'approvato' ? '#16A34A' : doc.stato === 'caricato' ? '#2563EB' : doc.stato === 'rifiutato' ? '#DC2626' : '#C7CCD4' }}>
+                      {doc.stato === 'approvato' && <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                      {doc.stato === 'rifiutato' && <svg width="6" height="6" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>}
+                    </span>
                   </div>
                 )
               })}
               {foto.length > 0 && (
-                <div onClick={() => apriVisoreFoto(foto[0].id)} style={{ width: 76, cursor: 'pointer' }} title={`Foto del veicolo · ${foto.length}`}>
-                  <div className="transition-all hover:!border-blue-300 hover:!shadow-[0_2px_8px_rgba(37,99,235,0.12)]" style={{ position: 'relative', width: 76, height: 76, borderRadius: 10, border: '1.5px solid #E5E7EB' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={foto[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8.5 }} />
-                    <span style={{ position: 'absolute', bottom: 3, right: 3, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 8.5, fontWeight: 700, borderRadius: 999, padding: '1px 6px' }}>{foto.length}</span>
-                  </div>
-                  <div style={{ fontSize: 9, fontWeight: 600, color: '#4B5563', textAlign: 'center', marginTop: 4 }}>Foto veicolo · {foto.length}</div>
+                <div
+                  onClick={() => apriVisoreFoto(foto[0].id)}
+                  title={`Foto del veicolo · ${foto.length}`}
+                  className="transition-all hover:!border-blue-300"
+                  style={{ position: 'relative', width: 40, height: 40, borderRadius: 8, border: '1.5px solid #E5E7EB', cursor: 'pointer', flexShrink: 0 }}
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={foto[0].url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 6.5 }} />
+                  <span style={{ position: 'absolute', bottom: 2, right: 2, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 8, fontWeight: 700, borderRadius: 999, padding: '0px 5px' }}>{foto.length}</span>
                 </div>
               )}
             </div>
@@ -1053,15 +1068,18 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 {!selezione && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, minHeight: 34 }}>
                   <div style={{ flex: 1 }} />
+                  {/* ⭐ 27/07 (mockup definitivo): pilloline coi colori
+                      dell'app — Approva azzurra piena, Rifiuta leggera col
+                      rosso spento. "Approva" passa da solo al prossimo. */}
                   {voce.tipo === 'doc' && voce.doc.stato === 'caricato' && (
                     <>
                       <span style={{ position: 'relative', display: 'inline-flex' }}>
-                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: '#fff', color: '#C0392B', border: '1.5px solid #F3C8C8', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
+                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} className="transition-colors hover:bg-[#FBF5F5]" style={{ background: '#fff', color: '#A94444', border: '1.5px solid #E5E7EB', borderRadius: 999, padding: '8px 18px', fontSize: 12.5, fontWeight: 500, height: 33, display: 'flex', alignItems: 'center', opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
                         {nuvolaRifiutoDi(voce.doc.id)}
                       </span>
-                      <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#16A34A', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 18px', fontSize: 13, fontWeight: 600, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                        Approva e avanti
+                      <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} className="transition-colors hover:bg-[#CCE0FC]" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#DBEAFE', color: '#1D4ED8', border: '1.5px solid #DBEAFE', borderRadius: 999, padding: '8px 20px', fontSize: 12.5, fontWeight: 700, height: 33, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                        Approva
                       </button>
                     </>
                   )}
@@ -1072,7 +1090,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                         Approvato
                       </span>
                       <span style={{ position: 'relative', display: 'inline-flex' }}>
-                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Rifiuta</button>
+                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 12, fontWeight: 500, textDecoration: 'underline', cursor: 'pointer' }}>Rifiuta</button>
                         {nuvolaRifiutoDi(voce.doc.id)}
                       </span>
                     </>
@@ -1080,7 +1098,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                   {voce.tipo === 'doc' && voce.doc.stato === 'rifiutato' && (
                     <>
                       <span style={{ fontSize: 12.5, fontWeight: 700, color: '#C0392B' }}>Rifiutato{voce.doc.nota_admin ? ` · "${voce.doc.nota_admin}"` : ''}</span>
-                      <button onClick={() => tornaInVerifica(voce.doc)} disabled={azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer' }}>Rimetti in verifica</button>
+                      <button onClick={() => tornaInVerifica(voce.doc)} disabled={azione} style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 12, fontWeight: 500, textDecoration: 'underline', cursor: 'pointer' }}>Rimetti in verifica</button>
                     </>
                   )}
                 </div>
