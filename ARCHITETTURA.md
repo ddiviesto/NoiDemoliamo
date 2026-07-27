@@ -851,7 +851,7 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ---
 
-# 📋 PARTE 8 — STATO ATTUALE (10 luglio 2026)
+# 📋 PARTE 8 — STATO ATTUALE (27 luglio 2026)
 
 ## 8.1 ✅ FATTO
 
