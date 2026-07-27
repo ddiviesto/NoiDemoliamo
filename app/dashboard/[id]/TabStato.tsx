@@ -71,6 +71,11 @@ function IconaChevron({ aperto }: { aperto: boolean }) {
 // TIMELINE STEPS
 // ============================================================
 
+// ⭐ 28/07 (variante B su mockup): 7 tappe con "Ritiro programmato" (gemella
+// della fase del CRM) e nomi allineati alle pillole di stato — la terza
+// tappa dice "In attesa assegnazione" come la pillola, non "Documenti
+// verificati". Percorso e pillola raccontano la stessa cosa nello stesso
+// momento.
 const TIMELINE_STEPS = [
   {
     key: 'richiesta_inviata',
@@ -85,22 +90,28 @@ const TIMELINE_STEPS = [
     statiAttiviPer: ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati'],
   },
   {
-    key: 'documenti_verificati',
-    label: 'Documenti verificati',
-    descrizione: 'NoiDemoliamo ha approvato i documenti',
-    statiAttiviPer: ['da_assegnare', 'in_attesa_assegnazione'],
+    key: 'attesa_assegnazione',
+    label: 'In attesa assegnazione',
+    descrizione: 'Documenti approvati: stiamo scegliendo il demolitore',
+    statiAttiviPer: ['da_assegnare', 'in_attesa_assegnazione', 'in_assegnazione_manuale'],
   },
   {
     key: 'demolitore_assegnato',
     label: 'Demolitore assegnato',
-    descrizione: 'Riceverai i contatti per il ritiro',
-    statiAttiviPer: ['assegnata', 'in_attesa_conferma_cliente', 'ritiro_confermato'],
+    descrizione: 'Ti contatta per fissare il ritiro',
+    statiAttiviPer: ['assegnata', 'in_attesa_conferma_cliente'],
+  },
+  {
+    key: 'ritiro_programmato',
+    label: 'Ritiro programmato',
+    descrizione: 'Data fissata: tieni pronti gli originali',
+    statiAttiviPer: ['ritiro_confermato'],
   },
   {
     key: 'veicolo_ritirato',
     label: 'Veicolo ritirato',
     descrizione: 'Certificato di rottamazione in arrivo',
-    statiAttiviPer: ['ritirata', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra'],
+    statiAttiviPer: ['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra'],
   },
   {
     key: 'pratica_completata',
