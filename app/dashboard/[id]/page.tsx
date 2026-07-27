@@ -178,20 +178,23 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
 }
 
 // Badge di stato nell'header blu (pillola chiara)
+// ⭐ 28/07 (mockup approvato da Davide): palette allineata al CRM come
+// nella home cliente: flusso azzurro, verde solo Completata, rosso
+// tenue per "da rifare" e Annullata. Nomi invariati.
 function statoBadge(stato: string): { label: string; bg: string; text: string } {
   switch (stato) {
-    case 'in_attesa_documenti': return { label: 'In attesa documenti', bg: '#FAEEDA', text: '#854F0B' }
-    case 'in_attesa_approvazione_admin': return { label: 'In verifica', bg: '#E0EDFB', text: '#1E4E8C' }
-    case 'documenti_parzialmente_approvati': return { label: 'Documenti da rifare', bg: '#FBE2E2', text: '#9B1C1C' }
-    case 'da_assegnare': return { label: 'Approvata', bg: '#DCF3E4', text: '#1F7A43' }
+    case 'in_attesa_documenti': return { label: 'In attesa documenti', bg: '#EFF6FF', text: '#1D4ED8' }
+    case 'in_attesa_approvazione_admin': return { label: 'In verifica', bg: '#EFF6FF', text: '#1D4ED8' }
+    case 'documenti_parzialmente_approvati': return { label: 'Documenti da rifare', bg: '#F3D9D9', text: '#A94444' }
+    case 'da_assegnare': return { label: 'Approvata', bg: '#EFF6FF', text: '#1D4ED8' }
     case 'assegnata':
     case 'in_attesa_conferma_cliente':
-    case 'ritiro_confermato': return { label: 'Assegnata', bg: '#E0EDFB', text: '#1E4E8C' }
+    case 'ritiro_confermato': return { label: 'Assegnata', bg: '#EFF6FF', text: '#1D4ED8' }
     case 'ritirata':
     case 'in_attesa_cert_rottamazione':
-    case 'in_attesa_cert_radiazione_pra': return { label: 'In lavorazione', bg: '#EDE4FB', text: '#6B21A8' }
+    case 'in_attesa_cert_radiazione_pra': return { label: 'In lavorazione', bg: '#EFF6FF', text: '#1D4ED8' }
     case 'completata': return { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43' }
-    case 'annullata': return { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563' }
+    case 'annullata': return { label: 'Annullata', bg: '#F3D9D9', text: '#A94444' }
     default: return { label: stato, bg: '#E7EAEE', text: '#4B5563' }
   }
 }
@@ -316,7 +319,7 @@ export default function DettaglioPraticaCliente() {
 
   const banner = bannerInfo(pratica)
   const inPausa = !!pratica.in_attesa && pratica.stato !== 'completata' && pratica.stato !== 'annullata'
-  const badge = inPausa ? { label: 'In attesa', bg: '#FAEEDA', text: '#854F0B' } : statoBadge(pratica.stato)
+  const badge = inPausa ? { label: 'In attesa', bg: '#E8ECF3', text: '#5B6779' } : statoBadge(pratica.stato)
 
   return (
     <main className="min-h-screen flex justify-center p-4 pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>

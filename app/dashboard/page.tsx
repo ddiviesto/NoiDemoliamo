@@ -21,22 +21,33 @@ interface Pratica {
 }
 
 // ============================================================
-// Mappa stato → etichetta + colori pillola (chiari, come /inizia)
+// Mappa stato → etichetta + colori pillola
+// ⭐ 28/07 (mockup approvato da Davide): palette allineata al CRM.
+// Il flusso è tutto AZZURRO (parla il testo), verde solo Completata,
+// ROSSO TENUE per "da rifare" e Annullata, azzurro spento la pausa.
+// I nomi restano quelli del cliente: cambiano solo i colori.
 // ============================================================
 
+const PILL_FLUSSO = { bg: '#EFF6FF', text: '#1D4ED8' }
+const PILL_ROSSO_TENUE = { bg: '#F3D9D9', text: '#A94444' }
+const PILL_PAUSA = { bg: '#E8ECF3', text: '#5B6779' }
+
 const STATO_INFO: Record<string, { label: string; bg: string; text: string }> = {
-  in_attesa_documenti: { label: 'In attesa documenti', bg: '#FAEEDA', text: '#854F0B' },
-  in_attesa_approvazione_admin: { label: 'In verifica', bg: '#E0EDFB', text: '#1E4E8C' },
-  documenti_parzialmente_approvati: { label: 'Documenti da rifare', bg: '#FBE2E2', text: '#9B1C1C' },
-  da_assegnare: { label: 'In attesa assegnazione', bg: '#FDEBD9', text: '#92500E' },
-  assegnata: { label: 'Demolitore assegnato', bg: '#E0EDFB', text: '#1E4E8C' },
-  in_attesa_conferma_cliente: { label: 'Demolitore assegnato', bg: '#E0EDFB', text: '#1E4E8C' },
-  ritiro_confermato: { label: 'Ritiro confermato', bg: '#E4E4FB', text: '#4338CA' },
-  ritirata: { label: 'Veicolo ritirato', bg: '#EDE4FB', text: '#6B21A8' },
-  in_attesa_cert_rottamazione: { label: 'In attesa certificato', bg: '#DDF2F0', text: '#0F766E' },
-  in_attesa_cert_radiazione_pra: { label: 'In attesa PRA', bg: '#DDF2F0', text: '#0F766E' },
+  in_attesa_documenti: { label: 'In attesa documenti', ...PILL_FLUSSO },
+  in_attesa_approvazione_admin: { label: 'In verifica', ...PILL_FLUSSO },
+  documenti_parzialmente_approvati: { label: 'Documenti da rifare', ...PILL_ROSSO_TENUE },
+  da_assegnare: { label: 'In attesa assegnazione', ...PILL_FLUSSO },
+  in_attesa_assegnazione: { label: 'In attesa assegnazione', ...PILL_FLUSSO },
+  in_assegnazione_manuale: { label: 'In attesa assegnazione', ...PILL_FLUSSO },
+  assegnata: { label: 'Demolitore assegnato', ...PILL_FLUSSO },
+  in_attesa_conferma_cliente: { label: 'Demolitore assegnato', ...PILL_FLUSSO },
+  ritiro_confermato: { label: 'Ritiro confermato', ...PILL_FLUSSO },
+  ritirata: { label: 'Veicolo ritirato', ...PILL_FLUSSO },
+  in_attesa_recensione_cliente: { label: 'Veicolo ritirato', ...PILL_FLUSSO },
+  in_attesa_cert_rottamazione: { label: 'In attesa certificato', ...PILL_FLUSSO },
+  in_attesa_cert_radiazione_pra: { label: 'In attesa PRA', ...PILL_FLUSSO },
   completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43' },
-  annullata: { label: 'Annullata', bg: '#E7EAEE', text: '#4B5563' },
+  annullata: { label: 'Annullata', ...PILL_ROSSO_TENUE },
 }
 
 function infoStato(stato: string) {
@@ -247,7 +258,7 @@ export default function DashboardCliente() {
               {pratiche.map(p => {
                 // Pratica in pausa (decisa dall'admin): il cliente vede solo "In attesa"
                 const inPausa = p.in_attesa && p.stato !== 'completata' && p.stato !== 'annullata'
-                const s = inPausa ? { label: 'In attesa', bg: '#FAEEDA', text: '#854F0B' } : infoStato(p.stato)
+                const s = inPausa ? { label: 'In attesa', ...PILL_PAUSA } : infoStato(p.stato)
                 return (
                   <button
                     key={p.id}
