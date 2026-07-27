@@ -150,8 +150,11 @@ function isAttiva(stato: string): boolean {
   return stato !== 'completata' && stato !== 'annullata'
 }
 
+// ⭐ 27/07: anche il FERMO "non lo sa" fa scattare il Da contattare
+// (decisione Davide): tutte e tre le risposte critiche del modulo si
+// chiariscono al telefono prima di procedere
 function daContattare(p: Pratica): boolean {
-  return isAttiva(p.stato) && (p.libretto === 'no' || p.certificato_proprieta === 'nessuno')
+  return isAttiva(p.stato) && (p.libretto === 'no' || p.certificato_proprieta === 'nessuno' || p.fermo_amministrativo === 'non_so')
 }
 
 // ALLERTA 8 ORE (23/07): pratiche assegnate il cui demolitore NON ha
@@ -617,7 +620,7 @@ export default function AdminDashboard() {
                   a zero, rossa coi casi. Non è una fase: niente freccia,
                   solo uno stacco. Via il vecchio riquadro rosso. */}
               <PillolaFase nome="Da contattare" valore={conta('contattare')} rossa={conta('contattare') > 0} attivo={filtro === 'contattare'} onClick={() => setFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
-                title={conta('contattare') > 0 ? 'Da chiamare per i documenti (libretto o certificato da chiarire)' : 'Nessun cliente da chiamare per i documenti'} />
+                title={conta('contattare') > 0 ? 'Da chiamare: libretto, certificato o fermo da chiarire' : 'Nessun cliente da chiamare per i documenti'} />
               <div style={{ width: 14, flexShrink: 0 }} />
               <PillolaFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => setFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
               <FrecciaFase />
@@ -759,7 +762,17 @@ export default function AdminDashboard() {
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', background: '#EFF6FF', padding: '0 16px 12px' }}>
                         {/* ⭐ 27/07 (variante 3 su mockup): la pillola Documenti
                             è SPARITA — la scheda Documenti sta sempre in vista
-                            in fila con le altre, dentro la tendina */}
+                            in fila con le altre, dentro la tendina.
+                            ⭐ Ordine delle pillole deciso da Davide: Cronologia ·
+                            Chat · Stato pratica · Trattativa Extra · Assegnazione */}
+                        <button
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelCronoAperta(a => !a) }}
+                          className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
+                          style={{ background: selCronoAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                        >
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 7 12 12 15.5 13.5" /></svg>
+                          Cronologia
+                        </button>
                         <button
                           onClick={() => { setMenuStato(null); setSelChatAperta(a => !a); if (selChatAperta) aggiornaContatori(p.id) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
@@ -782,82 +795,91 @@ export default function AdminDashboard() {
                           {menuStato && (
                             <>
                               <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => { if (!statoBusy) setMenuStato(null) }} />
-                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 260, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: 8, zIndex: 6 }}>
-                                {menuStato === 'menu' ? (
-                                  <>
-                                    <button onClick={() => azioneStato(p, 'attiva')} disabled={statoBusy || (!p.in_attesa && p.stato !== 'annullata')} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-blue-50 disabled:opacity-40 disabled:hover:bg-transparent" style={{ background: 'none', border: 'none' }}>
-                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
-                                      <span>
-                                        <span className="block text-[12px] font-bold" style={{ color: '#1D4ED8' }}>Attiva</span>
-                                        <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>{p.stato === 'annullata' ? 'riattiva: torna dov\'era rimasta' : p.in_attesa ? 'riprendi da dov\'era rimasta' : 'la pratica è già attiva'}</span>
-                                      </span>
-                                    </button>
-                                    <button onClick={() => { setMenuStato('attesa'); setStatoErr(null) }} disabled={statoBusy || p.stato === 'annullata' || !!p.in_attesa} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-amber-50 disabled:opacity-40 disabled:hover:bg-transparent" style={{ background: 'none', border: 'none' }}>
-                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#854F0B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                                      <span>
-                                        <span className="block text-[12px] font-bold" style={{ color: '#854F0B' }}>Metti in attesa</span>
-                                        <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>pausa col motivo · si riprende quando vuoi</span>
-                                      </span>
-                                    </button>
-                                    <button onClick={() => { setMenuStato('annulla'); setStatoErr(null) }} disabled={statoBusy || p.stato === 'annullata'} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-red-50 disabled:opacity-40 disabled:hover:bg-transparent" style={{ background: 'none', border: 'none' }}>
-                                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9B1C1C" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" /></svg>
-                                      <span>
-                                        <span className="block text-[12px] font-bold" style={{ color: '#9B1C1C' }}>Annulla pratica</span>
-                                        <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>col motivo · riattivabile in futuro</span>
-                                      </span>
-                                    </button>
-                                  </>
-                                ) : (
-                                  <div style={{ padding: 4 }}>
-                                    <div className="text-[12px] font-bold" style={{ color: menuStato === 'attesa' ? '#854F0B' : '#9B1C1C' }}>{menuStato === 'attesa' ? 'Metti in attesa' : 'Annulla pratica'}</div>
-                                    <textarea
-                                      value={motivoStato}
-                                      onChange={e => setMotivoStato(e.target.value)}
-                                      placeholder="Motivo (resta nella cronologia)…"
-                                      rows={2}
-                                      className="w-full mt-1.5 rounded-lg px-2.5 py-2 text-[12px] outline-none resize-none"
-                                      style={{ border: '1.5px solid #E5E7EB', color: '#111827' }}
-                                    />
-                                    {statoErr && <div className="text-[10.5px] text-red-600 mt-1">{statoErr}</div>}
-                                    <div className="flex gap-1.5 justify-end mt-2">
-                                      <button onClick={() => { setMenuStato('menu'); setStatoErr(null) }} disabled={statoBusy} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>Indietro</button>
-                                      <button onClick={() => azioneStato(p, menuStato)} disabled={statoBusy} className="transition-colors disabled:opacity-50" style={{ background: menuStato === 'attesa' ? '#B45309' : '#E15E5E', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>{statoBusy ? 'Salvo…' : 'Conferma'}</button>
-                                    </div>
-                                  </div>
-                                )}
+                              {/* ⭐ 27/07 (mockup approvato): la nuvoletta parla la
+                                  lingua del CRM — dentro ci sono LE PILLOLE DI
+                                  STATO VERE della lista (azzurro flusso, azzurro
+                                  spento con l'orologio, rosso tenue), quella
+                                  corrente ha l'anello blu; il motivo si apre
+                                  sotto quando scegli attesa o annullo. */}
+                              <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 280, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: '11px 12px', zIndex: 6 }}>
+                                {(() => {
+                                  const statoCorrente = p.stato === 'annullata' ? 'annullata' : p.in_attesa ? 'attesa' : 'attiva'
+                                  const evidenziata = menuStato === 'attesa' || menuStato === 'annulla' ? menuStato === 'annulla' ? 'annullata' : 'attesa' : statoCorrente
+                                  const anello = (attiva: boolean): React.CSSProperties => attiva ? { border: '1.5px solid #2563EB', boxShadow: '0 0 0 3px rgba(37,99,235,0.10)' } : { border: '1.5px solid transparent' }
+                                  return (
+                                    <>
+                                      <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, marginBottom: 8 }}>STATO DELLA PRATICA</div>
+                                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                                        <button
+                                          onClick={() => azioneStato(p, 'attiva')}
+                                          disabled={statoBusy || statoCorrente === 'attiva'}
+                                          className="transition-all"
+                                          style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '4px 12px', cursor: statoCorrente === 'attiva' ? 'default' : 'pointer', opacity: statoBusy ? 0.5 : 1, ...anello(evidenziata === 'attiva') }}
+                                        >
+                                          Attiva
+                                        </button>
+                                        <button
+                                          onClick={() => { setMenuStato('attesa'); setStatoErr(null) }}
+                                          disabled={statoBusy || p.stato === 'annullata' || !!p.in_attesa}
+                                          className="transition-all disabled:opacity-45"
+                                          style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#E8ECF3', color: '#5B6779', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '4px 12px', cursor: 'pointer', ...anello(evidenziata === 'attesa') }}
+                                        >
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+                                          In attesa
+                                        </button>
+                                        <button
+                                          onClick={() => { setMenuStato('annulla'); setStatoErr(null) }}
+                                          disabled={statoBusy || p.stato === 'annullata'}
+                                          className="transition-all disabled:opacity-45"
+                                          style={{ background: '#F3D9D9', color: '#A94444', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '4px 12px', cursor: 'pointer', ...anello(evidenziata === 'annullata') }}
+                                        >
+                                          Annullata
+                                        </button>
+                                      </div>
+                                      {(menuStato === 'attesa' || menuStato === 'annulla') && (
+                                        <div style={{ marginTop: 9 }}>
+                                          <textarea
+                                            value={motivoStato}
+                                            onChange={e => setMotivoStato(e.target.value)}
+                                            placeholder="Motivo (resta nella cronologia)…"
+                                            rows={2}
+                                            autoFocus
+                                            className="w-full rounded-lg px-2.5 py-2 text-[12px] outline-none resize-none focus:border-blue-300"
+                                            style={{ border: '1.5px solid #E5E7EB', color: '#111827' }}
+                                          />
+                                          {statoErr && <div className="text-[10.5px] text-red-600 mt-1">{statoErr}</div>}
+                                          <div className="flex gap-2 items-center justify-end mt-1.5">
+                                            <button onClick={() => { setMenuStato('menu'); setStatoErr(null); setMotivoStato('') }} disabled={statoBusy} className="disabled:opacity-50" style={{ background: 'none', border: 'none', color: '#5B6779', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Annulla</button>
+                                            <button onClick={() => azioneStato(p, menuStato as 'attesa' | 'annulla')} disabled={statoBusy} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 13px', cursor: 'pointer' }}>{statoBusy ? 'Salvo…' : 'Conferma'}</button>
+                                          </div>
+                                        </div>
+                                      )}
+                                      {menuStato === 'menu' && statoErr && <div className="text-[10.5px] text-red-600 mt-2">{statoErr}</div>}
+                                    </>
+                                  )
+                                })()}
                               </div>
                             </>
                           )}
                         </span>
-                        {/* ⭐ ASSEGNAZIONE (27/07, mockup definitivo): apre il
-                            pannello a DESTRA delle schede nella tendina */}
-                        <button
-                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelAssegnaAperta(a => !a) }}
-                          className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
-                          style={{ background: selAssegnaAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
-                        >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
-                          Assegnazione
-                          {p.demolitore_id && (
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                          )}
-                        </button>
-                        {/* ⭐ IMPORTO una tantum: nuvoletta ancorata alla pillola */}
+                        {/* ⭐ TRATTATIVA EXTRA (ex Importo, rinominata da Davide
+                            27/07): importo una tantum, nuvoletta sulla pillola */}
                         <span style={{ position: 'relative' }}>
                           <button
                             onClick={() => { setMenuStato(null); setNuvolaElimina(false); setNuvolaImporto(v => { const nv = !v; if (nv) { setImportoVal(p.fee_concordata != null ? String(p.fee_concordata) : ''); setImportoErr(null) } return nv }) }}
                             className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
                             style={{ background: nuvolaImporto ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                           >
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-                            Importo
+                            {/* Simbolo dell'EURO (via il dollaro, 27/07) */}
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10h12" /><path d="M4 14h9" /><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" /></svg>
+                            Trattativa Extra
                             {p.fee_concordata != null && <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{p.fee_concordata}€</span>}
                           </button>
                           {nuvolaImporto && (
                             <>
                               <div style={{ position: 'fixed', inset: 0, zIndex: 5 }} onClick={() => { if (!importoBusy) setNuvolaImporto(false) }} />
                               <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 250, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: 12, zIndex: 6 }}>
-                                <div className="text-[12px] font-bold" style={{ color: '#0F1B33' }}>Importo una tantum</div>
+                                <div className="text-[12px] font-bold" style={{ color: '#0F1B33' }}>Trattativa Extra</div>
                                 <div className="text-[10.5px] mt-0.5" style={{ color: '#8B95A5' }}>
                                   {p.fee_concordata != null ? 'Per questa pratica vale questo importo, non le tariffe di zona.' : 'Ora vale la tariffa di zona del demolitore. Se serve un accordo speciale, scrivi l\'importo.'}
                                 </div>
@@ -890,15 +912,18 @@ export default function AdminDashboard() {
                             </>
                           )}
                         </span>
-                        {/* ⭐ CRONOLOGIA (27/07, scelta B su mockup): finestrella
-                            fissa in basso a destra, gemella della Chat */}
+                        {/* ⭐ ASSEGNAZIONE (27/07, mockup definitivo): apre il
+                            pannello a DESTRA delle schede nella tendina */}
                         <button
-                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelCronoAperta(a => !a) }}
+                          onClick={() => { setMenuStato(null); setNuvolaImporto(false); setNuvolaElimina(false); setSelAssegnaAperta(a => !a) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
-                          style={{ background: selCronoAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
+                          style={{ background: selAssegnaAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 7 12 12 15.5 13.5" /></svg>
-                          Cronologia
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
+                          Assegnazione
+                          {p.demolitore_id && (
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+                          )}
                         </button>
                         <span style={{ flex: 1 }} />
                         {/* ⭐ CESTINO (27/07): nuvoletta a due scelte, come nel dettaglio */}
@@ -965,6 +990,18 @@ export default function AdminDashboard() {
                           onMatita={() => apriSez(p, 'casistiche')}
                           onAnnulla={() => { setSezEdit(null); setErroreSez(null) }}
                           onSalva={() => salvaSez(p)}
+                          avviso={(p.libretto === 'no' || p.certificato_proprieta === 'nessuno' || p.fermo_amministrativo === 'non_so') ? (
+                            // ⭐ Avviso "Dal modulo" (27/07, variante B su mockup):
+                            // pillola blu tenue con le sole risposte critiche del
+                            // cliente; sparisce da sola quando l'admin le corregge
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 6, background: '#EFF6FF', borderRadius: 10, padding: '5px 11px', marginBottom: 8, fontSize: 10.5, color: '#1E4E8C', minWidth: 0 }}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+                              <span style={{ lineHeight: 1.5 }}>
+                                <b style={{ color: '#1D4ED8', fontWeight: 700 }}>Dal modulo:</b>{' '}
+                                {[p.libretto === 'no' && 'niente libretto', p.certificato_proprieta === 'nessuno' && 'CDC da chiarire', p.fermo_amministrativo === 'non_so' && 'fermo da verificare'].filter(Boolean).join(' · ')}
+                              </span>
+                            </div>
+                          ) : undefined}
                           righe={[
                             { k: 'Casistica', vista: p.casistica ? (NOMI_CASISTICHE[p.casistica] || p.casistica) : '—' },
                             { k: 'Libretto', vista: p.libretto ? (LIBRETTO_LABEL[p.libretto] || p.libretto) : '—', campo: (
@@ -982,7 +1019,7 @@ export default function AdminDashboard() {
                                 <option value="smarrito">Smarrito</option>
                               </select>
                             ) },
-                            { k: 'Fermo', vista: p.fermo_amministrativo ? (FERMO_LABEL[p.fermo_amministrativo] || p.fermo_amministrativo) : '—', campo: (
+                            { k: 'Fermo Amministrativo', vista: p.fermo_amministrativo ? (FERMO_LABEL[p.fermo_amministrativo] || p.fermo_amministrativo) : '—', campo: (
                               <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('fermo_amministrativo')} onChange={e => setB('fermo_amministrativo', e.target.value)}>
                                 <option value="" disabled>Scegli…</option>
                                 <option value="no">No</option>
@@ -1093,30 +1130,34 @@ export default function AdminDashboard() {
                       )}
                       </div>
 
-                      {/* CHAT A FINESTRELLA (26/07, variante A su mockup):
-                          fissa in basso a destra, la pagina resta usabile */}
-                      {aperta && selChatAperta && (
-                        <ChatAdmin
-                          praticaId={p.id}
-                          demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
-                          aperta
-                          onToggle={() => { setSelChatAperta(false); aggiornaContatori(p.id) }}
-                          finestra
-                          titolo={`${p.nome_richiedente || 'Cliente'} · ${p.targa || 'senza targa'}`}
-                        />
-                      )}
-                      {/* ⭐ CRONOLOGIA A FINESTRELLA (27/07, scelta B su
-                          mockup): gemella della chat, con l'ingrandisci */}
-                      {aperta && selCronoAperta && (
-                        <CronologiaNote
-                          praticaId={p.id}
-                          praticaCreataIl={p.creato_il}
-                          refreshKey={0}
-                          aperta
-                          onToggle={() => setSelCronoAperta(false)}
-                          finestra
-                          titolo={`Cronologia · ${p.targa || 'senza targa'}`}
-                        />
+                      {/* ⭐ FINESTRELLE (27/07): chat e cronologia vivono in un
+                          contenitore fisso UNICO in basso a destra, AFFIANCATE
+                          (cronologia a sinistra della chat) — mai sovrapposte,
+                          anche quando una delle due si ingrandisce */}
+                      {aperta && (selChatAperta || selCronoAperta) && (
+                        <div style={{ position: 'fixed', right: 16, bottom: 16, display: 'flex', gap: 12, alignItems: 'flex-end', zIndex: 50 }}>
+                          {selCronoAperta && (
+                            <CronologiaNote
+                              praticaId={p.id}
+                              praticaCreataIl={p.creato_il}
+                              refreshKey={0}
+                              aperta
+                              onToggle={() => setSelCronoAperta(false)}
+                              finestra
+                              titolo={`Cronologia · ${p.targa || 'senza targa'}`}
+                            />
+                          )}
+                          {selChatAperta && (
+                            <ChatAdmin
+                              praticaId={p.id}
+                              demolitoreNome={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
+                              aperta
+                              onToggle={() => { setSelChatAperta(false); aggiornaContatori(p.id) }}
+                              finestra
+                              titolo={`${p.nome_richiedente || 'Cliente'} · ${p.targa || 'senza targa'}`}
+                            />
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -1142,7 +1183,7 @@ export default function AdminDashboard() {
 // mockup): righe ad ALTEZZA FISSA, in modifica il valore diventa un campo
 // slim col filo blu (dissolvenza incrociata), la matita diventa
 // Annulla · Salva in uno spazio già riservato. Zero sobbalzi.
-function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, onSalva, righe, extra }: {
+function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, onSalva, righe, extra, avviso }: {
   titolo: string
   inEdit: boolean
   salvando: boolean
@@ -1152,6 +1193,9 @@ function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, 
   onSalva: () => void
   righe: { k: string; vista: string; campo?: React.ReactNode }[]
   extra?: React.ReactNode
+  // ⭐ 27/07 (variante B su mockup): avviso blu tenue sotto la testata
+  // (es. le risposte "critiche" del modulo nella scheda Casistiche)
+  avviso?: React.ReactNode
 }) {
   const fade = (visibile: boolean): React.CSSProperties => ({
     opacity: visibile ? 1 : 0,
@@ -1178,6 +1222,7 @@ function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, 
           </span>
         </span>
       </div>
+      {avviso}
       {righe.map((r, i) => (
         <div key={r.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 27, borderBottom: i === righe.length - 1 && !extra ? 'none' : '1px solid #F5F7FA', fontSize: 11.5 }}>
           <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.k}</span>

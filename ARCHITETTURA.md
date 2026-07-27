@@ -922,6 +922,14 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **VISORE: pilloline Approva/Rifiuta rifatte** (mockup definitivo, 3 giri): "**Approva**" azzurra piena `#DBEAFE`/`#1D4ED8` con spunta (il verde nei bottoni è BOCCIATO: nell'app è dei traguardi; passa sempre da solo al prossimo documento), "**Rifiuta**" bianca bordo grigio testo rosso spento `#A94444` a peso NORMALE (il grassetto è bocciato), niente ✕. Link degli stati allineati.
 - ⭐ **PALLINO SPIA sui badge della fila azioni** (variante C su mockup): via i numerini schiacciati — puntino rosso sull'angolo col bordino dello sfondo (ora resta sulla Chat).
 
+**Quinta parte (27/07 notte) — RIFINITURE DAL TEST DI DAVIDE (mockup approvati):**
+- ⭐⭐ **ORDINE PILLOLE deciso da Davide**: **Cronologia · Chat · Stato pratica · Trattativa Extra · Assegnazione** (cestino a destra). "Importo" RINOMINATO "**Trattativa Extra**" col simbolo dell'**EURO** (via il dollaro).
+- ⭐⭐ **NUVOLETTA "Stato pratica" nella lingua del CRM** (mockup approvato dopo 2 giri bocciati: né menu a 3 colori né pilloline generiche): dentro ci sono **LE PILLOLE DI STATO VERE della lista** — Attiva (azzurro flusso), In attesa (azzurro spento con l'orologio), Annullata (rosso tenue) — quella corrente ha l'**anello blu** delle pillole attive del flusso; toccando attesa/annullo il campo MOTIVO si apre morbido sotto (Annulla · Conferma blu). Zero colori nuovi.
+- ⭐⭐ **AVVISO "Dal modulo" sulla scheda Casistiche** (variante B su mockup): via il riquadro giallo "Da contattare" dalla scheda Documenti (coi bottoni CDC) — al suo posto una **pillola blu tenue** sotto la testata di Casistiche con le sole risposte critiche del cliente ("niente libretto · CDC da chiarire · fermo da verificare"), che VA A CAPO e sparisce da sola quando l'admin corregge con la matita. Le correzioni si fanno SOLO dalla matita di Casistiche.
+- ⭐ **Anche il FERMO "non lo sa" fa scattare "Da contattare"** (decisione Davide): il predicato `daContattare` ora copre libretto no + CDC nessuno + fermo non_so — pillola del flusso, filtro, pillola in riga e priorità inclusi. Corretto il valore → la pratica rientra nel flusso.
+- ⭐ **"Fermo" rinominato "Fermo Amministrativo"** nella scheda Casistiche.
+- ⭐ **FINESTRELLE AFFIANCATE**: chat e cronologia vivono in un contenitore fisso UNICO in basso a destra (flex, gap 12, allineate in basso) — la cronologia si mette a sinistra della chat e non si sovrappongono mai, anche ingrandite. Le due componenti non sono più `position: fixed` da sole.
+
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 
 > ⚠️ **METODO SPECIALE PER QUEST'AREA** (dopo 3 tentativi di design bocciati): Davide DETTA

@@ -758,19 +758,10 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
             )}
           </div>
 
-          {/* Da contattare: ora anche gli ESITI della telefonata vivono qui
-              (la pagina intera non c'è più) */}
-          {daContattare && (
-            <div className="text-[11px] rounded-lg px-2.5 py-2 mb-2" style={{ background: '#FDF7EA', color: '#854F0B' }}>
-              <b>Da contattare:</b> {dati?.libretto === 'no' ? 'il cliente non ha il libretto (né denuncia). ' : ''}{dati?.certificato_proprieta === 'nessuno' ? 'il cliente non sa che certificato di proprietà ha. ' : ''}Chiamalo per capire la situazione.
-              {dati?.certificato_proprieta === 'nessuno' && (
-                <div className="flex items-center flex-wrap gap-1.5 mt-2">
-                  <span className="font-semibold">Dopo la verifica:</span>
-                  <BottoniCdc azione={azione} onScegli={impostaCdc} />
-                </div>
-              )}
-            </div>
-          )}
+          {/* Nota 27/07: l'avviso giallo "Da contattare" è stato TOLTO da qui
+              (decisione Davide): le cose da chiarire del modulo si leggono
+              nell'avviso blu della sezione Casistiche e le corregge l'admin
+              con la matita. */}
 
           {loading ? (
             <div className="flex justify-center py-4"><div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /></div>

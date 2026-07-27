@@ -193,10 +193,12 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
 
   // ---- FINESTRELLA fissa in basso a destra (27/07, gemella della Chat):
   // misure fisse, bottone ingrandisci accanto alla ✕ ----
+  // ⭐ 27/07: niente position fixed qui — le finestrelle (chat e cronologia)
+  // vivono affiancate in un contenitore fisso unico nel CRM
   if (finestra) {
     if (!aperta) return null
     return (
-      <div style={{ position: 'fixed', right: 16, bottom: 16, width: espansa ? 470 : 340, height: espansa ? 'min(600px, calc(100vh - 32px))' : 430, maxWidth: 'calc(100vw - 32px)', zIndex: 50, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, boxShadow: '0 16px 44px rgba(15,23,42,0.28)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'width .2s ease, height .2s ease' }}>
+      <div style={{ position: 'relative', flexShrink: 0, width: espansa ? 470 : 340, height: espansa ? 'min(600px, calc(100vh - 32px))' : 430, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, boxShadow: '0 16px 44px rgba(15,23,42,0.28)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'width .2s ease, height .2s ease' }}>
         <div style={{ background: 'linear-gradient(90deg,#1D4ED8,#2563EB)', color: '#fff', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="text-[12.5px] font-bold truncate">{titolo || 'Cronologia e note'}</div>
