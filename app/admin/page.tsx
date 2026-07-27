@@ -264,6 +264,8 @@ export default function AdminDashboard() {
   // incrementa il trigger e il visore si apre sul primo da verificare
   const [docTrigger, setDocTrigger] = useState<Record<string, number>>({})
   const [selChatAperta, setSelChatAperta] = useState(false)
+  // Riclic sulla pillola Chat: la finestrella scivola via prima di smontarsi
+  const [chatChiudi, setChatChiudi] = useState(0)
   const [menuStato, setMenuStato] = useState<null | 'menu' | 'attesa' | 'annulla'>(null)
   const [motivoStato, setMotivoStato] = useState('')
   const [statoBusy, setStatoBusy] = useState(false)
@@ -886,7 +888,7 @@ export default function AdminDashboard() {
                           {(docStats[p.id]?.daVerificare ?? 0) > 0 && <span style={{ position: 'absolute', top: -3, right: -1, width: 10, height: 10, borderRadius: 999, background: '#DC2626', border: '2px solid #EFF6FF' }} />}
                         </button>
                         <button
-                          onClick={() => { setMenuStato(null); setSelChatAperta(a => !a); if (selChatAperta) aggiornaContatori(p.id) }}
+                          onClick={() => { setMenuStato(null); if (selChatAperta) setChatChiudi(x => x + 1); else setSelChatAperta(true) }}
                           className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
                           style={{ position: 'relative', background: selChatAperta ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                         >
@@ -1280,6 +1282,7 @@ export default function AdminDashboard() {
                             onToggle={() => { setSelChatAperta(false); aggiornaContatori(p.id) }}
                             finestra
                             titolo={`${p.nome_richiedente || 'Cliente'} · ${p.targa || 'senza targa'}`}
+                            chiudiSegnale={chatChiudi}
                           />
                         </div>
                       )}

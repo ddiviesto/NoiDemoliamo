@@ -40,13 +40,16 @@ function fmtOra(x: string) {
 // chips rapidi sottili, campo a pillola col bottone tondo) + modalità
 // `finestra`: finestrella fissa in basso a destra (stile messenger) usata
 // dalla tendina del CRM — la pagina sotto resta tutta usabile.
-export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle, finestra, titolo }: {
+export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle, finestra, titolo, chiudiSegnale }: {
   praticaId: string
   demolitoreNome: string | null
   aperta: boolean
   onToggle: () => void
   finestra?: boolean
   titolo?: string
+  // ⭐ 27/07 notte (variante B su mockup): riclic sulla pillola Chat = il
+  // padre incrementa il segnale e la finestrella scivola via verso destra
+  chiudiSegnale?: number
 }) {
   // ⭐ 26/07: TRE canali — Cliente (tu↔cliente), Demolitore (tu↔demolitore,
   // NUOVO) e "Dem. e Cliente" (controllo qualità, sola lettura)
@@ -64,6 +67,23 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
   // Finestrella: altezza SEMPRE uguale (linguette e Gestisci si adattano
   // dentro) + bottone per ingrandirla accanto alla ✕ (26/07)
   const [espansa, setEspansa] = useState(false)
+  // ⭐ 27/07 notte (variante B su mockup): la finestrella entra scivolando
+  // DA DESTRA e esce riscivolando VERSO DESTRA prima di smontarsi (✕ o
+  // riclic sulla pillola Chat)
+  const [chiudendo, setChiudendo] = useState(false)
+  function chiudi() {
+    if (chiudendo) return
+    setChiudendo(true)
+    setTimeout(onToggle, 260)
+  }
+  const segnaleGestito = useRef(chiudiSegnale ?? 0)
+  useEffect(() => {
+    if (chiudiSegnale != null && chiudiSegnale > segnaleGestito.current) {
+      segnaleGestito.current = chiudiSegnale
+      chiudi()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chiudiSegnale])
   const listaRef = useRef<HTMLDivElement>(null)
 
   // Fotografia dell'ultimo elenco: si aggiorna SOLO se è cambiato qualcosa
@@ -288,7 +308,9 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
   if (finestra) {
     if (!aperta) return null
     return (
-      <div style={{ position: 'relative', flexShrink: 0, width: espansa ? 470 : 340, height: espansa ? 'min(600px, calc(100vh - 32px))' : 430, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, boxShadow: '0 16px 44px rgba(15,23,42,0.28)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'width .2s ease, height .2s ease' }}>
+      <div style={{ position: 'relative', flexShrink: 0, width: espansa ? 470 : 340, height: espansa ? 'min(600px, calc(100vh - 32px))' : 430, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, boxShadow: '0 16px 44px rgba(15,23,42,0.28)', overflow: 'hidden', display: 'flex', flexDirection: 'column', transition: 'width .2s ease, height .2s ease, transform .26s ease', animation: 'chat-scivola .28s ease', transform: chiudendo ? 'translateX(130%)' : undefined }}>
+        {/* ⭐ Scivola da destra all'apertura, via verso destra alla chiusura */}
+        <style>{'@keyframes chat-scivola{from{transform:translateX(130%)}to{transform:none}}'}</style>
         <div style={{ background: 'linear-gradient(90deg,#1D4ED8,#2563EB)', color: '#fff', padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="text-[12.5px] font-bold truncate">{titolo || 'Chat'}</div>
@@ -301,7 +323,7 @@ export default function ChatAdmin({ praticaId, demolitoreNome, aperta, onToggle,
               <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 3 21 3 21 9" /><polyline points="9 21 3 21 3 15" /></svg>
             )}
           </button>
-          <button onClick={onToggle} aria-label="Chiudi" className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-white/30" style={{ width: 22, height: 22, borderRadius: 7, background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer' }}>
+          <button onClick={chiudi} aria-label="Chiudi" className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-white/30" style={{ width: 22, height: 22, borderRadius: 7, background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer' }}>
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
           </button>
         </div>
