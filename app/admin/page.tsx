@@ -514,9 +514,16 @@ export default function AdminDashboard() {
         if (!res.ok) { const d = await res.json().catch(() => null); throw new Error(d?.error || 'Errore') }
         await notaAutomatica(p.id, `Pratica annullata: ${motivo}`)
       }
-      await ricaricaPratiche()
+      const fresche = await ricaricaPratiche()
       setMenuStato(null)
       setMotivoStato('')
+      // ⭐ 27/07 sera (variante A su mockup): alla RIATTIVAZIONE il flusso ti
+      // PORTA nella casella di destinazione (pillola azzurra accesa) e la
+      // pratica resta aperta — mai più "riattivo e non so dove va"
+      if (azione === 'attiva' && fresche) {
+        const nuova = fresche.find(x => x.id === p.id)
+        if (nuova) setFiltro(bucketDi(nuova))
+      }
     } catch (e) {
       setStatoErr(e instanceof Error && e.message !== 'Errore' ? e.message : 'Errore nel salvataggio. Riprova.')
     }
@@ -563,6 +570,9 @@ export default function AdminDashboard() {
       .select(CAMPI_LISTA)
       .order('creato_il', { ascending: false })
     if (praticheData) setPratiche(praticheData as Pratica[])
+    // La lista fresca serve a chi deve guardare la pratica APPENA aggiornata
+    // (es. la riattivazione, che segue la pratica nella sua casella)
+    return (praticheData as Pratica[] | null) || null
   }
   useAggiornaLive({
     canale: 'admin-crm',
