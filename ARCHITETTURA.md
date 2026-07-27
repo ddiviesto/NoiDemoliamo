@@ -945,6 +945,15 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐ **CRONOLOGIA rifinita** (richieste Davide): titolo "**Cronologia e Note**"; la pillola dice il tipo e il testo NON lo ripete più (via i prefissi automatici "Messa in attesa/Pratica annullata/ripresa/riattivata": resta solo il motivo, o parla la pillola da sola); motivo dell'attesa in riga allineato al testo della pillola; **campo nota** con placeholder corto "Scrivi una nota…" e bottone TONDO BLU PIENO con la MATITA (opzione B su mockup, gemello del tondo della chat).
 - ⭐ **COLORI PILLOLE CRONOLOGIA** (proposta approvata): AZZURRO `#DBEAFE`/`#1D4ED8` per Nota, Demolitore, Ripresa e Riattivata (via il verde: è solo della Completata), grigio spento per In attesa e Creata, **rosso tenue** `#F3D9D9`/`#A94444` per Annullata.
 
+**Settima parte (27/07 notte) — RICERCA CHE TI PORTA, RIATTIVAZIONE CHE SEGUE, VISORE A PANNELLO (mockup approvati):**
+- ⭐⭐ **RICERCA DAPPERTUTTO**: appena scrivi nel cerca il filtro attivo si IGNORA e si cerca su TUTTE le pratiche (annullate comprese); **cliccare la pratica trovata** cancella il testo del cerca, sposta il flusso NELLA SUA CASELLA e apre la tendina lì.
+- ⭐⭐ **RIATTIVAZIONE CHE TI PORTA** (variante A su mockup): premendo Attiva (da attesa o annullata) il flusso si sposta da solo nella casella di destinazione e la pratica resta aperta — mai più "riattivo e non so dove va". `ricaricaPratiche` restituisce la lista fresca per leggere lo stato appena aggiornato.
+- ⭐ **Pillola ATTIVA del flusso tinta d'azzurro** `#EFF6FF` (si vede dove sei); pillola "In attesa" IDENTICA alle altre (la variante "quieta" è stata provata e tolta: sembrava scolorita).
+- ⭐ **PILLOLA DI STATO in riga BIANCA col bordino del suo colore** quando la riga è azzurra (hover o aperta): mai mimetizzata. Stato `hoverId` per l'hover.
+- ⭐ **Motivo dell'ANNULLO in riga** sotto la pillola (da `motivo_annullamento`, come quello dell'attesa, allineato al testo della pillola).
+- ⭐⭐⭐ **VISORE RIDISEGNATO (variante A + forma 3 su mockup)**: è un **PANNELLO CHE SCIVOLA DA DESTRA a tutta altezza** (via la finestra centrata con lo sfondo scuro; overlay trasparente, clic fuori o ✕ chiude, animazione 220ms). **Testata gemella della tendina** (quadratino icona veicolo, "targa · modello · anno" nel blu di casa, cliente in grigio sotto, fondo `#EFF6FF`; VIA la targhetta finta). **Elenco con nomi a peso normale e stato a PALLINO** colorato (verde/blu/rosso, tooltip col nome dello stato); titolo documento a peso medio grigio scuro. **Bottoni SOBRI**: Rifiuta scritta rosso spento sottolineata, "✓ Approva" pillola BIANCA bordo celeste testo blu (i fondi colorati stonavano sul palco scuro, bocciati). Scarica a pillola celeste. Palco ardesia invariato.
+- **Trattativa Extra**: nella nuvoletta si parla di "**proforma fattura**" (via "prefattura", dettato da Davide).
+
 ### ⭐⭐⭐ SESSIONE 23 luglio 2026 — AREA DEMOLITORE: RICOSTRUZIONE GUIDATA DA DAVIDE (IN CORSO)
 
 > ⚠️ **METODO SPECIALE PER QUEST'AREA** (dopo 3 tentativi di design bocciati): Davide DETTA

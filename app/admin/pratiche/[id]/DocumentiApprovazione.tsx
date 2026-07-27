@@ -938,34 +938,35 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
         const miStile: React.CSSProperties = { display: 'flex', alignItems: 'flex-start', gap: 9, width: '100%', textAlign: 'left', background: 'none', border: 'none', borderRadius: 8, padding: '8px 10px', fontSize: 12.5, color: '#1E293B', fontWeight: 600, cursor: 'pointer' }
         const mdescStile: React.CSSProperties = { display: 'block', fontSize: 10.5, fontWeight: 400, color: '#8A94A3', marginTop: 1 }
         return (
-          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4" onClick={chiudiVisore}>
-            <div className="bg-white rounded-2xl w-full flex flex-col overflow-hidden" style={{ maxWidth: 1000, height: '85vh' }} onClick={e => { e.stopPropagation(); if (menuScarica) setMenuScarica(false) }}>
+          // ⭐ 27/07 notte (forma 3 su mockup): il visore è un PANNELLO che
+          // SCIVOLA DA DESTRA a tutta altezza (via la finestra centrata con lo
+          // sfondo scuro) — la pagina resta visibile a sinistra, clic fuori
+          // o ✕ chiude. Overlay trasparente solo per il clic-fuori.
+          <div className="fixed inset-0 z-50" onClick={chiudiVisore}>
+            <style>{'@keyframes visore-drawer{from{transform:translateX(48px);opacity:0}to{transform:none;opacity:1}}'}</style>
+            <div
+              className="absolute top-0 right-0 bottom-0 bg-white flex flex-col overflow-hidden"
+              style={{ width: 'min(960px, calc(100vw - 230px))', borderLeft: '1.5px solid #E5E7EB', boxShadow: '-18px 0 44px rgba(15,23,42,0.22)', animation: 'visore-drawer .22s ease' }}
+              onClick={e => { e.stopPropagation(); if (menuScarica) setMenuScarica(false) }}
+            >
 
-              {/* ⭐ TESTATA (27/07, mockup definitivo): targhetta, veicolo e
-                  cliente sempre in vista + bottone Scarica con le due strade */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderBottom: '1px solid #EEF1F5', background: '#FAFBFD', flexShrink: 0 }}>
-                {targa && (
-                  <span style={{ display: 'inline-flex', alignItems: 'stretch', border: '1.5px solid #94A3B8', borderRadius: 6, overflow: 'hidden', background: '#fff', flexShrink: 0 }}>
-                    <span style={{ width: 8, background: '#1D4ED8' }} />
-                    <span style={{ fontWeight: 800, letterSpacing: 1.6, fontSize: 13, padding: '3px 9px', color: '#111827' }}>{targa}</span>
-                  </span>
-                )}
-                {veicolo && <span style={{ fontSize: 13.5, fontWeight: 700, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{veicolo}</span>}
-                {cliente && (
-                  <>
-                    <span style={{ color: '#C3CBD6', fontSize: 12, flexShrink: 0 }}>·</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: '#5B6779', minWidth: 0 }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cliente}</span>
-                    </span>
-                  </>
-                )}
+              {/* ⭐ TESTATA gemella della tendina (variante A su mockup): via
+                  la targhetta finta — quadratino con l'icona veicolo, targa ·
+                  modello · anno nel blu di casa, cliente in grigio sotto */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 16px', borderBottom: '1px solid #DBEAFE', background: '#EFF6FF', flexShrink: 0 }}>
+                <span style={{ width: 38, height: 38, borderRadius: 10, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#2563EB' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="9" width="13" height="7" rx="1.5" /><path d="M16 11h3l2 3v2h-2" /><circle cx="7" cy="18" r="1.8" /><circle cx="16.5" cy="18" r="1.8" /></svg>
+                </span>
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1D4ED8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{[targa, veicolo].filter(Boolean).join(' · ') || 'Documenti'}</span>
+                  {cliente && <span style={{ display: 'block', fontSize: 11.5, color: '#4B5563', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cliente}</span>}
+                </span>
                 <span style={{ flex: 1 }} />
                 <span style={{ position: 'relative', flexShrink: 0 }}>
                   <button
                     onClick={e => { e.stopPropagation(); setMenuScarica(m => !m) }}
                     disabled={pdfInCorso}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '1.5px solid #D8DDE5', borderRadius: 9, padding: '7px 13px', fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', cursor: 'pointer', opacity: pdfInCorso ? 0.6 : 1 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '1.5px solid #BFDBFE', borderRadius: 999, padding: '6px 13px', fontSize: 11.5, fontWeight: 700, color: '#1D4ED8', cursor: 'pointer', opacity: pdfInCorso ? 0.6 : 1 }}
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                     {pdfInCorso ? 'Preparo il PDF…' : 'Scarica'}
@@ -1004,29 +1005,32 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                       {i === primaFotoIdx && (
                         <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '10px 16px 8px', borderTop: '1px solid #EEF1F5', marginTop: 8 }}>FOTO DEL VEICOLO · {foto.length}</div>
                       )}
+                      {/* ⭐ 27/07 notte (variante A su mockup): nomi a peso
+                          normale (600 solo sull'attiva) e stato a PALLINO
+                          colorato — verde approvato, blu in verifica, rosso
+                          rifiutato (il dettaglio lo dicono le azioni sotto) */}
                       <button
                         onClick={() => { if (selezione) toggleScelta(v); else setVisoreIdx(i) }}
+                        title={v.tipo === 'doc' ? `${titoloVoce(v)} · ${v.doc.stato === 'approvato' ? 'Approvato' : v.doc.stato === 'rifiutato' ? 'Rifiutato' : 'In verifica'}` : titoloVoce(v)}
                         style={{
                           width: '100%', textAlign: 'left', display: 'flex', alignItems: 'center', gap: 9,
-                          padding: '7px 14px', fontSize: 12.5, border: 'none', cursor: 'pointer',
+                          padding: '7px 14px', fontSize: 12, border: 'none', cursor: 'pointer',
                           background: attiva ? '#EFF6FF' : 'transparent', boxShadow: attiva ? 'inset 3px 0 0 #2563eb' : 'none',
-                          color: attiva ? '#0C447C' : '#374151', fontWeight: attiva ? 700 : 400,
+                          color: attiva ? '#1D4ED8' : '#374151', fontWeight: attiva ? 600 : 400,
                         }}
                       >
                         {selezione && (
                           <input type="checkbox" readOnly checked={scelte.has(chiaveVoce(v))} style={{ accentColor: '#2563EB', width: 15, height: 15, flexShrink: 0, pointerEvents: 'none' }} />
                         )}
-                        <span style={{ width: 30, height: 38, borderRadius: 5, flexShrink: 0, border: '1px solid #E2E8F0', background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#9AA7B5' }}>
+                        <span style={{ width: 28, height: 36, borderRadius: 5, flexShrink: 0, border: '1px solid #E2E8F0', background: '#fff', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#B6BFCC' }}>
                           {thumbUrl
                             ? /* eslint-disable-next-line @next/next/no-img-element */
                               <img src={thumbUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
+                            : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
                         </span>
                         <span style={{ flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(v)}</span>
                         {v.tipo === 'doc' && (
-                          <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '2px 8px', ...(v.doc.stato === 'approvato' ? { background: '#DCF3E4', color: '#1F7A43' } : v.doc.stato === 'rifiutato' ? { background: '#FBDADA', color: '#C0392B' } : { background: '#E0EDFB', color: '#1E4E8C' }) }}>
-                            {v.doc.stato === 'approvato' ? 'Approvato' : v.doc.stato === 'rifiutato' ? 'Rifiutato' : 'In verifica'}
-                          </span>
+                          <span style={{ width: 9, height: 9, borderRadius: 999, flexShrink: 0, background: v.doc.stato === 'approvato' ? '#16A34A' : v.doc.stato === 'rifiutato' ? '#DC2626' : '#2563EB' }} />
                         )}
                       </button>
                     </div>
@@ -1036,9 +1040,10 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
 
               {/* AREA PRINCIPALE */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px 16px', minWidth: 0 }}>
+                {/* Titolo a peso medio grigio scuro (variante A): via il nero pieno */}
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, minWidth: 0 }}>
-                  <span style={{ fontWeight: 700, fontSize: 14.5, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</span>
-                  <span style={{ fontSize: 11.5, color: '#6B7280', flexShrink: 0 }}>{visoreIdx + 1} di {voci.length}</span>
+                  <span style={{ fontWeight: 600, fontSize: 13.5, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</span>
+                  <span style={{ fontSize: 11, color: '#9AA7B5', flexShrink: 0 }}>{visoreIdx + 1} di {voci.length}</span>
                 </div>
 
                 {/* ⭐ PALCO grigio ardesia (27/07, dosaggio 3 su mockup): FILE
@@ -1087,16 +1092,18 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 {!selezione && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, minHeight: 34 }}>
                   <div style={{ flex: 1 }} />
-                  {/* ⭐ 27/07 (mockup definitivo): pilloline coi colori
-                      dell'app — Approva azzurra piena, Rifiuta leggera col
-                      rosso spento. "Approva" passa da solo al prossimo. */}
+                  {/* ⭐ 27/07 notte (mockup forma 3): bottoni SOBRI — Rifiuta
+                      scritta rosso spento sottolineata, Approva pillola
+                      BIANCA col bordo celeste e testo blu (via i fondi
+                      colorati che stonavano sul palco scuro). "Approva"
+                      passa da solo al prossimo. */}
                   {voce.tipo === 'doc' && voce.doc.stato === 'caricato' && (
                     <>
                       <span style={{ position: 'relative', display: 'inline-flex' }}>
-                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} className="transition-colors hover:bg-[#FBF5F5]" style={{ background: '#fff', color: '#A94444', border: '1.5px solid #E5E7EB', borderRadius: 999, padding: '8px 18px', fontSize: 12.5, fontWeight: 500, height: 33, display: 'flex', alignItems: 'center', opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
+                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 12, fontWeight: 500, textDecoration: 'underline', opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
                         {nuvolaRifiutoDi(voce.doc.id)}
                       </span>
-                      <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} className="transition-colors hover:bg-[#CCE0FC]" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#DBEAFE', color: '#1D4ED8', border: '1.5px solid #DBEAFE', borderRadius: 999, padding: '8px 20px', fontSize: 12.5, fontWeight: 700, height: 33, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
+                      <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} className="transition-colors hover:bg-blue-50" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', color: '#1D4ED8', border: '1.5px solid #BFDBFE', borderRadius: 999, padding: '8px 20px', fontSize: 12.5, fontWeight: 700, height: 33, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                         Approva
                       </button>
