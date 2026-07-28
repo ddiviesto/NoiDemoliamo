@@ -121,8 +121,10 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   const [bozza, setBozza] = useState<Record<string, string | number | null>>({})
   const [salvandoSez, setSalvandoSez] = useState(false)
 
-  // Contribuzione (tariffa base + tariffe di zona)
+  // Tariffa (base + tariffe di zona)
   const [contribEdit, setContribEdit] = useState(false)
+  // Sotto-area "+ Aggiungi zona" (variante A su mockup: si apre morbida)
+  const [aggiungiAperta, setAggiungiAperta] = useState(false)
   const [nuovaTipo, setNuovaTipo] = useState<TipoZona>('regione')
   const [nuovoNome, setNuovoNome] = useState('')
   const [nuovaFee, setNuovaFee] = useState('')
@@ -743,7 +745,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                 </button>
               ) : (
-                <button onClick={() => { setContribEdit(false); setNuovoNome(''); setNuovaFee(''); setErroreTariffa(null); setInfoTariffa(null) }} className="transition-colors hover:bg-blue-700" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}>Fatto</button>
+                <button onClick={() => { setContribEdit(false); setAggiungiAperta(false); setNuovoNome(''); setNuovaFee(''); setErroreTariffa(null); setInfoTariffa(null) }} className="transition-colors hover:bg-blue-700" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}>Fatto</button>
               )}
             </div>
 
@@ -753,8 +755,9 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
               {!contribEdit ? (
                 <div style={{ fontSize: 16, fontWeight: 700, color: '#0F1B33', marginTop: 1 }}>{dem.fee_per_pratica || 0} € <span style={{ fontSize: 10.5, fontWeight: 400, color: '#4B5563' }}>/ pratica</span></div>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
-                  <input type="number" defaultValue={dem.fee_per_pratica || ''} onBlur={e => aggiornaFeeBase(parseFloat(e.target.value) || 0)} placeholder="0" style={{ width: 70, border: '1.5px solid #93C5FD', borderRadius: 8, padding: '4px 8px', fontSize: 14, fontWeight: 700, color: '#0F1B33', outline: 'none', background: '#fff' }} />
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 3 }}>
+                  {/* Campo col FILO BLU (variante A su mockup): niente cornici */}
+                  <input type="number" defaultValue={dem.fee_per_pratica || ''} onBlur={e => aggiornaFeeBase(parseFloat(e.target.value) || 0)} placeholder="0" style={{ width: 56, border: 0, borderBottom: '2px solid #93C5FD', borderRadius: 0, padding: '1px 2px', fontSize: 14, fontWeight: 700, color: '#0F1B33', outline: 'none', background: 'transparent' }} />
                   <span style={{ fontSize: 10.5, color: '#4B5563' }}>€ / pratica</span>
                 </div>
               )}
@@ -776,7 +779,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                       <span style={{ fontWeight: 700, color: '#0F1B33', flexShrink: 0 }}>{t.fee} €</span>
                     ) : (
                       <>
-                        <input type="number" defaultValue={t.fee} onBlur={e => aggiornaFeeTariffa(t.id, e.target.value)} style={{ width: 52, border: '1.5px solid #E5E7EB', borderRadius: 7, padding: '2px 6px', fontSize: 11.5, fontWeight: 700, textAlign: 'right', color: '#1E293B', outline: 'none' }} />
+                        <input type="number" defaultValue={t.fee} onBlur={e => aggiornaFeeTariffa(t.id, e.target.value)} style={{ width: 44, border: 0, borderBottom: '2px solid #93C5FD', borderRadius: 0, padding: '1px 2px', fontSize: 11.5, fontWeight: 700, textAlign: 'right', color: '#1E293B', outline: 'none', background: 'transparent' }} />
                         <button onClick={() => eliminaTariffa(t.id)} aria-label="Elimina tariffa" style={{ background: 'none', border: 'none', color: '#C0C7D1', cursor: 'pointer', padding: 0, flexShrink: 0 }} className="hover:!text-[#C0392B]">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
                         </button>
@@ -787,28 +790,43 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
               </div>
             )}
 
-            {/* Nuova tariffa (solo in modifica) */}
+            {/* ⭐ "+ Aggiungi zona" (variante A su mockup): via il riquadro
+                tratteggiato — la riga apre MORBIDA la sotto-area celeste con
+                pilloline, campo coi suggerimenti e tondo blu */}
             {contribEdit && (
-              <div style={{ background: '#F9FBFF', border: '1.5px dashed #93C5FD', borderRadius: 10, padding: 9, marginTop: 8 }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: '#1E4E8C', letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 6 }}>Nuova tariffa</div>
-                <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
-                  {(['regione', 'provincia', 'comune'] as TipoZona[]).map(tp => (
-                    <button key={tp} onClick={() => { setNuovaTipo(tp); setNuovoNome(''); setErroreTariffa(null) }} style={nuovaTipo === tp ? { background: '#2563eb', color: '#fff', border: 'none', fontSize: 9.5, fontWeight: 700, borderRadius: 999, padding: '3px 9px', cursor: 'pointer' } : { background: '#fff', color: '#4B5563', border: '1px solid #E5E7EB', fontSize: 9.5, fontWeight: 700, borderRadius: 999, padding: '3px 9px', cursor: 'pointer' }}>
-                      {TIPO_ZONA_LABEL[tp]}
-                    </button>
-                  ))}
+              <>
+                <button onClick={() => setAggiungiAperta(a => !a)} style={{ display: 'block', background: 'none', border: 'none', color: '#1D4ED8', fontSize: 11, fontWeight: 600, cursor: 'pointer', padding: '7px 0 2px', textAlign: 'left' }}>
+                  + Aggiungi zona
+                </button>
+                <div style={{ display: 'grid', gridTemplateRows: aggiungiAperta ? '1fr' : '0fr', transition: 'grid-template-rows .24s ease' }}>
+                  <div style={{ overflow: 'hidden' }}>
+                    <div style={{ background: '#F8FAFF', border: '1px solid #DBEAFE', borderRadius: 10, padding: '9px 10px', marginTop: 4 }}>
+                      <div style={{ display: 'flex', gap: 4, marginBottom: 8 }}>
+                        {(['regione', 'provincia', 'comune'] as TipoZona[]).map(tp => (
+                          <button key={tp} onClick={() => { setNuovaTipo(tp); setNuovoNome(''); setErroreTariffa(null) }} style={nuovaTipo === tp ? { background: '#DBEAFE', color: '#1D4ED8', border: '1.5px solid #BFDBFE', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '3px 10px', cursor: 'pointer' } : { background: '#fff', color: '#5F6C7E', border: '1.5px solid #E5E7EB', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>
+                            {TIPO_ZONA_LABEL[tp]}
+                          </button>
+                        ))}
+                      </div>
+                      <input list={`zone-sugg-${demolitoreId}`} value={nuovoNome} onChange={e => { setNuovoNome(e.target.value); setErroreTariffa(null) }} placeholder={nuovaTipo === 'comune' ? 'Scrivi il comune…' : nuovaTipo === 'regione' ? 'Scrivi la regione…' : 'Scrivi la provincia…'} style={{ width: '100%', border: 0, borderBottom: '2px solid #93C5FD', borderRadius: 0, padding: '2px 2px 3px', fontSize: 11.5, color: '#111827', outline: 'none', background: 'transparent' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 9 }}>
+                        <span style={{ fontSize: 10.5, color: '#4B5563' }}>Importo</span>
+                        <input type="number" value={nuovaFee} onChange={e => { setNuovaFee(e.target.value); setErroreTariffa(null) }} placeholder="0" style={{ width: 52, border: 0, borderBottom: '2px solid #93C5FD', borderRadius: 0, padding: '2px 2px 3px', fontSize: 11.5, fontWeight: 700, textAlign: 'right', color: '#111827', outline: 'none', background: 'transparent' }} />
+                        <span style={{ fontSize: 10.5, color: '#4B5563' }}>€</span>
+                        <span style={{ flex: 1 }} />
+                        <button onClick={aggiungiTariffa} aria-label="Aggiungi tariffa" className="transition-colors hover:bg-blue-700" style={{ width: 26, height: 26, borderRadius: 999, background: '#2563EB', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                        </button>
+                      </div>
+                      <datalist id={`zone-sugg-${demolitoreId}`}>
+                        {(nuovaTipo === 'regione' ? REGIONI : nuovaTipo === 'provincia' ? PROVINCE : []).map(z => <option key={z} value={z} />)}
+                      </datalist>
+                      {erroreTariffa && <p style={{ fontSize: 10, color: '#A94444', fontWeight: 600, marginTop: 6 }}>{erroreTariffa}</p>}
+                      {infoTariffa && <p style={{ fontSize: 10, color: '#1E4E8C', fontWeight: 600, marginTop: 6, lineHeight: 1.4 }}>{infoTariffa}</p>}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 4 }}>
-                  <input list={`zone-sugg-${demolitoreId}`} value={nuovoNome} onChange={e => { setNuovoNome(e.target.value); setErroreTariffa(null) }} placeholder={nuovaTipo === 'comune' ? 'Comune…' : `${TIPO_ZONA_LABEL[nuovaTipo]}…`} style={{ flex: 1, minWidth: 0, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '4px 8px', fontSize: 11, color: '#111827', outline: 'none', background: '#fff' }} />
-                  <input type="number" value={nuovaFee} onChange={e => { setNuovaFee(e.target.value); setErroreTariffa(null) }} placeholder="€" style={{ width: 46, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '4px 6px', fontSize: 11, fontWeight: 700, textAlign: 'right', color: '#111827', outline: 'none', background: '#fff' }} />
-                  <button onClick={aggiungiTariffa} className="transition-colors hover:bg-blue-700" style={{ background: '#2563eb', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 8, padding: '0 9px', cursor: 'pointer' }}>Aggiungi</button>
-                </div>
-                <datalist id={`zone-sugg-${demolitoreId}`}>
-                  {(nuovaTipo === 'regione' ? REGIONI : nuovaTipo === 'provincia' ? PROVINCE : []).map(z => <option key={z} value={z} />)}
-                </datalist>
-                {erroreTariffa && <p style={{ fontSize: 10, color: '#A94444', fontWeight: 600, marginTop: 5 }}>{erroreTariffa}</p>}
-                {infoTariffa && <p style={{ fontSize: 10, color: '#1E4E8C', fontWeight: 600, marginTop: 5, lineHeight: 1.4 }}>{infoTariffa}</p>}
-              </div>
+              </>
             )}
 
             {/* Regola di fatturazione */}
