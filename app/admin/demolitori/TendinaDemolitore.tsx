@@ -110,6 +110,16 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
     const t = requestAnimationFrame(() => setAperto(true))
     return () => cancelAnimationFrame(t)
   }, [])
+  // ⭐ Chiusura MORBIDA (28/07, "a scatto" bocciato da Davide): la tendina
+  // si riavvolge con la stessa animazione e SOLO DOPO si smonta
+  const [chiudendo, setChiudendo] = useState(false)
+  function chiudi() {
+    if (chiudendo) return
+    setChiudendo(true)
+    setNuvola(null)
+    setAperto(false)
+    setTimeout(onChiudi, 300)
+  }
   const [copertura, setCopertura] = useState<CoperturaRecord[]>([])
   const [stats, setStats] = useState({ aperte: 0, completate: 0, annullate: 0 })
   const [annullate, setAnnullate] = useState<PraticaAnnullata[]>([])
@@ -210,7 +220,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
       if (e.key !== 'Escape') return
       if (drawer) chiudiDrawer()
       else if (nuvola) setNuvola(null)
-      else onChiudi()
+      else chiudi()
     }
     window.addEventListener('keydown', suTasto)
     return () => window.removeEventListener('keydown', suTasto)
@@ -533,17 +543,17 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   const barColor = attivo ? '#97C459' : '#C0C7D1'
 
   return (
-    <div style={{ border: '2px solid #2563EB', borderRadius: 16, background: '#FAFBFD', boxShadow: '0 10px 30px rgba(15,23,42,0.10)', overflow: 'visible' }}>
+    <div style={{ border: `2px solid ${chiudendo ? '#E5E7EB' : '#2563EB'}`, borderRadius: 16, background: '#FAFBFD', boxShadow: chiudendo ? '0 1px 3px rgba(16,24,40,0.07)' : '0 10px 30px rgba(15,23,42,0.10)', overflow: 'visible', transition: 'border-color .3s ease, box-shadow .3s ease' }}>
 
       {/* ===== TESTATA-RIGA: IDENTICA alla card chiusa (stesse misure e
           colonne: NIENTE sobbalzo all'apertura) ma tinta d'azzurro, col nome
           in blu — clic = richiudi, come le pratiche ===== */}
-      <div onClick={onChiudi} style={{ background: '#EFF6FF', borderLeft: `4px solid ${barColor}`, borderRadius: '14px 14px 0 0', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+      <div onClick={chiudi} style={{ background: chiudendo ? '#fff' : '#EFF6FF', borderLeft: `4px solid ${barColor}`, borderRadius: '14px 14px 0 0', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer', transition: 'background .3s ease' }}>
         <div style={{ width: 46, height: 46, borderRadius: 12, background: '#DBEAFE', color: '#1E4E8C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
           {iniziali(nomeVivo)}
         </div>
         <div style={{ flex: 1.6, minWidth: 0 }}>
-          <div className="text-[15px] font-bold truncate" style={{ color: '#1D4ED8' }}>{nomeVivo}</div>
+          <div className="text-[15px] font-bold truncate" style={{ color: chiudendo ? '#111827' : '#1D4ED8', transition: 'color .3s ease' }}>{nomeVivo}</div>
           <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>{cittaViva ? `${cittaViva}${provViva ? ` (${provViva})` : ''}` : 'Sede non impostata'}</div>
         </div>
         <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #DBEAFE', paddingLeft: 14 }}>
