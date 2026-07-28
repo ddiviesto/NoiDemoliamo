@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* ⭐ 28/07 (bug trovato da Davide): quando un'apertura allunga la pagina
+   compare la barra di scorrimento e tutto slitta a sinistra (Windows).
+   Lo spazio della barra è SEMPRE riservato: niente più spostamenti. */
+html {
+  scrollbar-gutter: stable;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
