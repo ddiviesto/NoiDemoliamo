@@ -93,14 +93,22 @@ function Nuvola({ onChiudi, larghezza = 270, children }: { onChiudi: () => void;
   )
 }
 
-export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambiati }: {
+export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDatiCambiati }: {
   demolitoreId: string
+  // I dati della riga: la testata si disegna SUBITO, senza aspettare il caricamento
+  base: { ragione_sociale: string; citta: string | null; provincia: string | null; stato: string; fee_per_pratica: number }
   onChiudi: () => void
   // La lista si ricarica quando cambiano nome, stato, fee o il demolitore sparisce
   onDatiCambiati: () => void
 }) {
   const router = useRouter()
   const [dem, setDem] = useState<DemolitoreFull | null>(null)
+  // Apertura morbida (srotolamento come la tendina delle pratiche)
+  const [aperto, setAperto] = useState(false)
+  useEffect(() => {
+    const t = requestAnimationFrame(() => setAperto(true))
+    return () => cancelAnimationFrame(t)
+  }, [])
   const [copertura, setCopertura] = useState<CoperturaRecord[]>([])
   const [stats, setStats] = useState({ aperte: 0, completate: 0, annullate: 0 })
   const [annullate, setAnnullate] = useState<PraticaAnnullata[]>([])
@@ -150,27 +158,27 @@ export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambia
 
   useEffect(() => {
     async function carica() {
-      const { data: d } = await supabase.from('demolitori').select('*').eq('id', demolitoreId).single()
-      if (d) setDem(d as DemolitoreFull)
-
-      const { data: cov } = await supabase.from('demolitori_comuni').select('*').eq('demolitore_id', demolitoreId)
-      setCopertura((cov as CoperturaRecord[]) || [])
-
-      const { data: prat } = await supabase.from('pratiche').select('id, targa, marca, modello, nome_richiedente, stato, motivo_annullamento, aggiornato_il').eq('demolitore_id', demolitoreId)
-      const listaAnnullate = (prat || []).filter(p => p.stato === 'annullata')
+      // ⭐ 28/07 (lag segnalato da Davide): le cinque letture partono TUTTE
+      // INSIEME, non una dietro l'altra — l'apertura è immediata
+      const [dRes, covRes, pratRes, tarRes, ntRes] = await Promise.all([
+        supabase.from('demolitori').select('*').eq('id', demolitoreId).single(),
+        supabase.from('demolitori_comuni').select('*').eq('demolitore_id', demolitoreId),
+        supabase.from('pratiche').select('id, targa, marca, modello, nome_richiedente, stato, motivo_annullamento, aggiornato_il').eq('demolitore_id', demolitoreId),
+        supabase.from('demolitori_tariffe').select('*').eq('demolitore_id', demolitoreId).order('tipo'),
+        supabase.from('demolitori_note').select('*').eq('demolitore_id', demolitoreId).order('creato_il', { ascending: false }),
+      ])
+      if (dRes.data) setDem(dRes.data as DemolitoreFull)
+      setCopertura((covRes.data as CoperturaRecord[]) || [])
+      const prat = pratRes.data || []
+      const listaAnnullate = prat.filter(p => p.stato === 'annullata')
       setStats({
-        aperte: (prat || []).filter(p => p.stato !== 'completata' && p.stato !== 'annullata').length,
-        completate: (prat || []).filter(p => p.stato === 'completata').length,
+        aperte: prat.filter(p => p.stato !== 'completata' && p.stato !== 'annullata').length,
+        completate: prat.filter(p => p.stato === 'completata').length,
         annullate: listaAnnullate.length,
       })
       setAnnullate(listaAnnullate)
-
-      const { data: tar } = await supabase.from('demolitori_tariffe').select('*').eq('demolitore_id', demolitoreId).order('tipo')
-      setTariffe((tar as Tariffa[]) || [])
-
-      const { data: nt } = await supabase.from('demolitori_note').select('*').eq('demolitore_id', demolitoreId).order('creato_il', { ascending: false })
-      setNote((nt as Nota[]) || [])
-
+      setTariffe((tarRes.data as Tariffa[]) || [])
+      setNote((ntRes.data as Nota[]) || [])
       setLoading(false)
     }
     carica()
@@ -512,7 +520,12 @@ export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambia
   const stileScheda: React.CSSProperties = { flex: 1, minWidth: 215, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }
   const stilePillola: React.CSSProperties = { display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap', cursor: 'pointer' }
 
-  const attivo = dem?.stato === 'attivo'
+  // La testata usa i dati della riga finché il carico completo non arriva
+  const nomeVivo = dem?.ragione_sociale ?? base.ragione_sociale
+  const cittaViva = dem?.citta ?? base.citta
+  const provViva = dem?.provincia ?? base.provincia
+  const attivo = (dem?.stato ?? base.stato) === 'attivo'
+  const feeViva = dem?.fee_per_pratica ?? base.fee_per_pratica
 
   return (
     <div style={{ border: '2px solid #2563EB', borderRadius: 16, background: '#FAFBFD', boxShadow: '0 10px 30px rgba(15,23,42,0.10)', overflow: 'visible' }}>
@@ -521,11 +534,11 @@ export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambia
       <div onClick={onChiudi} style={{ background: '#EFF6FF', borderRadius: '14px 14px 0 0', padding: '12px 16px 0', cursor: 'pointer' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ width: 40, height: 40, borderRadius: 11, background: '#DBEAFE', color: '#1D4ED8', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {dem ? iniziali(dem.ragione_sociale) : '…'}
+            {iniziali(nomeVivo)}
           </span>
           <span style={{ minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: '#1D4ED8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dem?.ragione_sociale || '…'}</span>
-            <span style={{ display: 'block', fontSize: 11.5, color: '#4B5563', marginTop: 1 }}>{dem?.citta ? `${dem.citta}${dem.provincia ? ` (${dem.provincia})` : ''}` : 'Sede non impostata'}</span>
+            <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: '#1D4ED8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nomeVivo}</span>
+            <span style={{ display: 'block', fontSize: 11.5, color: '#4B5563', marginTop: 1 }}>{cittaViva ? `${cittaViva}${provViva ? ` (${provViva})` : ''}` : 'Sede non impostata'}</span>
           </span>
           <span style={{ fontSize: 10.5, fontWeight: 600, borderRadius: 999, padding: '3.5px 11px', background: attivo ? '#DCF3E4' : '#E7EAEE', color: attivo ? '#1F7A43' : '#4B5563' }}>{attivo ? 'Attivo' : 'Non attivo'}</span>
           <span style={{ flex: 1 }} />
@@ -535,7 +548,7 @@ export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambia
             <Boxino n={String(stats.completate)} l="Completate" />
             <Boxino n={String(stats.annullate)} l="Annullate" allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
             <Boxino n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} l="Velocità" />
-            <Boxino n={dem?.fee_per_pratica ? `${dem.fee_per_pratica} €` : '—'} l="Fee base" />
+            <Boxino n={feeViva ? `${feeViva} €` : '—'} l="Fee base" />
           </span>
         </div>
 
@@ -646,7 +659,9 @@ export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambia
         </div>
       </div>
 
-      {/* ===== FASCIA SCHEDE ===== */}
+      {/* ===== FASCIA SCHEDE (si srotola morbida, regola di famiglia) ===== */}
+      <div style={{ display: 'grid', gridTemplateRows: aperto ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
+      <div style={{ overflow: 'hidden' }}>
       {loading || !dem ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '26px 0' }}>
           <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -718,13 +733,13 @@ export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambia
             <RigaSc k="Cellulare" vista={dem.referente_cellulare || ''} campo={sezEdit === 'persone' ? <input className={CAMPO} inputMode="tel" value={sb('referente_cellulare')} onChange={e => setB('referente_cellulare', e.target.value)} /> : undefined} />
           </div>
 
-          {/* CONTRIBUZIONE */}
+          {/* TARIFFA (rinominata da Contribuzione, richiesta Davide 28/07) */}
           <div style={{ ...stileScheda, minWidth: 235, borderColor: contribEdit ? '#93C5FD' : '#E5E7EB' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
               <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-              <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33', flex: 1, minWidth: 0 }}>Contribuzione</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33', flex: 1, minWidth: 0 }}>Tariffa</span>
               {!contribEdit ? (
-                <button onClick={() => setContribEdit(true)} aria-label="Modifica Contribuzione" className="flex items-center justify-center transition-colors hover:bg-blue-50 hover:border-blue-200" style={{ width: 22, height: 22, borderRadius: 7, border: '1.5px solid #E5E7EB', background: '#fff', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}>
+                <button onClick={() => setContribEdit(true)} aria-label="Modifica Tariffa" className="flex items-center justify-center transition-colors hover:bg-blue-50 hover:border-blue-200" style={{ width: 22, height: 22, borderRadius: 7, border: '1.5px solid #E5E7EB', background: '#fff', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                 </button>
               ) : (
@@ -801,6 +816,8 @@ export default function TendinaDemolitore({ demolitoreId, onChiudi, onDatiCambia
           </div>
         </div>
       )}
+      </div>
+      </div>
 
       {/* ===== PANNELLO DA DESTRA: COPERTURA (mappa) o PRATICHE ANNULLATE ===== */}
       {drawer && dem && (

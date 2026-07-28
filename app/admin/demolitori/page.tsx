@@ -154,6 +154,7 @@ export default function GestioneDemolitori() {
         <TendinaDemolitore
           key={d.id}
           demolitoreId={d.id}
+          base={d}
           onChiudi={() => setSelId(null)}
           onDatiCambiati={ricarica}
         />
