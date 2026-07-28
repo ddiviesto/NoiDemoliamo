@@ -22,6 +22,11 @@ interface Props {
   coperturaIniziale?: CoperturaRecord[]
   // Salvataggio: riceve TUTTI i record (regioni + province + inclusi + esclusi)
   onSalva: (records: CoperturaRecord[]) => void | Promise<void>
+  // ⭐ 28/07 (variante B su mockup): il Salva vive nella TESTATA del pannello
+  // del genitore — la mappa avvisa quando ci sono modifiche non salvate e
+  // salva quando il segnale viene incrementato (pattern dei pannelli)
+  onModificata?: (modificata: boolean) => void
+  salvaSegnale?: number
 }
 
 // ============================================================
@@ -93,7 +98,7 @@ const PROVINCE_REGIONI: Record<string, string> = {
 
 type Layer = 'regioni' | 'province' | 'comuni'
 
-export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
+export default function MappaComuni({ coperturaIniziale, onSalva, onModificata, salvaSegnale }: Props) {
   // --- Refs DOM e mappa ---
   const mapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<google.maps.Map | null>(null)
@@ -939,6 +944,22 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
     firmaSets(regioniSelezionate, provinceSelezionate, provinceEscluse, comuniInclusi, comuniEsclusi) !==
     firmaSets(setsIniziali.r, setsIniziali.p, setsIniziali.pe, setsIniziali.ci, setsIniziali.ce)
 
+  // ⭐ 28/07: il genitore mostra "Non salvato" e il Salva nella sua testata
+  useEffect(() => {
+    onModificata?.(coperturaModificata)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [coperturaModificata])
+
+  // Salvataggio comandato dal genitore (segnale incrementale + ref)
+  const salvaGestito = useRef(salvaSegnale ?? 0)
+  useEffect(() => {
+    if (salvaSegnale != null && salvaSegnale > salvaGestito.current) {
+      salvaGestito.current = salvaSegnale
+      handleSalva()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [salvaSegnale])
+
   // --- Copertura parziale (SOLO visualizzazione pannello) ---
   // Una provincia è "parziale" se al suo interno ci sono comuni esclusi;
   // una regione se ha province escluse o comuni esclusi. Il calcolo legge
@@ -1053,15 +1074,8 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
           </div>
         )}
 
-        {/* Il salvataggio appare SOLO se la copertura è stata modificata */}
-        {coperturaModificata && (
-          <>
-            <p className="text-[11.5px] font-semibold text-center" style={{ color: '#B45309', margin: 0 }}>Modifiche non salvate</p>
-            <button onClick={handleSalva} className="w-full text-white py-3 rounded-xl text-sm font-bold transition-all hover:opacity-95 active:scale-[0.99]" style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
-              Salva copertura
-            </button>
-          </>
-        )}
+        {/* ⭐ 28/07 (variante B su mockup): "Modifiche non salvate" e il
+            bottone Salva sono SALITI nella testata del pannello del genitore */}
       </div>
 
       <div style={{ flex: 1, position: 'relative', borderRadius: '14px', overflow: 'hidden', border: '1.5px solid #E5E7EB', boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>

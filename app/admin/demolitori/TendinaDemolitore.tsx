@@ -170,6 +170,10 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   // Copertura
   const [messaggioCop, setMessaggioCop] = useState<{ ok: boolean; testo: string } | null>(null)
   const [salvandoCop, setSalvandoCop] = useState(false)
+  // ⭐ 28/07 (variante B su mockup): "Non salvato" e il Salva vivono nella
+  // TESTATA del pannello — la mappa avvisa e salva col segnale incrementale
+  const [copModificata, setCopModificata] = useState(false)
+  const [salvaCopSegnale, setSalvaCopSegnale] = useState(0)
 
   useEffect(() => {
     async function carica() {
@@ -248,7 +252,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   function chiudiDrawer() {
     if (drawerChiudendo) return
     setDrawerChiudendo(true)
-    setTimeout(() => { setDrawer(null); setDrawerChiudendo(false) }, 240)
+    setTimeout(() => { setDrawer(null); setDrawerChiudendo(false); setCopModificata(false) }, 240)
   }
 
   // ---- Modifica sul posto delle schede ----
@@ -907,6 +911,15 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
               {drawer === 'copertura' && messaggioCop && (
                 <span style={{ fontSize: 11, fontWeight: 700, color: messaggioCop.ok ? '#1F7A43' : '#A94444', flexShrink: 0 }}>{messaggioCop.testo}</span>
               )}
+              {/* ⭐ 28/07 (variante B su mockup): "Non salvato" e Salva nella
+                  testata, sempre in vista anche con la lista zone lunga */}
+              {drawer === 'copertura' && copModificata && !salvandoCop && (
+                <>
+                  <span style={{ width: 7, height: 7, borderRadius: 999, background: '#EF9F27', flexShrink: 0 }} />
+                  <span style={{ fontSize: 10.5, color: '#8B95A5', flexShrink: 0 }}>Non salvato</span>
+                  <button onClick={() => setSalvaCopSegnale(x => x + 1)} className="transition-colors hover:bg-blue-700" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '6px 16px', cursor: 'pointer', flexShrink: 0 }}>Salva</button>
+                </>
+              )}
               {drawer === 'copertura' && salvandoCop && (
                 <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" style={{ flexShrink: 0 }} />
               )}
@@ -929,7 +942,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                     ))}
                   </div>
                   {/* La mappa VERA di sempre, con le sue regole */}
-                  <MappaComuni coperturaIniziale={copertura} onSalva={salvaCopertura} />
+                  <MappaComuni coperturaIniziale={copertura} onSalva={salvaCopertura} onModificata={setCopModificata} salvaSegnale={salvaCopSegnale} />
                 </>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
