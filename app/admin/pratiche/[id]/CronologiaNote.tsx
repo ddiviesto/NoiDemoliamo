@@ -3,12 +3,20 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
+import { metaStato } from '@/lib/statiCrm'
 
 // ============================================================
 // CRONOLOGIA E NOTE DELLA PRATICA — SOLO ADMIN (17/07/2026)
 // Timeline di note con data e ora esatte (tabella pratiche_note,
 // RLS solo admin). Le note della messa in attesa / ripresa vengono
 // inserite in automatico dalla pagina e riconosciute dal prefisso.
+//
+// ⭐ 28/07 sera (mockup approvato): REGISTRO COMPLETO a due canali.
+// Il canale NoiDemoliamo mostra TUTTO (eventi automatici + note private
+// + note scambiate col demolitore, firmate); la pillolina "Demolitore"
+// è solo il FILTRO che mostra la vista di lui, e da lì gli si scrive.
+// Gli eventi automatici hanno pilloline PARLANTI (il cambio stato usa
+// le pillole vere di lib/statiCliente).
 // ============================================================
 
 interface Nota {
@@ -18,6 +26,25 @@ interface Nota {
   // 'admin' (default) o 'demolitore' — le note del demolitore ("chiamato,
   // non risponde") arrivano dalla sua area e hanno la pillola dedicata (23/07)
   autore?: string
+  // ⭐ 28/07 sera: eventi automatici e canale condiviso
+  evento?: string | null
+  visibile_demolitore?: boolean
+  demolitore_id?: string | null
+}
+
+// Pilloline parlanti degli eventi automatici (il codice sta in `evento`;
+// per evento='stato' il testo contiene il codice stato → pillola vera)
+const EVENTI_META: Record<string, { label: string; bg: string; col: string }> = {
+  doc_rifiutato: { label: 'Documento rifiutato', bg: '#FBE2E2', col: '#A94444' },
+  doc_approvati: { label: 'Documenti approvati', bg: '#DCF3E4', col: '#1F7A43' },
+  assegnata: { label: 'Demolitore assegnato', bg: '#DBEAFE', col: '#1D4ED8' },
+  riassegnata: { label: 'Demolitore cambiato', bg: '#DBEAFE', col: '#1D4ED8' },
+  ritiro_fissato: { label: 'Ritiro fissato', bg: '#DBEAFE', col: '#1D4ED8' },
+  ritiro_spostato: { label: 'Ritiro spostato', bg: '#DBEAFE', col: '#1D4ED8' },
+  ritirata: { label: 'Veicolo ritirato', bg: '#DBEAFE', col: '#1D4ED8' },
+  cert_rottamazione: { label: 'Certificato rottamazione', bg: '#DBEAFE', col: '#1D4ED8' },
+  cert_pra: { label: 'Radiazione PRA', bg: '#DBEAFE', col: '#1D4ED8' },
+  trattativa: { label: 'Trattativa extra', bg: '#DBEAFE', col: '#1D4ED8' },
 }
 
 const PREFISSO_ATTESA = 'Messa in attesa'
@@ -35,7 +62,7 @@ function fmtOra(x: string) {
 // ⭐ 23/07: card A SCOMPARSA — chiusa all'apertura, la testata apre e chiude
 // ⭐ 27/07: modalità `finestra` (scelta B su mockup): finestrella fissa in
 // basso a destra come la Chat, con l'ingrandisci — usata dalla tendina CRM
-export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey, aperta, onToggle, finestra, titolo, scheda }: {
+export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey, aperta, onToggle, finestra, titolo, scheda, demolitoreId, nomeDemolitore }: {
   praticaId: string
   praticaCreataIl: string
   refreshKey: number
@@ -46,12 +73,18 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
   // ⭐ 27/07 sera (mockup approvato): modalità SCHEDA — prima card della
   // fila nella tendina del CRM (timeline con scroll interno, campo nota)
   scheda?: boolean
+  // ⭐ 28/07 sera: demolitore assegnato alla pratica — abilita la pillolina
+  // "Demolitore" (filtro + scrittura nel canale condiviso)
+  demolitoreId?: string | null
+  nomeDemolitore?: string | null
 }) {
   const [note, setNote] = useState<Nota[]>([])
   const [tabellaAssente, setTabellaAssente] = useState(false)
   const [nuova, setNuova] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [espansa, setEspansa] = useState(false)
+  // Canale attivo: 'tutte' = registro completo · 'demolitore' = la vista di lui
+  const [canale, setCanale] = useState<'tutte' | 'demolitore'>('tutte')
 
   async function carica() {
     const { data, error } = await supabase
@@ -81,9 +114,13 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
     const testo = nuova.trim()
     if (!testo) return
     setSalvando(true)
+    // Sul canale Demolitore la nota è CONDIVISA: lui la vedrà nella sua area
+    const condivisa = canale === 'demolitore' && !!demolitoreId
     const { data, error } = await supabase
       .from('pratiche_note')
-      .insert({ pratica_id: praticaId, testo })
+      .insert(condivisa
+        ? { pratica_id: praticaId, testo, visibile_demolitore: true, demolitore_id: demolitoreId }
+        : { pratica_id: praticaId, testo })
       .select()
       .single()
     if (!error && data) {
@@ -95,6 +132,13 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
     setSalvando(false)
   }
 
+  // La vista del demolitore: solo le voci condivise DEL demolitore attuale
+  // (le voci del demolitore precedente restano nel registro completo)
+  const inCanaleDemolitore = (n: Nota) =>
+    (n.visibile_demolitore || n.autore === 'demolitore') && (!n.demolitore_id || n.demolitore_id === demolitoreId)
+  const noteMostrate = canale === 'demolitore' ? note.filter(inCanaleDemolitore) : note
+  const contaCondivise = note.filter(inCanaleDemolitore).length
+
   // Corpo unico (timeline + campo nota): la CARD lo mostra sotto la testata,
   // la FINESTRELLA lo riempie in altezza (27/07)
   const corpo = tabellaAssente ? (
@@ -103,19 +147,63 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
     </p>
   ) : (
         <div className={finestra ? undefined : 'mt-2'} style={finestra ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', padding: '10px 12px 12px' } : undefined}>
+          {/* ⭐ 28/07 sera: pilloline dei canali — compaiono solo con un
+              demolitore assegnato. "NoiDemoliamo" = registro completo,
+              "Demolitore" = il filtro con la vista di lui */}
+          {demolitoreId && (
+            <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexShrink: 0 }}>
+              <button onClick={() => setCanale('tutte')} style={{ fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer', border: `1.5px solid ${canale === 'tutte' ? '#BFDBFE' : '#E5E7EB'}`, background: canale === 'tutte' ? '#EFF6FF' : '#fff', color: canale === 'tutte' ? '#1D4ED8' : '#6B7280' }}>NoiDemoliamo</button>
+              <button onClick={() => setCanale('demolitore')} style={{ fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer', border: `1.5px solid ${canale === 'demolitore' ? '#BFDBFE' : '#E5E7EB'}`, background: canale === 'demolitore' ? '#EFF6FF' : '#fff', color: canale === 'demolitore' ? '#1D4ED8' : '#6B7280' }}>
+                Demolitore{contaCondivise > 0 && <span style={{ fontWeight: 600, opacity: 0.7, marginLeft: 3 }}>{contaCondivise}</span>}
+              </button>
+            </div>
+          )}
           {/* Riquadro a altezza FISSA: si scorre dentro (mouse/dito), la
               pagina non si allunga (richiesta Davide 21/07) */}
           <div className="overflow-y-auto" style={finestra ? { flex: 1, minHeight: 0, overscrollBehavior: 'contain' } : scheda ? { maxHeight: 150, overscrollBehavior: 'contain' } : { maxHeight: 300 }}>
-          {note.map(n => {
+          {noteMostrate.map(n => {
+            // ⭐ 28/07 sera: EVENTI AUTOMATICI — pillolina parlante; per il
+            // cambio stato la pillola è quella VERA (lib/statiCliente, il
+            // testo della riga contiene il codice stato)
+            if (n.evento) {
+              // ⭐ 28/07 sera (richiesta Davide): il cambio stato usa la pillola
+              // ESATTA del CRM (lib/statiCrm), stessa lingua della riga in alto
+              const meta = n.evento === 'stato'
+                ? (() => { const s = metaStato(n.testo); return { label: s.label, bg: s.bg, col: s.text } })()
+                : (EVENTI_META[n.evento] || { label: n.evento, bg: '#F1F4F8', col: '#64748B' })
+              // ⭐ 28/07 sera (richiesta Davide): "Documento rifiutato" mostra
+              // SOLO il nome del documento (senza il motivo), A CAPO sotto la
+              // pillola e su UNA riga sola (puntini se non ci sta)
+              const dettaglio = n.evento === 'stato' ? ''
+                : n.evento === 'doc_rifiutato' ? n.testo.split(': "')[0]
+                : n.testo
+              const aCapo = n.evento === 'doc_rifiutato'
+              return (
+                <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
+                  <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                    {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
+                  </div>
+                  <div style={{ flex: 1, fontSize: 12.5, color: '#3E4C63', lineHeight: 1.5, minWidth: 0 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: meta.bg, color: meta.col, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
+                      {meta.label}
+                    </span>
+                    {aCapo && dettaglio ? (
+                      <span style={{ display: 'block', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dettaglio}</span>
+                    ) : dettaglio}
+                  </div>
+                </div>
+              )
+            }
+
             // Pillola per le voci automatiche (attesa/ripresa/annullo/riattivo)
-            // e per le note del DEMOLITORE (23/07: quadratino celeste come in chat)
-            const tipo = n.autore === 'demolitore' ? 'demolitore'
+            // e per le note del canale DEMOLITORE (firmate, 28/07 sera)
+            const condivisa = n.visibile_demolitore || n.autore === 'demolitore'
+            const tipo = condivisa ? 'demolitore'
               : n.testo.startsWith(PREFISSO_ATTESA) ? 'attesa'
               : n.testo.startsWith(PREFISSO_RIPRESA) ? 'ripresa'
               : n.testo.startsWith(PREFISSO_RIATTIVATA) ? 'riattivata'
               : n.testo.startsWith(PREFISSO_ANNULLATA) ? 'annullata'
               : null
-            // Ogni riga ha la sua pillola (20/07): le note manuali hanno "Nota"
             // ⭐ 27/07 sera (richiesta Davide): la pillola dice già il TIPO,
             // quindi il testo NON lo ripete — via i prefissi automatici,
             // resta solo il motivo (se non c'è, parla la pillola da sola)
@@ -124,17 +212,21 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               : tipo === 'riattivata' ? n.testo.replace(/^Pratica riattivata[.:]?\s*/, '')
               : tipo === 'annullata' ? n.testo.replace(/^Pratica annullata[.:]?\s*/, '')
               : n.testo
-            // ⭐ 27/07 sera (proposta approvata): colori con le regole
-            // dell'app — AZZURRO per ciò che è in corso o torna in corso
-            // (Nota, Demolitore, Ripresa, Riattivata: via il verde, che è
-            // solo della Completata), grigio spento per pausa e nascita,
-            // ROSSO TENUE delle pillole di stato per l'annullo
+            // Firma delle note del canale condiviso: chi l'ha scritta
+            const firma = tipo === 'demolitore'
+              ? (n.autore === 'demolitore' ? (nomeDemolitore || 'Demolitore') : 'NoiDemoliamo')
+              : null
+            // ⭐ 28/07 sera: la voce "Ripresa" porta il CODICE dello stato in
+            // cui riparte → accanto si disegna la pillola ESATTA del CRM
+            const statoRipresa = tipo === 'ripresa' && /^[a-z_]+$/.test(testoMostrato)
+              ? metaStato(testoMostrato)
+              : null
             const stilePillola = tipo === 'attesa' ? { bg: '#E8ECF3', col: '#5B6779', label: 'In attesa' }
               : tipo === 'ripresa' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Ripresa' }
               : tipo === 'riattivata' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Riattivata' }
               : tipo === 'annullata' ? { bg: '#F3D9D9', col: '#A94444', label: 'Annullata' }
-              : tipo === 'demolitore' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Demolitore' }
-              : { bg: '#DBEAFE', col: '#1D4ED8', label: 'Nota' }
+              : tipo === 'demolitore' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Nota demolitore' }
+              : { bg: '#EEF1F5', col: '#5B6779', label: 'Nota privata' }
             return (
               <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
                 <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
@@ -164,13 +256,18 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
                       {stilePillola.label}
                     </span>
                   )}
-                  {testoMostrato}
+                  {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}
+                  {statoRipresa ? (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: statoRipresa.bg, color: statoRipresa.text, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>{statoRipresa.label}</span>
+                  ) : testoMostrato}
                 </div>
               </div>
             )
           })}
 
-          {/* Prima voce fissa: la nascita della pratica */}
+          {/* Prima voce fissa: la nascita della pratica (solo nel registro
+              completo: il demolitore non vede la fase pre-assegnazione) */}
+          {canale === 'tutte' && (
           <div style={{ display: 'flex', gap: 10, padding: '9px 0' }}>
             <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
               {fmtGiorno(praticaCreataIl)}<br />{fmtOra(praticaCreataIl)}
@@ -183,17 +280,20 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               Pratica creata dal cliente
             </div>
           </div>
+          )}
           </div>
 
           {/* Aggiungi nota — ⭐ 27/07 sera (opzione B su mockup): placeholder
               corto sempre leggibile e bottone TONDO BLU PIENO con la matita
-              (richiama la pillola "Nota"), gemello del tondo della chat */}
+              (richiama la pillola "Nota"), gemello del tondo della chat.
+              ⭐ 28/07 sera: sul canale Demolitore la nota è CONDIVISA e il
+              placeholder lo dice chiaro */}
           <div className="flex gap-1.5 mt-2 items-center">
             <input
               value={nuova}
               onChange={e => setNuova(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') aggiungi() }}
-              placeholder="Scrivi una nota…"
+              placeholder={canale === 'demolitore' ? 'Scrivi al demolitore…' : 'Scrivi una nota privata…'}
               className="flex-1 min-w-0 border-[1.5px] border-gray-200 rounded-full px-3.5 py-[7px] text-[12.5px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all placeholder:text-gray-400"
             />
             <button

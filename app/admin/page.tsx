@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
+import { metaStato } from '@/lib/statiCrm'
 import AdminSidebar from './_components/AdminSidebar'
 // Card vere del dettaglio, aperte IN LINEA dentro la tendina (26/07)
 import DocumentiApprovazione, { nomeAdmin } from './pratiche/[id]/DocumentiApprovazione'
@@ -58,6 +59,10 @@ interface Pratica {
   indirizzo_ritiro: string | null
   cap_ritiro: string | null
   spazio_carro_attrezzi: string | null
+  // ⭐ 28/07 sera: le NOTE libere del cliente (condizioni veicolo e spazio
+  // carro da /inizia) — prima non si vedevano da nessuna parte in admin
+  note_veicolo: string | null
+  spazio_carro_attrezzi_note: string | null
   delegato_nome: string | null
   delegato_telefono: string | null
   // ⭐ Assegnazione e importo nella tendina (27/07)
@@ -98,46 +103,25 @@ type SezioneTendina = 'cliente' | 'casistiche' | 'veicolo' | 'ritiro'
 const CAMPO_TENDINA = 'w-full h-[22px] bg-transparent border-0 border-b-2 border-blue-300 focus:border-blue-600 rounded-none outline-none text-[11.5px] text-right text-gray-900 px-0.5 transition-colors placeholder:text-gray-400'
 
 // Un'unica lista di campi per il caricamento e le ricariche (stessa forma)
-const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione, data_ritiro_prevista, data_ritiro_effettuato, motivo_annullamento'
+const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, note_veicolo, spazio_carro_attrezzi_note, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione, data_ritiro_prevista, data_ritiro_effettuato, motivo_annullamento'
 
 // ============================================================
-// METADATI STATO (etichetta + colori pillola + barra colorata)
+// METADATI STATO — ⭐ 28/07 sera: spostati in lib/statiCrm.ts
+// (li usa anche la cronologia per la pillola esatta del CRM)
 // ============================================================
 
-// ⭐ PALETTE A (26/07, mockup approvato): il FLUSSO è tutto AZZURRO (parla
-// il testo della pillola), le eccezioni vere sono le uniche colorate:
-// verde = completata, ROSSO TENUE = annullata e anomalie, rosso medio
-// pieno = "Da contattare". Via il giallo senape e l'arcobaleno.
-const PILL_FLUSSO = { bg: '#EFF6FF', text: '#1D4ED8' }
-const PILL_ROSSO_TENUE = { bg: '#F3D9D9', text: '#A94444' }
-const STATO_META: Record<string, { label: string; bg: string; text: string; bar: string }> = {
-  // Fase 1 — In attesa documenti
-  in_attesa_documenti: { label: 'In attesa documenti', ...PILL_FLUSSO, bar: '#EF9F27' },
-  documenti_parzialmente_approvati: { label: 'In attesa documenti · da rifare', ...PILL_ROSSO_TENUE, bar: '#E24B4A' },
-  // Fase 2 — Documenti da verificare
-  in_attesa_approvazione_admin: { label: 'Documenti da verificare', ...PILL_FLUSSO, bar: '#378ADD' },
-  // Fase 3 — Da assegnare
-  da_assegnare: { label: 'Da assegnare', ...PILL_FLUSSO, bar: '#D85A30' },
-  in_attesa_assegnazione: { label: 'Da assegnare · in corso', ...PILL_FLUSSO, bar: '#D85A30' },
-  in_assegnazione_manuale: { label: 'Da assegnare · a mano', ...PILL_ROSSO_TENUE, bar: '#E24B4A' },
-  // Fase 4 — Assegnata
-  assegnata: { label: 'Assegnata', ...PILL_FLUSSO, bar: '#7F77DD' },
-  in_attesa_conferma_cliente: { label: 'Assegnata · attesa cliente', ...PILL_FLUSSO, bar: '#7F77DD' },
-  // ⭐ 27/07 (rinomine di Davide): "Ritiro Programmato" secco; la famiglia
-  // del ritiro resta "Ritirata" (il "Mezzo Ritirato" è stato ripensato)
-  ritiro_confermato: { label: 'Ritiro Programmato', ...PILL_FLUSSO, bar: '#7F77DD' },
-  // Fase 5 — Ritirata
-  ritirata: { label: 'Ritirata · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_recensione_cliente: { label: 'Ritirata · attesa recensione', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_cert_rottamazione: { label: 'Ritirata · Attesa Certificati', ...PILL_FLUSSO, bar: '#1D9E75' },
-  in_attesa_cert_radiazione_pra: { label: 'Ritirata · Attesa PRA', ...PILL_FLUSSO, bar: '#1D9E75' },
-  // Fase 6 — Completata (verde, l'unico traguardo)
-  completata: { label: 'Completata', bg: '#DCF3E4', text: '#1F7A43', bar: '#639922' },
-  annullata: { label: 'Annullata', ...PILL_ROSSO_TENUE, bar: '#C0C7D1' },
-}
-
-function metaStato(stato: string) {
-  return STATO_META[stato] || { label: stato, bg: '#EDF0F5', text: '#64748B', bar: '#C0C7D1' }
+// ⭐ 28/07 sera (richiesta Davide): l'indirizzo del ritiro in DUE righe
+// pulite — sopra VIA E CIVICO (sempre interi), sotto CAP, comune e
+// provincia. Si taglia l'indirizzo di Google al CAP; comune/prov/cap
+// vengono dai campi della pratica (con la coda di Google come riserva).
+function indirizzoRitiroCompleto(p: { indirizzo_ritiro: string | null; comune_ritiro: string | null; provincia_ritiro: string | null; cap_ritiro: string | null }) {
+  const intero = (p.indirizzo_ritiro || '').trim()
+  const taglio = intero.search(/,?\s*\d{5}\b/)
+  const viaCivico = (taglio > 0 ? intero.slice(0, taglio) : intero).trim().replace(/,$/, '')
+  const daCampi = [p.cap_ritiro, p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}` : ''].filter(Boolean).join(' ')
+  const daGoogle = taglio > 0 ? intero.slice(taglio).replace(/^,?\s*/, '') : ''
+  const secondaRiga = daCampi || daGoogle
+  return [viaCivico || '—', secondaRiga].filter(Boolean).join('\n')
 }
 
 // Data corta con l'anno per i boxini di riga (gg/mm/aa)
@@ -333,9 +317,21 @@ export default function AdminDashboard() {
       setFiltro(bucketDi(p))
     }
     setSelId(prev => (prev === p.id ? null : p.id))
+    // ⭐ 28/07 sera: l'email si legge dal SERVER (/api/email-cliente) — il
+    // browser admin non può leggere `utenti` (RLS: ognuno vede solo sé) e
+    // la tendina mostrava "—" pur con l'account a posto
     if (p.user_id && emailAccounts[p.id] === undefined) {
-      supabase.from('utenti').select('email').eq('id', p.user_id).single()
-        .then(({ data }) => setEmailAccounts(prev => ({ ...prev, [p.id]: data?.email || '' })))
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (!session) return
+        fetch('/api/email-cliente', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+          body: JSON.stringify({ pratica_id: p.id }),
+        })
+          .then(r => r.json())
+          .then(d => setEmailAccounts(prev => ({ ...prev, [p.id]: d.email || '' })))
+          .catch(() => setEmailAccounts(prev => ({ ...prev, [p.id]: '' })))
+      })
     }
     aggiornaContatori(p.id)
   }
@@ -537,7 +533,10 @@ export default function AdminDashboard() {
         } else if (p.in_attesa) {
           const res = await fetch('/api/pratica-dati', { method: 'POST', headers, body: JSON.stringify({ pratica_id: p.id, dati: { in_attesa: false, attesa_motivo: null, attesa_dal: null } }) })
           if (!res.ok) throw new Error('Errore')
-          await notaAutomatica(p.id, 'Pratica ripresa')
+          // ⭐ 28/07 sera (richiesta Davide): accanto a "Ripresa" si mette la
+          // PILLOLA di dove si trova la pratica — qui si salva il CODICE
+          // stato, la pillola vera la disegna la cronologia
+          await notaAutomatica(p.id, `Pratica ripresa: ${p.stato}`)
         }
       } else if (azione === 'attesa') {
         const motivo = motivoStato.trim()
@@ -803,7 +802,8 @@ export default function AdminDashboard() {
                     {/* Veicolo — ⭐ 27/07 (variante B su mockup): anno di
                         immatricolazione dopo il modello, sotto solo il comune */}
                     <div style={{ flex: 1.6, minWidth: 0 }}>
-                      <div className="text-[15px] font-bold truncate" style={{ color: aperta ? '#1D4ED8' : '#111827' }}>{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}{p.anno ? ` · ${p.anno}` : ''}</div>
+                      {/* ⭐ 28/07 sera (richiesta Davide): anche i KM dopo l'anno */}
+                      <div className="text-[15px] font-bold truncate" style={{ color: aperta ? '#1D4ED8' : '#111827' }}>{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}{p.anno ? ` · ${p.anno}` : ''}{p.km != null && p.km !== '' ? ` · ${Number(p.km).toLocaleString('it-IT')} km` : ''}</div>
                       <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
                         {p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}` : (p.tipo_mezzo || '—')}
                       </div>
@@ -831,8 +831,13 @@ export default function AdminDashboard() {
                         const pillBg = (p.in_attesa && !chiusa) ? '#E8ECF3' : contatta ? '#FBDADA' : m.bg
                         const pillText = (p.in_attesa && !chiusa) ? '#5B6779' : contatta ? '#9B1C1C' : m.text
                         // Bianca col bordino sia da APERTA che al passaggio
-                        // del mouse: la riga in entrambi i casi è azzurra
-                        const evidenzia = aperta || hoverId === p.id
+                        // del mouse: la riga in entrambi i casi è azzurra.
+                        // ⭐ 28/07 sera (richiesta Davide): le pillole ROSSE
+                        // (da rifare, Da contattare) restano rosse SEMPRE —
+                        // il rosso non si mimetizza con l'azzurro e non deve
+                        // sbiancarsi
+                        const rossa = pillBg === '#F3D9D9' || pillBg === '#FBDADA'
+                        const evidenzia = (aperta || hoverId === p.id) && !rossa
                         return (
                           <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ background: evidenzia ? '#fff' : pillBg, color: pillText, border: `1px solid ${evidenzia ? `${pillText}55` : 'transparent'}`, padding: '3px 11px' }}>
                             {(p.in_attesa && !chiusa) ? 'In attesa' : contatta ? 'Da contattare' : m.label}
@@ -1129,6 +1134,8 @@ export default function AdminDashboard() {
                             aperta
                             onToggle={() => {}}
                             scheda
+                            demolitoreId={p.demolitore_id}
+                            nomeDemolitore={p.demolitore_id ? demolitori[p.demolitore_id] || null : null}
                           />
                         )}
                         <SezTendinaMod
@@ -1147,10 +1154,10 @@ export default function AdminDashboard() {
                             // ⭐ 28/07 (richiesta Davide): il delegato vive QUI, sotto
                             // l'email — è una persona, non un dato del ritiro
                             ...(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere' ? [
-                              { k: 'Delegato', vista: 'Delega non ammessa' },
+                              { k: 'Delegato per la consegna', vista: 'Delega non ammessa', pillola: true },
                             ] : [
-                              { k: 'Delegato', vista: p.delegato_nome || 'Consegna in prima persona', campo: <input className={CAMPO_TENDINA} placeholder="Vuoto = in prima persona" value={sb('delegato_nome')} onChange={e => setB('delegato_nome', e.target.value)} /> },
-                              { k: 'Tel. delegato', vista: p.delegato_telefono || '—', campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('delegato_telefono')} onChange={e => setB('delegato_telefono', e.target.value)} /> },
+                              { k: 'Delegato per la consegna', vista: p.delegato_nome || 'Consegna in prima persona', pillola: true, campo: <input className={CAMPO_TENDINA} placeholder="Vuoto = in prima persona" value={sb('delegato_nome')} onChange={e => setB('delegato_nome', e.target.value)} /> },
+                              { k: 'Tel. delegato', vista: p.delegato_telefono || '—', pillola: true, campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('delegato_telefono')} onChange={e => setB('delegato_telefono', e.target.value)} /> },
                             ]),
                           ]}
                         />
@@ -1191,14 +1198,14 @@ export default function AdminDashboard() {
                                 <option value="smarrito">Smarrito</option>
                               </select>
                             ) },
-                            { k: 'Fermo Amministrativo', vista: p.fermo_amministrativo ? (FERMO_LABEL[p.fermo_amministrativo] || p.fermo_amministrativo) : '—', campo: (
+                            { k: 'Fermo Amministrativo', vista: p.fermo_amministrativo ? (FERMO_LABEL[p.fermo_amministrativo] || p.fermo_amministrativo) : '—', pillola: true, campo: (
                               <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('fermo_amministrativo')} onChange={e => setB('fermo_amministrativo', e.target.value)}>
                                 <option value="" disabled>Scegli…</option>
                                 <option value="no">No</option>
                                 <option value="si">Sì</option>
                               </select>
                             ) },
-                            { k: 'Targhe', vista: p.targhe_presenti == null ? '—' : p.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite o rubate', campo: (
+                            { k: 'Targhe', vista: p.targhe_presenti == null ? '—' : p.targhe_presenti ? 'Presenti sul mezzo' : 'Smarrite o rubate', pillola: true, campo: (
                               <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('targhe_presenti')} onChange={e => setB('targhe_presenti', e.target.value)}>
                                 <option value="" disabled>Scegli…</option>
                                 <option value="presenti">Presenti sul mezzo</option>
@@ -1230,23 +1237,33 @@ export default function AdminDashboard() {
                             ) },
                           ]}
                           extra={
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, paddingTop: 5 }}>
-                              {sezEdit === 'veicolo' ? (
-                                <>
-                                  <PillBool valore={bozza.incidentato as boolean | null} labelSi="Incidentata" labelNo="Non incidentata" buonoSeNo onClick={() => setB('incidentato', bozza.incidentato == null ? true : !bozza.incidentato)} />
-                                  <PillBool valore={bozza.va_in_moto as boolean | null} labelSi="Si avvia" labelNo="Non si avvia" onClick={() => setB('va_in_moto', bozza.va_in_moto == null ? true : !bozza.va_in_moto)} />
-                                  <PillBool valore={bozza.marciante as boolean | null} labelSi="Cammina" labelNo="Non cammina" onClick={() => setB('marciante', bozza.marciante == null ? true : !bozza.marciante)} />
-                                  <PillBool valore={bozza.parti_mancanti as boolean | null} labelSi="Parti mancanti" labelNo="Completo" buonoSeNo onClick={() => setB('parti_mancanti', bozza.parti_mancanti == null ? true : !bozza.parti_mancanti)} />
-                                </>
-                              ) : (
-                                <>
-                                  {p.incidentato != null && <PillCond buono={!p.incidentato}>{p.incidentato ? 'Incidentata' : 'Non incidentata'}</PillCond>}
-                                  {p.va_in_moto != null && <PillCond buono={p.va_in_moto}>{p.va_in_moto ? 'Si avvia' : 'Non si avvia'}</PillCond>}
-                                  {p.marciante != null && <PillCond buono={p.marciante}>{p.marciante ? 'Cammina' : 'Non cammina'}</PillCond>}
-                                  {p.parti_mancanti != null && <PillCond buono={!p.parti_mancanti}>{p.parti_mancanti ? 'Parti mancanti' : 'Completo'}</PillCond>}
-                                </>
+                            <>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, paddingTop: 5 }}>
+                                {sezEdit === 'veicolo' ? (
+                                  <>
+                                    <PillBool valore={bozza.incidentato as boolean | null} labelSi="Incidentata" labelNo="Non incidentata" buonoSeNo onClick={() => setB('incidentato', bozza.incidentato == null ? true : !bozza.incidentato)} />
+                                    <PillBool valore={bozza.va_in_moto as boolean | null} labelSi="Si avvia" labelNo="Non si avvia" onClick={() => setB('va_in_moto', bozza.va_in_moto == null ? true : !bozza.va_in_moto)} />
+                                    <PillBool valore={bozza.marciante as boolean | null} labelSi="Cammina" labelNo="Non cammina" onClick={() => setB('marciante', bozza.marciante == null ? true : !bozza.marciante)} />
+                                    <PillBool valore={bozza.parti_mancanti as boolean | null} labelSi="Parti mancanti" labelNo="Completo" buonoSeNo onClick={() => setB('parti_mancanti', bozza.parti_mancanti == null ? true : !bozza.parti_mancanti)} />
+                                  </>
+                                ) : (
+                                  <>
+                                    {p.incidentato != null && <PillCond buono={!p.incidentato}>{p.incidentato ? 'Incidentata' : 'Non incidentata'}</PillCond>}
+                                    {p.va_in_moto != null && <PillCond buono={p.va_in_moto}>{p.va_in_moto ? 'Si avvia' : 'Non si avvia'}</PillCond>}
+                                    {p.marciante != null && <PillCond buono={p.marciante}>{p.marciante ? 'Cammina' : 'Non cammina'}</PillCond>}
+                                    {p.parti_mancanti != null && <PillCond buono={!p.parti_mancanti}>{p.parti_mancanti ? 'Parti mancanti' : 'Completo'}</PillCond>}
+                                  </>
+                                )}
+                              </div>
+                              {/* ⭐ 28/07 sera (mockup B): le NOTE del cliente da /inizia
+                                  in un blocchetto celeste — solo quando esistono */}
+                              {p.note_veicolo && (
+                                <div style={{ marginTop: 10, background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 10, padding: '8px 10px' }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: '#1D4ED8', textTransform: 'uppercase', marginBottom: 3 }}>Nota cliente sul veicolo</div>
+                                  <div style={{ fontSize: 11.5, color: '#1E3A5F', lineHeight: 1.5 }}>{p.note_veicolo}</div>
+                                </div>
                               )}
-                            </div>
+                            </>
                           }
                         />
                         <SezTendinaMod
@@ -1258,9 +1275,12 @@ export default function AdminDashboard() {
                           onAnnulla={() => { setSezEdit(null); setErroreSez(null) }}
                           onSalva={() => salvaSez(p)}
                           righe={[
-                            { k: 'Indirizzo', vista: p.indirizzo_ritiro || '—', campo: <input className={CAMPO_TENDINA} value={sb('indirizzo_ritiro')} onChange={e => setB('indirizzo_ritiro', e.target.value)} /> },
-                            { k: 'Comune', vista: p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}${p.cap_ritiro ? ` · ${p.cap_ritiro}` : ''}` : '—' },
-                            { k: 'Spazio carro', vista: p.spazio_carro_attrezzi ? (SPAZIO_LABEL[p.spazio_carro_attrezzi] || p.spazio_carro_attrezzi) : '—', campo: (
+                            // ⭐ 28/07 sera: UNA riga sola per l'indirizzo completo
+                            // (la riga "Comune" era un doppione: Google lo include già)
+                            // ⭐ 28/07 sera: indirizzo in due righe (via+civico, poi
+                            // CAP e comune), valore a destra con la sua etichetta
+                            { k: 'Indirizzo', vista: indirizzoRitiroCompleto(p), multiriga: true, campo: <input className={CAMPO_TENDINA} value={sb('indirizzo_ritiro')} onChange={e => setB('indirizzo_ritiro', e.target.value)} /> },
+                            { k: 'Spazio carro', vista: p.spazio_carro_attrezzi ? (SPAZIO_LABEL[p.spazio_carro_attrezzi] || p.spazio_carro_attrezzi) : '—', pillola: true, campo: (
                               <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('spazio_carro_attrezzi')} onChange={e => setB('spazio_carro_attrezzi', e.target.value)}>
                                 <option value="" disabled>Scegli…</option>
                                 <option value="libero">Accesso libero</option>
@@ -1269,21 +1289,33 @@ export default function AdminDashboard() {
                               </select>
                             ) },
                           ]}
-                          extra={(daPortare[p.id]?.length ?? 0) > 0 ? (
-                            // ⭐ 28/07 (variante B su mockup): gli ORIGINALI che il
-                            // cliente deve consegnare al ritiro, con le spunte blu
-                            <div style={{ paddingTop: 8 }}>
-                              <div style={{ fontSize: 9.5, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>Originali da consegnare al ritiro</div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                                {daPortare[p.id].map((nome, i) => (
-                                  <span key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11.5, color: '#374151', lineHeight: 1.35 }}>
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
-                                    {nome}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
-                          ) : undefined}
+                          extra={
+                            <>
+                              {/* ⭐ 28/07 sera (mockup B): la nota del cliente sullo
+                                  SPAZIO del carro attrezzi — solo quando esiste */}
+                              {p.spazio_carro_attrezzi_note && (
+                                <div style={{ marginTop: 8, background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 10, padding: '8px 10px' }}>
+                                  <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.5, color: '#1D4ED8', textTransform: 'uppercase', marginBottom: 3 }}>Nota cliente sullo spazio</div>
+                                  <div style={{ fontSize: 11.5, color: '#1E3A5F', lineHeight: 1.5 }}>{p.spazio_carro_attrezzi_note}</div>
+                                </div>
+                              )}
+                              {(daPortare[p.id]?.length ?? 0) > 0 && (
+                                // ⭐ 28/07 (variante B su mockup): gli ORIGINALI che il
+                                // cliente deve consegnare al ritiro, con le spunte blu
+                                <div style={{ paddingTop: 8 }}>
+                                  <div style={{ fontSize: 9.5, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>Originali da consegnare al ritiro</div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                                    {daPortare[p.id].map((nome, i) => (
+                                      <span key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11.5, color: '#374151', lineHeight: 1.35 }}>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
+                                        {nome}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          }
                         />
                       </div>
                       {/* ⭐ DOCUMENTI SOLO-VISORE (27/07 sera): in pagina non
@@ -1367,7 +1399,12 @@ function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, 
   onMatita: () => void
   onAnnulla: () => void
   onSalva: () => void
-  righe: { k: string; vista: string; campo?: React.ReactNode }[]
+  // ⭐ 28/07 sera (mockup Pillola 1): `pillola` = valore evidenziato nella
+  // pillolina celeste di famiglia (dati operativi chiave: delegato, fermo,
+  // targhe, spazio carro). Il trattino dei valori mancanti resta grigio.
+  // `multiriga` = il valore sta su più righe (es. indirizzo di ritiro:
+  // via+civico, poi CAP e comune) — etichetta e valore restano in parallelo
+  righe: { k: string; vista: string; campo?: React.ReactNode; pillola?: boolean; multiriga?: boolean }[]
   extra?: React.ReactNode
   // ⭐ 27/07 (variante B su mockup): avviso blu tenue sotto la testata
   // (es. le risposte "critiche" del modulo nella scheda Casistiche)
@@ -1399,11 +1436,30 @@ function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, 
         </span>
       </div>
       {avviso}
-      {righe.map((r, i) => (
+      {righe.map((r, i) => r.multiriga ? (
+        // ⭐ 28/07 sera: riga MULTIRIGA — etichetta sopra, valore sotto
+        // ALLINEATO A SINISTRA su più righe pulite (via+civico, poi
+        // cap/comune: le righe le decide `vista` coi suoi a-capo)
+        // Etichetta a sinistra e valore a destra IN PARALLELO come le altre
+        // righe: solo che qui il valore sta su due righe (via+civico, poi
+        // CAP e comune) e la riga si alza di conseguenza
+        <div key={r.k} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, minHeight: 27, padding: '5px 0', borderBottom: i === righe.length - 1 && !extra ? 'none' : '1px solid #F5F7FA', fontSize: 11.5 }}>
+          <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.k}</span>
+          {inEdit && r.campo ? (
+            <span style={{ flex: 1, minWidth: 0 }}>{r.campo}</span>
+          ) : (
+            <span style={{ flex: 1, minWidth: 0, color: '#6B7280', lineHeight: 1.5, whiteSpace: 'pre-line', textAlign: 'right' }}>{r.vista}</span>
+          )}
+        </div>
+      ) : (
         <div key={r.k} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, height: 27, borderBottom: i === righe.length - 1 && !extra ? 'none' : '1px solid #F5F7FA', fontSize: 11.5 }}>
           <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.k}</span>
           <span style={{ position: 'relative', flex: 1, minWidth: 0, height: 22 }}>
-            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...fade(!inEdit || !r.campo) }} title={r.vista}>{r.vista}</span>
+            <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...fade(!inEdit || !r.campo) }} title={r.vista}>
+              {r.pillola && r.vista !== '—' && r.vista !== '…' ? (
+                <span style={{ background: '#EFF6FF', border: '1px solid #DBEAFE', color: '#1D4ED8', fontWeight: 600, fontSize: 10.5, borderRadius: 999, padding: '2px 9px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.vista}</span>
+              ) : r.vista}
+            </span>
             {r.campo && (
               <span style={{ position: 'absolute', inset: 0, ...fade(inEdit) }}>{r.campo}</span>
             )}

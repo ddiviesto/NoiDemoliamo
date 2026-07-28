@@ -70,14 +70,11 @@ export async function POST(req: NextRequest) {
       }).eq('id', praticaId)
       if (error) throw error
 
-      if (eSpostamento) {
-        const fmt = (x: string | Date) => new Date(x).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
-        await supabase.from('pratiche_note').insert({
-          pratica_id: praticaId,
-          testo: `Ritiro spostato dal ${fmt(dataPrecedente!)} al ${fmt(dataRitiro)} — Motivo: ${motivo.slice(0, 500)}`,
-          autore: 'demolitore',
-        })
-      }
+      // ⭐ 28/07 sera: EVENTO nel registro, condiviso (lo vede anche lui)
+      const fmt = (x: string | Date) => new Date(x).toLocaleString('it-IT', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
+      await supabase.from('pratiche_note').insert(eSpostamento
+        ? { pratica_id: praticaId, testo: `Dal ${fmt(dataPrecedente!)} al ${fmt(dataRitiro)} — Motivo: ${motivo.slice(0, 500)}`, evento: 'ritiro_spostato', autore: 'demolitore', visibile_demolitore: true, demolitore_id: demolitoreId }
+        : { pratica_id: praticaId, testo: fmt(dataRitiro), evento: 'ritiro_fissato', autore: 'demolitore', visibile_demolitore: true, demolitore_id: demolitoreId })
       return NextResponse.json({ success: true, stato: 'ritiro_confermato' })
     }
 
@@ -91,6 +88,8 @@ export async function POST(req: NextRequest) {
         aggiornato_il: adesso,
       }).eq('id', praticaId)
       if (error) throw error
+      // ⭐ 28/07 sera: evento condiviso nel registro
+      await supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: '', evento: 'ritirata', autore: 'demolitore', visibile_demolitore: true, demolitore_id: demolitoreId })
       return NextResponse.json({ success: true, stato: 'ritirata' })
     }
 
@@ -105,6 +104,8 @@ export async function POST(req: NextRequest) {
         aggiornato_il: adesso,
       }).eq('id', praticaId)
       if (error) throw error
+      // ⭐ 28/07 sera: evento condiviso nel registro
+      await supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: 'Consegnato a mano al ritiro', evento: 'cert_rottamazione', autore: 'demolitore', visibile_demolitore: true, demolitore_id: demolitoreId })
       return NextResponse.json({ success: true, stato: 'in_attesa_cert_radiazione_pra' })
     }
 

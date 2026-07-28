@@ -72,6 +72,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'File caricato ma pratica non aggiornata: riprova' }, { status: 500 })
     }
 
+    // ⭐ 28/07 sera: evento condiviso nel registro della pratica
+    await supabase.from('pratiche_note').insert({
+      pratica_id: praticaId,
+      testo: 'Caricato dal demolitore',
+      evento: tipo === 'rottamazione' ? 'cert_rottamazione' : 'cert_pra',
+      autore: 'demolitore',
+      visibile_demolitore: true,
+      demolitore_id: demolitoreId,
+    })
+
     return NextResponse.json({ success: true, stato: aggiornamento.stato })
   } catch (err) {
     console.error('Errore endpoint demolitore-certificato:', err)

@@ -72,6 +72,10 @@ export async function POST(req: NextRequest) {
     const cambiato = nuovo !== pratica.stato
     if (cambiato) {
       await supabase.from('pratiche').update({ stato: nuovo, aggiornato_il: new Date().toISOString() }).eq('id', praticaId)
+      // ⭐ 28/07 sera: il cambio di stato entra da solo nel REGISTRO della
+      // pratica (evento 'stato', il testo è il codice — la pillola vera la
+      // disegna la cronologia). Se la colonna non c'è ancora, pazienza.
+      await supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: nuovo, evento: 'stato' })
     }
 
     return NextResponse.json({ success: true, stato: nuovo, cambiato })

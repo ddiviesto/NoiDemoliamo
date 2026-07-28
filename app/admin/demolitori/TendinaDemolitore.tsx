@@ -749,14 +749,19 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
             <RigaSc k="Ragione sociale" vista={dem.ragione_sociale} campo={sezEdit === 'azienda' ? <input className={CAMPO} value={sb('ragione_sociale')} onChange={e => setB('ragione_sociale', e.target.value)} /> : undefined} />
             <RigaSc k="P.IVA" vista={dem.piva || ''} campo={sezEdit === 'azienda' ? <input className={CAMPO} value={sb('piva')} onChange={e => setB('piva', e.target.value)} /> : undefined} />
             <RigaSc k="Codice SDI" vista={dem.codice_sdi || ''} campo={sezEdit === 'azienda' ? <input className={CAMPO} maxLength={7} value={sb('codice_sdi')} onChange={e => setB('codice_sdi', e.target.value.toUpperCase())} /> : undefined} />
+            {/* ⭐ 28/07 sera: l'indirizzo di Google è GIÀ completo (città e
+                provincia incluse) — niente più doppione appiccicato */}
             {sezEdit !== 'azienda' && (
-              <RigaSc k="Indirizzo" vista={dem.indirizzo ? `${dem.indirizzo}${dem.citta ? ` · ${dem.citta}` : ''}${dem.provincia ? ` (${dem.provincia})` : ''}` : ''} />
+              <RigaSc k="Indirizzo" vista={dem.indirizzo || ''} />
             )}
             {sezEdit === 'azienda' && (
               <div style={{ paddingTop: 7 }}>
                 <div style={{ fontSize: 9.5, fontWeight: 700, color: '#9AA7B5', letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 4 }}>Indirizzo sede</div>
                 <AutocompleteIndirizzo compatto valoreIniziale={sb('indirizzo')} placeholder="Cerca l'indirizzo…" onSelezione={d => setBozza(b => ({ ...b, indirizzo: d.indirizzo, citta: d.comune || '', provincia: d.provincia || '', cap: d.cap || '', lat: d.lat ?? null, lng: d.lng ?? null }))} />
-                {sb('indirizzo') && <p style={{ fontSize: 10.5, color: '#6B7280', marginTop: 5 }}>{sb('indirizzo')}{sb('citta') ? ` · ${sb('citta')}` : ''}{sb('provincia') ? ` (${sb('provincia')})` : ''}{sb('cap') ? ` · ${sb('cap')}` : ''}</p>}
+                {/* Sotto il campo solo la CONFERMA dei dati estratti (comune,
+                    provincia, CAP servono a copertura e tariffe) — l'indirizzo
+                    intero sta già nel campo, ripeterlo era un doppione */}
+                {sb('citta') && <p style={{ fontSize: 10.5, color: '#6B7280', marginTop: 5 }}>Comune rilevato: {sb('citta')}{sb('provincia') ? ` (${sb('provincia')})` : ''}{sb('cap') ? ` · CAP ${sb('cap')}` : ''}</p>}
               </div>
             )}
           </div>

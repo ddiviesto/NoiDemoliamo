@@ -542,10 +542,21 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     onRicaricaPratica?.()
   }
 
+  // ⭐ 28/07 sera: il traguardo "tutti i documenti approvati" entra da solo
+  // nel registro della pratica (una volta sola, quando scatta)
+  function segnaTuttiApprovati(aggiornate: DocRiga[]) {
+    const daApprovare = aggiornate.filter(d => d.richiede_upload)
+    const primaMancava = docs.filter(d => d.richiede_upload).some(d => d.stato !== 'approvato')
+    if (primaMancava && daApprovare.length > 0 && daApprovare.every(d => d.stato === 'approvato')) {
+      supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: 'Tutti i documenti sono a posto', evento: 'doc_approvati' }).then(() => {})
+    }
+  }
+
   async function approva(doc: DocRiga) {
     setAzione(true)
     await supabase.from('pratica_documenti_checklist').update({ stato: 'approvato', nota_admin: null, aggiornato_il: new Date().toISOString() }).eq('id', doc.id)
     const aggiornate = docs.map(d => d.id === doc.id ? { ...d, stato: 'approvato' as const, nota_admin: null } : d)
+    segnaTuttiApprovati(aggiornate)
     setDocs(aggiornate)
     await aggiornaStatoPratica()
     setAzione(false)
@@ -565,8 +576,19 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     if (!notaRifiuto.trim()) { setErrRifiuto('Scrivi (o scegli) cosa deve rifare il cliente.'); return }
     setErrRifiuto(null)
     setAzione(true)
-    await supabase.from('pratica_documenti_checklist').update({ stato: 'rifiutato', nota_admin: notaRifiuto.trim(), aggiornato_il: new Date().toISOString() }).eq('id', modalRifiuto.id)
-    const aggiornate = docs.map(d => d.id === modalRifiuto.id ? { ...d, stato: 'rifiutato' as const, nota_admin: notaRifiuto.trim() } : d)
+    // ⭐ 28/07 sera (deciso con Davide): il rifiuto AZZERA i file — il
+    // cliente ritrova il documento come alla prima vista (Scatta fronte/
+    // retro o Allega file) col motivo in evidenza. Pulizia del bucket
+    // best-effort: se una policy la blocca, la riga è comunque svuotata.
+    const daRifiutare = docs.find(d => d.id === modalRifiuto.id)
+    const vecchiFile = daRifiutare ? leggiFile(daRifiutare.file_url) : []
+    await supabase.from('pratica_documenti_checklist').update({ stato: 'rifiutato', nota_admin: notaRifiuto.trim(), file_url: null, aggiornato_il: new Date().toISOString() }).eq('id', modalRifiuto.id)
+    if (vecchiFile.length > 0) {
+      supabase.storage.from('documenti-pratiche').remove(vecchiFile.map(f => f.url)).then(() => {})
+    }
+    // ⭐ 28/07 sera: il rifiuto entra nel registro (documento + motivo)
+    supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: `${modalRifiuto.titolo}: "${notaRifiuto.trim()}"`, evento: 'doc_rifiutato' }).then(() => {})
+    const aggiornate = docs.map(d => d.id === modalRifiuto.id ? { ...d, stato: 'rifiutato' as const, nota_admin: notaRifiuto.trim(), file_url: null } : d)
     setDocs(aggiornate)
     await aggiornaStatoPratica()
     setModalRifiuto(null)
@@ -605,6 +627,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
       await supabase.from('pratica_documenti_checklist').update({ stato: 'approvato', nota_admin: null, aggiornato_il: new Date().toISOString() }).eq('id', d.id)
     }
     const aggiornate = docs.map(d => (d.richiede_upload && d.stato === 'caricato') ? { ...d, stato: 'approvato' as const, nota_admin: null } : d)
+    segnaTuttiApprovati(aggiornate)
     setDocs(aggiornate)
     await aggiornaStatoPratica()
     setAzione(false)
@@ -1135,20 +1158,20 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 {!selezione && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, minHeight: 34 }}>
                   <div style={{ flex: 1 }} />
-                  {/* ⭐ 27/07 notte (mockup forma 3): bottoni SOBRI — Rifiuta
-                      scritta rosso spento sottolineata, Approva pillola
-                      BIANCA col bordo celeste e testo blu (via i fondi
-                      colorati che stonavano sul palco scuro). "Approva"
-                      passa da solo al prossimo. */}
+                  {/* ⭐ 28/07 sera (mockup B): SOLO SIMBOLI — tondo rosso tenue
+                      col ✕ per Rifiuta, tondo verde col ✓ per Approva (nome
+                      al passaggio del mouse). "Approva" passa da solo al
+                      prossimo. */}
                   {voce.tipo === 'doc' && voce.doc.stato === 'caricato' && (
                     <>
                       <span style={{ position: 'relative', display: 'inline-flex' }}>
-                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 12, fontWeight: 500, textDecoration: 'underline', opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>Rifiuta</button>
+                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} title="Rifiuta" aria-label="Rifiuta" className="transition-transform hover:scale-105" style={{ width: 38, height: 38, borderRadius: 999, background: '#FBE2E2', border: '1.5px solid #F3C8C8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A94444" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </button>
                         {nuvolaRifiutoDi(voce.doc.id)}
                       </span>
-                      <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} className="transition-colors hover:bg-blue-50" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', color: '#1D4ED8', border: '1.5px solid #BFDBFE', borderRadius: 999, padding: '8px 20px', fontSize: 12.5, fontWeight: 700, height: 33, opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                        Approva
+                      <button onClick={() => approvaEAvanti(voce.doc)} disabled={azione} title="Approva" aria-label="Approva" className="transition-transform hover:scale-105" style={{ width: 38, height: 38, borderRadius: 999, background: '#DCF3E4', border: '1.5px solid #C8E6D5', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', opacity: azione ? 0.5 : 1, cursor: 'pointer' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                       </button>
                     </>
                   )}
@@ -1159,7 +1182,9 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                         Approvato
                       </span>
                       <span style={{ position: 'relative', display: 'inline-flex' }}>
-                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 12, fontWeight: 500, textDecoration: 'underline', cursor: 'pointer' }}>Rifiuta</button>
+                        <button onClick={() => { setNotaRifiuto(voce.doc.nota_admin || ''); setErrRifiuto(null); setModalRifiuto({ id: voce.doc.id, titolo: nomeDoc(voce.doc) }) }} disabled={azione} title="Rifiuta" aria-label="Rifiuta" className="transition-transform hover:scale-105" style={{ width: 38, height: 38, borderRadius: 999, background: '#FBE2E2', border: '1.5px solid #F3C8C8', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A94444" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                        </button>
                         {nuvolaRifiutoDi(voce.doc.id)}
                       </span>
                     </>

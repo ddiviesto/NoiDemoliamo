@@ -205,13 +205,16 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
             </span>
             <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '2px 10px', flexShrink: 0 }}>{docs.length}</span>
           </div>
-          <div style={{ padding: '2px 14px 6px', borderTop: '1px solid #F1F3F6' }}>
+          {/* ⭐ 28/07 sera (mockup B): ogni documento in un RIQUADRINO CELESTE
+              di famiglia — si vedono meglio delle righe coi filetti; numerino
+              e pillolina in bianco per staccare sul celeste */}
+          <div style={{ padding: '10px 12px 4px', borderTop: '1px solid #F1F3F6' }}>
             {docs.map((d, i) => (
-              <div key={d.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '11px 0', borderBottom: i < docs.length - 1 ? '1px solid #F1F3F6' : 'none' }}>
+              <div key={d.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '11px 12px', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 12, marginBottom: 8 }}>
                 {/* ⭐ 28/07 sera (mockup C): OGNI documento ha il suo numero — il
                     check verde sul modulo scaricato confondeva (sembrava una
                     cosa già fatta in una lista di cose DA portare) */}
-                <span style={{ width: 23, height: 23, borderRadius: 999, background: '#EFF6FF', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+                <span style={{ width: 23, height: 23, borderRadius: 999, background: '#fff', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeDoc(d)}</span>
                   {mostraDescrizione(d) && (
@@ -223,7 +226,7 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
                   {/* ⭐ 28/07 sera (mockup C): pillolina CELESTE anche da scaricata
                       — zero verde nella lista */}
                   {d.template_pdf && (
-                    <span style={{ display: 'inline-block', background: '#EFF6FF', color: '#1D4ED8', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>
+                    <span style={{ display: 'inline-block', background: '#fff', color: '#1D4ED8', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>
                       {d.scaricato_il ? 'Scaricata · ora compilala e firmala' : 'Scaricalo, compilalo e firmalo'}
                     </span>
                   )}

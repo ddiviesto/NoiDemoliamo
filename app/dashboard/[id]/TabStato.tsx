@@ -1,8 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import { supabase } from '@/lib/supabase'
 import { Pratica } from './page'
 import IconaVeicolo from '../../components/IconaVeicolo'
+
+// ⭐ 28/07 sera (mockup A): il cliente può correggere delegato e telefono
+// del delegato SOLO finché la pratica non è assegnata (stessa lista degli
+// altri permessi cliente); dopo, comanda solo l'admin dal CRM
+const STATI_DELEGA_MODIFICABILE = ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati', 'da_assegnare', 'in_attesa_assegnazione', 'in_assegnazione_manuale']
 
 interface Props {
   pratica: Pratica
@@ -112,6 +118,45 @@ export default function TabStato({ pratica }: Props) {
   const isAnnullata = pratica.stato === 'annullata'
   const pillole = pilloleCondizioni(pratica)
   const delegaAmmessa = !(pratica.casistica === 'non_intestatario' || pratica.casistica === 'targhe_straniere')
+
+  // ⭐ 28/07 sera (mockup A): modifica del delegato, una riga alla volta
+  const puoModificareDelega = delegaAmmessa && STATI_DELEGA_MODIFICABILE.includes(pratica.stato)
+  const [editDelega, setEditDelega] = useState<'nome' | 'telefono' | null>(null)
+  const [valDelega, setValDelega] = useState('')
+  const [busyDelega, setBusyDelega] = useState(false)
+  const [errDelega, setErrDelega] = useState<string | null>(null)
+
+  function apriEditDelega(campo: 'nome' | 'telefono') {
+    setValDelega(campo === 'nome' ? (pratica.delegato_nome || '') : (pratica.delegato_telefono || ''))
+    setErrDelega(null)
+    setEditDelega(campo)
+  }
+
+  // Passa dal server (/api/pratica-dati, modalità cliente): la modifica
+  // si riflette subito anche nel CRM di NoiDemoliamo
+  async function salvaDelega() {
+    if (busyDelega || !editDelega) return
+    setBusyDelega(true)
+    setErrDelega(null)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('Sessione scaduta: ricarica la pagina')
+      const dati = editDelega === 'nome'
+        ? { delegato_nome: valDelega.trim() || null }
+        : { delegato_telefono: valDelega.trim() || null }
+      const res = await fetch('/api/pratica-dati', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session.access_token}` },
+        body: JSON.stringify({ pratica_id: pratica.id, dati }),
+      })
+      const d = await res.json().catch(() => null)
+      if (!res.ok) throw new Error(d?.error || 'Errore nel salvataggio')
+      setEditDelega(null)
+    } catch (e) {
+      setErrDelega(e instanceof Error ? e.message : 'Errore nel salvataggio')
+    }
+    setBusyDelega(false)
+  }
 
   const indirizzoCompleto = [
     pratica.indirizzo_ritiro,
@@ -225,8 +270,29 @@ export default function TabStato({ pratica }: Props) {
             <Riga k="Anno · km" v={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
             <Riga k="Indirizzo ritiro" v={indirizzoCompleto} />
             <Riga k="Spazio carro attrezzi" v={pratica.spazio_carro_attrezzi ? (SPAZIO_LABEL[pratica.spazio_carro_attrezzi] || pratica.spazio_carro_attrezzi) : null} />
-            {delegaAmmessa && <Riga k="Delegato" v={pratica.delegato_nome || 'Consegna in prima persona'} />}
-            {delegaAmmessa && pratica.delegato_nome && pratica.delegato_telefono && <Riga k="Tel. delegato" v={pratica.delegato_telefono} />}
+            {/* ⭐ 28/07 sera (mockup A): righe del delegato con "Modifica" —
+                una alla volta, campo a filo blu, testo 16px (regola Safari) */}
+            {delegaAmmessa && (
+              editDelega === 'nome' ? (
+                <RigaCampo k="Delegato per la consegna" valore={valDelega} onChange={setValDelega} placeholder="Vuoto = consegni tu" />
+              ) : (
+                <RigaModificabile k="Delegato per la consegna" v={pratica.delegato_nome || 'Consegna in prima persona'} modifica={puoModificareDelega && !editDelega ? () => apriEditDelega('nome') : undefined} />
+              )
+            )}
+            {delegaAmmessa && (pratica.delegato_nome || editDelega === 'telefono') && (
+              editDelega === 'telefono' ? (
+                <RigaCampo k="Tel. delegato" valore={valDelega} onChange={setValDelega} tel placeholder="Numero del delegato" />
+              ) : (
+                <RigaModificabile k="Tel. delegato" v={pratica.delegato_telefono || '—'} modifica={puoModificareDelega && !editDelega ? () => apriEditDelega('telefono') : undefined} />
+              )
+            )}
+            {editDelega && (
+              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center', marginTop: 8 }}>
+                {errDelega && <span style={{ flex: 1, fontSize: 10.5, color: '#9B1C1C', lineHeight: 1.4 }}>{errDelega}</span>}
+                <button onClick={() => setEditDelega(null)} disabled={busyDelega} style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px', cursor: 'pointer', opacity: busyDelega ? 0.5 : 1 }}>Annulla</button>
+                <button onClick={salvaDelega} disabled={busyDelega} style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', opacity: busyDelega ? 0.6 : 1 }}>{busyDelega ? 'Salvo…' : 'Salva'}</button>
+              </div>
+            )}
 
             {pillole.length > 0 && (
               <>
@@ -260,6 +326,40 @@ function Riga({ k, v }: { k: string; v: string | number | null }) {
     <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderBottom: '1px solid #F5F7FA', fontSize: 12 }}>
       <span style={{ fontWeight: 600, color: '#1E293B', flexShrink: 0 }}>{k}</span>
       <span style={{ color: '#6B7280', textAlign: 'right' }}>{v || '—'}</span>
+    </div>
+  )
+}
+
+// ⭐ 28/07 sera (mockup A): riga con il link "Modifica" (stile Impostazioni)
+function RigaModificabile({ k, v, modifica }: { k: string; v: string | number | null; modifica?: () => void }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderBottom: '1px solid #F5F7FA', fontSize: 12 }}>
+      <span style={{ fontWeight: 600, color: '#1E293B', flexShrink: 0 }}>{k}</span>
+      <span style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
+        <span style={{ color: '#6B7280', textAlign: 'right', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{v || '—'}</span>
+        {modifica && (
+          <button onClick={modifica} style={{ background: 'none', border: 'none', padding: 0, fontSize: 12, fontWeight: 700, color: '#1D4ED8', textDecoration: 'underline', cursor: 'pointer', flexShrink: 0 }}>Modifica</button>
+        )}
+      </span>
+    </div>
+  )
+}
+
+// Riga in modifica: campo a FILO BLU, testo 16px (sotto, Safari iPhone
+// zoomerebbe la pagina al tocco)
+function RigaCampo({ k, valore, onChange, placeholder, tel }: { k: string; valore: string; onChange: (v: string) => void; placeholder?: string; tel?: boolean }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderBottom: '1px solid #F5F7FA', fontSize: 12 }}>
+      <span style={{ fontWeight: 600, color: '#1E293B', flexShrink: 0 }}>{k}</span>
+      <input
+        autoFocus
+        type={tel ? 'tel' : 'text'}
+        inputMode={tel ? 'tel' : undefined}
+        value={valore}
+        onChange={e => onChange(e.target.value)}
+        placeholder={placeholder}
+        style={{ flex: 1, minWidth: 0, maxWidth: 180, border: 'none', borderBottom: '2px solid #93C5FD', borderRadius: 0, outline: 'none', background: 'transparent', fontSize: 16, color: '#111827', textAlign: 'right', padding: '1px 2px 3px' }}
+      />
     </div>
   )
 }

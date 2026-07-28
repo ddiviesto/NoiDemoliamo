@@ -42,6 +42,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Errore nel salvataggio' }, { status: 500 })
     }
 
+    // ⭐ 28/07 sera: evento nel registro (SOLO admin: gli importi non
+    // entrano nel canale del demolitore)
+    await supabase.from('pratiche_note').insert({
+      pratica_id: praticaId,
+      testo: fee == null ? 'Importo concordato rimosso' : `Importo concordato: ${fee} €`,
+      evento: 'trattativa',
+    })
+
     return NextResponse.json({ success: true, fee })
   } catch (err) {
     console.error('Errore endpoint pratica-fee:', err)

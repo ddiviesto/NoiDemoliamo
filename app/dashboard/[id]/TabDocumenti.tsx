@@ -786,15 +786,14 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           prossimo. Ultimo passo della fila: le foto del veicolo. */}
       {docAttivo && (
         <div>
-          <SezioneTitolo testo="Da preparare" />
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 2px 10px' }}>
-            <span style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, color: '#2563eb', flexShrink: 0 }}>
-              DOCUMENTO {Math.min(inviatiCount + 1, totaleDocWizard)} DI {totaleDocWizard}
+          {/* ⭐ 28/07 sera (mockup B): via la barra e le scritte sparse —
+              etichetta a sinistra, pillolina "Documento X di Y" a destra;
+              il palco è della card qui sotto */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '2px 2px 10px' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, color: '#9AA7B5' }}>DA PREPARARE</span>
+            <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '3px 10px' }}>
+              Documento {Math.min(inviatiCount + 1, totaleDocWizard)} di {totaleDocWizard}
             </span>
-            <div style={{ flex: 1, height: 5, background: '#EAF0F7', borderRadius: 999, overflow: 'hidden' }}>
-              <div style={{ width: `${Math.max(6, Math.round((inviatiCount / Math.max(1, totaleDocWizard)) * 100))}%`, height: '100%', background: '#2563eb', transition: 'width 0.4s ease' }} />
-            </div>
           </div>
 
           {/* Frase rassicurante SOLO sul primo documento (variante A, 22/07):
@@ -826,18 +825,18 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
                 transition: 'all 0.2s',
               }}
             >
-              {inviandoId === docAttivo.id ? 'Invio…' : codaWizard.length > 1 ? 'Vai al prossimo documento' : "Invia l'ultimo documento"}
+              {inviandoId === docAttivo.id ? 'Invio…' : docAttivo.stato === 'rifiutato' ? 'Invia di nuovo' : codaWizard.length > 1 ? 'Vai al prossimo documento' : "Invia l'ultimo documento"}
             </button>
           )}
 
-          {/* Coda: i prossimi passi, in fila chiusa (informazione secondaria, sotto) */}
+          {/* ⭐ 28/07 sera (mockup B): coda ATTENUATA — niente card, righe
+              grigie leggere coi numerini spenti (informazione secondaria) */}
           {codaWizard.length > 1 && (
-            <div style={{ border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden', background: '#fff', marginTop: 12 }}>
-              <div style={{ padding: '7px 12px', fontSize: 10, fontWeight: 600, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', borderBottom: '1px solid #F3F4F6' }}>Dopo questo</div>
+            <div style={{ margin: '13px 10px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {codaWizard.slice(1).map((d, i) => (
-                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', borderBottom: i < codaWizard.length - 2 ? '1px solid #F3F4F6' : 'none' }}>
-                  <span style={{ width: 22, height: 22, borderRadius: '50%', background: '#F3F4F6', color: '#6B7280', fontSize: 11, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
-                  <span style={{ fontSize: 12.5, color: '#6B7280' }}>{nomeRitiro(d)}</span>
+                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#F1F4F8', color: '#9AA7B5', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
+                  <span style={{ fontSize: 12, color: '#8B98A9' }}>{nomeRitiro(d)}</span>
                 </div>
               ))}
             </div>
@@ -992,16 +991,6 @@ function ConfermaInRiga({ cosa, onAnnulla, onConferma }: {
 }
 
 // ============================================================
-// TITOLO SEZIONE
-// ============================================================
-
-function SezioneTitolo({ testo }: { testo: string }) {
-  return (
-    <div style={{ fontSize: 11, fontWeight: 600, color: '#9aa7b5', letterSpacing: '0.05em', textTransform: 'uppercase', margin: '4px 2px 12px' }}>{testo}</div>
-  )
-}
-
-// ============================================================
 // FUNZIONI DI SUPPORTO TESTO
 // ============================================================
 
@@ -1131,8 +1120,11 @@ function DocCard(props: {
   const completo = docCompleto(doc)
 
   // Palette: blu di default, rosso se rifiutato (come /inizia con errore)
-  const bordo = rifiutato ? '#F3C8C8' : '#E5E7EB'
-  const bgCard = rifiutato ? '#FEF6F6' : '#F9FAFB'
+  // ⭐ 28/07 sera (mockup B): card PROTAGONISTA — bordo celeste, ombra
+  // azzurrina, testata su fondo azzurrino chiaro
+  const bordo = rifiutato ? '#F3C8C8' : '#BFDBFE'
+  const bgTesta = rifiutato ? '#FEF6F6' : '#F8FBFF'
+  const bordoTesta = rifiutato ? '#F8DADA' : '#EAF2FE'
   const bgTile = rifiutato ? '#FBDADA' : '#DBEAFE'
   const colTile = rifiutato ? '#C0392B' : '#2563eb'
 
@@ -1153,13 +1145,20 @@ function DocCard(props: {
 
   // Suggerimento solo quando manca qualcosa: a documento completo il bottone
   // blu acceso parla da solo (niente "premi Continua").
+  // ⭐ 28/07 sera: documento RIFIUTATO = i file li abbiamo tolti noi — il
+  // suggerimento lo dice chiaro (e niente più "Foto complete" verde qui)
+  const rifiutatoVuoto = rifiutato && files.length === 0
+  // ⭐ 28/07 notte (mockup B, 4 scene): la frase del rifiuto SEGUE il modo
+  // scelto — foto: "rifai le foto"; file: secca, "Allega il documento nuovo"
   const hint = props.caricamento
     ? 'Caricamento…'
-    : inModoFile
-      ? (files.length > 0 ? '' : 'Allega almeno un file per continuare')
-      : modoSlot
-        ? (completo ? 'Foto complete' : !fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
-        : (completo ? '' : 'Scatta una foto per continuare')
+    : rifiutatoVuoto
+      ? (inModoFile ? 'Allega il documento nuovo' : frDoc ? 'Rifai le due foto: quelle vecchie le abbiamo tolte noi' : 'Rifai la foto: quella vecchia l\'abbiamo tolta noi')
+      : inModoFile
+        ? (files.length > 0 ? '' : 'Allega almeno un file per continuare')
+        : modoSlot
+          ? (rifiutato && completo ? '' : completo ? 'Foto complete' : !fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
+          : (completo ? '' : 'Scatta una foto per continuare')
 
   // Miniatura di un file (✕ scura; la conferma appare in riga sotto le miniature)
   function renderMini(f: FileCaricato, idx: number, size = 56) {
@@ -1230,7 +1229,7 @@ function DocCard(props: {
   }
 
   return (
-    <div style={{ background: bgCard, border: `1.5px solid ${bordo}`, borderRadius: 14, padding: 14 }}>
+    <div style={{ background: '#fff', border: `2px solid ${bordo}`, borderRadius: 16, overflow: 'hidden', boxShadow: rifiutato ? 'none' : '0 6px 18px rgba(37,99,235,0.10)' }}>
       {/* input nascosti: fotocamera per gli scatti (su PC il browser apre la
           scelta immagine) + allegati liberi per scansioni e PDF */}
       <input ref={inputCamFronte} type="file" accept="image/*" capture="environment" onChange={e => props.onCarica(fileFromEvent(e), 'fronte')} className="hidden" />
@@ -1238,8 +1237,8 @@ function DocCard(props: {
       <input ref={inputCamLibero} type="file" accept="image/*" capture="environment" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
       <input ref={inputAllega} type="file" accept="image/*,application/pdf" multiple onChange={e => props.onCarica(fileFromEvent(e))} className="hidden" />
 
-      {/* HEADER */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+      {/* HEADER — testata azzurrina separata dal corpo (mockup B) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', background: bgTesta, borderBottom: `1px solid ${bordoTesta}` }}>
         <div style={{ width: 40, height: 40, borderRadius: 12, background: bgTile, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <IconaTipoDocumento nome={doc.nome} color={colTile} />
         </div>
@@ -1264,6 +1263,9 @@ function DocCard(props: {
           </div>
         ) : null}
       </div>
+
+      {/* CORPO della card (il padding che prima stava sul contenitore) */}
+      <div style={{ padding: '2px 14px 14px' }}>
 
       {/* GUIDA A PASSI (solo attestazione Ente Pubblico): l'Autodichiarazione
           si scarica SOLO dal box verde qui sotto (niente doppio bottone) */}
@@ -1293,42 +1295,37 @@ function DocCard(props: {
         </div>
       )}
 
-      {/* MODALITÀ FILE: lista allegati + "Allega un altro file" (quanti ne
-          vuole: quando ha finito lo dichiara lui col Continua) */}
+      {/* MODALITÀ FILE — ⭐ 28/07 notte (mockup B): i file sono MINIATURE
+          quadrate come le foto (badge PDF dentro, ✕ sull'angolo) col nome
+          piccolo sotto; "Allega un altro file" a pillola compatta */}
       {inModoFile && (
-        <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 7 }}>
-          {files.map((f, idx) => (
-            confermaIdx === idx ? (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, flexWrap: 'wrap' }}>
+            {files.map((f, idx) => (
+              <div key={idx} style={{ width: 56 }}>
+                {renderMini(f, idx)}
+                <div style={{ fontSize: 9, color: '#9AA7B5', marginTop: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nome || 'File'}</div>
+              </div>
+            ))}
+          </div>
+          {confermaIdx !== null && files[confermaIdx] && (
+            <div style={{ marginTop: 8 }}>
               <ConfermaInRiga
-                key={idx}
-                cosa="questo file"
+                cosa={isPdfUrl(files[confermaIdx].nome) || isPdfUrl(files[confermaIdx].url) ? 'questo file' : 'questa foto'}
                 onAnnulla={() => setConfermaIdx(null)}
-                onConferma={() => props.onElimina(idx)}
+                onConferma={() => props.onElimina(confermaIdx)}
               />
-            ) : (
-            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1px solid #E5E7EB', borderRadius: 10, padding: '8px 11px' }}>
-              <button onClick={() => props.onApri(props.signedMap[f.url] || f.url, doc.nome)} style={{ width: 36, height: 36, borderRadius: 8, overflow: 'hidden', border: '1px solid #E5E7EB', background: isPdfUrl(f.nome) || isPdfUrl(f.url) ? '#FBEAEA' : '#f3f5f8', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {isPdfUrl(f.nome) || isPdfUrl(f.url) ? (
-                  <span style={{ fontSize: 8.5, fontWeight: 700, color: '#C0392B' }}>PDF</span>
-                ) : (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img src={props.signedMap[f.url] || f.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                )}
-              </button>
-              <span style={{ flex: 1, minWidth: 0, fontSize: 12, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.nome || 'File'}</span>
-              {props.eliminabile && (
-                <button onClick={() => setConfermaIdx(idx)} aria-label="Elimina file" style={{ width: 22, height: 22, background: 'rgba(15,23,42,0.55)', borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer', padding: 0 }}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                </button>
-              )}
             </div>
-            )
-          ))}
+          )}
+          {/* ⭐ 28/07 notte (mockup approvato): PILLOLA COMPATTA centrata al
+              posto del rettangolone tratteggiato */}
           {props.eliminabile && (
-            <button onClick={() => inputAllega.current?.click()} style={{ border: '1.5px dashed #B5C6E0', borderRadius: 10, background: '#fff', padding: '11px 0', fontSize: 12.5, fontWeight: 600, color: '#2563eb', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-              {files.length === 0 ? 'Allega file' : 'Allega un altro file'}
-            </button>
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 2px' }}>
+              <button onClick={() => inputAllega.current?.click()} className="active:scale-[0.98]" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, border: '1.5px solid #BFDBFE', borderRadius: 999, background: '#fff', color: '#2563eb', fontSize: 12.5, fontWeight: 700, padding: '8px 18px', cursor: 'pointer', transition: 'transform 0.1s' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
+                {files.length === 0 ? 'Allega file' : 'Allega un altro file'}
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -1358,9 +1355,9 @@ function DocCard(props: {
         </>
       )}
 
-      {/* SUGGERIMENTO: solo quando manca qualcosa */}
+      {/* SUGGERIMENTO: solo quando manca qualcosa (rosso spento se rifiutato) */}
       {props.eliminabile && hint && (
-        <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: 11.5, fontWeight: 600, color: completo ? '#1D9E75' : '#9AA7B5' }}>
+        <p style={{ margin: '10px 0 0', textAlign: 'center', fontSize: 11.5, fontWeight: 600, color: rifiutatoVuoto ? '#B03A2E' : completo ? '#1D9E75' : '#9AA7B5' }}>
           {hint}
         </p>
       )}
@@ -1389,6 +1386,8 @@ function DocCard(props: {
           </button>
         </div>
       )}
+
+      </div>{/* fine corpo card */}
     </div>
   )
 }
@@ -1573,9 +1572,13 @@ function PannelloInviati(props: {
                     )
                   })}
                 </div>
-                <p style={{ fontSize: 11, color: '#9AA7B5', margin: '10px 0 0', lineHeight: 1.4 }}>
-                  {approvato ? 'Documento approvato: non serve fare altro.' : 'Toccalo per vederlo a schermo intero. Con la ✕ lo elimini e puoi ricaricarlo.'}
-                </p>
+                {/* 28/07 sera: via la spiegazione "toccalo/✕" (superflua) —
+                    resta solo la conferma per il documento approvato */}
+                {approvato && (
+                  <p style={{ fontSize: 11, color: '#9AA7B5', margin: '10px 0 0', lineHeight: 1.4 }}>
+                    Documento approvato: non serve fare altro.
+                  </p>
+                )}
               </div>
             )
           })()}

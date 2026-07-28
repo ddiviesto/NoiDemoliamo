@@ -70,7 +70,9 @@ function chatDemolitoreVisibile(stato: string): boolean {
 // BANNER DINAMICO (stesso blu del banner di /inizia)
 // ============================================================
 
-function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sottotitolo: string; bg: string } {
+// ⭐ 28/07 sera (mockup A): `tenue` = banner in ROSSO TENUE (rosa di famiglia,
+// testo rosso scuro) — via il rosso pieno che urlava
+function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sottotitolo: string; bg: string; tenue?: boolean } {
   const ico = (path: React.ReactNode) => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{path}</svg>
   )
@@ -102,8 +104,9 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
       return {
         icona: ico(<><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></>),
         titolo: 'Alcuni documenti vanno rifatti',
-        sottotitolo: 'Controlla il tab Documenti per i dettagli',
-        bg: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+        sottotitolo: 'Qui sotto vedi quali sono e cosa correggere',
+        bg: '#FBE2E2',
+        tenue: true,
       }
     case 'da_assegnare':
       // Se la pratica è stata riassegnata, il cliente non deve allarmarsi:
@@ -250,8 +253,10 @@ export default function DettaglioPraticaCliente() {
   const [tab, setTab] = useState<Tab>('documenti')
   const [docRifiutati, setDocRifiutati] = useState(0)
   const [chatNonLetti, setChatNonLetti] = useState(0)
-  // ⭐ Pallino sulla linguetta Ritiro: data fissata non ancora vista
-  // (memoria in localStorage, si spegne aprendo la tab)
+  // ⭐ Pallino sulla linguetta Ritiro (28/07 sera, variante A): FISSO per
+  // tutta la vita della pratica — si spegne solo quando il demolitore
+  // registra il ritiro effettivo (o la pratica è annullata). Così il
+  // cliente prima o poi ci clicca di sicuro.
   const [ritiroNuovo, setRitiroNuovo] = useState(false)
 
   const handleDocRifiutatiCambiati = useCallback((numero: number) => {
@@ -265,20 +270,16 @@ export default function DettaglioPraticaCliente() {
     if (data) setPratica(data)
   }, [id])
 
-  // La data fissata è "nuova" finché il cliente non apre la tab Ritiro:
-  // pallino rosso sulla linguetta, memoria in localStorage
+  // Il pallino resta acceso finché il veicolo non è stato RITIRATO davvero
+  // (via anche ad annullata): aprire la tab non lo spegne più.
   useEffect(() => {
     if (!pratica) { setRitiroNuovo(false); return }
-    const attesa = ['assegnata', 'in_attesa_conferma_cliente', 'ritiro_confermato'].includes(pratica.stato)
-    if (!pratica.data_ritiro_prevista || !attesa) { setRitiroNuovo(false); return }
-    const visto = localStorage.getItem(`ritiroVisto:${pratica.id}`)
-    setRitiroNuovo(visto !== pratica.data_ritiro_prevista)
+    const dopoRitiro = ['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra', 'completata', 'annullata'].includes(pratica.stato)
+    setRitiroNuovo(!dopoRitiro)
   }, [pratica])
 
   function apriTabRitiro() {
     setTab('ritiro')
-    if (pratica?.data_ritiro_prevista) localStorage.setItem(`ritiroVisto:${pratica.id}`, pratica.data_ritiro_prevista)
-    setRitiroNuovo(false)
   }
 
   // Aggiornamento automatico (22/07): stato/banner e contatore chat si
@@ -372,9 +373,10 @@ export default function DettaglioPraticaCliente() {
 
         <div className="p-4 flex flex-col gap-3">
 
-          {/* BANNER STATO DINAMICO */}
-          <div className="text-white rounded-2xl p-4 flex items-center gap-3 shadow-md" style={{ background: banner.bg }}>
-            <div className="w-11 h-11 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">{banner.icona}</div>
+          {/* BANNER STATO DINAMICO — ⭐ 28/07 sera: la versione `tenue` è
+              rosa di famiglia con testo rosso scuro (via il rosso pieno) */}
+          <div className={`rounded-2xl p-4 flex items-center gap-3 ${banner.tenue ? '' : 'text-white shadow-md'}`} style={{ background: banner.bg, border: banner.tenue ? '1.5px solid #F3C8C8' : undefined, color: banner.tenue ? '#7C2D2D' : undefined }}>
+            <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${banner.tenue ? '' : 'bg-white/20'}`} style={banner.tenue ? { background: '#F3C8C8', color: '#A94444' } : undefined}>{banner.icona}</div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-bold leading-tight">{banner.titolo}</div>
               <div className="text-xs opacity-90 mt-1 leading-snug">{banner.sottotitolo}</div>

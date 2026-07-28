@@ -495,7 +495,10 @@ function evidenzia(testo: string): React.ReactNode {
   return parti.map((p, i) => (i % 2 === 1 ? <span key={i} style={{ color: '#1D4ED8' }}>{p}</span> : p))
 }
 
-function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder }: { iconSvg: React.ReactNode; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean }) {
+// ⭐ 28/07 sera (mockup B): `uniforme` = tutti i riquadri della lista alla
+// stessa altezza (quella del più alto coi testi a capo) — niente più riquadro
+// che spicca perché il suo titolo va su due righe
+function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder, uniforme }: { iconSvg: React.ReactNode; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean; uniforme?: boolean }) {
   // Opzione più "solida" e leggibile: bordo netto, icona grande, titolo scuro protagonista.
   // La selezionata è inconfondibile: bordo blu pieno, sfondo azzurro, icona blu piena.
   const baseBg = selected ? 'bg-[#EFF6FF]' : errorBorder ? 'bg-white' : 'bg-white hover:bg-blue-50/40'
@@ -505,7 +508,7 @@ function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder }: { 
       ? { border: '2px solid #FCA5A5' }
       : { border: '2px solid #D7DCE5' }
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 p-3.5 rounded-[13px] text-left transition-all active:scale-[0.995] ${baseBg}`} style={borderStyle}>
+    <button onClick={onClick} className={`w-full flex items-center gap-3 p-3.5 rounded-[13px] text-left transition-all active:scale-[0.995] ${baseBg}`} style={{ ...borderStyle, minHeight: uniforme ? 92 : undefined }}>
       <div className={`w-[42px] h-[42px] rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? 'bg-blue-600 text-white' : 'bg-[#DBEAFE] text-blue-600'}`}>
         {iconSvg}
       </div>
@@ -567,7 +570,7 @@ function BannerStep({ stepKey, curIdx, total, tipo, tipoAltro, intestazione, onB
   const Icona = meta.icona
 
   return (
-    <div className="-mx-7 -mt-7 mb-5 px-4 py-3 bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] rounded-t-3xl flex items-center gap-3 text-white">
+    <div className="-mx-7 -mt-7 mb-5 px-4 py-3 bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] rounded-t-none sm:rounded-t-3xl flex items-center gap-3 text-white">
       <button
         onClick={onBack}
         className="bg-white/85 hover:bg-white text-blue-700 rounded-lg px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0 shadow-sm transition-all"
@@ -1029,8 +1032,11 @@ export default function IniziaPage() {
   const inputClass = (err?: boolean) => `w-full border rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400 ${err ? 'border-red-300 bg-red-50' : 'border-gray-200'}`
 
   return (
-    <main className="min-h-screen flex items-start justify-center p-4 pt-8" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-lg p-7 relative">
+    // ⭐ 28/07 sera (mockup approvato): sul TELEFONO /inizia è A TUTTO SCHERMO
+    // come home e pratica — bianco fino ai bordi, banner blu fuso con la
+    // cornice del browser (theme-color già blu). Su PC resta la card centrata.
+    <main className="min-h-screen flex items-start justify-center p-0 sm:p-4 sm:pt-8 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
+      <div className="bg-white rounded-none sm:rounded-3xl w-full max-w-md shadow-none sm:shadow-lg p-7 relative min-h-screen sm:min-h-0">
 
         <BannerStep
           stepKey={curStep}
@@ -1536,7 +1542,9 @@ export default function IniziaPage() {
             <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
             <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
             {erroreIntestazione && <div className="mb-3"><ErrorBadge>Seleziona a chi è intestato il mezzo per continuare.</ErrorBadge></div>}
-            <div className="flex flex-col gap-2">
+            {/* ⭐ 28/07 sera (mockup B): righe di griglia TUTTE uguali — ogni
+                riquadro alto quanto il più alto, a qualsiasi larghezza */}
+            <div className="grid gap-2" style={{ gridAutoRows: '1fr' }}>
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
                 label="A un privato cittadino"
@@ -1544,6 +1552,7 @@ export default function IniziaPage() {
                 selected={dati.intestazione === 'me'}
                 onClick={() => setIntestazione('me')}
                 errorBorder={erroreIntestazione}
+                uniforme
               />
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="7" x2="10" y2="7"/><line x1="14" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="15" y2="11"/><path d="M9 22v-4h6v4"/></svg>}
@@ -1552,6 +1561,7 @@ export default function IniziaPage() {
                 selected={dati.intestazione === 'societa'}
                 onClick={() => setIntestazione('societa')}
                 errorBorder={erroreIntestazione}
+                uniforme
               />
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 2048 2048" fill="currentColor"><path d="M1504 128q113 0 212 43t173 116t116 173t43 212q0 109-41 209t-118 176l-865 864l-865-864Q83 981 42 881T0 672q0-112 42-211t117-173t173-117t212-43q83 0 148 19t120 52t106 81t106 103q55-56 105-103t106-80t121-53t148-19m294 838q59-59 90-135t31-159q0-87-32-162t-88-131t-132-87t-163-32q-84 0-149 26t-120 70t-105 97t-106 111q-54-54-105-109t-106-99t-121-72t-148-28q-86 0-162 32t-132 89t-89 133t-33 162q0 83 31 159t91 135l774 774z"/></svg>}
@@ -1560,6 +1570,7 @@ export default function IniziaPage() {
                 selected={dati.intestazione === 'deceduto'}
                 onClick={() => setIntestazione('deceduto')}
                 errorBorder={erroreIntestazione}
+                uniforme
               />
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M19 15a4 4 0 0 1 3 4v2"/></svg>}
@@ -1568,14 +1579,16 @@ export default function IniziaPage() {
                 selected={dati.intestazione === 'associazione'}
                 onClick={() => setIntestazione('associazione')}
                 errorBorder={erroreIntestazione}
+                uniforme
               />
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>}
-                label="Il passaggio di proprietà non è stato completato"
+                label="Passaggio di proprietà non completato"
                 sub="Non risulto proprietario sui documenti"
                 selected={dati.intestazione === 'altra_persona'}
                 onClick={() => setIntestazione('altra_persona')}
                 errorBorder={erroreIntestazione}
+                uniforme
               />
               <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg>}
@@ -1584,6 +1597,7 @@ export default function IniziaPage() {
                 selected={dati.intestazione === 'targhe_straniere'}
                 onClick={() => setIntestazione('targhe_straniere')}
                 errorBorder={erroreIntestazione}
+                uniforme
               />
             </div>
             <button onClick={handleContinuaIntestazione} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
@@ -1687,14 +1701,21 @@ export default function IniziaPage() {
                 errorBorder={erroreFermo}
               />
             </div>
+            {/* ⭐ 28/07 sera: SCHEDA BLU come gli altri avvisi informativi (il
+                giallo è da allarme, regola 25/07), testi un filo più grandi */}
             {dati.fermo === 'si' && (
-              <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                  <path d="M12 9v4"/>
-                  <path d="M12 17h.01"/>
-                  <circle cx="12" cy="12" r="10"/>
-                </svg>
-                <span>La demolizione toglie il veicolo dalla circolazione, ma <strong>il debito che ha causato il fermo non si cancella</strong> e resta legato al codice fiscale del proprietario.</span>
+              <div className="mt-3 flex items-start gap-2.5 bg-blue-50 border-[1.5px] border-blue-200 rounded-xl p-3.5">
+                <span className="w-[32px] h-[32px] rounded-[9px] bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
+                  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 16v-4"/>
+                    <path d="M12 8h.01"/>
+                  </svg>
+                </span>
+                <span>
+                  <span className="block text-[13.5px] font-bold text-blue-900">Il debito non si cancella</span>
+                  <span className="block text-[12.5px] text-[#37507E] leading-snug mt-0.5">La demolizione toglie il veicolo dalla circolazione, ma <strong className="text-blue-900">il debito che ha causato il fermo resta</strong>, legato al codice fiscale del proprietario.</span>
+                </span>
               </div>
             )}
             <button onClick={handleContinuaFermo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>

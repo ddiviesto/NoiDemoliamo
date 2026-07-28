@@ -1,12 +1,16 @@
 /**
- * Endpoint AREA DEMOLITORE: note cronologiche del demolitore (23/07/2026).
+ * Endpoint AREA DEMOLITORE: cronologia condivisa della pratica (23/07/2026,
+ * ⭐ riscritto il 28/07 sera per i CANALI).
  *
- * POST { pratica_id }          → elenco delle SUE note sulla pratica
- * POST { pratica_id, testo }   → aggiunge una nota ("chiamato, non risponde")
+ * POST { pratica_id }          → le voci del CANALE CONDIVISO: eventi che lo
+ *                                riguardano (assegnazione, ritiro, certificati)
+ *                                + note a due voci (sue e di NoiDemoliamo)
+ * POST { pratica_id, testo }   → aggiunge una sua nota al canale
  *
- * Le note finiscono in `pratiche_note` con autore='demolitore': l'admin le
- * vede nella cronologia del dettaglio pratica (pillola dedicata). Il
- * demolitore vede SOLO le proprie note — mai quelle interne dell'admin.
+ * Regole: il demolitore NON vede mai le note private dell'admin né gli
+ * eventi della fase documenti; vede solo le voci con visibile_demolitore
+ * legate al SUO demolitore_id (dopo una riassegnazione, il nuovo demolitore
+ * non vede le voci del precedente).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -34,6 +38,8 @@ export async function POST(req: NextRequest) {
         pratica_id: praticaId,
         testo: testo.slice(0, 1000),
         autore: 'demolitore',
+        visibile_demolitore: true,
+        demolitore_id: demolitoreId,
       })
       if (error) {
         console.error('Errore inserimento nota demolitore:', error)
@@ -41,18 +47,21 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Il canale condiviso: voci visibili al demolitore, legate a LUI
+    // (le righe vecchie senza demolitore_id restano visibili per compatibilità)
     const { data: note, error: errN } = await supabase
       .from('pratiche_note')
-      .select('id, testo, creato_il')
+      .select('id, testo, creato_il, autore, evento, demolitore_id')
       .eq('pratica_id', praticaId)
-      .eq('autore', 'demolitore')
+      .eq('visibile_demolitore', true)
       .order('creato_il', { ascending: false })
     if (errN) {
       console.error('Errore lettura note demolitore:', errN)
       return NextResponse.json({ error: 'Errore nel caricamento delle note' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true, note: note || [] })
+    const sue = (note || []).filter(n => !n.demolitore_id || n.demolitore_id === demolitoreId)
+    return NextResponse.json({ success: true, note: sue })
   } catch (err) {
     console.error('Errore endpoint demolitore-note:', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })

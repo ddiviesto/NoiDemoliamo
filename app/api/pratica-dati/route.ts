@@ -51,17 +51,34 @@ export async function POST(req: NextRequest) {
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     const supabaseUser = createClient(supabaseUrl, supabaseAnonKey)
     const { data: { user } } = await supabaseUser.auth.getUser(token)
-    if (!user || user.email !== ADMIN_EMAIL) return NextResponse.json({ error: 'Solo admin' }, { status: 403 })
+    if (!user) return NextResponse.json({ error: 'Non autorizzato' }, { status: 401 })
+    const isAdmin = user.email === ADMIN_EMAIL
 
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, serviceKey)
 
     const { data: pratica } = await supabase
       .from('pratiche')
-      .select('stato, casistica, numero_eredi, fermo_amministrativo, libretto, targhe_presenti, delegato_nome')
+      .select('stato, casistica, numero_eredi, fermo_amministrativo, libretto, targhe_presenti, delegato_nome, user_id')
       .eq('id', praticaId)
       .single()
     if (!pratica) return NextResponse.json({ error: 'Pratica non trovata' }, { status: 404 })
+
+    // ⭐ 28/07 sera: anche il CLIENTE proprietario può passare di qui, ma
+    // SOLO per nome e telefono del delegato e SOLO prima dell'assegnazione
+    // (dopo, comanda solo l'admin — regola del 22/07)
+    if (!isAdmin) {
+      if (pratica.user_id !== user.id) return NextResponse.json({ error: 'Non autorizzato' }, { status: 403 })
+      const campi = Object.keys(dati)
+      const ammessi = ['delegato_nome', 'delegato_telefono']
+      if (campi.length === 0 || campi.some(c => !ammessi.includes(c))) {
+        return NextResponse.json({ error: 'Puoi modificare solo il delegato' }, { status: 403 })
+      }
+      const modificabili = ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati', 'da_assegnare', 'in_attesa_assegnazione', 'in_assegnazione_manuale']
+      if (!modificabili.includes(pratica.stato)) {
+        return NextResponse.json({ error: 'La pratica è già assegnata: scrivici in chat per cambiare il delegato' }, { status: 409 })
+      }
+    }
 
     // Whitelist + normalizzazioni
     const update: Record<string, unknown> = {}

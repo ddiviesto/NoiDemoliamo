@@ -143,6 +143,9 @@ export async function POST(req: NextRequest) {
         console.error('Errore disassegnazione:', errDis)
         return NextResponse.json({ error: 'Errore durante la disassegnazione' }, { status: 500 })
       }
+      // ⭐ 28/07 sera: nel registro (solo admin: il vecchio demolitore vede
+      // semplicemente sparire la pratica dalla sua lista)
+      await supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: 'Demolitore rimosso: la pratica torna da assegnare', evento: 'riassegnata' })
       return NextResponse.json({ success: true, disassegnata: true })
     }
 
@@ -180,6 +183,15 @@ export async function POST(req: NextRequest) {
         console.error('Errore assegnazione demolitore scelto:', errAssegna)
         return NextResponse.json({ error: 'Errore salvataggio assegnazione' }, { status: 500 })
       }
+      // ⭐ 28/07 sera: evento nel registro, CONDIVISO col nuovo demolitore
+      // (è l'inizio della sua cronologia: demolitore_id lo lega a lui)
+      await supabase.from('pratiche_note').insert({
+        pratica_id: praticaId,
+        testo: `${demo.ragione_sociale}${manuale ? ' (scelto a mano)' : ' (dalla classifica)'}`,
+        evento: aggiornamento.riassegnata ? 'riassegnata' : 'assegnata',
+        visibile_demolitore: true,
+        demolitore_id: demo.id,
+      })
       return NextResponse.json({ success: true, vincitore: demo, scadenza_proposta_ritiro: scadenzaA.toISOString() })
     }
 
@@ -287,6 +299,15 @@ export async function POST(req: NextRequest) {
       console.error('Errore update pratica:', errUpdate)
       return NextResponse.json({ error: 'Errore salvataggio assegnazione' }, { status: 500 })
     }
+
+    // ⭐ 28/07 sera: evento nel registro, condiviso col demolitore vincitore
+    await supabase.from('pratiche_note').insert({
+      pratica_id: praticaId,
+      testo: `${risultato.vincitore.ragione_sociale} (automatica, 1ª in classifica)`,
+      evento: 'assegnata',
+      visibile_demolitore: true,
+      demolitore_id: risultato.vincitore.id,
+    })
 
     return NextResponse.json({
       success: true,
