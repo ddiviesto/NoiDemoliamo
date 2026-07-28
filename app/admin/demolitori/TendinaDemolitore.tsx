@@ -610,10 +610,16 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                 {dem?.invito_inviato_il && (
                   <div style={{ fontSize: 10.5, color: '#8B95A5', marginTop: 3 }}>Invito del {fmtDataOra(dem.invito_inviato_il)}</div>
                 )}
-                {/* ⭐ 28/07 (richiesta Davide): bottone piccolo a pillolina, non a tutta larghezza */}
-                <button onClick={invitaDemolitore} disabled={invitando} className="transition-colors hover:bg-blue-700 disabled:opacity-60" style={{ marginTop: 9, background: '#2563EB', border: 'none', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', cursor: 'pointer' }}>
-                  {invitando ? 'Invio…' : dem?.invito_inviato_il ? "Reinvita all'area" : "Invita all'area"}
-                </button>
+                {/* ⭐ 28/07 (variante A su mockup): pilloline affiancate — Reinvita
+                    blu e Revoca bianca col testo rosso spento (via il link rosso) */}
+                <div style={{ display: 'flex', gap: 6, marginTop: 9 }}>
+                  <button onClick={invitaDemolitore} disabled={invitando} className="transition-colors hover:bg-blue-700 disabled:opacity-60" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', cursor: 'pointer' }}>
+                    {invitando ? 'Invio…' : dem?.invito_inviato_il ? "Reinvita all'area" : "Invita all'area"}
+                  </button>
+                  {accesso && !revocaConferma && (
+                    <button onClick={() => setRevocaConferma(true)} className="transition-colors hover:bg-red-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#A94444', fontSize: 10.5, fontWeight: 400, borderRadius: 999, padding: '5px 13px', cursor: 'pointer' }}>Revoca</button>
+                  )}
+                </div>
                 {messaggioInvito && (
                   <div style={{ fontSize: 10.5, fontWeight: 600, marginTop: 6, color: messaggioInvito.ok ? '#1F7A43' : '#A94444' }}>{messaggioInvito.testo}</div>
                 )}
@@ -623,9 +629,6 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                     <input readOnly value={linkInvito} onFocus={e => e.target.select()} style={{ flex: 1, minWidth: 0, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '5px 8px', fontSize: 10, color: '#4B5563', outline: 'none', background: '#F8FAFC' }} />
                     <button onClick={() => navigator.clipboard.writeText(linkInvito)} style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '5px 10px', cursor: 'pointer' }}>Copia</button>
                   </div>
-                )}
-                {accesso && !revocaConferma && (
-                  <button onClick={() => setRevocaConferma(true)} style={{ marginTop: 8, background: 'none', border: 'none', color: '#A94444', fontSize: 10.5, fontWeight: 600, textDecoration: 'underline', cursor: 'pointer', padding: 0 }}>Revoca accesso</button>
                 )}
                 {revocaConferma && (
                   <div style={{ marginTop: 8, background: '#FBF3F3', border: '1px solid #F3D9D9', borderRadius: 9, padding: '8px 10px' }}>
