@@ -573,6 +573,11 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
           <div className="text-[15px] font-bold" style={{ color: aperteVive > 0 ? '#1E4E8C' : '#6B7280' }}>{aperteVive}</div>
           <div className="text-[10px] font-semibold uppercase" style={{ color: aperteVive > 0 ? '#1E4E8C' : '#6B7280' }}>aperte</div>
         </div>
+        {/* ⭐ 28/07 (richiesta Davide): le altre statistiche stanno QUI in alto,
+            dopo la fee, quadrate come Aperte */}
+        <BoxStat n={String(stats.completate)} l="Completate" />
+        <BoxStat n={String(stats.annullate)} l="Annullate" allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
+        <BoxStat n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} l="Velocità" />
       </div>
 
       {/* Tutto il resto SI SROTOLA morbido sotto la riga (azioni + schede) */}
@@ -663,10 +668,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
               la scheda Tariffa con la matita c'è già nella tendina) */}
 
           <span style={{ flex: 1 }} />
-          {/* Statistiche restanti come CHIPS in linea (Aperte e Fee vivono già nella riga) */}
-          <ChipStat l="Completate" n={String(stats.completate)} />
-          <ChipStat l="Annullate" n={String(stats.annullate)} allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
-          <ChipStat l="Velocità" n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} />
+          {/* (28/07: le statistiche sono salite nella riga in alto, dopo la fee) */}
           <span style={{ position: 'relative' }}>
             <button onClick={() => { setNuvola(n => n === 'elimina' ? null : 'elimina'); setConfermaNome(''); setErroreElimina('') }} aria-label="Elimina demolitore" className="transition-colors hover:bg-red-50" style={{ width: 30, height: 30, borderRadius: 999, background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -943,22 +945,26 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   )
 }
 
-// Chip statistica in linea con le pillole (28/07: i boxini impilati
-// "scombussolavano" la fila, bocciati da Davide)
-function ChipStat({ l, n, allerta = false, onClick }: { l: string; n: string; allerta?: boolean; onClick?: () => void }) {
+// Boxino statistica QUADRATO come "Aperte" (28/07, richiesta Davide: le
+// statistiche vivono nella riga in alto dopo la fee). Sta dentro la riga
+// cliccabile che richiude la tendina, quindi ferma il clic quando serve.
+function BoxStat({ n, l, allerta = false, onClick }: { n: string; l: string; allerta?: boolean; onClick?: () => void }) {
   const stile: React.CSSProperties = {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
+    flexShrink: 0, textAlign: 'center', borderRadius: 10, padding: '6px 14px', minWidth: 70,
     background: allerta ? '#FBDADA' : '#fff',
-    border: `1.5px solid ${allerta ? '#F3C8C8' : '#DBEAFE'}`,
-    borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap', flexShrink: 0,
+    border: `1px solid ${allerta ? '#F3C8C8' : '#DBEAFE'}`,
     cursor: onClick ? 'pointer' : 'default',
   }
   const contenuto = (
     <>
-      <span style={{ fontSize: 11, fontWeight: 600, color: allerta ? '#9B1C1C' : '#5B6779' }}>{l}</span>
-      <span style={{ fontSize: 11.5, fontWeight: 700, color: allerta ? '#9B1C1C' : '#111827' }}>{n}</span>
+      <div className="text-[15px] font-bold" style={{ color: allerta ? '#9B1C1C' : '#6B7280' }}>{n}</div>
+      <div className="text-[10px] font-semibold uppercase" style={{ color: allerta ? '#9B1C1C' : '#6B7280' }}>{l}</div>
     </>
   )
-  if (onClick) return <button onClick={onClick} className="transition-all hover:shadow-sm" style={stile}>{contenuto}</button>
-  return <span style={stile}>{contenuto}</span>
+  if (onClick) {
+    return (
+      <button onClick={e => { e.stopPropagation(); onClick() }} className="transition-all hover:shadow-sm" style={stile}>{contenuto}</button>
+    )
+  }
+  return <div style={stile}>{contenuto}</div>
 }
