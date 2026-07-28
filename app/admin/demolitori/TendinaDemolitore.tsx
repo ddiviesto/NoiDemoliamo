@@ -597,7 +597,8 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                 {dem?.invito_inviato_il && (
                   <div style={{ fontSize: 10.5, color: '#8B95A5', marginTop: 3 }}>Invito del {fmtDataOra(dem.invito_inviato_il)}</div>
                 )}
-                <button onClick={invitaDemolitore} disabled={invitando} className="transition-colors hover:bg-blue-700 disabled:opacity-60" style={{ marginTop: 9, width: '100%', background: '#2563EB', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 9, padding: '7px 10px', cursor: 'pointer' }}>
+                {/* ⭐ 28/07 (richiesta Davide): bottone piccolo a pillolina, non a tutta larghezza */}
+                <button onClick={invitaDemolitore} disabled={invitando} className="transition-colors hover:bg-blue-700 disabled:opacity-60" style={{ marginTop: 9, background: '#2563EB', border: 'none', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 13px', cursor: 'pointer' }}>
                   {invitando ? 'Invio…' : dem?.invito_inviato_il ? "Reinvita all'area" : "Invita all'area"}
                 </button>
                 {messaggioInvito && (
@@ -658,10 +659,8 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
             <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{zoneCoperte.length}</span>
           </button>
 
-          {/* TARIFFE: scorciatoia che apre la modifica della scheda Contribuzione */}
-          <button onClick={() => { setContribEdit(true) }} className="transition-all hover:bg-blue-100" style={stilePillola}>
-            € Tariffe
-          </button>
+          {/* (28/07: la pillola "€ Tariffe" è stata tolta, richiesta Davide:
+              la scheda Tariffa con la matita c'è già nella tendina) */}
 
           <span style={{ flex: 1 }} />
           {/* Statistiche restanti come CHIPS in linea (Aperte e Fee vivono già nella riga) */}
@@ -856,8 +855,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
               </>
             )}
 
-            {/* Regola di fatturazione */}
-            <div style={{ fontSize: 9.5, color: '#9AA7B5', paddingTop: 7, lineHeight: 1.5 }}>Vince la più specifica: comune › provincia › regione › base. L&apos;importo una tantum della pratica supera tutto.</div>
+            {/* (28/07: la frase della regola è stata tolta, richiesta Davide) */}
           </div>
         </div>
       )}

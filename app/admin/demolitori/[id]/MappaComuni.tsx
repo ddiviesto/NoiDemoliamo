@@ -1031,20 +1031,26 @@ export default function MappaComuni({ coperturaIniziale, onSalva }: Props) {
           )}
         </div>
 
+        {/* ⭐ 28/07 (richiesta Davide): via il bottone "Cancella tutto" — solo
+            l'icona cestino, discreta, col nome al passaggio del mouse */}
         {(regioniSelezionate.size > 0 || provinceSelezionate.size > 0 || comuniInclusi.size > 0 || comuniEsclusi.size > 0) && (
-          <button
-            onClick={() => {
-              setRegioniSelezionate(new Set())
-              setProvinceSelezionate(new Set())
-              setProvinceEscluse(new Set())
-              setComuniInclusi(new Set())
-              setComuniEsclusi(new Set())
-            }}
-            className="w-full bg-white border border-red-200 text-red-600 py-2.5 rounded-xl text-xs font-semibold hover:bg-red-50 transition-all flex items-center justify-center gap-1.5"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
-            Cancella tutto
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button
+              onClick={() => {
+                setRegioniSelezionate(new Set())
+                setProvinceSelezionate(new Set())
+                setProvinceEscluse(new Set())
+                setComuniInclusi(new Set())
+                setComuniEsclusi(new Set())
+              }}
+              title="Svuota la copertura"
+              aria-label="Svuota la copertura"
+              className="transition-colors hover:bg-red-50"
+              style={{ width: 30, height: 30, borderRadius: 999, background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
+            </button>
+          </div>
         )}
 
         {/* Il salvataggio appare SOLO se la copertura è stata modificata */}
