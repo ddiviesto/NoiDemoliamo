@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AdminSidebar from '../_components/AdminSidebar'
 import AutocompleteIndirizzo from '../../inizia/steps/AutocompleteIndirizzo'
+import TendinaDemolitore from './TendinaDemolitore'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -63,6 +64,9 @@ export default function GestioneDemolitori() {
   const [showForm, setShowForm] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [form, setForm] = useState({ ...FORM_VUOTO })
+  // ⭐ 28/07 (mockup approvato): la scheda del demolitore vive nella TENDINA
+  // sotto la riga, come le pratiche — la pagina di dettaglio non esiste più
+  const [selId, setSelId] = useState<string | null>(null)
 
   useEffect(() => {
     async function carica() {
@@ -140,8 +144,21 @@ export default function GestioneDemolitori() {
   const filtratiAttivi = filtrati.filter(d => d.stato === 'attivo')
   const filtratiNonAttivi = filtrati.filter(d => d.stato !== 'attivo')
 
-  // Card demolitore, identica nelle due sezioni (attivi / non attivi)
+  // Card demolitore, identica nelle due sezioni (attivi / non attivi).
+  // ⭐ 28/07: il clic APRE LA TENDINA sotto la riga (via il salto di pagina);
+  // se è già aperta, la richiude.
   function cardDemolitore(d: Demolitore) {
+    // Aperta: al posto della card c'è il blocco unico con la tendina
+    if (selId === d.id) {
+      return (
+        <TendinaDemolitore
+          key={d.id}
+          demolitoreId={d.id}
+          onChiudi={() => setSelId(null)}
+          onDatiCambiati={ricarica}
+        />
+      )
+    }
     const s = metaStato(d.stato)
     const cop = riassuntoCopertura(coperture[d.id] || [])
     const barColor = d.stato === 'attivo' ? '#97C459' : '#C0C7D1'
@@ -149,7 +166,7 @@ export default function GestioneDemolitori() {
     return (
       <div
         key={d.id}
-        onClick={() => router.push(`/admin/demolitori/${d.id}`)}
+        onClick={() => setSelId(d.id)}
         // ⭐ 27/07: hover AZZURRO gemello delle righe pratiche (#EFF6FF);
         // la barretta colorata a sinistra (stato) resta com'è
         className="group bg-white cursor-pointer transition-all hover:!bg-[#EFF6FF] hover:!border-t-[#BFDBFE] hover:!border-r-[#BFDBFE] hover:!border-b-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]"
