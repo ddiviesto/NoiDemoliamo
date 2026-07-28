@@ -707,15 +707,17 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
           <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
         </div>
       ) : (
-        <div style={{ display: 'flex', gap: 12, padding: '12px 14px 14px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+        // ⭐ 28/07 (mockup approvato): riquadri TUTTI alla stessa altezza
+        // (stretch), bordi in riga sopra e sotto
+        <div style={{ display: 'flex', gap: 12, padding: '12px 14px 14px', alignItems: 'stretch', flexWrap: 'wrap' }}>
 
-          {/* CRONOLOGIA E NOTE */}
-          <div style={{ ...stileScheda, minWidth: 240 }}>
+          {/* CRONOLOGIA E NOTE (usa lo spazio in più per le note, campo in fondo) */}
+          <div style={{ ...stileScheda, minWidth: 240, display: 'flex', flexDirection: 'column' }}>
             <TestataScheda titolo="Cronologia e Note" />
             {note.length === 0 ? (
-              <p style={{ fontSize: 10.5, color: '#9AA7B5', padding: '4px 0' }}>Nessuna nota. La cronologia del demolitore apparirà qui.</p>
+              <p style={{ fontSize: 10.5, color: '#9AA7B5', padding: '4px 0', flex: 1 }}>Nessuna nota. La cronologia del demolitore apparirà qui.</p>
             ) : (
-              <div style={{ maxHeight: 150, overflowY: 'auto', overscrollBehavior: 'contain' }}>
+              <div style={{ flex: 1, minHeight: 0, maxHeight: 260, overflowY: 'auto', overscrollBehavior: 'contain' }}>
                 {note.map(n => (
                   <div key={n.id} className="group" style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '4px 0' }}>
                     <span style={{ fontSize: 8.5, color: '#9AA7B5', textTransform: 'uppercase', fontWeight: 700, flexShrink: 0, paddingTop: 2, width: 62, lineHeight: 1.35 }}>{fmtDataOra(n.creato_il)}</span>
@@ -727,7 +729,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                 ))}
               </div>
             )}
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 6, marginTop: 'auto', paddingTop: 8 }}>
               <input value={nuovaNota} onChange={e => setNuovaNota(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') aggiungiNota() }} placeholder="Scrivi una nota…" style={{ flex: 1, minWidth: 0, border: '1.5px solid #E5E7EB', borderRadius: 999, padding: '5px 11px', fontSize: 11, color: '#111827', outline: 'none' }} />
               <button onClick={aggiungiNota} disabled={salvandoNota || !nuovaNota.trim()} aria-label="Aggiungi nota" className="transition-colors hover:bg-blue-700 disabled:opacity-40" style={{ width: 28, height: 28, borderRadius: 999, background: '#2563EB', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: 'pointer' }}>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" /></svg>
