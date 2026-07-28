@@ -136,8 +136,11 @@ export default function DashboardCliente() {
   }
 
   return (
-    <main className="min-h-screen flex justify-center p-4 pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden" style={{ alignSelf: 'flex-start' }}>
+    // ⭐ 28/07 (mockup approvato, proposta 2): sul TELEFONO l'app è a TUTTO
+    // SCHERMO (bianco fino ai bordi, header blu in cima, via la cornice
+    // lavanda); su PC resta la card centrata di sempre
+    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
 
         {/* HEADER BLU (stile banner /inizia) */}
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>

@@ -11,9 +11,9 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  // ⭐ 28/07 (screen iPhone di Davide): la cornice del browser è LAVANDA come
-  // lo sfondo delle pagine cliente — via il nero attorno alla pagina
-  themeColor: "#e0e7ff",
+  // ⭐ 28/07 (proposta 2 approvata): sul telefono l'app è a tutto schermo con
+  // l'header BLU in cima — la cornice del browser si fonde col blu
+  themeColor: "#1d4ed8",
 };
 
 export default function RootLayout({

@@ -343,8 +343,10 @@ export default function DettaglioPraticaCliente() {
   const badge = pillolaStato(pratica.stato, pratica.in_attesa)
 
   return (
-    <main className="min-h-screen flex justify-center p-4 pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden relative" style={{ alignSelf: 'flex-start' }}>
+    // ⭐ 28/07 (mockup approvato, proposta 2): sul TELEFONO l'app è a TUTTO
+    // SCHERMO (bianco fino ai bordi, header blu in cima); su PC card centrata
+    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden relative min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
 
         {/* HEADER BLU (stile banner /inizia) */}
         <div className="px-4 py-3 flex items-center gap-3 text-white sticky top-0 z-30" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>

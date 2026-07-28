@@ -262,7 +262,29 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const [loading, setLoading] = useState(true)
   const [caricandoId, setCaricandoId] = useState<string | null>(null)
   const [inviandoId, setInviandoId] = useState<string | null>(null)
-  const [anteprima, setAnteprima] = useState<{ url: string; titolo: string } | null>(null)
+  // ⭐ 28/07 (mockup approvato, proposta 4): il visore è un PALCO SCURO a
+  // tutto schermo con la navigazione tra i file dello stesso documento
+  const [anteprima, setAnteprima] = useState<{ lista: { url: string; titolo: string }[]; indice: number } | null>(null)
+
+  // Dal singolo file risale al SUO documento (o alle foto del veicolo) e
+  // costruisce la lista per sfogliare con Prec./Succ.
+  function apriAnteprima(url: string, titolo: string) {
+    for (const d of docs) {
+      const files = leggiFile(d.file_url)
+      const urls = files.map(f => signedMap[f.url] || f.url)
+      const i = urls.indexOf(url)
+      if (i !== -1) {
+        setAnteprima({ lista: urls.map(u => ({ url: u, titolo })), indice: i })
+        return
+      }
+    }
+    const iFoto = foto.findIndex(f => f.url === url)
+    if (iFoto !== -1) {
+      setAnteprima({ lista: foto.map((f, j) => ({ url: f.url, titolo: `Foto ${j + 1}` })), indice: iFoto })
+      return
+    }
+    setAnteprima({ lista: [{ url, titolo }], indice: 0 })
+  }
   const [sistematiAperti, setSistematiAperti] = useState(false)
   // ⭐ 28/07: il box "da portare al ritiro" (e il download dei moduli) si è
   // trasferito nella nuova tab Ritiro (TabRitiro.tsx)
@@ -615,7 +637,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           aperta={sistematiAperti}
           onToggle={() => setSistematiAperti(a => !a)}
           eliminabile={puoEliminare}
-          onApri={(url, titolo) => setAnteprima({ url, titolo })}
+          onApri={apriAnteprima}
           onElimina={eliminaFile}
           onEliminaFoto={eliminaFoto}
           onUploadFoto={uploadFotoExtra}
@@ -648,7 +670,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           )}
 
           <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
-            onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={(idx) => eliminaFile(docAttivo, idx)}
+            onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={apriAnteprima} onElimina={(idx) => eliminaFile(docAttivo, idx)}
             guidaAttestazione={docAttivo.codice === 'ATTESTAZIONE_INUTILIZZABILITA'} />
 
           {/* CONTINUA di pagina SUBITO SOTTO la card (l'azione è attaccata a
@@ -713,7 +735,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           con "Ho finito con le foto". */}
       {cardFotoVisibile && (
         <CardFotoVeicolo foto={foto} eliminabile={puoEliminare} onUpload={uploadFotoExtra}
-          onApri={(url, titolo) => setAnteprima({ url, titolo })} onElimina={eliminaFoto}
+          onApri={apriAnteprima} onElimina={eliminaFoto}
           onFinito={() => setCardFotoAperta(false)} />
       )}
 
@@ -721,25 +743,41 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           download dei moduli PDF) si è TRASFERITO nella nuova tab Ritiro
           (TabRitiro.tsx) — questa tab resta solo per caricare. */}
 
-      {/* ====== MODALE ANTEPRIMA ====== */}
-      {anteprima && (
-        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4" onClick={() => setAnteprima(null)}>
-          <div className="bg-white rounded-2xl p-3 max-w-4xl w-full h-[90vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-3 px-2 flex-shrink-0">
-              <p className="font-semibold text-gray-800 text-sm truncate">{anteprima.titolo}</p>
-              <button onClick={() => setAnteprima(null)} className="text-gray-400 text-2xl leading-none flex-shrink-0" aria-label="Chiudi anteprima">×</button>
+      {/* ====== VISORE A PALCO SCURO (mockup approvato 28/07, proposta 4):
+          tutto schermo sul grigio ardesia dell'admin, documento centrato con
+          l'ombra, titolo in alto, Prec./Succ. tra i file dello stesso
+          documento (o tra le foto del veicolo) ====== */}
+      {anteprima && (() => {
+        const voce = anteprima.lista[anteprima.indice]
+        const pdf = isPdfUrl(voce.url)
+        const prec = () => setAnteprima(a => a ? { ...a, indice: (a.indice - 1 + a.lista.length) % a.lista.length } : a)
+        const succ = () => setAnteprima(a => a ? { ...a, indice: (a.indice + 1) % a.lista.length } : a)
+        return (
+          <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#5D6A7E' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', flexShrink: 0 }}>
+              <span style={{ flex: 1, minWidth: 0, color: '#fff', fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{voce.titolo}</span>
+              <button onClick={() => setAnteprima(null)} aria-label="Chiudi anteprima" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.85)', fontSize: 24, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
             </div>
-            <div className="flex-1 overflow-auto">
-              {isPdfUrl(anteprima.url) ? (
-                <iframe src={anteprima.url} title={anteprima.titolo} className="w-full h-full rounded-xl border border-gray-200" />
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: pdf ? '0 10px' : '0 16px', overflow: 'auto' }} onClick={() => setAnteprima(null)}>
+              {pdf ? (
+                <iframe src={voce.url} title={voce.titolo} style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12, background: '#fff', boxShadow: '0 10px 34px rgba(0,0,0,0.35)' }} />
               ) : (
                 /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={anteprima.url} alt={anteprima.titolo} className="w-full h-auto object-contain rounded-xl" />
+                <img src={voce.url} alt={voce.titolo} onClick={e => e.stopPropagation()} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 10px 34px rgba(0,0,0,0.35)' }} />
               )}
             </div>
+            {anteprima.lista.length > 1 ? (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12, padding: '12px 0 22px', flexShrink: 0 }}>
+                <button onClick={prec} style={{ background: 'rgba(255,255,255,0.14)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '7px 16px', cursor: 'pointer' }}>‹ Prec.</button>
+                <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 11.5, fontWeight: 600 }}>{anteprima.indice + 1} di {anteprima.lista.length}</span>
+                <button onClick={succ} style={{ background: 'rgba(255,255,255,0.14)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '7px 16px', cursor: 'pointer' }}>Succ. ›</button>
+              </div>
+            ) : (
+              <div style={{ height: 18, flexShrink: 0 }} />
+            )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
     </div>
   )
