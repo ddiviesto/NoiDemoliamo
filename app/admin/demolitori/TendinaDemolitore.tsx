@@ -294,11 +294,16 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   }
 
   // ---- Stato attivo / non attivo ----
+  // ⭐ 28/07 (bug trovato da Davide): cambiando stato la riga cambia sezione
+  // (attivi ↔ non attivi) — la tendina si RICHIUDE con la sua animazione e
+  // la lista si aggiorna DOPO, così la scheda non si riapre nella nuova sezione
   async function aggiornaStato(stato: string) {
     await supabase.from('demolitori').update({ stato }).eq('id', demolitoreId)
     setDem(prev => prev ? { ...prev, stato } : prev)
     setNuvola(null)
-    onDatiCambiati()
+    setChiudendo(true)
+    setAperto(false)
+    setTimeout(() => { onChiudi(); onDatiCambiati() }, 300)
   }
 
   // ---- Contribuzione ----
