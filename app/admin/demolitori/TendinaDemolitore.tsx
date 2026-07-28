@@ -755,10 +755,11 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
           {/* PERSONE */}
           <div style={{ ...stileScheda, borderColor: sezEdit === 'persone' ? '#93C5FD' : '#E5E7EB' }}>
             <TestataScheda titolo="Persone" sezione="persone" />
-            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#9AA7B5', letterSpacing: 0.4, textTransform: 'uppercase', margin: '2px 0 1px' }}>Titolare</div>
+            {/* ⭐ 28/07 (richiesta Davide): titoletti in grassetto ma meno accesi */}
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#5B6779', letterSpacing: 0.4, textTransform: 'uppercase', margin: '2px 0 1px' }}>Titolare</div>
             <RigaSc k="Nome" vista={dem.titolare_nome || ''} campo={sezEdit === 'persone' ? <input className={CAMPO} value={sb('titolare_nome')} onChange={e => setB('titolare_nome', e.target.value)} /> : undefined} />
             <RigaSc k="Cellulare" vista={dem.titolare_cellulare || ''} campo={sezEdit === 'persone' ? <input className={CAMPO} inputMode="tel" value={sb('titolare_cellulare')} onChange={e => setB('titolare_cellulare', e.target.value)} /> : undefined} />
-            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#9AA7B5', letterSpacing: 0.4, textTransform: 'uppercase', margin: '8px 0 1px' }}>Referente pratiche</div>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: '#5B6779', letterSpacing: 0.4, textTransform: 'uppercase', margin: '8px 0 1px' }}>Referente pratiche</div>
             <RigaSc k="Nome" vista={dem.referente_nome || ''} campo={sezEdit === 'persone' ? <input className={CAMPO} value={sb('referente_nome')} onChange={e => setB('referente_nome', e.target.value)} /> : undefined} />
             <RigaSc k="Cellulare" vista={dem.referente_cellulare || ''} campo={sezEdit === 'persone' ? <input className={CAMPO} inputMode="tel" value={sb('referente_cellulare')} onChange={e => setB('referente_cellulare', e.target.value)} /> : undefined} />
           </div>
@@ -777,17 +778,17 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
               )}
             </div>
 
-            {/* Tariffa base */}
-            <div style={{ background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 10, padding: '8px 11px', marginBottom: 7 }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: '#1D4ED8', letterSpacing: 0.4, textTransform: 'uppercase' }}>Tariffa base</div>
+            {/* ⭐ Tariffa base = RIGA come le zone (variante A su mockup 28/07:
+                il rettangolone celeste a tutta larghezza è stato bocciato) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 0', borderBottom: '1px solid #F5F7FA', fontSize: 11.5 }}>
+              <span style={{ fontWeight: 600, color: '#1E293B' }}>Tariffa base</span>
               {!contribEdit ? (
-                <div style={{ fontSize: 16, fontWeight: 700, color: '#0F1B33', marginTop: 1 }}>{dem.fee_per_pratica || 0} € <span style={{ fontSize: 10.5, fontWeight: 400, color: '#4B5563' }}>/ pratica</span></div>
+                <span style={{ marginLeft: 'auto', fontWeight: 700, color: '#0F1B33', flexShrink: 0 }}>{dem.fee_per_pratica || 0} € <span style={{ fontWeight: 400, color: '#6B7280', fontSize: 10 }}>/ pratica</span></span>
               ) : (
-                <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 3 }}>
-                  {/* Campo col FILO BLU (variante A su mockup): niente cornici */}
-                  <input type="number" defaultValue={dem.fee_per_pratica || ''} onBlur={e => aggiornaFeeBase(parseFloat(e.target.value) || 0)} placeholder="0" style={{ width: 56, border: 0, borderBottom: '2px solid #93C5FD', borderRadius: 0, padding: '1px 2px', fontSize: 14, fontWeight: 700, color: '#0F1B33', outline: 'none', background: 'transparent' }} />
-                  <span style={{ fontSize: 10.5, color: '#4B5563' }}>€ / pratica</span>
-                </div>
+                <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                  <input type="number" defaultValue={dem.fee_per_pratica || ''} onBlur={e => aggiornaFeeBase(parseFloat(e.target.value) || 0)} placeholder="0" style={{ width: 44, border: 0, borderBottom: '2px solid #93C5FD', borderRadius: 0, padding: '1px 2px', fontSize: 11.5, fontWeight: 700, textAlign: 'right', color: '#0F1B33', outline: 'none', background: 'transparent' }} />
+                  <span style={{ fontSize: 10, color: '#6B7280' }}>€</span>
+                </span>
               )}
             </div>
 
