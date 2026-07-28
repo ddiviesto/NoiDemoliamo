@@ -2,9 +2,12 @@
 
 /* ⭐ 28/07 (bug trovato da Davide): quando un'apertura allunga la pagina
    compare la barra di scorrimento e tutto slitta a sinistra (Windows).
-   Lo spazio della barra è SEMPRE riservato: niente più spostamenti. */
+   Lo spazio della barra è SEMPRE riservato: niente più spostamenti.
+   ⭐ 28/07 (screen iPhone di Davide): lo sfondo dietro la pagina è LAVANDA,
+   così l'effetto elastico di iOS non mostra più il nero. */
 html {
   scrollbar-gutter: stable;
+  background: #e0e7ff;
 }
 
 :root {
@@ -19,12 +22,8 @@ html {
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ⭐ 28/07: il sito è SOLO chiaro — il tema scuro del telefono rendeva NERO
+   lo sfondo dietro le pagine (screen di Davide da iPhone in dark mode) */
 
 body {
   background: var(--background);

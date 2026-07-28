@@ -357,14 +357,17 @@ function Chat({
 
       {/* Input */}
       <div className="p-2.5 border-t border-gray-100 flex gap-2 items-center">
+        {/* ⭐ 28/07 (screen iPhone di Davide): placeholder più scuro e testo
+            16px sul telefono — sotto i 16px Safari ZOOMA la pagina al tocco */}
         <input
           type="text"
           value={testo}
           onChange={e => setTesto(e.target.value)}
           onKeyDown={e => e.key === 'Enter' && invia()}
-          placeholder="Scrivi un messaggio..."
+          placeholder="Scrivi un messaggio…"
           disabled={inviando}
-          className="flex-1 border border-gray-200 rounded-full px-4 py-2.5 text-sm outline-none focus:border-blue-500 disabled:opacity-50"
+          className="flex-1 rounded-full px-4 py-2.5 text-base sm:text-[13px] text-gray-900 outline-none focus:border-blue-500 disabled:opacity-50 placeholder:text-gray-500"
+          style={{ border: '1.5px solid #D6DBE3' }}
         />
         <button
           onClick={invia}
