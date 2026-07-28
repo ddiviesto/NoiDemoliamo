@@ -80,13 +80,15 @@ function BadgeZona({ tipo }: { tipo: TipoZona }) {
   return <span style={{ ...stile, fontSize: 8.5, fontWeight: 700, textTransform: 'uppercase', borderRadius: 999, padding: '1.5px 7px', letterSpacing: 0.3, flexShrink: 0 }}>{TIPO_ZONA_LABEL[tipo]}</span>
 }
 
-// Nuvoletta ancorata (becco, clic fuori chiude, niente sfondo scuro)
-function Nuvola({ onChiudi, larghezza = 270, children }: { onChiudi: () => void; larghezza?: number; children: React.ReactNode }) {
+// Nuvoletta ancorata (becco, clic fuori chiude, niente sfondo scuro).
+// `allinea="destra"` per i bottoni sul bordo destro (es. cestino): la
+// nuvoletta si apre verso sinistra e non viene tagliata dal blocco.
+function Nuvola({ onChiudi, larghezza = 270, allinea = 'sinistra', children }: { onChiudi: () => void; larghezza?: number; allinea?: 'sinistra' | 'destra'; children: React.ReactNode }) {
   return (
     <>
       <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={e => { e.stopPropagation(); onChiudi() }} />
-      <div style={{ position: 'absolute', top: 'calc(100% + 9px)', left: 0, zIndex: 50, width: larghezza, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, boxShadow: '0 14px 34px rgba(15,23,42,0.18)', padding: 12, cursor: 'default', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
-        <span style={{ position: 'absolute', top: -6.5, left: 20, width: 11, height: 11, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB', transform: 'rotate(45deg)' }} />
+      <div style={{ position: 'absolute', top: 'calc(100% + 9px)', ...(allinea === 'destra' ? { right: 0 } : { left: 0 }), zIndex: 50, width: larghezza, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, boxShadow: '0 14px 34px rgba(15,23,42,0.18)', padding: 12, cursor: 'default', textAlign: 'left' }} onClick={e => e.stopPropagation()}>
+        <span style={{ position: 'absolute', top: -6.5, ...(allinea === 'destra' ? { right: 10 } : { left: 20 }), width: 11, height: 11, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB', transform: 'rotate(45deg)' }} />
         {children}
       </div>
     </>
@@ -684,7 +686,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
             </button>
             {nuvola === 'elimina' && dem && (
-              <Nuvola onChiudi={() => setNuvola(null)} larghezza={290}>
+              <Nuvola onChiudi={() => setNuvola(null)} larghezza={290} allinea="destra">
                 <div style={{ fontSize: 12, fontWeight: 700, color: '#111827' }}>Eliminare {dem.ragione_sociale}?</div>
                 <div style={{ fontSize: 10.5, color: '#6B7280', lineHeight: 1.5, marginTop: 4 }}>
                   Azione <b>irreversibile</b>: spariscono anagrafica, copertura, tariffe, note e accesso. Le pratiche storiche restano ma perdono il riferimento. Non è possibile se ha pratiche aperte.
