@@ -249,6 +249,15 @@ export default function AdminDashboard() {
   // = sotto si apre un pannello con transizione morbida (grid 0fr→1fr),
   // ritocco = si richiude. I dati dentro li detta Davide, un pezzo alla volta.
   const [selId, setSelId] = useState<string | null>(null)
+  // ⭐ 28/07 (scatto in chiusura bocciato da Davide): il contenuto della
+  // tendina resta MONTATO mentre si riavvolge (grid → 0fr) e si smonta solo
+  // a fine animazione — altrimenti la Cronologia spariva di colpo
+  const [renderId, setRenderId] = useState<string | null>(null)
+  useEffect(() => {
+    if (selId) { setRenderId(selId); return }
+    const t = setTimeout(() => setRenderId(null), 320)
+    return () => clearTimeout(t)
+  }, [selId])
   // ⭐ 27/07 sera: riga sotto il mouse — serve alla pillola di stato per
   // diventare bianca anche in hover (la riga si tinge d'azzurro e la
   // pillola azzurra si mimetizzerebbe)
@@ -764,6 +773,9 @@ export default function AdminDashboard() {
                 const chiusa = !isAttiva(p.stato)
                 const azioneRichiesta = rango(p) <= 2
                 const aperta = p.id === selId
+                // Montata = aperta O in chiusura animata (il contenuto resta
+                // nel DOM finché la tendina non ha finito di riavvolgersi)
+                const montata = aperta || p.id === renderId
                 // BLOCCO UNICO (26/07, variante 3 su mockup): da aperta la
                 // cornice blu ingloba riga e tendina; la riga si tinge
                 // d'azzurro e fa da testata
@@ -1109,7 +1121,7 @@ export default function AdminDashboard() {
                         {/* ⭐ 27/07 sera (mockup approvato): la CRONOLOGIA è la
                             PRIMA scheda della fila (al posto del riquadro
                             documenti che caricava in ritardo) */}
-                        {aperta && (
+                        {montata && (
                           <CronologiaNote
                             praticaId={p.id}
                             praticaCreataIl={p.creato_il}
