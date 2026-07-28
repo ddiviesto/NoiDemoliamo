@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **27 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **28 luglio 2026**.
 > Questo è l'unico file da leggere per capire dove siamo, dove andiamo, e come si lavora.
 
 ---
@@ -851,9 +851,36 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 
 ---
 
-# 📋 PARTE 8 — STATO ATTUALE (27 luglio 2026)
+# 📋 PARTE 8 — STATO ATTUALE (28 luglio 2026)
 
 ## 8.1 ✅ FATTO
+
+### ⭐⭐⭐ SESSIONE 28 luglio 2026 — AREA CLIENTE IN FAMIGLIA + TAB RITIRO + RIFINITURE CRM
+
+**CRM (assegnazione e tendina):**
+- ⭐ **Via il bottone "Scegli tu"** dal pannello Assegnazione (richiesta Davide: superfluo, per assegnare a mano basta cliccare Assegna): la lista è UNA sola con TUTTI i demolitori attivi — prima la classifica di chi copre la zona, sotto la voce grigia "Non coprono la zona" con gli altri (nome, città, Assegna). Vale anche per la Riassegnazione; niente più link "Mostra tutti" a zona scoperta.
+- ⭐ **Pillola "Documenti e Foto"** (rinominata: nel visore ci sono anche le foto).
+- ⭐⭐ **Scheda Ritiro: elenco con le SPUNTE degli ORIGINALI da consegnare al ritiro** (variante B su mockup): dalla checklist della pratica (flag `richiede_consegna`, libretto escluso se "da chiarire"), nomi col ruolo casistica (`nomeAdmin` ora ESPORTATA da DocumentiApprovazione), caricato coi contatori all'apertura della tendina e aggiornato dopo i salvataggi con la matita. La lista è DINAMICA: mostra solo ciò che si applica alla pratica (condizioni CDC/fermo/targhe/delega).
+- ⭐ **Delegato e Tel. delegato SPOSTATI nella scheda Cliente** sotto l'email (via dalla scheda Ritiro); la matita del Cliente li salva (protezione invariata per non intestatario e targhe straniere).
+
+**Area cliente — STATI IN UNA LINGUA SOLA (mockup approvati):**
+- ⭐⭐ **Tabella UNICA `lib/statiCliente.ts`**: home e header della pagina pratica leggono le pillole di stato da lì (via i nomi propri "Approvata/Assegnata/In lavorazione"). Palette allineata al CRM: flusso azzurro `#EFF6FF`/`#1D4ED8`, verde solo Completata, ROSSO TENUE per "da rifare" e Annullata, pausa in azzurro spento. Mappati anche gli stati orfani (assegnazione in corso/a mano = "In attesa assegnazione", attesa recensione = "Veicolo ritirato").
+- ⭐ **Percorso tab Stato a 7 TAPPE** (variante B): nuova tappa "**Ritiro programmato**" ("Data fissata: tieni pronti gli originali"); la terza tappa si chiama "In attesa assegnazione" come la pillola.
+
+**Area cliente — TAB "RITIRO" (idea di Davide, mockup approvato):**
+- ⭐⭐⭐ **Quarta linguetta tra Documenti e Stato**: Documenti · Ritiro · Stato · Chat. Dentro: **riquadro data in CELESTE CRM** (`#EFF6FF`/`#DBEAFE` — la "botta blu" è stata provata e bocciata) con giorno/ora quando il demolitore fissa il ritiro, e la **card "Da portare al ritiro" aperta fissa** con gli originali (numeri azzurri, moduli con Scarica e stato, spiegazioni, nota "servono in originale"). **Pallino rosso sulla linguetta** finché la data fissata non viene vista (localStorage). Il riquadrone VERDE ACQUA in fondo alla tab Documenti NON esiste più (era fuori palette e invadente durante il caricamento).
+- ⭐ **Decisione: il cliente NON vede chi è il demolitore** (per ora): frase generica "Il demolitore passa a ritirare il mezzo", nessun nome.
+
+**Area cliente — TUTTO IN FAMIGLIA (mockup finale approvato, colonna per colonna):**
+- ⭐⭐⭐ **Una famiglia sola di card ovunque**: bordo sottile `#E5E7EB`, angoli 16, testata con quadratino azzurro 38px + titolo 14/700 + sottotitolo 11 grigio, contatori a pillolina azzurra, **grassetti attenuati** (massimo 700, secondari 600 — gli 800 sono bocciati). Righe dati come nel CRM: **etichetta scura in evidenza, valore grigio leggero**.
+- ⭐⭐ **Tab Stato rifatta**: percorso con **SPUNTE AZZURRE** (cerchietto `#DBEAFE`, spunta blu, filo celeste — i check VERDI sono bocciati: il verde resta solo alle pillole delle cose fatte), tappa attuale col riquadro azzurro; card "Dati del veicolo" con testata standard (icona VERA del mezzo), righe k/v e IN PIÙ **spazio carro attrezzi, delegato e tel. delegato**; apertura MORBIDA (grid 0fr→1fr).
+- ⭐ **Tab Chat**: canali a PILLOLINE (via i linguettoni col bordone blu), testata in famiglia col **LOGO VERO** di NoiDemoliamo (via la "N" nel tondino scuro, anche nell'header della conversazione), bolle compatte con orario, campo a pillola col tondo blu.
+- ⭐ **Tab Documenti**: testata del pannello inviati in famiglia (wizard di caricamento INVARIATO).
+- ⭐ **Home**: card bianche col piede grigino a tutta larghezza, targa 14.5, bordo celeste al passaggio, "Aggiungi un altro veicolo" col + blu.
+- ⭐ **Impostazioni**: etichette scure/valori grigi, azioni "Modifica/Cambia" a LINK BLU sottolineati, tile dei legali azzurre, "Esci dall'account" col rosso tenue.
+- ⭐ **Icone veicolo in UN componente condiviso** (`app/components/IconaVeicolo.tsx`, i disegni originali di /inizia): lo usano lista CRM, home cliente e card "Dati del veicolo" — prima la home aveva una copia ridotta con icone sbagliate per vespa/minicar/pullman/velivolo.
+- **Tasto indietro header pratica**: chevron "‹" provato e BOCCIATO — resta "← Pratiche" con la freccia come su /inizia.
+- ⭐ **Fix `scrollbar-gutter: stable` globale** (bug trovato da Davide): quando un'apertura allungava la pagina, la barra di scorrimento di Windows compariva e slittava tutto a sinistra — ora lo spazio è sempre riservato, su tutte le pagine.
 
 ### ⭐ SESSIONE 25-26 luglio 2026 — RIFINITURE /INIZIA E PANNELLO IMPOSTAZIONI (mockup → scelta di Davide)
 
@@ -1265,6 +1292,14 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 (1-54: vedi storico — tutte ancora valide: velocità come principio cardine, approvazione granulare, chat in-app, mobile-first, mini-step, gamification foto, sistema casistiche con derivazione automatica, catalogo documenti come DATI, moduli PDF scarica-firma-fotografa, niente gergo, rassicurazioni telefono, ecc.)
 
+**Nuove decisioni 28 luglio 2026:**
+
+- ⭐⭐ **L'area cliente parla UNA famiglia sola** (quella della tab Ritiro/CRM): card bianche con bordo sottile, testata con quadratino azzurro 38px, titoli 14/700, sottotitoli 11 grigi, contatori a pillolina azzurra, etichette scure e valori grigi anche lato cliente. **Grassetti massimo 700** (gli 800 "urlano"), spunte del percorso in AZZURRO (il verde resta solo alle pillole delle cose fatte), riquadri informativi in celeste `#EFF6FF`/`#DBEAFE` (mai blu pieno: quello è del banner).
+- ⭐⭐ **Stati del cliente in una tabella unica** (`lib/statiCliente.ts`): home e header pratica non possono più avere due nomi per lo stesso momento. Se nasce uno stato nuovo si aggiunge LÌ.
+- ⭐ **Il cliente non vede chi è il demolitore** (per ora): nella tab Ritiro frase generica, nessun nome.
+- ⭐ **Il ritiro ha una tab sua** nell'area cliente (Documenti · Ritiro · Stato · Chat): la tab Documenti serve SOLO a caricare; data fissata e originali da consegnare vivono nella tab Ritiro, col pallino rosso di novità sulla linguetta.
+- ⭐ **`scrollbar-gutter: stable` globale**: le aperture che allungano la pagina non fanno più slittare nulla (la barra di Windows ha sempre il suo spazio). Regola parente del "niente sobbalzi".
+
 **Nuove decisioni luglio 2026:**
 
 55. ⭐ **Upload ≠ invio**: caricare un file NON manda il documento in verifica. Il cliente aggiunge tutte le foto che servono (fronte, retro, più pagine) e POI preme "Ho finito, invia in verifica". Niente più documenti a metà.
@@ -1379,4 +1414,4 @@ Tecnica da decidere: email (es. Resend) + SMS (Twilio). Tabelle `notifiche_app`/
 
 ---
 
-**Fine documento. Ultimo aggiornamento: 27 luglio 2026.**
+**Fine documento. Ultimo aggiornamento: 28 luglio 2026.**
