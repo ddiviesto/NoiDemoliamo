@@ -148,22 +148,23 @@ export default function GestioneDemolitori() {
   // ⭐ 28/07: il clic APRE LA TENDINA sotto la riga (via il salto di pagina);
   // se è già aperta, la richiude.
   function cardDemolitore(d: Demolitore) {
-    // Aperta: al posto della card c'è il blocco unico con la tendina
+    const s = metaStato(d.stato)
+    const cop = riassuntoCopertura(coperture[d.id] || [])
+    const barColor = d.stato === 'attivo' ? '#97C459' : '#C0C7D1'
+    const nAperte = aperte[d.id] || 0
+    // Aperta: al posto della card c'è il blocco unico con la tendina (la sua
+    // testata è la STESSA riga, tinta d'azzurro: nessun sobbalzo)
     if (selId === d.id) {
       return (
         <TendinaDemolitore
           key={d.id}
           demolitoreId={d.id}
-          base={d}
+          base={{ ...d, cop, nAperte }}
           onChiudi={() => setSelId(null)}
           onDatiCambiati={ricarica}
         />
       )
     }
-    const s = metaStato(d.stato)
-    const cop = riassuntoCopertura(coperture[d.id] || [])
-    const barColor = d.stato === 'attivo' ? '#97C459' : '#C0C7D1'
-    const nAperte = aperte[d.id] || 0
     return (
       <div
         key={d.id}

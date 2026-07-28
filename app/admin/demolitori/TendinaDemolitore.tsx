@@ -95,8 +95,9 @@ function Nuvola({ onChiudi, larghezza = 270, children }: { onChiudi: () => void;
 
 export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDatiCambiati }: {
   demolitoreId: string
-  // I dati della riga: la testata si disegna SUBITO, senza aspettare il caricamento
-  base: { ragione_sociale: string; citta: string | null; provincia: string | null; stato: string; fee_per_pratica: number }
+  // I dati della riga: la testata si disegna SUBITO, senza aspettare il
+  // caricamento, ed è IDENTICA alla card chiusa (niente sobbalzo)
+  base: { ragione_sociale: string; citta: string | null; provincia: string | null; stato: string; fee_per_pratica: number; cop: string | null; nAperte: number }
   onChiudi: () => void
   // La lista si ricarica quando cambiano nome, stato, fee o il demolitore sparisce
   onDatiCambiati: () => void
@@ -528,34 +529,48 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   const provViva = dem?.provincia ?? base.provincia
   const attivo = (dem?.stato ?? base.stato) === 'attivo'
   const feeViva = dem?.fee_per_pratica ?? base.fee_per_pratica
+  const aperteVive = loading ? base.nAperte : stats.aperte
+  const barColor = attivo ? '#97C459' : '#C0C7D1'
 
   return (
     <div style={{ border: '2px solid #2563EB', borderRadius: 16, background: '#FAFBFD', boxShadow: '0 10px 30px rgba(15,23,42,0.10)', overflow: 'visible' }}>
 
-      {/* ===== TESTATA AZZURRA (clic = richiudi, come le pratiche) ===== */}
-      <div onClick={onChiudi} style={{ background: '#EFF6FF', borderRadius: '14px 14px 0 0', padding: '12px 16px 0', cursor: 'pointer' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <span style={{ width: 40, height: 40, borderRadius: 11, background: '#DBEAFE', color: '#1D4ED8', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {iniziali(nomeVivo)}
-          </span>
-          <span style={{ minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, color: '#1D4ED8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nomeVivo}</span>
-            <span style={{ display: 'block', fontSize: 11.5, color: '#4B5563', marginTop: 1 }}>{cittaViva ? `${cittaViva}${provViva ? ` (${provViva})` : ''}` : 'Sede non impostata'}</span>
-          </span>
-          <span style={{ fontSize: 10.5, fontWeight: 600, borderRadius: 999, padding: '3.5px 11px', background: attivo ? '#DCF3E4' : '#E7EAEE', color: attivo ? '#1F7A43' : '#4B5563' }}>{attivo ? 'Attivo' : 'Non attivo'}</span>
-          <span style={{ flex: 1 }} />
-          {/* Statistiche a boxini (le stesse 5 del vecchio riquadro blu) */}
-          <span style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
-            <Boxino n={String(stats.aperte)} l="Aperte" />
-            <Boxino n={String(stats.completate)} l="Completate" />
-            <Boxino n={String(stats.annullate)} l="Annullate" allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
-            <Boxino n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} l="Velocità" />
-            <Boxino n={feeViva ? `${feeViva} €` : '—'} l="Fee base" />
-          </span>
+      {/* ===== TESTATA-RIGA: IDENTICA alla card chiusa (stesse misure e
+          colonne: NIENTE sobbalzo all'apertura) ma tinta d'azzurro, col nome
+          in blu — clic = richiudi, come le pratiche ===== */}
+      <div onClick={onChiudi} style={{ background: '#EFF6FF', borderLeft: `4px solid ${barColor}`, borderRadius: '14px 14px 0 0', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, cursor: 'pointer' }}>
+        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#DBEAFE', color: '#1E4E8C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
+          {iniziali(nomeVivo)}
         </div>
+        <div style={{ flex: 1.6, minWidth: 0 }}>
+          <div className="text-[15px] font-bold truncate" style={{ color: '#1D4ED8' }}>{nomeVivo}</div>
+          <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>{cittaViva ? `${cittaViva}${provViva ? ` (${provViva})` : ''}` : 'Sede non impostata'}</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #DBEAFE', paddingLeft: 14 }}>
+          <span className="inline-block text-[11.5px] font-bold rounded-full" style={{ background: attivo ? '#DCF3E4' : '#E7EAEE', color: attivo ? '#1F7A43' : '#4B5563', padding: '4px 12px' }}>{attivo ? 'Attivo' : 'Non attivo'}</span>
+        </div>
+        <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #DBEAFE', paddingLeft: 14 }}>
+          <div className="text-[10.5px] font-bold uppercase" style={{ color: '#7C96C4', letterSpacing: 0.4 }}>Copertura</div>
+          {base.cop
+            ? <div className="text-[13px] font-semibold truncate" style={{ color: '#111827', marginTop: 2 }}>{base.cop}</div>
+            : <div className="text-[13px] truncate" style={{ color: '#94A3B8', marginTop: 2 }}>Da impostare</div>}
+        </div>
+        <div style={{ flexShrink: 0, minWidth: 70, borderLeft: '1px solid #DBEAFE', paddingLeft: 14 }}>
+          <div className="text-[10.5px] font-bold uppercase" style={{ color: '#7C96C4', letterSpacing: 0.4 }}>Fee</div>
+          <div className="text-[13.5px] font-bold" style={{ color: '#111827', marginTop: 2 }}>{feeViva ? `${feeViva} €` : '—'}</div>
+        </div>
+        <div style={{ flexShrink: 0, textAlign: 'center', background: aperteVive > 0 ? '#E0EDFB' : '#fff', borderRadius: 10, padding: '6px 14px', minWidth: 70, border: '1px solid #DBEAFE' }}>
+          <div className="text-[15px] font-bold" style={{ color: aperteVive > 0 ? '#1E4E8C' : '#6B7280' }}>{aperteVive}</div>
+          <div className="text-[10px] font-semibold uppercase" style={{ color: aperteVive > 0 ? '#1E4E8C' : '#6B7280' }}>aperte</div>
+        </div>
+      </div>
 
-        {/* FILA AZIONI */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '10px 0 12px' }} onClick={e => e.stopPropagation()}>
+      {/* Tutto il resto SI SROTOLA morbido sotto la riga (azioni + schede) */}
+      <div style={{ display: 'grid', gridTemplateRows: aperto ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
+      <div style={{ overflow: 'hidden' }}>
+
+        {/* FILA AZIONI nella testata azzurra */}
+        <div style={{ background: '#EFF6FF', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '0 16px 12px' }}>
 
           {/* ACCESSO AREA: LED + invito/reinvito, revoca, link di riserva */}
           <span style={{ position: 'relative' }}>
@@ -638,7 +653,12 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
             € Tariffe
           </button>
 
-          <span style={{ marginLeft: 'auto', position: 'relative' }}>
+          <span style={{ flex: 1 }} />
+          {/* Statistiche restanti a boxini (Aperte e Fee vivono già nella riga) */}
+          <Boxino n={String(stats.completate)} l="Completate" />
+          <Boxino n={String(stats.annullate)} l="Annullate" allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
+          <Boxino n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} l="Velocità" />
+          <span style={{ position: 'relative' }}>
             <button onClick={() => { setNuvola(n => n === 'elimina' ? null : 'elimina'); setConfermaNome(''); setErroreElimina('') }} aria-label="Elimina demolitore" className="transition-colors hover:bg-red-50" style={{ width: 30, height: 30, borderRadius: 999, background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
             </button>
@@ -659,11 +679,8 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
             )}
           </span>
         </div>
-      </div>
 
-      {/* ===== FASCIA SCHEDE (si srotola morbida, regola di famiglia) ===== */}
-      <div style={{ display: 'grid', gridTemplateRows: aperto ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
-      <div style={{ overflow: 'hidden' }}>
+      {/* ===== FASCIA SCHEDE ===== */}
       {loading || !dem ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '26px 0' }}>
           <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
