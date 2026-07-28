@@ -215,7 +215,10 @@ export default function TabStato({ pratica }: Props) {
           </span>
         </button>
 
-        {datiAperti && (
+        {/* ⭐ Apertura MORBIDA (grid 0fr→1fr, regola di famiglia): il
+            contenuto resta montato e scivola, niente sobbalzi di pagina */}
+        <div style={{ display: 'grid', gridTemplateRows: datiAperti ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
+          <div style={{ overflow: 'hidden' }}>
           <div style={{ padding: '2px 14px 12px', borderTop: '1px solid #F1F3F6' }}>
             <Riga k="Targa" v={pratica.targa} />
             <Riga k="Marca e modello" v={[pratica.marca, pratica.modello].filter(Boolean).join(' ')} />
@@ -243,7 +246,8 @@ export default function TabStato({ pratica }: Props) {
               </div>
             )}
           </div>
-        )}
+          </div>
+        </div>
       </div>
 
     </div>
