@@ -171,18 +171,19 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
   return (
     <div className="flex flex-col gap-3">
 
-      {/* RIQUADRO BLU: data e ora quando il ritiro è programmato */}
+      {/* ⭐ RIQUADRO DATA IN CELESTE CRM (28/07, mockup approvato: via la
+          "botta blu" — informa senza urlare, il blu pieno resta al banner) */}
       {dataViva && (
-        <div style={{ background: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)', borderRadius: 16, padding: '13px 15px', color: '#fff', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+        <div style={{ background: '#EFF6FF', border: '1.5px solid #DBEAFE', borderRadius: 16, padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ width: 38, height: 38, borderRadius: 11, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#2563eb' }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
           </span>
           <span style={{ flex: 1, minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: 10, fontWeight: 800, letterSpacing: 0.6, textTransform: 'uppercase', color: '#BFDBFE' }}>Ritiro programmato</span>
-            <span style={{ display: 'block', fontSize: 14.5, fontWeight: 800, marginTop: 1 }}>{formattaDataRitiro(pratica.data_ritiro_prevista!)}</span>
+            <span style={{ display: 'block', fontSize: 10, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#1D4ED8' }}>Ritiro programmato</span>
+            <span style={{ display: 'block', fontSize: 14.5, fontWeight: 700, marginTop: 1, color: '#0F1B33' }}>{formattaDataRitiro(pratica.data_ritiro_prevista!)}</span>
             {/* Decisione Davide 28/07: il cliente non deve vedere CHI è il
                 demolitore — frase generica, niente nomi */}
-            <span style={{ display: 'block', fontSize: 11, color: '#DBEAFE', marginTop: 1 }}>Il demolitore passa a ritirare il mezzo</span>
+            <span style={{ display: 'block', fontSize: 11, color: '#4B5563', marginTop: 1 }}>Il demolitore passa a ritirare il mezzo</span>
           </span>
         </div>
       )}
@@ -199,10 +200,10 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
               <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" /><line x1="9" y1="12" x2="15" y2="12" /><line x1="9" y1="16" x2="13" y2="16" /></svg>
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: 'block', fontSize: 14, fontWeight: 800, color: '#111827', lineHeight: 1.25 }}>Da portare al ritiro</span>
+              <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.25 }}>Da portare al ritiro</span>
               <span style={{ display: 'block', fontSize: 11, color: '#6B7280', marginTop: 1 }}>Consegnali in originale il giorno del ritiro</span>
             </span>
-            <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 12, fontWeight: 800, borderRadius: 999, padding: '2px 10px', flexShrink: 0 }}>{docs.length}</span>
+            <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '2px 10px', flexShrink: 0 }}>{docs.length}</span>
           </div>
           <div style={{ padding: '2px 14px 6px', borderTop: '1px solid #F1F3F6' }}>
             {docs.map((d, i) => (
@@ -212,7 +213,7 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                   </span>
                 ) : (
-                  <span style={{ width: 23, height: 23, borderRadius: 999, background: '#EFF6FF', color: '#1D4ED8', fontSize: 11.5, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
+                  <span style={{ width: 23, height: 23, borderRadius: 999, background: '#EFF6FF', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
                 )}
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeDoc(d)}</span>
@@ -224,9 +225,9 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
                   )}
                   {d.template_pdf && (
                     d.scaricato_il ? (
-                      <span style={{ display: 'inline-block', background: '#DCF3E4', color: '#1F7A43', fontSize: 9.5, fontWeight: 700, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>Scaricata · ora compilala e firmala</span>
+                      <span style={{ display: 'inline-block', background: '#DCF3E4', color: '#1F7A43', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>Scaricata · ora compilala e firmala</span>
                     ) : (
-                      <span style={{ display: 'inline-block', background: '#EFF6FF', color: '#1D4ED8', fontSize: 9.5, fontWeight: 700, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>Scaricalo, compilalo e firmalo</span>
+                      <span style={{ display: 'inline-block', background: '#EFF6FF', color: '#1D4ED8', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>Scaricalo, compilalo e firmalo</span>
                     )
                   )}
                 </span>
@@ -234,7 +235,7 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
                   <button
                     onClick={() => scaricaModulo(d)}
                     disabled={scaricandoId === d.id}
-                    style={{ flexShrink: 0, background: 'none', border: 'none', padding: 0, fontSize: 11.5, fontWeight: 700, color: '#1D4ED8', textDecoration: 'underline', cursor: 'pointer', marginTop: 2, opacity: scaricandoId === d.id ? 0.6 : 1 }}
+                    style={{ flexShrink: 0, background: 'none', border: 'none', padding: 0, fontSize: 11.5, fontWeight: 600, color: '#1D4ED8', textDecoration: 'underline', cursor: 'pointer', marginTop: 2, opacity: scaricandoId === d.id ? 0.6 : 1 }}
                   >
                     {scaricandoId === d.id ? 'Scarico…' : d.scaricato_il ? 'Scarica di nuovo' : 'Scarica'}
                   </button>

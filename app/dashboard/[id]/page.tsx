@@ -28,6 +28,10 @@ export interface Pratica {
   indirizzo_ritiro: string | null
   comune_ritiro: string | null
   provincia_ritiro: string | null
+  spazio_carro_attrezzi: string | null
+  delegato_nome: string | null
+  delegato_telefono: string | null
+  casistica: string | null
   codice_fiscale: string | null
   nome_richiedente: string | null
   telefono: string | null

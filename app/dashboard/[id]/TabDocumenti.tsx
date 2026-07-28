@@ -1307,19 +1307,22 @@ function PannelloInviati(props: {
       <div style={{ position: 'relative', height: altezza, transition: 'transform 0.55s, height 0.35s', transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d', transform: girata ? 'rotateY(-180deg)' : 'rotateY(0deg)' }}>
 
         {/* ============ FRONTE: la lista ============ */}
-        <div ref={frontRef} style={{ ...facciaStile, border: '1px solid #E5E7EB', pointerEvents: girata ? 'none' : 'auto' }}>
-          <button onClick={props.onToggle} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'none', border: 'none', cursor: 'pointer' }}>
-            <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#DCF3E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+        {/* ⭐ 28/07 (mockup approvato): testata in famiglia — quadratino
+            azzurro, titolo 14, sottotitolo con lo stato, contatore a pillolina */}
+        <div ref={frontRef} style={{ ...facciaStile, border: '1.5px solid #E5E7EB', pointerEvents: girata ? 'none' : 'auto' }}>
+          <button onClick={props.onToggle} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer' }}>
+            <span style={{ width: 38, height: 38, borderRadius: 11, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#2563eb' }}>
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
             </span>
-            <span style={{ flex: 1, minWidth: 0, textAlign: 'left', fontSize: 12.5, fontWeight: 600, color: '#374151' }}>
-              {docs.length === 1 ? '1 documento inviato' : `${docs.length} documenti inviati`}
-            </span>
-            {!props.aperta && (
-              <span style={{ display: 'inline-block', fontSize: 10, fontWeight: 600, color: inVerifica ? '#1E4E8C' : '#1F7A43', background: inVerifica ? '#E0EDFB' : '#DCF3E4', borderRadius: 20, padding: '2px 9px', flexShrink: 0 }}>
-                {inVerifica ? 'In verifica' : docs.length === 1 ? 'Approvato' : 'Approvati'}
+            <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+              <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.25 }}>
+                {docs.length === 1 ? 'Documento inviato' : 'Documenti inviati'}
               </span>
-            )}
+              <span style={{ display: 'block', fontSize: 11, color: '#6B7280', marginTop: 1 }}>
+                {inVerifica ? 'In verifica da NoiDemoliamo' : docs.length === 1 ? 'Approvato' : 'Tutti approvati'}
+              </span>
+            </span>
+            <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '2px 10px', flexShrink: 0 }}>{docs.length}</span>
             <span style={{ transform: props.aperta ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><IcoChevronDown size={16} color="#9AA7B5" /></span>
           </button>
 

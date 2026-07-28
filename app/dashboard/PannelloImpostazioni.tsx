@@ -149,8 +149,10 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
   // definirli come componenti dentro al componente li farebbe rimontare a
   // ogni render e i campi perderebbero il focus a ogni tasto digitato.
 
+  // ⭐ 28/07 (mockup approvato): come le righe del CRM — etichetta scura
+  // in evidenza, valore grigio leggero (prima era il contrario)
   function etichetta(testo: string) {
-    return <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, color: '#8B95A5', textTransform: 'uppercase' }}>{testo}</div>
+    return <div style={{ fontSize: 12, fontWeight: 600, color: '#1E293B' }}>{testo}</div>
   }
 
   // Riga dato con MODIFICA SUL POSTO (variante B, mockup 26/07): NESSUN
@@ -182,7 +184,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
           {etichetta(opts.label)}
           {/* Zona valore/campo ad altezza fissa: lettura e modifica sovrapposte */}
           <div style={{ position: 'relative', height: 26, marginTop: 2 }}>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', fontSize: 13.5, fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...fade(!opts.inEdit) }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', fontSize: 12.5, color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...fade(!opts.inEdit) }}>
               {opts.valore}
             </div>
             <div style={{ position: 'absolute', inset: 0, ...fade(opts.inEdit) }}>
@@ -201,8 +203,8 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
         {/* Bottoni a larghezza riservata: i due gruppi si scambiano in dissolvenza */}
         <div className="flex-shrink-0" style={{ position: 'relative', width: 124, height: 26, alignSelf: 'flex-start', marginTop: 16 }}>
           <div style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', ...fade(!opts.inEdit) }}>
-            <button onClick={opts.onApri} tabIndex={opts.inEdit ? -1 : 0} className="flex items-center gap-1 transition-colors hover:bg-blue-100" style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+            {/* ⭐ 28/07 (mockup approvato): l'azione è un link blu sottolineato */}
+            <button onClick={opts.onApri} tabIndex={opts.inEdit ? -1 : 0} className="transition-colors hover:text-blue-800" style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 11.5, fontWeight: 600, textDecoration: 'underline', padding: '5px 2px', cursor: 'pointer' }}>
               {opts.azione}
             </button>
           </div>
@@ -265,7 +267,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
           )}
 
           {/* ====== I TUOI DATI: lettura pulita, modifica col tasto ====== */}
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.6, color: '#9AA7B5', padding: '14px 16px 7px' }}>I TUOI DATI</div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.6, color: '#9AA7B5', padding: '14px 16px 7px' }}>I TUOI DATI</div>
 
           {riga({
             label: 'Nome e cognome',
@@ -313,7 +315,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
           })}
 
           {/* ====== ALTRO ====== */}
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.6, color: '#9AA7B5', padding: '14px 16px 7px' }}>ALTRO</div>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.6, color: '#9AA7B5', padding: '14px 16px 7px' }}>ALTRO</div>
 
           <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50" style={{ borderBottom: '1px solid #F1F4F8' }}>
             <Tile bg="#DCF3E4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg></Tile>
@@ -322,26 +324,28 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
           </a>
 
           {/* Legali: STESSA scheda, così "indietro" riporta qui */}
+          {/* ⭐ 28/07 (mockup approvato): tile dei legali in azzurro, via il grigio */}
           <Voce
             onClick={() => apriPagina('/privacy')}
-            tile={<Tile bg="#EEF1F5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg></Tile>}
+            tile={<Tile bg="#EFF6FF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg></Tile>}
             label="Privacy"
           />
           <Voce
             onClick={() => apriPagina('/termini')}
-            tile={<Tile bg="#EEF1F5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></svg></Tile>}
+            tile={<Tile bg="#EFF6FF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></svg></Tile>}
             label="Termini di servizio"
           />
         </div>
 
         {/* Esci: in fondo, separato */}
         <div style={{ borderTop: '1px solid #F1F4F8' }}>
+          {/* ⭐ 28/07 (mockup approvato): Esci col rosso tenue delle pillole */}
           <Voce
             onClick={onEsci}
-            tile={<Tile bg="#FBDADA"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg></Tile>}
+            tile={<Tile bg="#F3D9D9"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A94444" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg></Tile>}
             label="Esci dall'account"
             freccia={false}
-            colore="#C0392B"
+            colore="#A94444"
           />
         </div>
       </div>

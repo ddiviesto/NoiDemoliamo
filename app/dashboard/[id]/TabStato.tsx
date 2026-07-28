@@ -9,73 +9,23 @@ interface Props {
 }
 
 // ============================================================
-// ICONE SVG
-// ============================================================
-
-function IconaPin() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-      <circle cx="12" cy="10" r="3"/>
-    </svg>
-  )
-}
-
-// ⭐ 28/07 (richiesta Davide): l'icona della card "Dati del veicolo" è
-// quella ORIGINALE di /inizia e dipende dal tipo di mezzo — componente
-// condiviso app/components/IconaVeicolo.tsx
-
-function IconaSpuntaTimeline() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="20 6 9 17 4 12"/>
-    </svg>
-  )
-}
-
-function IconaXAnnullata() {
-  return (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10"/>
-      <line x1="15" y1="9" x2="9" y2="15"/>
-      <line x1="9" y1="9" x2="15" y2="15"/>
-    </svg>
-  )
-}
-
-function IconaChevron({ aperto }: { aperto: boolean }) {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`text-gray-400 transition-transform ${aperto ? 'rotate-180' : ''}`}
-    >
-      <polyline points="6 9 12 15 18 9"/>
-    </svg>
-  )
-}
-
-// ============================================================
-// TIMELINE STEPS
+// ⭐ TAB STATO RIFATTA IN FAMIGLIA (28/07/2026, mockup approvato):
+// card con testata standard (quadratino azzurro, titolo 14, sotto-
+// titolo grigio), percorso con SPUNTE AZZURRE (via il verde forte:
+// il verde resta solo alle pillole delle cose fatte), righe dati
+// come nel CRM (etichetta scura a sinistra, valore grigio a destra).
 // ============================================================
 
 // ⭐ 28/07 (variante B su mockup): 7 tappe con "Ritiro programmato" (gemella
 // della fase del CRM) e nomi allineati alle pillole di stato — la terza
-// tappa dice "In attesa assegnazione" come la pillola, non "Documenti
-// verificati". Percorso e pillola raccontano la stessa cosa nello stesso
-// momento.
+// tappa dice "In attesa assegnazione" come la pillola. Percorso e pillola
+// raccontano la stessa cosa nello stesso momento.
 const TIMELINE_STEPS = [
   {
     key: 'richiesta_inviata',
     label: 'Richiesta inviata',
     descrizione: 'Pratica creata',
-    statiAttiviPer: [],
+    statiAttiviPer: [] as string[],
   },
   {
     key: 'attesa_documenti',
@@ -124,20 +74,15 @@ function indiceStepAttuale(stato: string): number {
 }
 
 // ============================================================
-// PILLOLA CONDIZIONE VEICOLO
+// PILLOLE CONDIZIONE VEICOLO
 // ============================================================
 
-type TonoPillola = 'verde' | 'rosso' | 'neutro'
+type TonoPillola = 'verde' | 'rosso'
 
 function PillolaCondizione({ label, tono }: { label: string; tono: TonoPillola }) {
-  const stili: Record<TonoPillola, { bg: string; color: string }> = {
-    verde: { bg: '#EAF3DE', color: '#27500A' },
-    rosso: { bg: '#FCEBEB', color: '#791F1F' },
-    neutro: { bg: '#EEF1F5', color: '#4B5B6B' },
-  }
-  const s = stili[tono]
+  const s = tono === 'verde' ? { bg: '#EAF3DE', color: '#27500A' } : { bg: '#FBE2E2', color: '#9B1C1C' }
   return (
-    <span style={{ fontSize: 12, fontWeight: 500, padding: '4px 11px', borderRadius: 999, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
+    <span style={{ fontSize: 10.5, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: s.bg, color: s.color, whiteSpace: 'nowrap' }}>
       {label}
     </span>
   )
@@ -153,6 +98,12 @@ function pilloleCondizioni(p: Pratica): { label: string; tono: TonoPillola }[] {
   return out
 }
 
+const SPAZIO_LABEL: Record<string, string> = {
+  libero: 'Accesso libero',
+  stretto: 'Spazio stretto',
+  no: 'Non passa',
+}
+
 // ============================================================
 
 export default function TabStato({ pratica }: Props) {
@@ -160,138 +111,135 @@ export default function TabStato({ pratica }: Props) {
   const stepIdx = indiceStepAttuale(pratica.stato)
   const isAnnullata = pratica.stato === 'annullata'
   const pillole = pilloleCondizioni(pratica)
+  const delegaAmmessa = !(pratica.casistica === 'non_intestatario' || pratica.casistica === 'targhe_straniere')
+
+  const indirizzoCompleto = [
+    pratica.indirizzo_ritiro,
+    // L'indirizzo di Google contiene già il comune: si aggiunge solo se manca
+    pratica.comune_ritiro && !(pratica.indirizzo_ritiro || '').toLowerCase().includes(pratica.comune_ritiro.toLowerCase())
+      ? `${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`
+      : null,
+  ].filter(Boolean).join(' · ')
 
   return (
     <div className="flex flex-col gap-3">
 
-      {/* TIMELINE */}
-      <div className="bg-white border border-gray-200 rounded-2xl p-5" style={{ boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
-        <div className="flex items-center gap-2 mb-1">
-          <IconaPin />
-          <p className="text-sm font-bold text-gray-900">Il percorso della tua pratica</p>
+      {/* ====== CARD PERCORSO ====== */}
+      <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 14px' }}>
+          <span style={{ width: 38, height: 38, borderRadius: 11, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#2563eb' }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>
+          </span>
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.25 }}>Il percorso della tua pratica</span>
+            <span style={{ display: 'block', fontSize: 11, color: '#6B7280', marginTop: 1 }}>
+              Aperta il {new Date(pratica.creato_il).toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' })}
+            </span>
+          </span>
         </div>
-        <p className="text-xs text-gray-500 mb-5">
-          Aperta il {new Date(pratica.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })} alle {new Date(pratica.creato_il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-        </p>
 
-        {isAnnullata ? (
-          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex flex-col items-center text-center">
-            <div className="mb-2">
-              <IconaXAnnullata />
+        <div style={{ padding: '14px 14px 12px', borderTop: '1px solid #F1F3F6' }}>
+          {isAnnullata ? (
+            <div style={{ background: '#F8FAFC', border: '1px solid #EDEFF3', borderRadius: 12, padding: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <span style={{ width: 34, height: 34, borderRadius: 999, background: '#F3D9D9', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A94444" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              </span>
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: '#374151' }}>Pratica annullata</span>
+              <span style={{ fontSize: 10.5, color: '#8B95A5', marginTop: 2 }}>Questa pratica non è più attiva</span>
             </div>
-            <div className="text-sm font-semibold text-gray-700">Pratica annullata</div>
-            <div className="text-xs text-gray-500 mt-1">Questa pratica non è più attiva</div>
-          </div>
-        ) : (
-          <div>
-            {TIMELINE_STEPS.map((step, i) => {
-              const completato = i < stepIdx
-              const corrente = i === stepIdx
-              const futuro = i > stepIdx
-              const ultimo = i === TIMELINE_STEPS.length - 1
+          ) : (
+            <div>
+              {TIMELINE_STEPS.map((step, i) => {
+                const completato = i < stepIdx
+                const corrente = i === stepIdx
+                const futuro = i > stepIdx
+                const ultimo = i === TIMELINE_STEPS.length - 1
 
-              return (
-                <div key={step.key} className="flex gap-3.5">
-                  {/* Cerchio + linea */}
-                  <div className="flex flex-col items-center flex-shrink-0">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0 transition-colors ${
-                      completato
-                        ? 'bg-green-500 text-white'
-                        : corrente
-                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-300'
-                          : 'bg-white border-2 border-gray-200 text-gray-400'
-                    }`}>
+                return (
+                  <div key={step.key} style={{ display: 'flex', gap: 11, position: 'relative', paddingBottom: ultimo ? 2 : 16 }}>
+                    {/* Filo tra le tappe: celeste per il tratto già percorso */}
+                    {!ultimo && (
+                      <span style={{ position: 'absolute', left: 12.5, top: 27, bottom: 0, width: 2, background: completato ? '#BFDBFE' : '#E5E7EB' }} />
+                    )}
+                    {/* Cerchio: fatte celesti con spunta blu, attuale blu pieno */}
+                    <span style={{
+                      width: 26, height: 26, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 11, fontWeight: 700, zIndex: 1,
+                      background: completato ? '#DBEAFE' : corrente ? '#2563EB' : '#EDF0F5',
+                      color: completato ? '#1D4ED8' : corrente ? '#fff' : '#8B95A5',
+                    }}>
                       {completato ? (
-                        <IconaSpuntaTimeline />
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
                       ) : corrente ? (
-                        <span className="w-2.5 h-2.5 bg-white rounded-full" />
+                        <span style={{ width: 9, height: 9, background: '#fff', borderRadius: 999 }} />
                       ) : (
                         i + 1
                       )}
-                    </div>
-                    {!ultimo && (
-                      <div className={`w-0.5 flex-1 mt-1 mb-1 ${completato ? 'bg-green-300' : 'bg-gray-200'}`} style={{ minHeight: 36 }} />
-                    )}
-                  </div>
-
-                  {/* Etichetta */}
-                  <div className={`flex-1 ${ultimo ? '' : 'pb-4'}`}>
+                    </span>
+                    {/* Testi: la tappa attuale ha il riquadro azzurro */}
                     {corrente ? (
-                      <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5 -mt-1">
-                        <div className="text-sm font-semibold text-blue-900">{step.label}</div>
-                        <div className="text-[11px] text-blue-700 mt-0.5 leading-snug">{step.descrizione}</div>
-                      </div>
+                      <span style={{ minWidth: 0, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '7px 11px', marginTop: -3 }}>
+                        <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: '#1D4ED8', lineHeight: 1.3 }}>{step.label}</span>
+                        <span style={{ display: 'block', fontSize: 10.5, color: '#3B82C4', marginTop: 1, lineHeight: 1.45 }}>{step.descrizione}</span>
+                      </span>
                     ) : (
-                      <div className="pt-1.5">
-                        <div className={`text-sm font-medium ${futuro ? 'text-gray-400' : 'text-gray-800'}`}>
-                          {step.label}
-                        </div>
-                        <div className={`text-[11px] mt-0.5 leading-snug ${futuro ? 'text-gray-400' : 'text-gray-500'}`}>
-                          {step.descrizione}
-                        </div>
-                      </div>
+                      <span style={{ minWidth: 0, paddingTop: 3 }}>
+                        <span style={{ display: 'block', fontSize: 12.5, fontWeight: 600, color: futuro ? '#9AA7B5' : '#111827', lineHeight: 1.3 }}>{step.label}</span>
+                        <span style={{ display: 'block', fontSize: 10.5, color: '#8B95A5', marginTop: 1, lineHeight: 1.45 }}>{step.descrizione}</span>
+                      </span>
                     )}
                   </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
+                )
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* DATI VEICOLO COLLAPSABILI */}
-      <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 2px rgba(13,33,68,0.04)' }}>
+      {/* ====== CARD DATI DEL VEICOLO ====== */}
+      <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, overflow: 'hidden' }}>
         <button
           onClick={() => setDatiAperti(!datiAperti)}
-          className="w-full px-4 py-3.5 flex items-center justify-between"
+          style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 11, padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}
         >
-          <span className="text-sm font-semibold text-gray-800 flex items-center gap-2">
+          <span style={{ width: 38, height: 38, borderRadius: 11, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <IconaVeicolo tipo={pratica.tipo_mezzo} />
-            Dati del veicolo
           </span>
-          <IconaChevron aperto={datiAperti} />
+          <span style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.25 }}>Dati del veicolo</span>
+            <span style={{ display: 'block', fontSize: 11, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {[pratica.tipo_mezzo && (pratica.tipo_mezzo.charAt(0).toUpperCase() + pratica.tipo_mezzo.slice(1)), [pratica.marca, pratica.modello].filter(Boolean).join(' ')].filter(Boolean).join(' · ') || 'Il tuo mezzo'}
+            </span>
+          </span>
+          <span style={{ color: '#9AA7B5', fontSize: 13, flexShrink: 0, transform: datiAperti ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9" /></svg>
+          </span>
         </button>
 
         {datiAperti && (
-          <div className="px-4 pb-4 pt-1 flex flex-col gap-2 text-sm border-t border-gray-100">
-            <DataRiga label="Targa" valore={pratica.targa} />
-            <DataRiga label="Tipo" valore={pratica.tipo_mezzo} capitalize />
-            <DataRiga label="Marca / modello" valore={[pratica.marca, pratica.modello].filter(Boolean).join(' ')} />
-            <DataRiga label="Anno · km" valore={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
+          <div style={{ padding: '2px 14px 12px', borderTop: '1px solid #F1F3F6' }}>
+            <Riga k="Targa" v={pratica.targa} />
+            <Riga k="Marca e modello" v={[pratica.marca, pratica.modello].filter(Boolean).join(' ')} />
+            <Riga k="Anno · km" v={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
+            <Riga k="Indirizzo ritiro" v={indirizzoCompleto} />
+            <Riga k="Spazio carro attrezzi" v={pratica.spazio_carro_attrezzi ? (SPAZIO_LABEL[pratica.spazio_carro_attrezzi] || pratica.spazio_carro_attrezzi) : null} />
+            {delegaAmmessa && <Riga k="Delegato" v={pratica.delegato_nome || 'Consegna in prima persona'} />}
+            {delegaAmmessa && pratica.delegato_nome && pratica.delegato_telefono && <Riga k="Tel. delegato" v={pratica.delegato_telefono} />}
 
-            {/* CONDIZIONI: pillole colorate con tutte le scelte del cliente */}
             {pillole.length > 0 && (
-              <div className="mt-1">
-                <div className="text-[11px] text-gray-500 uppercase tracking-wide mb-2">Condizioni dichiarate</div>
-                <div className="flex flex-wrap gap-1.5">
+              <>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', margin: '10px 0 7px' }}>Condizioni dichiarate</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
                   {pillole.map((p, i) => (
                     <PillolaCondizione key={i} label={p.label} tono={p.tono} />
                   ))}
                 </div>
-              </div>
+              </>
             )}
 
-            <div className="mt-1">
-              <DataRiga
-                label="Indirizzo ritiro"
-                valore={
-                  // L'indirizzo di Google contiene già il comune: si aggiunge solo se manca
-                  [
-                    pratica.indirizzo_ritiro,
-                    pratica.comune_ritiro && !(pratica.indirizzo_ritiro || '').toLowerCase().includes(pratica.comune_ritiro.toLowerCase())
-                      ? `${pratica.comune_ritiro}${pratica.provincia_ritiro ? ` (${pratica.provincia_ritiro})` : ''}`
-                      : null,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')
-                }
-              />
-            </div>
-
             {pratica.note_veicolo && (
-              <div className="mt-1 bg-gray-50 rounded-xl p-3">
-                <div className="text-[11px] text-gray-500 uppercase tracking-wide mb-1">Note del cliente</div>
-                <div className="text-xs text-gray-700 italic">{pratica.note_veicolo}</div>
+              <div style={{ marginTop: 10, background: '#F8FAFC', border: '1px solid #F1F3F6', borderRadius: 10, padding: '8px 11px' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 700, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 3 }}>Note del cliente</div>
+                <div style={{ fontSize: 11.5, color: '#4B5563', fontStyle: 'italic', lineHeight: 1.5 }}>{pratica.note_veicolo}</div>
               </div>
             )}
           </div>
@@ -302,13 +250,12 @@ export default function TabStato({ pratica }: Props) {
   )
 }
 
-function DataRiga({ label, valore, capitalize }: { label: string; valore: string | number | null; capitalize?: boolean }) {
+// Riga dati in famiglia: etichetta scura in evidenza, valore grigio leggero
+function Riga({ k, v }: { k: string; v: string | number | null }) {
   return (
-    <div className="flex justify-between gap-3">
-      <span className="text-gray-500 flex-shrink-0">{label}</span>
-      <span className={`font-medium text-gray-800 text-right ${capitalize ? 'capitalize' : ''}`}>
-        {valore || '—'}
-      </span>
+    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderBottom: '1px solid #F5F7FA', fontSize: 12 }}>
+      <span style={{ fontWeight: 600, color: '#1E293B', flexShrink: 0 }}>{k}</span>
+      <span style={{ color: '#6B7280', textAlign: 'right' }}>{v || '—'}</span>
     </div>
   )
 }

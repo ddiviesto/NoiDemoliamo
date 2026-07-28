@@ -166,8 +166,8 @@ export default function DashboardCliente() {
 
           {/* TITOLO */}
           <div>
-            <h1 className="text-lg font-bold text-gray-900">Le tue pratiche</h1>
-            <p className="text-xs text-gray-500 mt-0.5">{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
+            <h1 className="font-bold text-gray-900" style={{ fontSize: 15 }}>Le tue pratiche</h1>
+            <p className="text-gray-500 mt-0.5" style={{ fontSize: 11 }}>{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
           </div>
 
           {/* LISTA PRATICHE */}
@@ -191,41 +191,44 @@ export default function DashboardCliente() {
                 // Pillola dalla tabella unica (gestisce anche la pausa "In attesa")
                 const s = pillolaStato(p.stato, p.in_attesa)
                 return (
+                  // ⭐ 28/07 (mockup approvato): card in famiglia — bianca col
+                  // piede grigino a tutta larghezza, targa 14.5, bordo che si
+                  // fa celeste al passaggio (come le righe del CRM)
                   <button
                     key={p.id}
                     onClick={() => router.push(`/dashboard/${p.id}`)}
-                    style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14, textAlign: 'left', transition: 'border-color 0.15s' }}
-                    className="hover:!border-blue-300 active:scale-[0.995]"
+                    style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: 0, textAlign: 'left', transition: 'border-color 0.15s', overflow: 'hidden' }}
+                    className="hover:!border-[#BFDBFE] active:scale-[0.995]"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px' }}>
                       {/* Quadratino con icona veicolo */}
                       <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <IconaVeicolo tipo={p.tipo_mezzo} />
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 600, fontSize: 15, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14.5, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.targa || 'Targa mancante'}
                         </div>
-                        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {[p.tipo_mezzo && (p.tipo_mezzo.charAt(0).toUpperCase() + p.tipo_mezzo.slice(1)), [p.marca, p.modello].filter(Boolean).join(' ')].filter(Boolean).join(' · ')}
                         </div>
                       </div>
 
-                      <span style={{ flexShrink: 0, fontSize: 10.5, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>
+                      <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>
                         {s.label}
                       </span>
                     </div>
 
                     {(p.indirizzo_ritiro || p.creato_il) && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: '#F8FAFC', borderTop: '1px solid #F1F3F6', padding: '7px 13px' }}>
                         {p.indirizzo_ritiro ? (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: '#6B7280', minWidth: 0 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: '#6B7280', minWidth: 0 }}>
                             <IconaPinPiccola />
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.indirizzo_ritiro}</span>
                           </span>
                         ) : <span />}
-                        <span style={{ fontSize: 11, color: '#9AA7B5', flexShrink: 0 }}>
+                        <span style={{ fontSize: 10.5, color: '#9AA7B5', flexShrink: 0 }}>
                           {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>
@@ -238,16 +241,17 @@ export default function DashboardCliente() {
                   mockup 22/07 — via il riquadro tratteggiato col +) */}
               <button
                 onClick={() => router.push('/inizia')}
-                className="w-full text-left hover:!border-blue-300 active:scale-[0.995]"
-                style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: 14, transition: 'border-color 0.15s' }}
+                className="w-full text-left hover:!border-[#BFDBFE] active:scale-[0.995]"
+                style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '12px 13px', transition: 'border-color 0.15s' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                  {/* ⭐ 28/07 (mockup approvato): quadratino blu pieno col + */}
                   <div style={{ width: 40, height: 40, borderRadius: 12, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 3px 9px rgba(37,99,235,0.25)' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 17a2 2 0 1 0 4 0a2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0"/><path d="M5 17H3v-6l2-5h9l4 5h1a2 2 0 0 1 2 2v4h-2m-4 0H9m-6-6h15m-6 0V6"/></svg>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14, color: '#111827' }}>Aggiungi un altro veicolo</div>
-                    <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 1 }}>Sempre gratis, come la prima</div>
+                    <div style={{ fontWeight: 600, fontSize: 13.5, color: '#111827' }}>Aggiungi un altro veicolo</div>
+                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Sempre gratis, come la prima</div>
                   </div>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6" /></svg>
                 </div>

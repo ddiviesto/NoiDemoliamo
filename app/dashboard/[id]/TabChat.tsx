@@ -105,31 +105,29 @@ export default function TabChat({ pratica, onMessaggiLetti }: Props) {
   return (
     <div className="flex flex-col gap-3">
 
-      {/* SUB-TAB sempre presenti */}
-      <div className="flex gap-2">
+      {/* ⭐ 28/07 (mockup approvato): via i linguettoni col bordone blu — i
+          canali sono PILLOLINE, famiglia del CRM */}
+      <div className="flex gap-1.5">
         <button
           onClick={() => setSubTab('admin')}
-          className={`flex-1 py-2.5 px-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all ${
-            subTab === 'admin'
-              ? 'bg-blue-50 border-2 border-blue-600 text-blue-800'
-              : 'bg-gray-100 border-2 border-transparent text-gray-600'
-          }`}
+          className="transition-all"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '6px 13px', cursor: 'pointer',
+            background: subTab === 'admin' ? '#DBEAFE' : '#fff',
+            border: `1.5px solid ${subTab === 'admin' ? '#BFDBFE' : '#E5E7EB'}`,
+            color: subTab === 'admin' ? '#1D4ED8' : '#5F6C7E' }}
         >
-          <LogoNoiDemoliamo size={24} />
+          <LogoNoiDemoliamo size={18} />
           NoiDemoliamo
         </button>
         <button
           onClick={() => setSubTab('demolitore')}
-          className={`flex-1 py-2.5 px-3 rounded-xl font-medium text-xs flex items-center justify-center gap-2 transition-all ${
-            subTab === 'demolitore'
-              ? 'bg-blue-50 border-2 border-blue-600 text-blue-800'
-              : 'bg-gray-100 border-2 border-transparent text-gray-600'
-          }`}
+          className="transition-all"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '6px 13px', cursor: 'pointer',
+            background: subTab === 'demolitore' ? '#DBEAFE' : '#fff',
+            border: `1.5px solid ${subTab === 'demolitore' ? '#BFDBFE' : '#E5E7EB'}`,
+            color: subTab === 'demolitore' ? '#1D4ED8' : '#5F6C7E' }}
         >
-          {/* Variante B (16/07): quadratino celeste stile app, niente arancione */}
-          <div className="w-6 h-6 flex items-center justify-center" style={{ background: '#DBEAFE', borderRadius: 7 }}>
-            <IconaDemolitore size={15} color="#2563eb" />
-          </div>
+          <IconaDemolitore size={14} color={subTab === 'demolitore' ? '#1D4ED8' : '#8a98a8'} />
           Demolitore
         </button>
       </div>
@@ -307,12 +305,12 @@ function Chat({
 
   const isAdmin = destinatarioTipo === 'admin'
   const headerNome = isAdmin ? 'NoiDemoliamo' : 'Demolitore'
-  const headerSubtitle = isAdmin ? '● Risposta media: 2 ore' : '● Comunica per il ritiro'
+  const headerSubtitle = isAdmin ? 'Risposta media: 2 ore' : 'Comunica per il ritiro'
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden flex flex-col" style={{ minHeight: 380 }}>
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-100 flex items-center gap-2.5">
+    <div className="bg-white overflow-hidden flex flex-col" style={{ minHeight: 380, border: '1.5px solid #E5E7EB', borderRadius: 16 }}>
+      {/* Header in famiglia: titolo 13, sottotitolo grigio col pallino verde */}
+      <div className="px-4 py-3 flex items-center gap-2.5" style={{ borderBottom: '1px solid #F1F3F6' }}>
         {isAdmin ? (
           <LogoNoiDemoliamo size={36} />
         ) : (
@@ -321,13 +319,13 @@ function Chat({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-gray-900">{headerNome}</div>
-          <div className="text-[11px] text-green-600 font-medium">{headerSubtitle}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{headerNome}</div>
+          <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}><span style={{ color: '#22C55E' }}>●</span> {headerSubtitle}</div>
         </div>
       </div>
 
       {/* Messaggi */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto bg-gray-50 p-3 flex flex-col gap-2" style={{ maxHeight: 400 }}>
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-3 flex flex-col gap-2" style={{ maxHeight: 400, background: '#F8FAFC' }}>
         {messaggi.length === 0 ? (
           <div className="flex-1 flex items-center justify-center text-center px-4">
             <p className="text-xs text-gray-400 italic">
@@ -340,14 +338,14 @@ function Chat({
             return (
               <div key={m.id} className={`flex ${isMio ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[78%]`}>
-                  <div className={`px-3.5 py-2.5 rounded-2xl text-sm ${
+                  <div className={`px-3 py-2 rounded-2xl text-[12.5px] leading-relaxed ${
                     isMio
                       ? 'bg-blue-600 text-white rounded-br-md'
-                      : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md'
-                  }`}>
+                      : 'bg-white text-gray-700 rounded-bl-md'
+                  }`} style={isMio ? undefined : { border: '1px solid #ECEFF3' }}>
                     {m.testo}
                   </div>
-                  <div className={`text-[10px] text-gray-400 mt-1 ${isMio ? 'text-right' : 'text-left'}`}>
+                  <div className={`text-[9.5px] mt-0.5 ${isMio ? 'text-right' : 'text-left'}`} style={{ color: '#9AA7B5' }}>
                     {new Date(m.creato_il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
