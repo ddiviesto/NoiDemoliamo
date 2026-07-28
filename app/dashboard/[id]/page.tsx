@@ -332,7 +332,9 @@ export default function DettaglioPraticaCliente() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      // ⭐ 28/07 sera: caricamento BIANCO sul telefono (via il lampo viola al
+      // refresh), lavanda solo da sm in su — come la home
+      <main className="min-h-screen flex items-center justify-center bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </main>
     )
@@ -345,7 +347,7 @@ export default function DettaglioPraticaCliente() {
   return (
     // ⭐ 28/07 (mockup approvato, proposta 2): sul TELEFONO l'app è a TUTTO
     // SCHERMO (bianco fino ai bordi, header blu in cima); su PC card centrata
-    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
       <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden relative min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
 
         {/* HEADER BLU (stile banner /inizia) */}

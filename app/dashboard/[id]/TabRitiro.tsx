@@ -201,20 +201,17 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#111827', lineHeight: 1.25 }}>Da portare al ritiro</span>
-              <span style={{ display: 'block', fontSize: 11, color: '#6B7280', marginTop: 1 }}>Consegnali in originale il giorno del ritiro</span>
+              <span style={{ display: 'block', fontSize: 12.5, color: '#6B7280', marginTop: 1 }}>Consegnali in originale il giorno del ritiro</span>
             </span>
             <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 12, fontWeight: 700, borderRadius: 999, padding: '2px 10px', flexShrink: 0 }}>{docs.length}</span>
           </div>
           <div style={{ padding: '2px 14px 6px', borderTop: '1px solid #F1F3F6' }}>
             {docs.map((d, i) => (
               <div key={d.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '11px 0', borderBottom: i < docs.length - 1 ? '1px solid #F1F3F6' : 'none' }}>
-                {d.template_pdf && d.scaricato_il ? (
-                  <span style={{ width: 23, height: 23, borderRadius: 999, background: '#DCF3E4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                  </span>
-                ) : (
-                  <span style={{ width: 23, height: 23, borderRadius: 999, background: '#EFF6FF', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
-                )}
+                {/* ⭐ 28/07 sera (mockup C): OGNI documento ha il suo numero — il
+                    check verde sul modulo scaricato confondeva (sembrava una
+                    cosa già fatta in una lista di cose DA portare) */}
+                <span style={{ width: 23, height: 23, borderRadius: 999, background: '#EFF6FF', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>{i + 1}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#111827', lineHeight: 1.35 }}>{nomeDoc(d)}</span>
                   {mostraDescrizione(d) && (
@@ -223,28 +220,33 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
                   {d.codice === 'ATTO_MORTE' && (
                     <span style={{ display: 'block', fontSize: 10.5, color: '#4B5563', marginTop: 3, lineHeight: 1.5 }}>Basta una copia o fotocopia.</span>
                   )}
+                  {/* ⭐ 28/07 sera (mockup C): pillolina CELESTE anche da scaricata
+                      — zero verde nella lista */}
                   {d.template_pdf && (
-                    d.scaricato_il ? (
-                      <span style={{ display: 'inline-block', background: '#DCF3E4', color: '#1F7A43', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>Scaricata · ora compilala e firmala</span>
-                    ) : (
-                      <span style={{ display: 'inline-block', background: '#EFF6FF', color: '#1D4ED8', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>Scaricalo, compilalo e firmalo</span>
-                    )
+                    <span style={{ display: 'inline-block', background: '#EFF6FF', color: '#1D4ED8', fontSize: 9.5, fontWeight: 600, borderRadius: 999, padding: '2px 8px', marginTop: 4 }}>
+                      {d.scaricato_il ? 'Scaricata · ora compilala e firmala' : 'Scaricalo, compilalo e firmalo'}
+                    </span>
                   )}
                 </span>
+                {/* ⭐ 28/07 sera (mockup C): via la scritta "Scarica di nuovo" —
+                    SIMBOLO di download blu pieno, vale sia per il primo scarico
+                    che per riscaricare */}
                 {d.template_pdf && (
                   <button
                     onClick={() => scaricaModulo(d)}
                     disabled={scaricandoId === d.id}
-                    style={{ flexShrink: 0, background: 'none', border: 'none', padding: 0, fontSize: 11.5, fontWeight: 600, color: '#1D4ED8', textDecoration: 'underline', cursor: 'pointer', marginTop: 2, opacity: scaricandoId === d.id ? 0.6 : 1 }}
+                    aria-label={d.scaricato_il ? 'Scarica di nuovo il modulo' : 'Scarica il modulo'}
+                    title={d.scaricato_il ? 'Scarica di nuovo' : 'Scarica'}
+                    style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 3px 8px rgba(37,99,235,0.28)', opacity: scaricandoId === d.id ? 0.6 : 1, transition: 'opacity 0.15s' }}
                   >
-                    {scaricandoId === d.id ? 'Scarico…' : d.scaricato_il ? 'Scarica di nuovo' : 'Scarica'}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                   </button>
                 )}
               </div>
             ))}
           </div>
-          <div style={{ display: 'flex', gap: 7, fontSize: 10.5, color: '#6B7280', lineHeight: 1.5, padding: '9px 14px 12px', background: '#F8FAFC', borderTop: '1px solid #F1F3F6' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+          <div style={{ display: 'flex', gap: 8, fontSize: 12.5, color: '#6B7280', lineHeight: 1.5, padding: '10px 14px 13px', background: '#F8FAFC', borderTop: '1px solid #F1F3F6' }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
             <span>Servono <b style={{ color: '#374151' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.{docs.some(d => d.template_pdf) && <> Scarica i moduli, <b style={{ color: '#374151' }}>compilali e firmali</b>.</>}</span>
           </div>
         </div>

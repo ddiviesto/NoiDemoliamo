@@ -144,7 +144,10 @@ export default function DashboardCliente() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+      // ⭐ 28/07 sera: sul TELEFONO la schermata di caricamento è BIANCA come
+      // le pagine — il lampo viola al refresh era questo sfondo lavanda che
+      // appariva per un attimo. Su PC resta lavanda (lì la cornice è quella).
+      <main className="min-h-screen flex items-center justify-center bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
       </main>
     )
@@ -154,7 +157,7 @@ export default function DashboardCliente() {
     // ⭐ 28/07 (mockup approvato, proposta 2): sul TELEFONO l'app è a TUTTO
     // SCHERMO (bianco fino ai bordi, header blu in cima, via la cornice
     // lavanda); su PC resta la card centrata di sempre
-    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
+    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
       <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
 
         {/* HEADER BLU (stile banner /inizia) */}
@@ -185,7 +188,7 @@ export default function DashboardCliente() {
           {/* TITOLO */}
           <div>
             <h1 className="font-bold text-gray-900" style={{ fontSize: 15 }}>Le tue pratiche</h1>
-            <p className="text-gray-500 mt-0.5" style={{ fontSize: 11 }}>{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
+            <p className="text-gray-500 mt-0.5" style={{ fontSize: 13 }}>{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
           </div>
 
           {/* LISTA PRATICHE */}
@@ -209,28 +212,38 @@ export default function DashboardCliente() {
                 // Pillola dalla tabella unica (gestisce anche la pausa "In attesa")
                 const s = pillolaStato(p.stato, p.in_attesa)
                 return (
-                  // ⭐ 28/07 (mockup approvato): card in famiglia — bianca col
-                  // piede grigino a tutta larghezza, targa 14.5, bordo che si
-                  // fa celeste al passaggio (come le righe del CRM)
+                  // ⭐ 28/07 sera (mockup approvato, mix B+C taglia 2): card con
+                  // OMBRA morbida, targa 16.5 e icona più grande, BARRETTA BLU
+                  // di stato sul fianco (elemento interno: il bordo celeste del
+                  // passaggio non la tocca), scritte secondarie più leggibili
                   <button
                     key={p.id}
                     onClick={() => router.push(`/dashboard/${p.id}`)}
-                    style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: 0, textAlign: 'left', transition: 'border-color 0.15s', overflow: 'hidden' }}
+                    style={{ position: 'relative', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: 0, textAlign: 'left', transition: 'border-color 0.15s', overflow: 'hidden', boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)' }}
                     className="hover:!border-[#BFDBFE] active:scale-[0.995]"
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px' }}>
+                    {/* Barretta blu di stato sul fianco sinistro */}
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: '#2563eb' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 13px 14px 16px' }}>
                       {/* Quadratino con icona veicolo */}
-                      <div style={{ width: 40, height: 40, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 46, height: 46, borderRadius: 13, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <IconaVeicolo tipo={p.tipo_mezzo} />
                       </div>
 
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontWeight: 700, fontSize: 14.5, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ fontWeight: 700, fontSize: 16.5, letterSpacing: '0.03em', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {p.targa || 'Targa mancante'}
                         </div>
-                        <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {[p.tipo_mezzo && (p.tipo_mezzo.charAt(0).toUpperCase() + p.tipo_mezzo.slice(1)), [p.marca, p.modello].filter(Boolean).join(' ')].filter(Boolean).join(' · ')}
-                        </div>
+                        {p.tipo_mezzo && (
+                          <div style={{ fontSize: 13.5, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {p.tipo_mezzo.charAt(0).toUpperCase() + p.tipo_mezzo.slice(1)}
+                          </div>
+                        )}
+                        {(p.marca || p.modello) && (
+                          <div style={{ fontSize: 13.5, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {[p.marca, p.modello].filter(Boolean).join(' ')}
+                          </div>
+                        )}
                       </div>
 
                       <span style={{ flexShrink: 0, fontSize: 10, fontWeight: 600, padding: '4px 10px', borderRadius: 999, background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>
@@ -239,14 +252,14 @@ export default function DashboardCliente() {
                     </div>
 
                     {(p.indirizzo_ritiro || p.creato_il) && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: '#F8FAFC', borderTop: '1px solid #F1F3F6', padding: '7px 13px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: '#F8FAFC', borderTop: '1px solid #F1F3F6', padding: '7px 13px 7px 16px' }}>
                         {p.indirizzo_ritiro ? (
-                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10.5, color: '#6B7280', minWidth: 0 }}>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: '#6B7280', minWidth: 0 }}>
                             <IconaPinPiccola />
                             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.indirizzo_ritiro}</span>
                           </span>
                         ) : <span />}
-                        <span style={{ fontSize: 10.5, color: '#9AA7B5', flexShrink: 0 }}>
+                        <span style={{ fontSize: 12.5, color: '#9AA7B5', flexShrink: 0 }}>
                           {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}
                         </span>
                       </div>

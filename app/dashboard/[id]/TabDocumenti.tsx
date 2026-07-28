@@ -255,6 +255,134 @@ function IconaTipoDocumento({ nome, color }: { nome: string; color: string }) {
 // COMPONENTE PRINCIPALE
 // ============================================================
 
+// Siamo su un telefono? (stessa soglia sm di Tailwind)
+function suTelefono() {
+  return typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches
+}
+
+// ============================================================
+// ⭐ ZOOM COL PIZZICO nel visore (28/07 sera): il viewport anti-zoom
+// dell'app blocca lo zoom di Safari, quindi il palco se lo costruisce
+// in casa — due dita per ingrandire (fino a 4x), un dito per spostarsi
+// da ingrandita, doppio tocco per ingrandire/tornare intera.
+// ============================================================
+function ZoomImmagine({ src, alt }: { src: string; alt: string }) {
+  const boxRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  // Lo stato dello zoom vive nei ref e si applica direttamente allo stile:
+  // niente re-render a ogni movimento delle dita (fluidità)
+  const stato = useRef({ scala: 1, tx: 0, ty: 0 })
+  const gesto = useRef({ tipo: null as 'pan' | 'pinch' | null, x0: 0, y0: 0, tx0: 0, ty0: 0, d0: 1, scala0: 1, mx: 0, my: 0 })
+  const ultimoTocco = useRef(0)
+
+  useEffect(() => {
+    const box = boxRef.current
+    if (!box) return
+
+    const applica = () => {
+      const s = stato.current
+      if (imgRef.current) imgRef.current.style.transform = `translate(${s.tx}px, ${s.ty}px) scale(${s.scala})`
+    }
+    // L'immagine ingrandita non deve scappare dal riquadro
+    const limita = () => {
+      const s = stato.current
+      const maxX = (box.clientWidth * (s.scala - 1)) / 2
+      const maxY = (box.clientHeight * (s.scala - 1)) / 2
+      s.tx = Math.max(-maxX, Math.min(maxX, s.tx))
+      s.ty = Math.max(-maxY, Math.min(maxY, s.ty))
+    }
+    const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY)
+
+    const inizio = (e: TouchEvent) => {
+      const s = stato.current, g = gesto.current
+      if (e.touches.length === 2) {
+        e.preventDefault()
+        g.tipo = 'pinch'
+        g.d0 = dist(e.touches); g.scala0 = s.scala
+        g.mx = (e.touches[0].clientX + e.touches[1].clientX) / 2
+        g.my = (e.touches[0].clientY + e.touches[1].clientY) / 2
+        g.tx0 = s.tx; g.ty0 = s.ty
+      } else if (e.touches.length === 1) {
+        const ora = Date.now()
+        if (ora - ultimoTocco.current < 280) {
+          // Doppio tocco: ingrandisci sul punto toccato, o torna intera
+          e.preventDefault()
+          ultimoTocco.current = 0
+          if (s.scala > 1) { s.scala = 1; s.tx = 0; s.ty = 0 }
+          else {
+            const r = box.getBoundingClientRect()
+            const cx = e.touches[0].clientX - r.left - r.width / 2
+            const cy = e.touches[0].clientY - r.top - r.height / 2
+            s.scala = 2.2; s.tx = -cx * (s.scala - 1); s.ty = -cy * (s.scala - 1)
+            limita()
+          }
+          applica()
+          g.tipo = null
+          return
+        }
+        ultimoTocco.current = ora
+        if (s.scala > 1) {
+          g.tipo = 'pan'
+          g.x0 = e.touches[0].clientX; g.y0 = e.touches[0].clientY
+          g.tx0 = s.tx; g.ty0 = s.ty
+        } else {
+          g.tipo = null
+        }
+      }
+    }
+    const movimento = (e: TouchEvent) => {
+      const s = stato.current, g = gesto.current
+      if (g.tipo === 'pinch' && e.touches.length === 2) {
+        e.preventDefault()
+        s.scala = Math.max(1, Math.min(4, g.scala0 * dist(e.touches) / g.d0))
+        // Lo zoom resta centrato sul punto tra le due dita
+        const rap = s.scala / g.scala0
+        const r = box.getBoundingClientRect()
+        const cx = g.mx - r.left - r.width / 2
+        const cy = g.my - r.top - r.height / 2
+        s.tx = cx - (cx - g.tx0) * rap
+        s.ty = cy - (cy - g.ty0) * rap
+        if (s.scala <= 1) { s.tx = 0; s.ty = 0 }
+        limita(); applica()
+      } else if (g.tipo === 'pan' && e.touches.length === 1) {
+        e.preventDefault()
+        s.tx = g.tx0 + (e.touches[0].clientX - g.x0)
+        s.ty = g.ty0 + (e.touches[0].clientY - g.y0)
+        limita(); applica()
+      }
+    }
+    const fine = (e: TouchEvent) => {
+      const s = stato.current, g = gesto.current
+      if (e.touches.length === 0) { g.tipo = null; return }
+      if (e.touches.length === 1 && g.tipo === 'pinch') {
+        // Da pizzico a trascinamento senza stacchi
+        g.tipo = s.scala > 1 ? 'pan' : null
+        g.x0 = e.touches[0].clientX; g.y0 = e.touches[0].clientY
+        g.tx0 = s.tx; g.ty0 = s.ty
+      }
+    }
+
+    box.addEventListener('touchstart', inizio, { passive: false })
+    box.addEventListener('touchmove', movimento, { passive: false })
+    box.addEventListener('touchend', fine)
+    box.addEventListener('touchcancel', fine)
+    return () => {
+      box.removeEventListener('touchstart', inizio)
+      box.removeEventListener('touchmove', movimento)
+      box.removeEventListener('touchend', fine)
+      box.removeEventListener('touchcancel', fine)
+    }
+  }, [])
+
+  return (
+    // Il tocco sull'IMMAGINE non chiude il palco; il tocco sul vuoto sì
+    <div ref={boxRef} onClick={e => { if (e.target === imgRef.current) e.stopPropagation() }} style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', touchAction: 'none' }}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img ref={imgRef} src={src} alt={alt} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 10px 34px rgba(0,0,0,0.35)', transformOrigin: 'center center', willChange: 'transform' }} />
+    </div>
+  )
+}
+
 export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoCambiato }: Props) {
   const [docs, setDocs] = useState<DocChecklist[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
@@ -269,6 +397,14 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   // Dal singolo file risale al SUO documento (o alle foto del veicolo) e
   // costruisce la lista per sfogliare con Prec./Succ.
   function apriAnteprima(url: string, titolo: string) {
+    // ⭐ 28/07 sera: i PDF sul TELEFONO si aprono nel visore di Safari (nuova
+    // scheda): lì si vedono per intero e si zoomano col pizzico — dentro al
+    // riquadro su iPhone arrivavano già ingranditi e senza zoom. Su PC il
+    // palco col riquadro resta (funziona bene).
+    if (isPdfUrl(url) && suTelefono()) {
+      window.open(url, '_blank')
+      return
+    }
     for (const d of docs) {
       const files = leggiFile(d.file_url)
       const urls = files.map(f => signedMap[f.url] || f.url)
@@ -753,17 +889,33 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
         const prec = () => setAnteprima(a => a ? { ...a, indice: (a.indice - 1 + a.lista.length) % a.lista.length } : a)
         const succ = () => setAnteprima(a => a ? { ...a, indice: (a.indice + 1) % a.lista.length } : a)
         return (
-          <div className="fixed inset-0 z-50 flex flex-col" style={{ background: '#5D6A7E' }}>
+          // z-60: il palco copre TUTTO, anche il bottone WhatsApp (z-50) che
+          // altrimenti resta a galla sopra il documento aperto
+          <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#5D6A7E' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', flexShrink: 0 }}>
               <span style={{ flex: 1, minWidth: 0, color: '#fff', fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{voce.titolo}</span>
               <button onClick={() => setAnteprima(null)} aria-label="Chiudi anteprima" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.85)', fontSize: 24, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
             </div>
             <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: pdf ? '0 10px' : '0 16px', overflow: 'auto' }} onClick={() => setAnteprima(null)}>
               {pdf ? (
-                <iframe src={voce.url} title={voce.titolo} style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12, background: '#fff', boxShadow: '0 10px 34px rgba(0,0,0,0.35)' }} />
+                suTelefono() ? (
+                  // Sfogliando col Prec./Succ. si può capitare su un PDF anche
+                  // sul telefono: qui niente riquadro, un tocco e si apre in
+                  // Safari (l'apertura automatica la bloccherebbe il browser)
+                  <button
+                    onClick={e => { e.stopPropagation(); window.open(voce.url, '_blank') }}
+                    style={{ background: '#fff', border: 'none', borderRadius: 14, padding: '22px 26px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 10px 34px rgba(0,0,0,0.35)' }}
+                  >
+                    <span style={{ background: '#fbeaea', color: '#c0392b', fontSize: 14, fontWeight: 700, borderRadius: 8, padding: '6px 14px' }}>PDF</span>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: '#111827' }}>Tocca per aprirlo a schermo intero</span>
+                  </button>
+                ) : (
+                  <iframe src={voce.url} title={voce.titolo} style={{ width: '100%', height: '100%', border: 'none', borderRadius: 12, background: '#fff', boxShadow: '0 10px 34px rgba(0,0,0,0.35)' }} />
+                )
               ) : (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={voce.url} alt={voce.titolo} onClick={e => e.stopPropagation()} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 10px 34px rgba(0,0,0,0.35)' }} />
+                // ⭐ Zoom col pizzico: componente dedicato (key = il file, così
+                // cambiando foto con Prec./Succ. lo zoom riparte da intero)
+                <ZoomImmagine key={voce.url} src={voce.url} alt={voce.titolo} />
               )}
             </div>
             {anteprima.lista.length > 1 ? (
@@ -1330,7 +1482,7 @@ function PannelloInviati(props: {
     return (
       <button onClick={onClick} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '9px 12px', background: 'none', border: 'none', borderTop: '1px solid #F3F4F6', cursor: 'pointer' }}>
         <div style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
-          <div style={{ fontSize: 12.5, fontWeight: 600, color: '#111827', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nome}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 500, color: '#111827', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nome}</div>
           <div style={{ marginTop: 3 }}>{neutra ? <PillolaInviate /> : <PillolaStato approvato={!!approvato} />}</div>
         </div>
         <span style={{ width: 30, height: 30, borderRadius: '50%', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
