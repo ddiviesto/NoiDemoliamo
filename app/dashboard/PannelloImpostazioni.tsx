@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -20,7 +20,7 @@ const INPUT_CLS = 'w-full h-[26px] bg-transparent border-0 border-b-2 border-blu
 
 type Sezione = 'nome' | 'telefono' | 'email' | 'password' | null
 
-export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, telefono, email, onProfiloAggiornato, onEsci }: {
+export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, telefono, email, onProfiloAggiornato, onEsci, onAggiorna }: {
   aperto: boolean
   onChiudi: () => void
   nome: string
@@ -29,6 +29,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
   email: string
   onProfiloAggiornato: (patch: { nome?: string; cognome?: string; telefono?: string }) => void
   onEsci: () => void
+  onAggiorna?: () => Promise<void>
 }) {
   const router = useRouter()
   const [sezione, setSezione] = useState<Sezione>(null)
@@ -44,6 +45,103 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
     const t = setTimeout(() => setEsito(null), durata)
     return () => clearTimeout(t)
   }, [esito])
+
+  // Pannello aperto = la pagina dietro resta FERMA. Su Safari iPhone
+  // overflow:hidden non basta: si congela il body con position:fixed
+  // alla posizione attuale e la si ripristina alla chiusura (niente salti).
+  useEffect(() => {
+    if (!aperto) return
+    const scrollY = window.scrollY
+    const body = document.body
+    body.style.position = 'fixed'
+    body.style.top = `-${scrollY}px`
+    body.style.left = '0'
+    body.style.right = '0'
+    body.style.width = '100%'
+    return () => {
+      body.style.position = ''
+      body.style.top = ''
+      body.style.left = ''
+      body.style.right = ''
+      body.style.width = ''
+      window.scrollTo(0, scrollY)
+    }
+  }, [aperto])
+
+  // ⭐ TIRA GIÙ PER AGGIORNARE (mockup 28/07, rotellina B "coda che sfuma"):
+  // col pannello aperto, tirare giù NON deve più far ricaricare Safari.
+  // Il gesto lo gestiamo noi: la lista scende, la rotellina gira, i dati
+  // del profilo si ricaricano e tutto risale da solo.
+  const scorriRef = useRef<HTMLDivElement>(null)
+  const [tiro, setTiro] = useState(0)              // di quanto è tirata giù la lista
+  const [aggiornando, setAggiornando] = useState(false)
+  const [trascinando, setTrascinando] = useState(false)
+  const tiroRef = useRef(0)
+  const partenzaYRef = useRef(0)
+  const attivoRef = useRef(false)
+  const apertoRef = useRef(aperto)
+  apertoRef.current = aperto
+  const aggiornandoRef = useRef(false)
+  const onAggiornaRef = useRef(onAggiorna)
+  onAggiornaRef.current = onAggiorna
+
+  useEffect(() => {
+    const el = scorriRef.current
+    if (!el) return
+    const SOGLIA = 44 // px di tiro oltre i quali, al rilascio, parte l'aggiornamento
+
+    const posaTiro = (v: number) => { tiroRef.current = v; setTiro(v) }
+
+    const inizio = (e: TouchEvent) => {
+      if (!apertoRef.current || aggiornandoRef.current || el.scrollTop > 0) return
+      partenzaYRef.current = e.touches[0].clientY
+      attivoRef.current = true
+    }
+    const movimento = (e: TouchEvent) => {
+      if (!attivoRef.current || aggiornandoRef.current) return
+      const delta = e.touches[0].clientY - partenzaYRef.current
+      if (delta <= 0 || el.scrollTop > 0) {
+        if (tiroRef.current !== 0) { posaTiro(0); setTrascinando(false) }
+        if (delta < -8) attivoRef.current = false // sta scorrendo la lista, non tirando
+        return
+      }
+      // Qui il dito sta tirando giù dalla cima: il gesto è NOSTRO
+      // (preventDefault spegne anche l'aggiornamento nativo di Safari)
+      e.preventDefault()
+      setTrascinando(true)
+      posaTiro(Math.min(72, delta / 2.2)) // resistenza tipo elastico
+    }
+    const fine = () => {
+      if (!attivoRef.current) return
+      attivoRef.current = false
+      setTrascinando(false)
+      if (tiroRef.current >= SOGLIA) {
+        aggiornandoRef.current = true
+        setAggiornando(true)
+        posaTiro(SOGLIA)
+        // La rotellina resta in vista almeno il tempo di farsi vedere
+        Promise.all([onAggiornaRef.current?.(), new Promise(r => setTimeout(r, 700))])
+          .finally(() => {
+            aggiornandoRef.current = false
+            setAggiornando(false)
+            posaTiro(0)
+          })
+      } else {
+        posaTiro(0)
+      }
+    }
+
+    el.addEventListener('touchstart', inizio, { passive: true })
+    el.addEventListener('touchmove', movimento, { passive: false })
+    el.addEventListener('touchend', fine)
+    el.addEventListener('touchcancel', fine)
+    return () => {
+      el.removeEventListener('touchstart', inizio)
+      el.removeEventListener('touchmove', movimento)
+      el.removeEventListener('touchend', fine)
+      el.removeEventListener('touchcancel', fine)
+    }
+  }, [])
 
   const [nuovoNome, setNuovoNome] = useState('')
   const [nuovoTelefono, setNuovoTelefono] = useState('')
@@ -241,12 +339,15 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
       <div
         onClick={onChiudi}
         className="absolute inset-0 transition-opacity duration-200"
-        style={{ background: 'rgba(15,23,42,0.45)', opacity: aperto ? 1 : 0 }}
+        style={{ background: 'rgba(15,23,42,0.45)', opacity: aperto ? 1 : 0, touchAction: 'none' }}
       />
-      {/* Pannello che scivola da destra */}
+      {/* Pannello che scivola da destra. ⭐ Sul TELEFONO (mockup 28/07,
+          variante A + larghezza B): carta al 70% dello schermo, staccata
+          dai bordi e con gli angoli smussati — la parte scura per chiudere
+          è comoda. Su PC resta la colonna da 340px attaccata al bordo. */}
       <div
-        className="absolute top-0 right-0 bottom-0 bg-white flex flex-col transition-transform duration-200 ease-out"
-        style={{ width: 'min(340px, 88vw)', borderRadius: '16px 0 0 16px', boxShadow: '-8px 0 30px rgba(15,23,42,0.25)', transform: aperto ? 'translateX(0)' : 'translateX(105%)' }}
+        className="absolute bg-white flex flex-col transition-transform duration-200 ease-out overflow-hidden right-2.5 top-3.5 bottom-3.5 w-[70vw] rounded-[20px] sm:right-0 sm:top-0 sm:bottom-0 sm:w-[340px] sm:rounded-r-none sm:rounded-l-2xl"
+        style={{ boxShadow: '-8px 0 30px rgba(15,23,42,0.25)', transform: aperto ? 'translateX(0)' : 'translateX(calc(100% + 24px))' }}
       >
         {/* Testata */}
         <div className="flex items-center justify-between px-4 py-3.5" style={{ borderBottom: '1px solid #F1F4F8' }}>
@@ -256,7 +357,23 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        {/* overscroll-contain: quando la lista arriva in cima o in fondo il
+            gesto NON passa alla pagina dietro (niente refresh di Safari) */}
+        <div ref={scorriRef} className="flex-1 overflow-y-auto overscroll-contain">
+          <div style={{ position: 'relative', transform: `translateY(${tiro}px)`, transition: trascinando ? 'none' : 'transform 0.25s ease' }}>
+            {/* Rotellina "coda che sfuma" (mockup B): compare nel vuoto del tiro */}
+            <div style={{ position: 'absolute', top: -40, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+              <div style={{
+                width: 27, height: 27, borderRadius: '50%',
+                background: 'conic-gradient(from 0deg, rgba(29,78,216,0) 0% 12%, #1d4ed8 88% 100%)',
+                WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3.4px), #000 calc(100% - 3px))',
+                mask: 'radial-gradient(farthest-side, transparent calc(100% - 3.4px), #000 calc(100% - 3px))',
+                opacity: aggiornando ? 1 : Math.min(1, tiro / 44),
+                transform: aggiornando ? undefined : `rotate(${tiro * 4.5}deg)`,
+                animation: aggiornando ? 'nd-gira 0.9s linear infinite' : 'none',
+              }} />
+            </div>
+
           {/* Esito operazioni */}
           {esito && (
             <div className="mx-4 mt-3 rounded-xl px-3 py-2.5 text-[12px]" style={esito.tipo === 'ok'
@@ -335,6 +452,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
             tile={<Tile bg="#EFF6FF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /><line x1="8" y1="13" x2="16" y2="13" /><line x1="8" y1="17" x2="13" y2="17" /></svg></Tile>}
             label="Termini di servizio"
           />
+          </div>
         </div>
 
         {/* Esci: in fondo, separato */}

@@ -122,6 +122,21 @@ export default function DashboardCliente() {
     onCambio: ricaricaPratiche,
   })
 
+  // ⭐ Tira giù sul pannello Impostazioni: ricarica il profilo dal server
+  // (rotellina B, mockup 28/07)
+  const ricaricaProfilo = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const { data: utente } = await supabase
+      .from('utenti')
+      .select('nome, cognome, telefono, email')
+      .eq('id', session.user.id)
+      .single()
+    const emailLogin = session.user.email || ''
+    if (utente?.nome) setNomeUtente(utente.nome.split(' ')[0])
+    setProfilo({ nome: utente?.nome || '', cognome: utente?.cognome || '', telefono: utente?.telefono || '', email: emailLogin || utente?.email || '' })
+  }
+
   async function logout() {
     await supabase.auth.signOut()
     router.push('/')
@@ -279,6 +294,7 @@ export default function DashboardCliente() {
           if (patch.nome) setNomeUtente(patch.nome.split(' ')[0])
         }}
         onEsci={logout}
+        onAggiorna={ricaricaProfilo}
       />
     </main>
   )

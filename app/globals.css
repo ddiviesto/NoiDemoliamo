@@ -31,6 +31,12 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ⭐ 28/07: rotellina di aggiornamento NoiDemoliamo (tira giù per aggiornare,
+   mockup B "coda che sfuma") — il giro continuo della rotellina. */
+@keyframes nd-gira {
+  to { transform: rotate(360deg); }
+}
+
 /* Card standard area admin: sfondo bianco + bordo + ombra morbida (profondità). */
 .card-admin {
   background: #ffffff;
