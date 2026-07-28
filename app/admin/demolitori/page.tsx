@@ -16,6 +16,7 @@ interface Demolitore {
   provincia: string | null
   stato: string
   fee_per_pratica: number
+  velocita_media_giorni: number
   contratto_firmato: boolean
   creato_il: string
 }
@@ -59,7 +60,7 @@ export default function GestioneDemolitori() {
   const [loading, setLoading] = useState(true)
   const [demolitori, setDemolitori] = useState<Demolitore[]>([])
   const [coperture, setCoperture] = useState<Record<string, CoperturaRow[]>>({})
-  const [aperte, setAperte] = useState<Record<string, number>>({})
+  const [statsDem, setStatsDem] = useState<Record<string, { aperte: number; completate: number; annullate: number }>>({})
   const [ricerca, setRicerca] = useState('')
   const [showForm, setShowForm] = useState(false)
   const [salvando, setSalvando] = useState(false)
@@ -79,7 +80,7 @@ export default function GestioneDemolitori() {
   }, [router])
 
   async function ricarica() {
-    const { data } = await supabase.from('demolitori').select('id, ragione_sociale, citta, provincia, stato, fee_per_pratica, contratto_firmato, creato_il').order('creato_il', { ascending: false })
+    const { data } = await supabase.from('demolitori').select('id, ragione_sociale, citta, provincia, stato, fee_per_pratica, velocita_media_giorni, contratto_firmato, creato_il').order('creato_il', { ascending: false })
     setDemolitori(data || [])
 
     const { data: cov } = await supabase.from('demolitori_comuni').select('demolitore_id, comune, tipo')
@@ -87,13 +88,18 @@ export default function GestioneDemolitori() {
     for (const c of (cov as CoperturaRow[]) || []) (mappaCov[c.demolitore_id] ||= []).push(c)
     setCoperture(mappaCov)
 
+    // ⭐ 28/07: i 4 quadratini (aperte/completate/annullate/velocità) si
+    // vedono anche a scheda CHIUSA — i conteggi si calcolano per tutti qui
     const { data: prat } = await supabase.from('pratiche').select('demolitore_id, stato').not('demolitore_id', 'is', null)
-    const mappaAperte: Record<string, number> = {}
+    const mappa: Record<string, { aperte: number; completate: number; annullate: number }> = {}
     for (const p of prat || []) {
-      if (p.stato === 'completata' || p.stato === 'annullata') continue
-      if (p.demolitore_id) mappaAperte[p.demolitore_id] = (mappaAperte[p.demolitore_id] || 0) + 1
+      if (!p.demolitore_id) continue
+      const st = (mappa[p.demolitore_id] ||= { aperte: 0, completate: 0, annullate: 0 })
+      if (p.stato === 'completata') st.completate += 1
+      else if (p.stato === 'annullata') st.annullate += 1
+      else st.aperte += 1
     }
-    setAperte(mappaAperte)
+    setStatsDem(mappa)
   }
 
   function set<K extends keyof typeof FORM_VUOTO>(k: K, v: (typeof FORM_VUOTO)[K]) {
@@ -151,7 +157,8 @@ export default function GestioneDemolitori() {
     const s = metaStato(d.stato)
     const cop = riassuntoCopertura(coperture[d.id] || [])
     const barColor = d.stato === 'attivo' ? '#97C459' : '#C0C7D1'
-    const nAperte = aperte[d.id] || 0
+    const st = statsDem[d.id] || { aperte: 0, completate: 0, annullate: 0 }
+    const nAperte = st.aperte
     // Aperta: al posto della card c'è il blocco unico con la tendina (la sua
     // testata è la STESSA riga, tinta d'azzurro: nessun sobbalzo)
     if (selId === d.id) {
@@ -159,7 +166,7 @@ export default function GestioneDemolitori() {
         <TendinaDemolitore
           key={d.id}
           demolitoreId={d.id}
-          base={{ ...d, cop, nAperte }}
+          base={{ ...d, cop, nAperte: st.aperte, nCompletate: st.completate, nAnnullate: st.annullate }}
           onChiudi={() => setSelId(null)}
           onDatiCambiati={ricarica}
         />
@@ -204,11 +211,12 @@ export default function GestioneDemolitori() {
           <div className="text-[13.5px] font-bold" style={{ color: '#111827', marginTop: 2 }}>{d.fee_per_pratica ? `${d.fee_per_pratica} €` : '—'}</div>
         </div>
 
-        {/* Pratiche aperte */}
-        <div style={{ flexShrink: 0, textAlign: 'center', background: nAperte > 0 ? '#E0EDFB' : '#F3F5F9', borderRadius: 10, padding: '6px 14px', minWidth: 70 }}>
-          <div className="text-[15px] font-bold" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>{nAperte}</div>
-          <div className="text-[10px] font-semibold uppercase" style={{ color: nAperte > 0 ? '#1E4E8C' : '#6B7280' }}>aperte</div>
-        </div>
+        {/* ⭐ 28/07 (richiesta Davide): i 4 quadratini si vedono anche a
+            scheda CHIUSA — gemelli di quelli della tendina aperta */}
+        <BoxRiga n={String(st.aperte)} l="aperte" acceso={nAperte > 0} />
+        <BoxRiga n={String(st.completate)} l="completate" />
+        <BoxRiga n={String(st.annullate)} l="annullate" rosso={st.annullate > 0} />
+        <BoxRiga n={d.velocita_media_giorni > 0 ? `${d.velocita_media_giorni}g` : '—'} l="velocità" />
       </div>
     )
   }
@@ -244,7 +252,8 @@ export default function GestioneDemolitori() {
               {ricerca && <button onClick={() => setRicerca('')} className="text-gray-400 hover:text-gray-600 text-sm flex-shrink-0">×</button>}
             </div>
           </div>
-          <button onClick={() => setShowForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors">
+          {/* ⭐ 28/07 (richiesta Davide): pillola sobria, via il blu pieno aggressivo */}
+          <button onClick={() => setShowForm(true)} className="transition-colors hover:bg-blue-50" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 12.5, fontWeight: 600, borderRadius: 999, padding: '7px 16px', cursor: 'pointer' }}>
             Aggiungi
           </button>
         </div>
@@ -341,6 +350,19 @@ export default function GestioneDemolitori() {
         </div>
       )}
     </main>
+  )
+}
+
+// Quadratino statistica della riga (gemello di quelli della tendina aperta)
+function BoxRiga({ n, l, acceso = false, rosso = false }: { n: string; l: string; acceso?: boolean; rosso?: boolean }) {
+  const bg = rosso ? '#FBDADA' : acceso ? '#E0EDFB' : '#fff'
+  const col = rosso ? '#9B1C1C' : acceso ? '#1E4E8C' : '#6B7280'
+  const bordo = rosso ? '#F3C8C8' : '#E5E7EB'
+  return (
+    <div style={{ flexShrink: 0, textAlign: 'center', background: bg, borderRadius: 10, padding: '6px 14px', minWidth: 70, border: `1px solid ${bordo}` }}>
+      <div className="text-[15px] font-bold" style={{ color: col }}>{n}</div>
+      <div className="text-[10px] font-semibold uppercase" style={{ color: col }}>{l}</div>
+    </div>
   )
 }
 

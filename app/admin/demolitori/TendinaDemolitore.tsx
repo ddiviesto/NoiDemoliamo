@@ -97,7 +97,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   demolitoreId: string
   // I dati della riga: la testata si disegna SUBITO, senza aspettare il
   // caricamento, ed è IDENTICA alla card chiusa (niente sobbalzo)
-  base: { ragione_sociale: string; citta: string | null; provincia: string | null; stato: string; fee_per_pratica: number; cop: string | null; nAperte: number }
+  base: { ragione_sociale: string; citta: string | null; provincia: string | null; stato: string; fee_per_pratica: number; velocita_media_giorni: number; cop: string | null; nAperte: number; nCompletate: number; nAnnullate: number }
   onChiudi: () => void
   // La lista si ricarica quando cambiano nome, stato, fee o il demolitore sparisce
   onDatiCambiati: () => void
@@ -540,6 +540,9 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   const attivo = (dem?.stato ?? base.stato) === 'attivo'
   const feeViva = dem?.fee_per_pratica ?? base.fee_per_pratica
   const aperteVive = loading ? base.nAperte : stats.aperte
+  const completateVive = loading ? base.nCompletate : stats.completate
+  const annullateVive = loading ? base.nAnnullate : stats.annullate
+  const velocitaViva = dem ? dem.velocita_media_giorni : base.velocita_media_giorni
   const barColor = attivo ? '#97C459' : '#C0C7D1'
 
   return (
@@ -574,10 +577,10 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
           <div className="text-[10px] font-semibold uppercase" style={{ color: aperteVive > 0 ? '#1E4E8C' : '#6B7280' }}>aperte</div>
         </div>
         {/* ⭐ 28/07 (richiesta Davide): le altre statistiche stanno QUI in alto,
-            dopo la fee, quadrate come Aperte */}
-        <BoxStat n={String(stats.completate)} l="Completate" />
-        <BoxStat n={String(stats.annullate)} l="Annullate" allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
-        <BoxStat n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} l="Velocità" />
+            dopo la fee, quadrate come Aperte (e si vedono anche a scheda chiusa) */}
+        <BoxStat n={String(completateVive)} l="Completate" />
+        <BoxStat n={String(annullateVive)} l="Annullate" allerta={annullateVive > 0} onClick={annullateVive > 0 ? () => apriDrawer('annullate') : undefined} />
+        <BoxStat n={velocitaViva > 0 ? `${velocitaViva}g` : '—'} l="Velocità" />
       </div>
 
       {/* Tutto il resto SI SROTOLA morbido sotto la riga (azioni + schede) */}
@@ -661,7 +664,6 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
           <button onClick={() => apriDrawer('copertura')} className="transition-all hover:bg-blue-100" style={{ ...stilePillola, background: drawer === 'copertura' ? '#DBEAFE' : '#fff' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
             Copertura
-            <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{zoneCoperte.length}</span>
           </button>
 
           {/* (28/07: la pillola "€ Tariffe" è stata tolta, richiesta Davide:
