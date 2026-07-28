@@ -654,10 +654,10 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
           </button>
 
           <span style={{ flex: 1 }} />
-          {/* Statistiche restanti a boxini (Aperte e Fee vivono già nella riga) */}
-          <Boxino n={String(stats.completate)} l="Completate" />
-          <Boxino n={String(stats.annullate)} l="Annullate" allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
-          <Boxino n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} l="Velocità" />
+          {/* Statistiche restanti come CHIPS in linea (Aperte e Fee vivono già nella riga) */}
+          <ChipStat l="Completate" n={String(stats.completate)} />
+          <ChipStat l="Annullate" n={String(stats.annullate)} allerta={stats.annullate > 0} onClick={stats.annullate > 0 ? () => apriDrawer('annullate') : undefined} />
+          <ChipStat l="Velocità" n={dem && dem.velocita_media_giorni > 0 ? `${dem.velocita_media_giorni}g` : '—'} />
           <span style={{ position: 'relative' }}>
             <button onClick={() => { setNuvola(n => n === 'elimina' ? null : 'elimina'); setConfermaNome(''); setErroreElimina('') }} aria-label="Elimina demolitore" className="transition-colors hover:bg-red-50" style={{ width: 30, height: 30, borderRadius: 999, background: '#fff', border: '1.5px solid #F3C8C8', color: '#C0392B', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
@@ -935,17 +935,20 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   )
 }
 
-// Boxino statistica nella testata (gemello dei boxini data delle pratiche)
-function Boxino({ n, l, allerta = false, onClick }: { n: string; l: string; allerta?: boolean; onClick?: () => void }) {
+// Chip statistica in linea con le pillole (28/07: i boxini impilati
+// "scombussolavano" la fila, bocciati da Davide)
+function ChipStat({ l, n, allerta = false, onClick }: { l: string; n: string; allerta?: boolean; onClick?: () => void }) {
   const stile: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 6,
     background: allerta ? '#FBDADA' : '#fff',
-    border: `1px solid ${allerta ? '#F3C8C8' : '#DBEAFE'}`,
-    borderRadius: 10, padding: '5px 12px', textAlign: 'center', cursor: onClick ? 'pointer' : 'default', flexShrink: 0,
+    border: `1.5px solid ${allerta ? '#F3C8C8' : '#DBEAFE'}`,
+    borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap', flexShrink: 0,
+    cursor: onClick ? 'pointer' : 'default',
   }
   const contenuto = (
     <>
-      <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: allerta ? '#9B1C1C' : '#111827' }}>{n}</span>
-      <span style={{ display: 'block', fontSize: 8.5, fontWeight: 700, color: allerta ? '#B96565' : '#8B95A5', letterSpacing: 0.4, textTransform: 'uppercase' }}>{l}</span>
+      <span style={{ fontSize: 11, fontWeight: 600, color: allerta ? '#9B1C1C' : '#5B6779' }}>{l}</span>
+      <span style={{ fontSize: 11.5, fontWeight: 700, color: allerta ? '#9B1C1C' : '#111827' }}>{n}</span>
     </>
   )
   if (onClick) return <button onClick={onClick} className="transition-all hover:shadow-sm" style={stile}>{contenuto}</button>
