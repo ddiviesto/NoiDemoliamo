@@ -890,6 +890,9 @@ Dal 3 luglio si lavora con **Claude Code (estensione VS Code)** sulla cartella `
 - ⭐⭐ **NIENTE SCATTI, regola di famiglia**: apertura e CHIUSURA morbide (grid 0fr↔1fr; in chiusura bordo blu, ombra, azzurro e nome sfumano verso la card). ⭐ Stesso fix sulla tendina PRATICHE: il contenuto resta montato mentre si riavvolge (`renderId`), prima la Cronologia spariva di colpo. Caricamento tendina VELOCE: le 5 letture partono INSIEME (`Promise.all`).
 - ⭐ **Riquadri della tendina TUTTI alla stessa altezza** (stretch, bordi in riga; la Cronologia usa lo spazio in più, campo nota in fondo). Pratiche non toccate: già allineate.
 - ⭐ **Tasto "Aggiungi" a pillola sobria** (bianca bordo celeste, via il blu pieno).
+- ⭐ **Nuvoletta del cestino ancorata a DESTRA** (bug: sforava il bordo del blocco e restava mezza nascosta) — il componente `Nuvola` accetta `allinea` sinistra/destra.
+- ⭐ **Copertura: il salvataggio vive nella TESTATA del pannello** (variante B su mockup): puntino ambra + "Non salvato" + pillola blu Salva accanto alla ✕, sempre in vista anche con la lista zone lunga (la mappa avvisa con `onModificata` e salva col `salvaSegnale` incrementale); via la scritta arancione e il bottone lungo sfumato dalla colonna. Chiusura del pannello senza salvare = modifiche scartate, come sempre.
+- **Metodo test mobile concordato**: Davide manda gli SCREEN dal telefono con due parole sul problema (la console nascosta `?debug=1` è stata proposta e NON voluta); per il collaudo cross-platform serio (STEP 7) si userà LambdaTest o BrowserStack: telefoni VERI comandati dal PC, console degli errori inclusa. L'emulazione di Chrome (F12) vale solo per il layout, non è il vero Safari.
 
 ### ⭐ SESSIONE 25-26 luglio 2026 — RIFINITURE /INIZIA E PANNELLO IMPOSTAZIONI (mockup → scelta di Davide)
 
