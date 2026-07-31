@@ -11,12 +11,12 @@ import { supabase } from '@/lib/supabase'
 // col tasto, Salva e Annulla sono bottoncini compatti affiancati.
 // ============================================================
 
-// Campo per la modifica sul posto (variante B, mockup 26/07): niente
-// cornice, solo un FILO BLU sotto il testo (azzurrino, blu pieno a fuoco).
-// Altezza fissa 26px = identica alla riga in lettura, così non c'è sobbalzo.
+// ⭐ 29/07 (mockup approvato dal giro iPhone): campo di modifica a PILLOLA
+// nella veste "a fuoco" fissa — bordo blu + alone azzurro (il campo esiste
+// solo mentre si modifica, quindi è sempre "attivo").
 // ⚠️ Su schermi piccoli (iPhone) il testo resta 16px: sotto quella soglia
 // iOS zooma tutta la pagina al focus. Da sm in su (PC) scende a 13.5px.
-const INPUT_CLS = 'w-full h-[26px] bg-transparent border-0 border-b-2 border-blue-300 rounded-none px-0.5 text-base sm:text-[13.5px] font-medium text-gray-900 outline-none focus:border-blue-600 transition-colors placeholder:text-gray-400 placeholder:font-normal'
+const INPUT_CLS = 'w-full bg-white border-[1.5px] border-blue-600 rounded-full px-4 py-2.5 text-base sm:text-[13.5px] font-medium text-gray-900 outline-none shadow-[0_0_0_3px_rgba(37,99,235,0.12)] placeholder:text-gray-400 placeholder:font-normal'
 
 type Sezione = 'nome' | 'telefono' | 'email' | 'password' | null
 
@@ -253,11 +253,10 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
     return <div style={{ fontSize: 12, fontWeight: 600, color: '#1E293B' }}>{testo}</div>
   }
 
-  // Riga dato con MODIFICA SUL POSTO (variante B, mockup 26/07): NESSUN
-  // sobbalzo. La zona valore/campo ha ALTEZZA FISSA (26px) e i due stati
-  // si scambiano in dissolvenza; i bottoni hanno larghezza RISERVATA
-  // (Annulla · Salva appare al posto di Modifica senza spostare nulla);
-  // suggerimento ed eventuali campi extra si aprono morbidi (grid 0fr→1fr).
+  // ⭐ 29/07 (mockup approvato dal giro iPhone): in LETTURA la riga resta
+  // com'era (etichetta, valore, link a destra); in MODIFICA diventa una
+  // COLONNA ordinata — etichetta → campo a pillola largo → spiegazione →
+  // Annulla/Salva a pillola in basso a destra (prima era tutto schiacciato)
   function riga(opts: {
     label: string
     valore: string
@@ -271,50 +270,35 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
     campiExtra?: React.ReactNode
     ultima?: boolean
   }) {
-    const fade = (visibile: boolean): React.CSSProperties => ({
-      opacity: visibile ? 1 : 0,
-      pointerEvents: visibile ? 'auto' : 'none',
-      transition: 'opacity .18s ease',
-    })
     return (
-      <div className="flex items-center gap-2.5 px-4 py-3" style={{ borderBottom: opts.ultima ? 'none' : '1px solid #F1F4F8' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          {etichetta(opts.label)}
-          {/* Zona valore/campo ad altezza fissa: lettura e modifica sovrapposte */}
-          <div style={{ position: 'relative', height: 26, marginTop: 2 }}>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', fontSize: 12.5, color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', ...fade(!opts.inEdit) }}>
-              {opts.valore}
+      <div className="px-4 py-3" style={{ borderBottom: opts.ultima ? 'none' : '1px solid #F1F4F8' }}>
+        {!opts.inEdit ? (
+          <div className="flex items-center gap-2.5">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              {etichetta(opts.label)}
+              <div style={{ marginTop: 2, fontSize: 12.5, color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{opts.valore}</div>
             </div>
-            <div style={{ position: 'absolute', inset: 0, ...fade(opts.inEdit) }}>
-              {opts.campi}
-            </div>
-          </div>
-          {(opts.hint || opts.campiExtra) && (
-            <div style={{ display: 'grid', gridTemplateRows: opts.inEdit ? '1fr' : '0fr', transition: 'grid-template-rows .22s ease' }}>
-              <div style={{ overflow: 'hidden' }}>
-                {opts.campiExtra && <div style={{ paddingTop: 6 }}>{opts.campiExtra}</div>}
-                {opts.hint && <div style={{ fontSize: 10, color: '#9AA7B5', paddingTop: 4, lineHeight: 1.4 }}>{opts.hint}</div>}
-              </div>
-            </div>
-          )}
-        </div>
-        {/* Bottoni a larghezza riservata: i due gruppi si scambiano in dissolvenza */}
-        <div className="flex-shrink-0" style={{ position: 'relative', width: 124, height: 26, alignSelf: 'flex-start', marginTop: 16 }}>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', ...fade(!opts.inEdit) }}>
             {/* ⭐ 28/07 (mockup approvato): l'azione è un link blu sottolineato */}
-            <button onClick={opts.onApri} tabIndex={opts.inEdit ? -1 : 0} className="transition-colors hover:text-blue-800" style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 11.5, fontWeight: 600, textDecoration: 'underline', padding: '5px 2px', cursor: 'pointer' }}>
+            <button onClick={opts.onApri} className="flex-shrink-0 transition-colors hover:text-blue-800" style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 11.5, fontWeight: 600, textDecoration: 'underline', padding: '5px 2px', cursor: 'pointer' }}>
               {opts.azione}
             </button>
           </div>
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center', ...fade(opts.inEdit) }}>
-            <button onClick={() => setSezione(null)} disabled={busy} tabIndex={opts.inEdit ? 0 : -1} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 9px' }}>
-              Annulla
-            </button>
-            <button onClick={opts.onSalva} disabled={busy} tabIndex={opts.inEdit ? 0 : -1} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563eb', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px' }}>
-              {busy ? 'Salvo…' : (opts.testoSalva || 'Salva')}
-            </button>
+        ) : (
+          <div>
+            {etichetta(opts.label)}
+            <div style={{ marginTop: 8 }}>{opts.campi}</div>
+            {opts.campiExtra && <div style={{ marginTop: 8 }}>{opts.campiExtra}</div>}
+            {opts.hint && <div style={{ fontSize: 11, color: '#9AA7B5', marginTop: 7, lineHeight: 1.45 }}>{opts.hint}</div>}
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginTop: 10 }}>
+              <button onClick={() => setSezione(null)} disabled={busy} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 13px', cursor: 'pointer' }}>
+                Annulla
+              </button>
+              <button onClick={opts.onSalva} disabled={busy} className="transition-all hover:brightness-105 disabled:opacity-50" style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 15px', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.3)' }}>
+                {busy ? 'Salvo…' : (opts.testoSalva || 'Salva')}
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     )
   }

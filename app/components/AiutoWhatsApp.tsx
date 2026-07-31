@@ -29,6 +29,22 @@ export default function AiutoWhatsApp() {
     return () => { clearInterval(ciclo); clearTimeout(nascondi) }
   }, [])
 
+  // ⭐ 29/07 (mockup B approvato): quando SCENDI il bottone sparisce (in
+  // fondo pagina i bottoni blu restano liberi), quando RISALI ricompare
+  const [inDiscesa, setInDiscesa] = useState(false)
+  useEffect(() => {
+    let ultimo = window.scrollY
+    const onScroll = () => {
+      const y = window.scrollY
+      if (y <= 0) setInDiscesa(false)
+      else if (y > ultimo + 4) setInDiscesa(true)
+      else if (y < ultimo - 4) setInDiscesa(false)
+      ultimo = y
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   // Campo di scrittura a fuoco (input, textarea, contenteditable) = nascosto;
   // ricompare da solo quando la tastiera si chiude
   useEffect(() => {
@@ -51,7 +67,7 @@ export default function AiutoWhatsApp() {
   }, [])
 
   return (
-    <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, opacity: scrivendo ? 0 : 1, pointerEvents: scrivendo ? 'none' : 'auto', transition: 'opacity 0.2s ease' }}>
+    <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, opacity: scrivendo || inDiscesa ? 0 : 1, transform: scrivendo || inDiscesa ? 'scale(0.6)' : 'scale(1)', pointerEvents: scrivendo || inDiscesa ? 'none' : 'auto', transition: 'opacity 0.25s ease, transform 0.25s ease' }}>
       {mostraEtichetta && (
         <span style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 20, padding: '6px 12px', fontSize: 11.5, fontWeight: 600, color: '#374151', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>
           Serve aiuto?

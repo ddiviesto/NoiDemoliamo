@@ -78,17 +78,18 @@ export default function Home() {
         </div>
 
         {/* Bottoni */}
+        {/* ⭐ 29/07: PILLOLE come tutti i bottoni di pagina (regola d'oro 23) */}
         <Link
           href="/inizia"
-          className="w-full text-white text-center hover:bg-blue-700 transition-colors active:scale-[0.99]"
-          style={{ background: '#2563eb', fontSize: 15.5, fontWeight: 600, padding: '15px 10px', borderRadius: 16, boxShadow: '0 6px 16px rgba(37,99,235,0.28)', lineHeight: 1.25 }}
+          className="w-full text-white text-center transition-all hover:brightness-105 active:scale-[0.99]"
+          style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', fontSize: 15.5, fontWeight: 600, padding: '15px 10px', borderRadius: 999, boxShadow: '0 6px 18px rgba(37,99,235,0.35)', lineHeight: 1.25 }}
         >
           Richiedi la demolizione gratuita
         </Link>
         <Link
           href="/login"
           className="w-full text-center hover:bg-blue-50 transition-colors"
-          style={{ fontSize: 14, fontWeight: 600, color: '#2563eb', padding: '13px 10px', borderRadius: 16, border: '1.5px solid #C7D6EC', marginTop: 10, boxSizing: 'border-box' }}
+          style={{ fontSize: 14, fontWeight: 600, color: '#2563eb', padding: '13px 10px', borderRadius: 999, border: '1.5px solid #C7D6EC', marginTop: 10, boxSizing: 'border-box' }}
         >
           Accedi al mio account
         </Link>
