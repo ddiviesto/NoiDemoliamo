@@ -201,7 +201,8 @@ export default function DashboardCliente() {
               <p style={{ fontSize: 13, color: '#6B7280', margin: '4px 0 18px' }}>Inizia ora la tua prima richiesta di demolizione gratuita.</p>
               <button
                 onClick={() => router.push('/inizia')}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-3 rounded-xl transition-colors"
+                className="btn-pagina btn-pagina--auto"
+                style={{ fontSize: 14, padding: '12px 26px', margin: '0 auto' }}
               >
                 Richiedi demolizione
               </button>

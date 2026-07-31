@@ -278,31 +278,30 @@ export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
         </div>
       </div>
 
-      {/* Campo input "Altro mezzo" */}
-      {dati.tipo === 'altro' && (
+      {/* ⭐ 29/07 (mockup A approvato): campo "Altro mezzo" IN FAMIGLIA —
+          etichetta in maiuscoletto + campo a PILLOLA (come i bottoni ovali);
+          apertura e CHIUSURA morbide (stessa animazione del riquadro
+          "Altri tipi di mezzo" qui sopra: via lo scatto al cambio mezzo) */}
+      <div className={`overflow-hidden transition-all duration-300 ease-out ${dati.tipo === 'altro' ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Specifica il tipo di mezzo</label>
-          <input
-            type="text"
-            value={dati.tipoAltro}
-            onChange={e => { onUpdate({ tipoAltro: e.target.value }); setErroreAltro(false) }}
-            placeholder="Es. Trattore, quad, elicottero, rimorchio..."
-            className={`w-full border rounded-xl px-3 py-2.5 text-base text-gray-900 bg-gray-50 outline-none transition-all
-              focus:border-blue-500 focus:bg-white placeholder:text-gray-400
-              ${erroreAltro ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
-          />
-          {erroreAltro && <p className="text-xs text-red-600 mt-1">Specifica il tipo di mezzo</p>}
+          <div style={{ paddingTop: 2, paddingBottom: 2 }}>
+            <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: '#9AA7B5', letterSpacing: '0.08em' }}>Specifica il tipo di mezzo</label>
+            <input
+              type="text"
+              value={dati.tipoAltro}
+              onChange={e => { onUpdate({ tipoAltro: e.target.value }); setErroreAltro(false) }}
+              placeholder="Trattore, quad, elicottero, rimorchio…"
+              className={`w-full border-[1.5px] rounded-full px-4 py-3 text-base text-gray-900 bg-white outline-none transition-all focus:border-blue-500 placeholder:text-gray-400 ${erroreAltro ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+            />
+            {erroreAltro && <p className="text-xs text-red-600 mt-1 px-2">Specifica il tipo di mezzo</p>}
+          </div>
         </div>
-      )}
+      </div>
 
       <button
         onClick={handleContinua}
         disabled={continueDisabled}
-        className={`w-full py-4 rounded-xl font-semibold text-base transition-all
-          ${continueDisabled
-            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'
-          }`}
+        className={`btn-pagina ${continueDisabled ? 'cursor-not-allowed' : ''}`}
       >
         Continua
       </button>

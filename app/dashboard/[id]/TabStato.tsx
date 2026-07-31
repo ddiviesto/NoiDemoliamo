@@ -37,7 +37,16 @@ const TIMELINE_STEPS = [
     key: 'attesa_documenti',
     label: 'In attesa dei tuoi documenti',
     descrizione: 'Carica e invia i documenti richiesti',
-    statiAttiviPer: ['in_attesa_documenti', 'in_attesa_approvazione_admin', 'documenti_parzialmente_approvati'],
+    statiAttiviPer: ['in_attesa_documenti', 'documenti_parzialmente_approvati'],
+  },
+  // ⭐ 29/07 (mockup approvato, giro iPhone): quando ha inviato TUTTO la
+  // tappa lo dice — prima il percorso restava su "carica i documenti"
+  // mentre banner e pillola dicevano "in verifica"
+  {
+    key: 'documenti_in_verifica',
+    label: 'Documenti in verifica',
+    descrizione: 'Ti faremo sapere a breve',
+    statiAttiviPer: ['in_attesa_approvazione_admin'],
   },
   {
     key: 'attesa_assegnazione',

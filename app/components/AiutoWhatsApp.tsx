@@ -14,6 +14,9 @@ const WHATSAPP_URL = 'https://wa.me/393518280493'
 
 export default function AiutoWhatsApp() {
   const [mostraEtichetta, setMostraEtichetta] = useState(true)
+  // ⭐ 29/07 (mockup approvato, giro iPhone): mentre il cliente SCRIVE il
+  // bottone si fa da parte — con la tastiera aperta copriva Salva e i campi
+  const [scrivendo, setScrivendo] = useState(false)
 
   useEffect(() => {
     let nascondi: ReturnType<typeof setTimeout>
@@ -26,8 +29,29 @@ export default function AiutoWhatsApp() {
     return () => { clearInterval(ciclo); clearTimeout(nascondi) }
   }, [])
 
+  // Campo di scrittura a fuoco (input, textarea, contenteditable) = nascosto;
+  // ricompare da solo quando la tastiera si chiude
+  useEffect(() => {
+    const eCampo = (el: Element | null) => {
+      if (!el) return false
+      const tag = el.tagName?.toLowerCase()
+      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable
+    }
+    const aggiorna = () => setScrivendo(eCampo(document.activeElement))
+    // Piccolo respiro sull'uscita: al passaggio da un campo all'altro
+    // il bottone non deve lampeggiare
+    const aggiornaDopo = () => { setTimeout(aggiorna, 80) }
+    document.addEventListener('focusin', aggiorna)
+    document.addEventListener('focusout', aggiornaDopo)
+    aggiorna()
+    return () => {
+      document.removeEventListener('focusin', aggiorna)
+      document.removeEventListener('focusout', aggiornaDopo)
+    }
+  }, [])
+
   return (
-    <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8 }}>
+    <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, opacity: scrivendo ? 0 : 1, pointerEvents: scrivendo ? 'none' : 'auto', transition: 'opacity 0.2s ease' }}>
       {mostraEtichetta && (
         <span style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 20, padding: '6px 12px', fontSize: 11.5, fontWeight: 600, color: '#374151', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>
           Serve aiuto?

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { Pratica } from './page'
+import { suTelefono, ZoomImmagine } from './TabDocumenti'
 
 // ============================================================
 // ⭐ TAB "RITIRO" (28/07/2026, mockup approvato — idea di Davide):
@@ -128,6 +129,37 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
     onCambio: () => carica(),
   })
 
+  // ⭐ 29/07 (punto 5 giro iPhone, mockup approvato): sul TELEFONO il modulo
+  // si apre nel PALCO SCURO (pagine come le foto, zoom col pizzico) con le
+  // azioni "Condividi o stampa" (menu vero dell'iPhone) e "Scarica". Su PC
+  // resta il download diretto di sempre.
+  const [moduloAperto, setModuloAperto] = useState<{ titolo: string; nomeFile: string; blob: Blob; pagine: string[]; indice: number } | null>(null)
+
+  function scaricaBlob(blob: Blob, nomeFile: string) {
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = nomeFile
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  }
+
+  async function condividiModulo() {
+    if (!moduloAperto) return
+    const file = new File([moduloAperto.blob], moduloAperto.nomeFile, { type: 'application/pdf' })
+    const nav = navigator as Navigator & { canShare?: (dati: { files: File[] }) => boolean }
+    if (nav.canShare && nav.canShare({ files: [file] }) && nav.share) {
+      try {
+        await nav.share({ files: [file], title: moduloAperto.titolo })
+      } catch { /* condivisione annullata dal cliente: nessun errore */ }
+    } else {
+      // Browser senza menu di condivisione: almeno il download
+      scaricaBlob(moduloAperto.blob, moduloAperto.nomeFile)
+    }
+  }
+
   // Scarica un modulo PDF (l'endpoint traccia anche scaricato_il)
   async function scaricaModulo(doc: DocConsegna) {
     setScaricandoId(doc.id)
@@ -142,14 +174,22 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
         throw new Error(corpo?.error ? `${corpo.error} (${res.status})` : `Download fallito (${res.status})`)
       }
       const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `${doc.nome}.pdf`
-      document.body.appendChild(a)
-      a.click()
-      a.remove()
-      URL.revokeObjectURL(url)
+      if (suTelefono()) {
+        // Telefono: palco con le pagine + Condividi/Scarica
+        const url = URL.createObjectURL(blob)
+        try {
+          const { renderPdfPagine } = await import('@/lib/pdfPagine')
+          const pagine = await renderPdfPagine(url)
+          setModuloAperto({ titolo: nomeDoc(doc), nomeFile: `${doc.nome}.pdf`, blob, pagine, indice: 0 })
+        } catch {
+          // Conversione fallita: almeno il download classico
+          scaricaBlob(blob, `${doc.nome}.pdf`)
+        } finally {
+          URL.revokeObjectURL(url)
+        }
+      } else {
+        scaricaBlob(blob, `${doc.nome}.pdf`)
+      }
       await carica()
     } catch (err) {
       console.error('Errore download modulo:', err)
@@ -251,6 +291,38 @@ export default function TabRitiro({ pratica }: { pratica: Pratica }) {
           <div style={{ display: 'flex', gap: 8, fontSize: 12.5, color: '#6B7280', lineHeight: 1.5, padding: '10px 14px 13px', background: '#F8FAFC', borderTop: '1px solid #F1F3F6' }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
             <span>Servono <b style={{ color: '#374151' }}>in originale</b>: senza questi documenti il veicolo non può essere ritirato.{docs.some(d => d.template_pdf) && <> Scarica i moduli, <b style={{ color: '#374151' }}>compilali e firmali</b>.</>}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ⭐ 29/07 (mockup approvato): PALCO del modulo sul telefono — pagine
+          con lo zoom col pizzico + "Condividi o stampa" (menu dell'iPhone:
+          da lì stampa, salva su File, WhatsApp…) e "Scarica" */}
+      {moduloAperto && (
+        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#5D6A7E' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', flexShrink: 0 }}>
+            <span style={{ flex: 1, minWidth: 0, color: '#fff', fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{moduloAperto.titolo}</span>
+            <button onClick={() => setModuloAperto(null)} aria-label="Chiudi" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.85)', fontSize: 24, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
+          </div>
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 16px' }}>
+            <ZoomImmagine key={moduloAperto.indice} src={moduloAperto.pagine[moduloAperto.indice]} alt={moduloAperto.titolo} />
+          </div>
+          {moduloAperto.pagine.length > 1 && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, padding: '10px 0 0', flexShrink: 0 }}>
+              <button onClick={() => setModuloAperto(m => m ? { ...m, indice: (m.indice - 1 + m.pagine.length) % m.pagine.length } : m)} style={{ color: '#fff', fontSize: 13, fontWeight: 700, background: 'rgba(255,255,255,0.14)', border: 'none', borderRadius: 999, padding: '7px 14px', cursor: 'pointer' }}>‹ Prec.</button>
+              <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: 12, fontWeight: 600 }}>Pagina {moduloAperto.indice + 1} di {moduloAperto.pagine.length}</span>
+              <button onClick={() => setModuloAperto(m => m ? { ...m, indice: (m.indice + 1) % m.pagine.length } : m)} style={{ color: '#fff', fontSize: 13, fontWeight: 700, background: 'rgba(255,255,255,0.14)', border: 'none', borderRadius: 999, padding: '7px 14px', cursor: 'pointer' }}>Succ. ›</button>
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 8, padding: '12px 16px 18px', flexShrink: 0 }}>
+            <button onClick={condividiModulo} className="btn-pagina" style={{ flex: 1, width: 'auto', fontSize: 13.5, padding: '13px 0' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
+              Condividi o stampa
+            </button>
+            <button onClick={() => scaricaBlob(moduloAperto.blob, moduloAperto.nomeFile)} className="active:scale-[0.99]" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, background: 'rgba(255,255,255,0.14)', color: '#fff', fontSize: 13.5, fontWeight: 700, border: 'none', borderRadius: 999, padding: '13px 18px', cursor: 'pointer' }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+              Scarica
+            </button>
           </div>
         </div>
       )}

@@ -46,6 +46,10 @@ interface Props {
   pratica: Pratica
   onDocRifiutatiCambiati?: (numero: number) => void
   onStatoCambiato?: () => void
+  // ⭐ 29/07: l'invito foto sotto il banner (pagina) apre questa tab con la
+  // card di caricamento foto GIÀ aperta; onFotoAperta azzera il segnale
+  apriFoto?: boolean
+  onFotoAperta?: () => void
 }
 
 // ============================================================
@@ -256,7 +260,8 @@ function IconaTipoDocumento({ nome, color }: { nome: string; color: string }) {
 // ============================================================
 
 // Siamo su un telefono? (stessa soglia sm di Tailwind)
-function suTelefono() {
+// (esportata: la usa anche TabRitiro per i moduli PDF)
+export function suTelefono() {
   return typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches
 }
 
@@ -266,7 +271,8 @@ function suTelefono() {
 // in casa — due dita per ingrandire (fino a 4x), un dito per spostarsi
 // da ingrandita, doppio tocco per ingrandire/tornare intera.
 // ============================================================
-function ZoomImmagine({ src, alt }: { src: string; alt: string }) {
+// (esportata: la usa anche TabRitiro per le pagine dei moduli PDF)
+export function ZoomImmagine({ src, alt }: { src: string; alt: string }) {
   const boxRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   // Lo stato dello zoom vive nei ref e si applica direttamente allo stile:
@@ -383,7 +389,7 @@ function ZoomImmagine({ src, alt }: { src: string; alt: string }) {
   )
 }
 
-export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoCambiato }: Props) {
+export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoCambiato, apriFoto, onFotoAperta }: Props) {
   const [docs, setDocs] = useState<DocChecklist[]>([])
   const [foto, setFoto] = useState<FotoPratica[]>([])
   const [signedMap, setSignedMap] = useState<Record<string, string>>({})
@@ -396,13 +402,31 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
 
   // Dal singolo file risale al SUO documento (o alle foto del veicolo) e
   // costruisce la lista per sfogliare con Prec./Succ.
+  // ⭐ 29/07 (punto 3 giro iPhone, mockup approvato): sul TELEFONO il PDF
+  // NON esce più dall'app — diventa pagine-immagine nel PALCO SCURO, con lo
+  // zoom col pizzico come le foto (Safari lo zoomava male e apriva schede).
+  // Su PC resta il riquadro nativo del browser (lì funziona bene).
+  const [preparaPdf, setPreparaPdf] = useState<string | null>(null)
+  const preparaIdRef = useRef(0)
+  async function apriPdfNelPalco(url: string, titolo: string) {
+    const mioId = ++preparaIdRef.current
+    setPreparaPdf(titolo)
+    try {
+      const { renderPdfPagine } = await import('@/lib/pdfPagine')
+      const pagine = await renderPdfPagine(url)
+      // Se nel frattempo il cliente ha chiuso (✕), non aprire nulla
+      if (preparaIdRef.current !== mioId) return
+      setAnteprima({ lista: pagine.map(p => ({ url: p, titolo })), indice: 0 })
+    } catch {
+      // Riserva: se la conversione fallisce, almeno il visore di Safari
+      if (preparaIdRef.current === mioId) window.open(url, '_blank')
+    }
+    if (preparaIdRef.current === mioId) setPreparaPdf(null)
+  }
+
   function apriAnteprima(url: string, titolo: string) {
-    // ⭐ 28/07 sera: i PDF sul TELEFONO si aprono nel visore di Safari (nuova
-    // scheda): lì si vedono per intero e si zoomano col pizzico — dentro al
-    // riquadro su iPhone arrivavano già ingranditi e senza zoom. Su PC il
-    // palco col riquadro resta (funziona bene).
     if (isPdfUrl(url) && suTelefono()) {
-      window.open(url, '_blank')
+      apriPdfNelPalco(url, titolo)
       return
     }
     for (const d of docs) {
@@ -427,6 +451,15 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   // Card di caricamento foto: si apre toccando il banner giallo, la chiude
   // il cliente con "Ho finito con le foto"
   const [cardFotoAperta, setCardFotoAperta] = useState(false)
+
+  // ⭐ 29/07: arrivo dall'invito foto della pagina → card foto già aperta
+  useEffect(() => {
+    if (apriFoto) {
+      setCardFotoAperta(true)
+      onFotoAperta?.()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [apriFoto])
 
   const puoEliminare = clientePuoEliminare(pratica.stato)
 
@@ -814,16 +847,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
             <button
               onClick={() => inviaInVerifica(docAttivo)}
               disabled={inviandoId === docAttivo.id || !docCompleto(docAttivo)}
-              className="active:scale-[0.99]"
-              style={{
-                width: '100%', marginTop: 12, padding: '14px 0', border: 'none', borderRadius: 13,
-                background: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? '#E5E7EB' : '#2563eb',
-                color: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? '#9CA3AF' : '#fff',
-                fontSize: 15, fontWeight: 600,
-                cursor: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? 'default' : 'pointer',
-                boxShadow: (inviandoId === docAttivo.id || !docCompleto(docAttivo)) ? 'none' : '0 4px 12px rgba(37,99,235,0.25)',
-                transition: 'all 0.2s',
-              }}
+              className="btn-pagina"
+              style={{ marginTop: 12 }}
             >
               {inviandoId === docAttivo.id ? 'Invio…' : docAttivo.stato === 'rifiutato' ? 'Invia di nuovo' : codaWizard.length > 1 ? 'Vai al prossimo documento' : "Invia l'ultimo documento"}
             </button>
@@ -882,6 +907,21 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           tutto schermo sul grigio ardesia dell'admin, documento centrato con
           l'ombra, titolo in alto, Prec./Succ. tra i file dello stesso
           documento (o tra le foto del veicolo) ====== */}
+      {/* ⭐ 29/07: palco di ATTESA mentre il PDF diventa pagine (rotellina
+          bianca a coda che sfuma; la ✕ annulla la preparazione) */}
+      {preparaPdf && (
+        <div className="fixed inset-0 z-[60] flex flex-col" style={{ background: '#5D6A7E' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', flexShrink: 0 }}>
+            <span style={{ flex: 1, minWidth: 0, color: '#fff', fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{preparaPdf}</span>
+            <button onClick={() => { preparaIdRef.current++; setPreparaPdf(null) }} aria-label="Annulla" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.85)', fontSize: 24, lineHeight: 1, cursor: 'pointer', flexShrink: 0 }}>×</button>
+          </div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'conic-gradient(from 0deg, rgba(255,255,255,0) 0% 12%, #fff 88% 100%)', WebkitMask: 'radial-gradient(farthest-side, transparent calc(100% - 3.4px), #000 calc(100% - 3px))', mask: 'radial-gradient(farthest-side, transparent calc(100% - 3.4px), #000 calc(100% - 3px))', animation: 'nd-gira 0.9s linear infinite' }} />
+            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12.5, fontWeight: 600 }}>Preparo il documento…</div>
+          </div>
+        </div>
+      )}
+
       {anteprima && (() => {
         const voce = anteprima.lista[anteprima.indice]
         const pdf = isPdfUrl(voce.url)
@@ -902,7 +942,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
                   // sul telefono: qui niente riquadro, un tocco e si apre in
                   // Safari (l'apertura automatica la bloccherebbe il browser)
                   <button
-                    onClick={e => { e.stopPropagation(); window.open(voce.url, '_blank') }}
+                    onClick={e => { e.stopPropagation(); apriPdfNelPalco(voce.url, voce.titolo) }}
                     style={{ background: '#fff', border: 'none', borderRadius: 14, padding: '22px 26px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, cursor: 'pointer', boxShadow: '0 10px 34px rgba(0,0,0,0.35)' }}
                   >
                     <span style={{ background: '#fbeaea', color: '#c0392b', fontSize: 14, fontWeight: 700, borderRadius: 8, padding: '6px 14px' }}>PDF</span>
@@ -955,7 +995,8 @@ function ConfermaSullaFoto({ cosa, compatta, onAnnulla, onConferma }: {
   onConferma: () => void | Promise<void>
 }) {
   const [inCorso, setInCorso] = useState(false)
-  const stileBtn: React.CSSProperties = { border: 'none', borderRadius: 8, padding: compatta ? '5px 0' : '7px 13px', fontSize: compatta ? 11 : 11.5, fontWeight: 600, cursor: 'pointer' }
+  // ⭐ 29/07 (richiesta Davide): anche questi a PILLOLA, come i bottoni di pagina
+  const stileBtn: React.CSSProperties = { border: 'none', borderRadius: 999, padding: compatta ? '5px 0' : '7px 14px', fontSize: compatta ? 11 : 11.5, fontWeight: 600, cursor: 'pointer' }
   return (
     <div style={{ position: 'absolute', inset: 0, background: 'rgba(15,23,42,0.74)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: compatta ? 5 : 9, padding: 6, zIndex: 2 }}>
       <span style={{ color: '#fff', fontSize: compatta ? 10.5 : 12.5, fontWeight: 600, textAlign: 'center', lineHeight: 1.3 }}>Eliminare {cosa}?</span>
@@ -980,11 +1021,11 @@ function ConfermaInRiga({ cosa, onAnnulla, onConferma }: {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FEF6F6', border: '1px solid #F3C8C8', borderRadius: 10, padding: '8px 11px' }}>
       <span style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 600, color: '#9B1C1C' }}>Eliminare {cosa}?</span>
-      <button onClick={onAnnulla} disabled={inCorso} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 8, padding: '6px 11px', fontSize: 11.5, fontWeight: 600, color: '#374151', cursor: 'pointer', flexShrink: 0 }}>Annulla</button>
+      <button onClick={onAnnulla} disabled={inCorso} style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 999, padding: '6px 12px', fontSize: 11.5, fontWeight: 600, color: '#374151', cursor: 'pointer', flexShrink: 0 }}>Annulla</button>
       <button
         onClick={async () => { setInCorso(true); try { await onConferma() } finally { setInCorso(false) } }}
         disabled={inCorso}
-        style={{ background: '#DC2626', border: 'none', borderRadius: 8, padding: '6px 11px', fontSize: 11.5, fontWeight: 600, color: '#fff', cursor: 'pointer', flexShrink: 0, opacity: inCorso ? 0.75 : 1 }}
+        style={{ background: '#DC2626', border: 'none', borderRadius: 999, padding: '6px 12px', fontSize: 11.5, fontWeight: 600, color: '#fff', cursor: 'pointer', flexShrink: 0, opacity: inCorso ? 0.75 : 1 }}
       >{inCorso ? 'Elimino…' : 'Elimina'}</button>
     </div>
   )
@@ -1736,17 +1777,7 @@ function CardFotoVeicolo({ foto, eliminabile, onUpload, onApri, onElimina, onFin
     {/* Bottone di pagina, FUORI dalla card (stesso stile del wizard):
         il completamento lo dichiara il cliente, acceso dalla prima foto */}
     {eliminabile && (
-      <button
-        onClick={onFinito}
-        disabled={!haFoto}
-        className="active:scale-[0.99]"
-        style={{
-          width: '100%', padding: '14px 0', border: 'none', borderRadius: 13,
-          background: haFoto ? '#2563eb' : '#E5E7EB', color: haFoto ? '#fff' : '#9CA3AF',
-          fontSize: 15, fontWeight: 600, cursor: haFoto ? 'pointer' : 'default',
-          boxShadow: haFoto ? '0 4px 12px rgba(37,99,235,0.25)' : 'none', transition: 'all 0.2s',
-        }}
-      >
+      <button onClick={onFinito} disabled={!haFoto} className="btn-pagina">
         Ho finito con le foto
       </button>
     )}

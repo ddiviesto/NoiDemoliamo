@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Image from 'next/image'
 import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi, Intestazione, derivaCasistica, delegaAmmessa, fermoApplicabile } from '../../types/pratica'
 import { StepTipoVeicolo } from './steps/StepTipoVeicolo'
 import { StepIdentificaVeicolo } from './steps/StepIdentificaVeicolo'
@@ -571,11 +570,15 @@ function BannerStep({ stepKey, curIdx, total, tipo, tipoAltro, intestazione, onB
 
   return (
     <div className="-mx-7 -mt-7 mb-5 px-4 py-3 bg-gradient-to-r from-[#1d4ed8] to-[#2563eb] rounded-t-none sm:rounded-t-3xl flex items-center gap-3 text-white">
+      {/* ⭐ 29/07 (mockup A approvato): via la pillastrella "← Indietro" —
+          TONDO traslucido con la sola freccia sottile */}
       <button
         onClick={onBack}
-        className="bg-white/85 hover:bg-white text-blue-700 rounded-lg px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0 shadow-sm transition-all"
+        aria-label="Torna indietro"
+        className="flex items-center justify-center flex-shrink-0 transition-all hover:bg-white/30 active:scale-95"
+        style={{ width: 38, height: 38, borderRadius: 999, background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer' }}
       >
-        ← Indietro
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
       </button>
       <div className="flex-1 flex items-center justify-center gap-3 min-w-0">
         <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center flex-shrink-0">
@@ -588,6 +591,8 @@ function BannerStep({ stepKey, curIdx, total, tipo, tipoAltro, intestazione, onB
           <div className="text-sm font-semibold leading-tight truncate">{meta.titoloBanner}</div>
         </div>
       </div>
+      {/* Spalla destra della stessa larghezza del tondo: il centro resta centrato */}
+      <span style={{ width: 38, flexShrink: 0 }} />
     </div>
   )
 }
@@ -1048,14 +1053,9 @@ export default function IniziaPage() {
           onBack={idxCorrente > 0 ? back : () => router.push(utenteLoggato ? '/dashboard' : '/')}
         />
 
-        <div className="flex items-center gap-2.5 mb-4">
-          <div className="w-9 h-9 bg-[#0d2144] rounded-xl flex items-center justify-center overflow-hidden">
-            <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={36} height={36} className="rounded-xl" />
-          </div>
-          <span className="text-sm font-medium text-gray-800">NoiDemoliamo</span>
-        </div>
-
-        <div className="h-1 bg-gray-100 rounded-full mb-5 overflow-hidden">
+        {/* ⭐ 29/07 (mockup A approvato): via la riga logo "NoiDemoliamo" —
+            il brand è già il banner blu, la pagina guadagna aria */}
+        <div className="h-1 bg-gray-100 rounded-full mb-5 mt-1 overflow-hidden">
           <div className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
         </div>
 
@@ -1184,7 +1184,7 @@ export default function IniziaPage() {
 
                   <button
                     onClick={handleContinuaIndirizzo}
-                    className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
+                    className="btn-pagina"
                   >
                     Continua
                   </button>
@@ -1266,7 +1266,7 @@ export default function IniziaPage() {
 
               <button
                 onClick={handleContinuaTarga}
-                className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
+                className="btn-pagina"
               >
                 Continua
               </button>
@@ -1326,7 +1326,7 @@ export default function IniziaPage() {
               </div>
               <button
                 onClick={handleContinuaCf}
-                className="w-full py-4 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all"
+                className="btn-pagina"
               >
                 Continua
               </button>
@@ -1460,19 +1460,19 @@ export default function IniziaPage() {
               )}
 
               {foto.length === 0 && (
-                <button onClick={next} className="w-full py-3.5 mt-3 rounded-xl font-semibold text-sm active:scale-[0.99] transition-all hover:opacity-90" style={{ border: '1.5px solid #93C5FD', background: '#DBEAFE', color: '#1D4ED8' }}>
+                <button onClick={next} className="w-full py-3.5 mt-3 rounded-full font-semibold text-sm active:scale-[0.99] transition-all hover:opacity-90" style={{ border: '1.5px solid #93C5FD', background: '#DBEAFE', color: '#1D4ED8' }}>
                   Continua senza foto, le aggiungo dopo
                 </button>
               )}
 
               {foto.length > 0 && foto.length < 4 && (
-                <button onClick={next} className="w-full py-3.5 mt-2 rounded-xl font-semibold text-sm bg-white text-blue-700 border-[1.5px] border-blue-300 hover:border-blue-400 hover:bg-blue-50 active:scale-[0.99] transition-all">
+                <button onClick={next} className="w-full py-3.5 mt-2 rounded-full font-semibold text-sm bg-white text-blue-700 border-[1.5px] border-blue-300 hover:border-blue-400 hover:bg-blue-50 active:scale-[0.99] transition-all">
                   Continua comunque con {foto.length} {foto.length === 1 ? 'foto' : 'foto'}
                 </button>
               )}
 
               {foto.length >= 4 && (
-                <button onClick={next} className="w-full py-4 mt-2 rounded-xl font-semibold text-base bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">
+                <button onClick={next} className="btn-pagina mt-2">
                   Continua con {foto.length} foto
                 </button>
               )}
@@ -1527,7 +1527,7 @@ export default function IniziaPage() {
 
                   <button
                     onClick={() => setMostraSheetFoto(false)}
-                    className="w-full py-3 rounded-xl font-medium text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
+                    className="w-full py-3 rounded-full font-medium text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
                   >
                     Annulla
                   </button>
@@ -1600,7 +1600,7 @@ export default function IniziaPage() {
                 uniforme
               />
             </div>
-            <button onClick={handleContinuaIntestazione} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
+            <button onClick={handleContinuaIntestazione} className="btn-pagina mt-4">Continua</button>
           </>
         )}
 
@@ -1639,7 +1639,7 @@ export default function IniziaPage() {
               </div>
             )}
 
-            <button onClick={handleContinuaEredi} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
+            <button onClick={handleContinuaEredi} className="btn-pagina mt-4">Continua</button>
           </>
         )}
 
@@ -1666,7 +1666,7 @@ export default function IniziaPage() {
                 errorBorder={erroreSocietaFallita}
               />
             </div>
-            <button onClick={handleContinuaSocietaFallita} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
+            <button onClick={handleContinuaSocietaFallita} className="btn-pagina mt-4">Continua</button>
           </>
         )}
 
@@ -1718,7 +1718,7 @@ export default function IniziaPage() {
                 </span>
               </div>
             )}
-            <button onClick={handleContinuaFermo} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
+            <button onClick={handleContinuaFermo} className="btn-pagina mt-4">Continua</button>
           </>
         )}
 
@@ -1779,7 +1779,7 @@ export default function IniziaPage() {
               </div>
             )}
 
-            <button onClick={handleContinuaConsegna} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
+            <button onClick={handleContinuaConsegna} className="btn-pagina mt-4">Continua</button>
           </>
         )}
 
@@ -1819,7 +1819,7 @@ export default function IniziaPage() {
                 <InfoBadge>Nessun problema: <strong>ti chiamiamo noi</strong> per capire la situazione e dirti esattamente come fare. Intanto puoi completare la richiesta e caricare gli altri documenti.</InfoBadge>
               </div>
             )}
-            <button onClick={handleContinuaLibretto} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
+            <button onClick={handleContinuaLibretto} className="btn-pagina mt-4">Continua</button>
           </>
         )}
 
@@ -1888,7 +1888,7 @@ export default function IniziaPage() {
                 <InfoBadge>Lo verifichiamo noi gratuitamente e <strong>ti chiamiamo</strong> per dirti come procedere. Intanto puoi completare la richiesta e caricare gli altri documenti.</InfoBadge>
               </div>
             )}
-            <button onClick={handleContinuaCdc} className="w-full py-4 rounded-xl font-semibold text-base mt-4 bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99] transition-all">Continua</button>
+            <button onClick={handleContinuaCdc} className="btn-pagina mt-4">Continua</button>
           </>
         )}
 
@@ -1998,7 +1998,7 @@ export default function IniziaPage() {
                   </div>
                 </>
               )}
-              <button onClick={handleContinuaAccount} disabled={loading} className={`w-full py-4 rounded-xl font-semibold text-base transition-all ${loading ? 'bg-gray-200 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-[0.99]'}`}>
+              <button onClick={handleContinuaAccount} disabled={loading} className={`btn-pagina ${loading ? 'btn-pagina--spento cursor-not-allowed' : ''}`}>
                 {loading ? (loadingMessage || 'Invio in corso...') : 'Conferma e invia richiesta'}
               </button>
 

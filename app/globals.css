@@ -31,6 +31,40 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* ⭐ 29/07 (mockup B approvato da Davide): IL BOTTONE BLU DI PAGINA — pillola
+   OVALE col gradiente dell'header e ombra morbida. È LA forma di tutti i
+   "Continua" / "Invia" / CTA grandi dell'app (testi invariati).
+   `--spento` = aspetto grigio ma bottone ancora cliccabile (regola /inizia:
+   la validazione avviene al click); `:disabled` = spento vero. */
+.btn-pagina {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(90deg, #1d4ed8, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 15px 0;
+  font-size: 15px;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-pagina:not(:disabled):not(.btn-pagina--spento):hover { filter: brightness(1.06); }
+.btn-pagina:not(:disabled):not(.btn-pagina--spento):active { transform: scale(0.99); }
+.btn-pagina:disabled,
+.btn-pagina--spento {
+  background: #E5E7EB;
+  color: #9CA3AF;
+  box-shadow: none;
+}
+.btn-pagina:disabled { cursor: default; }
+/* Variante NON a tutta larghezza (es. "Richiedi demolizione" in home) */
+.btn-pagina--auto { width: auto; padding-left: 26px; padding-right: 26px; }
+
 /* ⭐ 28/07: rotellina di aggiornamento NoiDemoliamo (tira giù per aggiornare,
    mockup B "coda che sfuma") — il giro continuo della rotellina. */
 @keyframes nd-gira {
@@ -61,3 +95,4 @@ body {
   border-radius: 2px;
   flex-shrink: 0;
 }
+

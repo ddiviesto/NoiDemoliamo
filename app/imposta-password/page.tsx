@@ -175,7 +175,7 @@ export default function ImpostaPassword() {
               <button
                 onClick={handleSalva}
                 disabled={salvando}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-xl font-semibold transition-colors disabled:opacity-50 active:scale-[0.99]"
+                className="btn-pagina"
               >
                 {salvando ? 'Salvataggio…' : 'Salva e accedi'}
               </button>

@@ -96,8 +96,9 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
     case 'in_attesa_approvazione_admin':
       return {
         icona: ico(<><circle cx="12" cy="12" r="9.5"/><polyline points="12 7 12 12 15.5 13.5"/></>),
-        titolo: 'Hai fatto tutto: stiamo verificando',
-        sottotitolo: 'Ti avviseremo entro 3 ore: non devi fare altro.',
+        // ⭐ 29/07 (testo dettato da Davide): niente promesse di orario
+        titolo: 'Documentazione ricevuta',
+        sottotitolo: 'Stiamo verificando che i documenti siano idonei per la demolizione: ti faremo sapere a breve, non devi fare altro.',
         bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'documenti_parzialmente_approvati':
@@ -270,6 +271,17 @@ export default function DettaglioPraticaCliente() {
     if (data) setPratica(data)
   }, [id])
 
+  // ⭐ 29/07 (mockup approvato): INVITO ALLE FOTO sotto il banner — solo in
+  // "Documenti in verifica", solo con ZERO foto, e mai sulla tab Documenti
+  // (lì parla il banner foto che esiste già: un solo invito per volta)
+  const [numFoto, setNumFoto] = useState<number | null>(null)
+  const [apriFoto, setApriFoto] = useState(false)
+  const contaFoto = useCallback(async () => {
+    const { count } = await supabase.from('foto_pratiche').select('id', { count: 'exact', head: true }).eq('pratica_id', id)
+    setNumFoto(count ?? 0)
+  }, [id])
+  useEffect(() => { if (id) contaFoto() }, [id, contaFoto])
+
   // Il pallino resta acceso finché il veicolo non è stato RITIRATO davvero
   // (via anche ad annullata): aprire la tab non lo spegne più.
   useEffect(() => {
@@ -290,8 +302,10 @@ export default function DettaglioPraticaCliente() {
     tabelle: [
       { tabella: 'pratiche', filtro: `id=eq.${id}` },
       { tabella: 'messaggi_chat', filtro: `pratica_id=eq.${id}` },
+      // ⭐ 29/07: anche le foto — l'invito foto sparisce da solo al primo scatto
+      { tabella: 'foto_pratiche', filtro: `pratica_id=eq.${id}` },
     ],
-    onCambio: ricaricaPratica,
+    onCambio: () => { ricaricaPratica(); contaFoto() },
     attivo: !!id,
   })
 
@@ -353,11 +367,15 @@ export default function DettaglioPraticaCliente() {
 
         {/* HEADER BLU (stile banner /inizia) */}
         <div className="px-4 py-3 flex items-center gap-3 text-white sticky top-0 z-30" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
+          {/* ⭐ 29/07 (stessa quadra di /inizia): TONDO traslucido con la sola
+              freccia sottile al posto della pillastrella "← Pratiche" */}
           <button
             onClick={() => router.push('/dashboard')}
-            className="bg-white/85 hover:bg-white text-blue-700 rounded-lg px-3 py-1.5 text-xs font-semibold inline-flex items-center gap-1 flex-shrink-0 shadow-sm transition-all"
+            aria-label="Torna alle pratiche"
+            className="flex items-center justify-center flex-shrink-0 transition-all hover:bg-white/30 active:scale-95"
+            style={{ width: 38, height: 38, borderRadius: 999, background: 'rgba(255,255,255,0.18)', border: 'none', cursor: 'pointer' }}
           >
-            ← Pratiche
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
           </button>
           <div className="flex-1 min-w-0">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">La tua pratica</div>
@@ -383,6 +401,31 @@ export default function DettaglioPraticaCliente() {
             </div>
           </div>
 
+          {/* ⭐ 29/07 (mockup approvato): INVITO ALLE FOTO — solo in
+              "Documenti in verifica", zero foto, e MAI sulla tab Documenti
+              (lì c'è già il suo banner: un solo invito per volta) */}
+          {pratica.stato === 'in_attesa_approvazione_admin' && numFoto === 0 && tab !== 'documenti' && (
+            <button
+              onClick={() => { setApriFoto(true); setTab('documenti') }}
+              className="active:scale-[0.99]"
+              style={{ width: '100%', background: '#F0F7FF', border: '1.5px solid #CFE3F8', borderRadius: 14, padding: 13, display: 'flex', alignItems: 'flex-start', gap: 11, cursor: 'pointer', textAlign: 'left', transition: 'transform 0.1s' }}
+            >
+              <span style={{ width: 38, height: 38, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+              </span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ display: 'block', fontWeight: 600, fontSize: 13.5, color: '#0C447C' }}>Intanto puoi caricare le foto del veicolo</span>
+                <span style={{ display: 'block', fontSize: 11.5, color: '#1E4E8C', marginTop: 2, lineHeight: 1.45 }}>Ci aiutano a mandare il carro attrezzi giusto: falle quando vuoi, direttamente davanti al veicolo.</span>
+              </span>
+              <span style={{ textAlign: 'center', flexShrink: 0, alignSelf: 'center' }}>
+                <span style={{ width: 40, height: 40, borderRadius: '50%', background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto', boxShadow: '0 3px 9px rgba(37,99,235,0.25)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
+                </span>
+                <span style={{ display: 'block', fontSize: 10, fontWeight: 600, color: '#2563eb', marginTop: 3 }}>Aggiungi</span>
+              </span>
+            </button>
+          )}
+
           {/* TAB BAR a pillole */}
           <div className="rounded-2xl p-1 flex gap-1" style={{ background: '#EFF3F9' }}>
             <TabButton attivo={tab === 'documenti'} onClick={() => setTab('documenti')} Icona={IconaDocumenti} label="Documenti" badge={docRifiutati > 0 ? docRifiutati : 0} />
@@ -393,7 +436,7 @@ export default function DettaglioPraticaCliente() {
 
           {/* CONTENUTO TAB */}
           {tab === 'documenti' && (
-            <TabDocumenti pratica={pratica} onDocRifiutatiCambiati={handleDocRifiutatiCambiati} onStatoCambiato={ricaricaPratica} />
+            <TabDocumenti pratica={pratica} onDocRifiutatiCambiati={handleDocRifiutatiCambiati} onStatoCambiato={ricaricaPratica} apriFoto={apriFoto} onFotoAperta={() => setApriFoto(false)} />
           )}
           {tab === 'ritiro' && <TabRitiro pratica={pratica} />}
           {tab === 'stato' && <TabStato pratica={pratica} />}
@@ -409,7 +452,9 @@ export default function DettaglioPraticaCliente() {
         </div>
       </div>
 
-      <AiutoWhatsApp />
+      {/* ⭐ 29/07 (mockup approvato): sulla tab CHAT niente bottone WhatsApp
+          — lì si parla già con NoiDemoliamo, e copriva il tasto d'invio */}
+      {tab !== 'chat' && <AiutoWhatsApp />}
     </main>
   )
 }

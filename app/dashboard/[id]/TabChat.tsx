@@ -305,31 +305,42 @@ function Chat({
 
   const isAdmin = destinatarioTipo === 'admin'
   const headerNome = isAdmin ? 'NoiDemoliamo' : 'Demolitore'
-  const headerSubtitle = isAdmin ? 'Risposta media: 2 ore' : 'Comunica per il ritiro'
+  // ⭐ 29/07 (richiesta Davide): via "Risposta media: 2 ore" — deve sentire
+  // che ci siamo, senza tempi
+  const headerSubtitle = isAdmin ? 'Ti rispondiamo subito' : 'Comunica per il ritiro'
 
   return (
     <div className="bg-white overflow-hidden flex flex-col" style={{ minHeight: 380, border: '1.5px solid #E5E7EB', borderRadius: 16 }}>
-      {/* Header in famiglia: titolo 13, sottotitolo grigio col pallino verde */}
+      {/* ⭐ 29/07 (mockup approvato): testata di FAMIGLIA — quadratino
+          azzurro 38px col logo, titolo 14/700, pallino verde */}
       <div className="px-4 py-3 flex items-center gap-2.5" style={{ borderBottom: '1px solid #F1F3F6' }}>
-        {isAdmin ? (
-          <LogoNoiDemoliamo size={36} />
-        ) : (
-          <div className="w-9 h-9 flex items-center justify-center flex-shrink-0" style={{ background: '#DBEAFE', borderRadius: 10 }}>
-            <IconaDemolitore size={20} color="#2563eb" />
-          </div>
-        )}
+        <div className="flex items-center justify-center flex-shrink-0" style={{ width: 38, height: 38, background: '#DBEAFE', borderRadius: 11 }}>
+          {isAdmin ? <LogoNoiDemoliamo size={28} /> : <IconaDemolitore size={20} color="#2563eb" />}
+        </div>
         <div className="flex-1 min-w-0">
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{headerNome}</div>
-          <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}><span style={{ color: '#22C55E' }}>●</span> {headerSubtitle}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{headerNome}</div>
+          <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1, display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 7, height: 7, borderRadius: 999, background: '#22C55E', flexShrink: 0 }} />
+            {headerSubtitle}
+          </div>
         </div>
       </div>
 
-      {/* Messaggi */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-3 flex flex-col gap-2" style={{ maxHeight: 400, background: '#F8FAFC' }}>
+      {/* Messaggi — ⭐ 29/07 (mockup approvato): area BIANCA (via il grigione),
+          bolle compatte con l'ORARIO DENTRO (blu a destra, grigie a sinistra) */}
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-2" style={{ maxHeight: 400 }}>
         {messaggi.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center text-center px-4">
-            <p className="text-xs text-gray-400 italic">
-              {isAdmin ? 'Inizia la conversazione con NoiDemoliamo...' : 'Scrivi al demolitore per organizzare il ritiro...'}
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-5 gap-2.5" style={{ minHeight: 220 }}>
+            <span style={{ width: 54, height: 54, borderRadius: 999, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {isAdmin ? (
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg>
+              ) : (
+                <IconaDemolitore size={26} color="#2563eb" />
+              )}
+            </span>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>{isAdmin ? 'Siamo qui per te' : 'Organizza il ritiro'}</div>
+            <p style={{ fontSize: 11.5, color: '#6B7280', lineHeight: 1.5, maxWidth: 240, margin: 0 }}>
+              {isAdmin ? 'Scrivici per qualsiasi dubbio sulla tua pratica: ti rispondiamo subito.' : 'Scrivi al demolitore per accordarvi su giorno e ora del ritiro.'}
             </p>
           </div>
         ) : (
@@ -337,17 +348,16 @@ function Chat({
             const isMio = m.mittente_id === userId
             return (
               <div key={m.id} className={`flex ${isMio ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[78%]`}>
-                  <div className={`px-3 py-2 rounded-2xl text-[12.5px] leading-relaxed ${
-                    isMio
-                      ? 'bg-blue-600 text-white rounded-br-md'
-                      : 'bg-white text-gray-700 rounded-bl-md'
-                  }`} style={isMio ? undefined : { border: '1px solid #ECEFF3' }}>
-                    {m.testo}
-                  </div>
-                  <div className={`text-[9.5px] mt-0.5 ${isMio ? 'text-right' : 'text-left'}`} style={{ color: '#9AA7B5' }}>
+                <div
+                  className="max-w-[78%] px-3 py-2 text-[13px] leading-relaxed"
+                  style={isMio
+                    ? { background: '#2563eb', color: '#fff', borderRadius: 16, borderBottomRightRadius: 6 }
+                    : { background: '#F1F4F8', color: '#1E293B', borderRadius: 16, borderBottomLeftRadius: 6 }}
+                >
+                  {m.testo}
+                  <span style={{ display: 'block', fontSize: 9.5, marginTop: 3, opacity: 0.65, textAlign: 'right' }}>
                     {new Date(m.creato_il).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+                  </span>
                 </div>
               </div>
             )

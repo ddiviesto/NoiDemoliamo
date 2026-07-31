@@ -733,7 +733,7 @@ I sobbalzi sono bug, non dettagli.
 ## 6.8 REGOLE D'ORO
 
 1. **Mobile-first**: touch-friendly (min 44px)
-2. **NIENTE EMOJI nell'interfaccia**: solo icone SVG feather-style (stroke ~1.7-1.9). Nemmeno le frecce testuali ←/→ nell'admin (nel cliente "← Pratiche" resta, il chevron ‹ è stato bocciato)
+2. **NIENTE EMOJI nell'interfaccia**: solo icone SVG feather-style (stroke ~1.7-1.9). Nemmeno le frecce testuali ←/→ nell'admin. ⭐ 29/07: il tasto indietro nei banner blu del cliente è un **TONDO traslucido** `rgba(255,255,255,0.18)` 38px con la sola freccia sottile (via le pillastrelle "← Indietro"/"← Pratiche"; il chevron ‹ resta bocciato). Con lo stesso giro è sparita la riga logo "NoiDemoliamo" sotto il banner di /inizia: il brand è il banner
 3. **Coerenza dei colori semantici** (6.5) e **una palette sola** per le pillole (6.4)
 4. **Personalizzazione per tipo veicolo ovunque** + generi corretti. Le icone veicolo stanno in UN componente condiviso (`app/components/IconaVeicolo.tsx`): cliente e CRM parlano la stessa lingua
 5. **Stato sempre visibile** · empty state amichevoli con SVG
@@ -754,6 +754,10 @@ I sobbalzi sono bug, non dettagli.
 20. ⭐ **Niente modali a schermo intero**: si usano **nuvolette ancorate** al bottone (col becco, clic fuori chiude) e **conferme in linea** o sulla foto stessa. Vale per rifiuto, eliminazione, stato pratica, trattativa
 21. **Avvisi informativi = scheda BLU** (quadratino azzurro + titoletto + testo), non gialla: il giallo è da allarme
 22. **Gamification dove possibile** (le foto: "Ottimo inizio!", incentivo a caricarne 4)
+23. ⭐ **Bottoni di pagina = PILLOLA OVALE, classe unica `.btn-pagina`** (globals.css, 29/07): gradiente dell'header + ombra morbida. Varianti: `--spento` (grigio ma CLICCABILE, per la regola 7), `:disabled` (spento vero), `--auto` (larghezza naturale). Ogni nuovo CTA usa questa classe; anche i bottoni piccoli (Annulla/Elimina, secondari) sono a pillola
+24. ⭐ **Mai promettere TEMPI al cliente** ("entro 3 ore" bocciato il 29/07): si dice "ti faremo sapere a breve" e basta
+25. **Un solo invito per volta sullo schermo**: l'invito foto vive sotto il banner SOLO in "Documenti in verifica" con zero foto, e MAI sulla tab Documenti (lì parla il suo banner). Appena arriva una foto, spariscono entrambi
+26. **WhatsApp si fa da parte**: il bottone fisso sparisce mentre si scrive (campo a fuoco) e non esiste sulla tab Chat (lì si parla già con NoiDemoliamo)
 
 ## 6.9 Regola MODIFICA A TASTO (ogni form, admin e cliente)
 
@@ -840,6 +844,8 @@ I 13 moduli:
 - **Dichiarazione Inutilizzabilità Ente Pubblico**: non è un modulo nostro, è la card con la guida a passi (scarica l'autodichiarazione → Comune/Polizia locale → fotografa la dichiarazione rilasciata)
 
 I PDF originali stanno in `docs/moduli/originali/` e viaggiano nel deploy via `outputFileTracingIncludes` (next.config). `.gitattributes` tratta PDF, Word e immagini come BINARI.
+
+⭐ **PDF sul TELEFONO (29/07)**: mai il visore di Safari (zoomava male e apriva schede). I PDF — documenti del cliente E moduli — diventano **pagine-immagine nel palco scuro** con lo zoom col pizzico, via `lib/pdfPagine.ts` (pdfjs; ⚠️ il worker sta in `public/pdf.worker.min.mjs`: se si aggiorna `pdfjs-dist` va ricopiato da node_modules). I **moduli** nel palco hanno in più "**Condividi o stampa**" (menu di condivisione dell'iPhone col file pronto: da lì stampa, salva su File, WhatsApp) e "**Scarica**". Su PC resta il visore nativo del browser.
 
 ⭐ **LEGGE 26/01/2026 n. 14** (fermo amministrativo, in vigore dal 20/02/2026): il fermo NON blocca più la radiazione per demolizione (resta escluso solo l'export estero), ma serve l'**attestazione di inutilizzabilità del Comune/Polizia locale**. Il flusso `/inizia` resta identico ("il cliente ce lo portiamo dentro noi").
 
