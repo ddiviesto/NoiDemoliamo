@@ -279,28 +279,43 @@ export default function TabStato({ pratica }: Props) {
             <Riga k="Anno · km" v={`${pratica.anno || '—'} · ${pratica.km?.toLocaleString('it-IT') || '—'}`} />
             <Riga k="Indirizzo ritiro" v={indirizzoCompleto} />
             <Riga k="Spazio carro attrezzi" v={pratica.spazio_carro_attrezzi ? (SPAZIO_LABEL[pratica.spazio_carro_attrezzi] || pratica.spazio_carro_attrezzi) : null} />
-            {/* ⭐ 28/07 sera (mockup A): righe del delegato con "Modifica" —
-                una alla volta, campo a filo blu, testo 16px (regola Safari) */}
+            {/* ⭐ Righe del delegato con "Modifica" (una alla volta); in
+                modifica la riga diventa la COLONNA della regola 27, come
+                nelle Impostazioni */}
             {delegaAmmessa && (
               editDelega === 'nome' ? (
-                <RigaCampo k="Delegato per la consegna" valore={valDelega} onChange={setValDelega} placeholder="Vuoto = consegni tu" />
+                <RigaCampo
+                  k="Delegato per la consegna"
+                  valore={valDelega}
+                  onChange={setValDelega}
+                  placeholder="Nome e cognome del delegato"
+                  hint="Lascia vuoto se al ritiro consegni tu il mezzo."
+                  errore={errDelega}
+                  busy={busyDelega}
+                  onAnnulla={() => setEditDelega(null)}
+                  onSalva={salvaDelega}
+                />
               ) : (
                 <RigaModificabile k="Delegato per la consegna" v={pratica.delegato_nome || 'Consegna in prima persona'} modifica={puoModificareDelega && !editDelega ? () => apriEditDelega('nome') : undefined} />
               )
             )}
             {delegaAmmessa && (pratica.delegato_nome || editDelega === 'telefono') && (
               editDelega === 'telefono' ? (
-                <RigaCampo k="Tel. delegato" valore={valDelega} onChange={setValDelega} tel placeholder="Numero del delegato" />
+                <RigaCampo
+                  k="Tel. delegato"
+                  valore={valDelega}
+                  onChange={setValDelega}
+                  tel
+                  placeholder="Numero del delegato"
+                  hint="Serve al demolitore per accordarsi sul ritiro."
+                  errore={errDelega}
+                  busy={busyDelega}
+                  onAnnulla={() => setEditDelega(null)}
+                  onSalva={salvaDelega}
+                />
               ) : (
                 <RigaModificabile k="Tel. delegato" v={pratica.delegato_telefono || '—'} modifica={puoModificareDelega && !editDelega ? () => apriEditDelega('telefono') : undefined} />
               )
-            )}
-            {editDelega && (
-              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center', marginTop: 8 }}>
-                {errDelega && <span style={{ flex: 1, fontSize: 10.5, color: '#9B1C1C', lineHeight: 1.4 }}>{errDelega}</span>}
-                <button onClick={() => setEditDelega(null)} disabled={busyDelega} style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 10px', cursor: 'pointer', opacity: busyDelega ? 0.5 : 1 }}>Annulla</button>
-                <button onClick={salvaDelega} disabled={busyDelega} style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11, fontWeight: 700, borderRadius: 8, padding: '5px 12px', cursor: 'pointer', opacity: busyDelega ? 0.6 : 1 }}>{busyDelega ? 'Salvo…' : 'Salva'}</button>
-              </div>
             )}
 
             {pillole.length > 0 && (
@@ -354,21 +369,45 @@ function RigaModificabile({ k, v, modifica }: { k: string; v: string | number | 
   )
 }
 
-// Riga in modifica: campo a FILO BLU, testo 16px (sotto, Safari iPhone
-// zoomerebbe la pagina al tocco)
-function RigaCampo({ k, valore, onChange, placeholder, tel }: { k: string; valore: string; onChange: (v: string) => void; placeholder?: string; tel?: boolean }) {
+// ⭐ Riga in MODIFICA nella veste delle Impostazioni (regola 27): COLONNA
+// ordinata — etichetta → campo a PILLOLA "a fuoco" fissa (bordo blu + alone
+// azzurro) → spiegazione → Annulla/Salva a pillola in basso a destra.
+// Testo 16px (sotto, Safari iPhone zoomerebbe la pagina al tocco).
+function RigaCampo({ k, valore, onChange, placeholder, tel, hint, errore, busy, onAnnulla, onSalva }: {
+  k: string
+  valore: string
+  onChange: (v: string) => void
+  placeholder?: string
+  tel?: boolean
+  hint?: string
+  errore?: string | null
+  busy?: boolean
+  onAnnulla: () => void
+  onSalva: () => void
+}) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderBottom: '1px solid #F5F7FA', fontSize: 12 }}>
-      <span style={{ fontWeight: 600, color: '#1E293B', flexShrink: 0 }}>{k}</span>
+    <div style={{ padding: '9px 0', borderBottom: '1px solid #F5F7FA' }}>
+      <div style={{ fontSize: 12, fontWeight: 600, color: '#1E293B' }}>{k}</div>
       <input
         autoFocus
         type={tel ? 'tel' : 'text'}
         inputMode={tel ? 'tel' : undefined}
         value={valore}
         onChange={e => onChange(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') onSalva() }}
         placeholder={placeholder}
-        style={{ flex: 1, minWidth: 0, maxWidth: 180, border: 'none', borderBottom: '2px solid #93C5FD', borderRadius: 0, outline: 'none', background: 'transparent', fontSize: 16, color: '#111827', textAlign: 'right', padding: '1px 2px 3px' }}
+        style={{ width: '100%', boxSizing: 'border-box', marginTop: 8, background: '#fff', border: '1.5px solid #2563eb', borderRadius: 999, padding: '10px 16px', fontSize: 16, fontWeight: 500, color: '#111827', outline: 'none', boxShadow: '0 0 0 3px rgba(37,99,235,0.12)' }}
       />
+      {hint && <div style={{ fontSize: 11, color: '#9AA7B5', marginTop: 7, lineHeight: 1.45 }}>{hint}</div>}
+      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', alignItems: 'center', marginTop: 10 }}>
+        {errore && <span style={{ flex: 1, fontSize: 10.5, color: '#9B1C1C', lineHeight: 1.4 }}>{errore}</span>}
+        <button onClick={onAnnulla} disabled={busy} className="transition-colors hover:bg-gray-50 disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 13px', cursor: 'pointer' }}>
+          Annulla
+        </button>
+        <button onClick={onSalva} disabled={busy} className="transition-all hover:brightness-105 disabled:opacity-50" style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 15px', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.3)' }}>
+          {busy ? 'Salvo…' : 'Salva'}
+        </button>
+      </div>
     </div>
   )
 }

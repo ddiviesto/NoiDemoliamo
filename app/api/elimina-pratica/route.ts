@@ -24,6 +24,7 @@ const TABELLE_COLLEGATE = [
   'documenti',
   'messaggi_chat',
   'messaggi',
+  'pratiche_note',
   'solleciti',
   'notifiche',
   'interessi_commercianti',

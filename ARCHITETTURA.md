@@ -768,7 +768,7 @@ I sobbalzi sono bug, non dettagli.
 24. ⭐ **Mai promettere TEMPI al cliente** ("entro 3 ore" bocciato il 29/07): si dice "ti faremo sapere a breve" e basta
 25. **Un solo invito per volta sullo schermo**: l'invito foto vive sotto il banner SOLO in "Documenti in verifica" con zero foto, e MAI sulla tab Documenti (lì parla il suo banner). Appena arriva una foto, spariscono entrambi
 26. **WhatsApp si fa da parte**: il bottone fisso sparisce mentre si scrive (campo a fuoco), sparisce quando SCORRI IN GIÙ e ricompare quando risali (i bottoni blu a fondo pagina restano liberi), e non esiste sulla tab Chat (lì si parla già con NoiDemoliamo)
-27. ⭐ **Campo di MODIFICA del cliente = pillola in veste "a fuoco"** (bordo blu 1.5px + alone azzurro `rgba(37,99,235,0.12)`): il campo esiste solo mentre si modifica, quindi è sempre "attivo". La riga in modifica è una **colonna ordinata**: etichetta → campo largo → spiegazione → Annulla/Salva a pillola in basso a destra (Salva col gradiente). Applicato alle Impostazioni; 🔜 da allineare anche il delegato nella tab Stato (oggi ancora a filo blu)
+27. ⭐ **Campo di MODIFICA del cliente = pillola in veste "a fuoco"** (bordo blu 1.5px + alone azzurro `rgba(37,99,235,0.12)`): il campo esiste solo mentre si modifica, quindi è sempre "attivo". La riga in modifica è una **colonna ordinata**: etichetta → campo largo → spiegazione → Annulla/Salva a pillola in basso a destra (Salva col gradiente). Applicato alle Impostazioni e al delegato nella tab Stato
 28. **La capsula con l'indirizzo che Safari mostra sopra la tastiera NON è rimovibile** (è del browser): si migliora col dominio corto noidemoliamo.it e si risolve con la futura PWA
 
 ## 6.9 Regola MODIFICA A TASTO (ogni form, admin e cliente)
