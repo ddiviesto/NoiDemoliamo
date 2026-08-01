@@ -341,8 +341,9 @@ export default function GestioneDemolitori() {
             </div>
 
             <div className="flex gap-2 justify-end px-6 py-4 border-t border-gray-100 sticky bottom-0 bg-white">
-              <button onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100">Annulla</button>
-              <button onClick={salva} disabled={salvando || !form.ragione_sociale.trim()} className="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed">
+              {/* ⭐ 29/07 (mockup B): pillole — Salva col gradiente di famiglia */}
+              <button onClick={() => setShowForm(false)} className="px-5 py-2.5 rounded-full text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors" style={{ border: '1.5px solid #E5E7EB' }}>Annulla</button>
+              <button onClick={salva} disabled={salvando || !form.ragione_sociale.trim()} className="px-5 py-2.5 rounded-full text-sm font-bold text-white transition-all hover:brightness-105 disabled:opacity-40 disabled:cursor-not-allowed" style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', boxShadow: '0 4px 12px rgba(37,99,235,0.3)' }}>
                 {salvando ? 'Salvataggio…' : 'Salva demolitore'}
               </button>
             </div>

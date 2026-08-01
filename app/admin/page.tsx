@@ -1430,8 +1430,8 @@ function SezTendinaMod({ titolo, inEdit, salvando, errore, onMatita, onAnnulla, 
             </button>
           </span>
           <span style={{ position: 'absolute', inset: 0, display: 'flex', gap: 4, justifyContent: 'flex-end', alignItems: 'center', ...fade(inEdit) }}>
-            <button onClick={onAnnulla} disabled={salvando} className="disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 7px', cursor: 'pointer' }}>Annulla</button>
-            <button onClick={onSalva} disabled={salvando} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 8px', cursor: 'pointer' }}>{salvando ? '…' : 'Salva'}</button>
+            <button onClick={onAnnulla} disabled={salvando} className="disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>Annulla</button>
+            <button onClick={onSalva} disabled={salvando} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 11px', cursor: 'pointer' }}>{salvando ? '…' : 'Salva'}</button>
           </span>
         </span>
       </div>

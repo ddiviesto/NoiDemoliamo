@@ -533,8 +533,8 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
         )}
         {sezione && inEdit && (
           <span style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
-            <button onClick={() => setSezEdit(null)} disabled={salvandoSez} className="disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 7px', cursor: 'pointer' }}>Annulla</button>
-            <button onClick={salvaSez} disabled={salvandoSez} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 8px', cursor: 'pointer' }}>{salvandoSez ? '…' : 'Salva'}</button>
+            <button onClick={() => setSezEdit(null)} disabled={salvandoSez} className="disabled:opacity-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>Annulla</button>
+            <button onClick={salvaSez} disabled={salvandoSez} className="transition-colors hover:bg-blue-700 disabled:opacity-50" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 11px', cursor: 'pointer' }}>{salvandoSez ? '…' : 'Salva'}</button>
           </span>
         )}
       </div>
@@ -797,7 +797,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                 </button>
               ) : (
-                <button onClick={() => { setContribEdit(false); setAggiungiAperta(false); setNuovoNome(''); setNuovaFee(''); setErroreTariffa(null); setInfoTariffa(null) }} className="transition-colors hover:bg-blue-700" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 7, padding: '3px 8px', cursor: 'pointer', flexShrink: 0 }}>Fatto</button>
+                <button onClick={() => { setContribEdit(false); setAggiungiAperta(false); setNuovoNome(''); setNuovaFee(''); setErroreTariffa(null); setInfoTariffa(null) }} className="transition-colors hover:bg-blue-700" style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 11px', cursor: 'pointer', flexShrink: 0 }}>Fatto</button>
               )}
             </div>
 
