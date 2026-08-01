@@ -6,6 +6,10 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 
+// Campo a pillola: si "accende" quando il cliente ci scrive dentro
+const CAMPO_PILLOLA = 'group flex items-center gap-2.5 rounded-full px-[18px] py-[13px] bg-[#F9FAFB] border-[1.5px] border-[#E5E7EB] transition-[border-color,background-color,box-shadow] duration-150 focus-within:bg-white focus-within:border-[#2563eb] focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.12)]'
+const ICONA_CAMPO = 'flex-shrink-0 text-[#9AA7B5] group-focus-within:text-[#2563eb] transition-colors'
+
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -45,40 +49,37 @@ export default function Login() {
   }
 
   return (
-    <main className="min-h-screen flex justify-center p-4 pt-6" style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ddd6fe 100%)' }}>
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-lg overflow-hidden" style={{ alignSelf: 'flex-start' }}>
+    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
+      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
 
-        {/* HEADER BLU (stile banner /inizia) */}
-        <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
-          <Link
-            href="/"
-            className="w-9 h-9 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors"
-            aria-label="Torna alla home"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
-            </svg>
-          </Link>
-          <div className="flex-1 min-w-0">
+        {/* TESTATA BLU ALTA col benvenuto e il logo a cavallo (mockup approvato) */}
+        <div className="relative text-white px-4 pt-3.5 pb-12" style={{ background: 'linear-gradient(120deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%)' }}>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="w-[38px] h-[38px] rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-white/30"
+              style={{ background: 'rgba(255,255,255,0.18)' }}
+              aria-label="Torna alla home"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+              </svg>
+            </Link>
             <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
-            <div className="text-sm font-semibold leading-tight">Bentornato</div>
+          </div>
+          <h1 className="text-[22px] font-bold mt-4 leading-tight">Bentornato</h1>
+          <p className="text-[13px] mt-1" style={{ color: '#DBEAFE' }}>Entra nella tua area personale</p>
+          <div className="absolute left-6 -bottom-[37px] w-[74px] h-[74px] bg-white rounded-[20px] flex items-center justify-center" style={{ boxShadow: '0 8px 20px rgba(16,24,40,0.18)' }}>
+            <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={58} height={58} className="rounded-2xl" priority />
           </div>
         </div>
 
-        <div className="p-6">
-
-          {/* LOGO */}
-          <div className="flex justify-center mb-4">
-            <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={88} height={88} className="rounded-2xl" priority />
-          </div>
-
-          <h1 className="text-xl font-semibold text-center text-gray-900">Accedi</h1>
-          <p className="text-sm text-center text-gray-500 mt-1 mb-5">Entra nella tua area personale</p>
+        <div className="px-6 pt-14 pb-8">
 
           {/* EMAIL */}
-          <label className="block text-xs font-semibold text-gray-700 mb-1.5">Email</label>
-          <div className="flex items-center gap-2.5 mb-3.5" style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: '11px 12px' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA7B5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5 ml-1">Email</label>
+          <div className={`${CAMPO_PILLOLA} mb-4`}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={ICONA_CAMPO}>
               <rect x="2" y="4" width="20" height="16" rx="3" /><path d="m2 7 10 6 10-6" />
             </svg>
             <input
@@ -87,15 +88,15 @@ export default function Login() {
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-transparent outline-none text-base text-gray-900 placeholder:text-gray-400"
+              className="flex-1 min-w-0 bg-transparent outline-none text-base text-gray-900 placeholder:text-gray-400"
               placeholder="nome@email.it"
             />
           </div>
 
           {/* PASSWORD */}
-          <label className="block text-xs font-semibold text-gray-700 mb-1.5">Password</label>
-          <div className="flex items-center gap-2.5 mb-5" style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 14, padding: '11px 12px' }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9AA7B5" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <label className="block text-xs font-semibold text-gray-700 mb-1.5 ml-1">Password</label>
+          <div className={`${CAMPO_PILLOLA} mb-2.5`}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className={ICONA_CAMPO}>
               <rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
             <input
@@ -123,6 +124,13 @@ export default function Login() {
                 </svg>
               )}
             </button>
+          </div>
+
+          {/* PASSWORD DIMENTICATA */}
+          <div className="flex justify-end mb-5 mr-1">
+            <Link href="/recupera-password" className="text-[13px] font-semibold text-blue-600 hover:text-blue-700">
+              Password dimenticata?
+            </Link>
           </div>
 
           {errore && (

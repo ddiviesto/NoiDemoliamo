@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **29 luglio 2026**.
+> Documento di riferimento del progetto. Aggiornato al **1 agosto 2026**.
 > Questo è l'unico file da leggere per capire com'è fatto il sito, come deve funzionare e come si lavora.
 > **Contiene solo cose STABILI e ATTUALI**: regole, flussi, dati, come deve essere il sito.
 > La cronaca delle sessioni non sta qui: se serve sapere *quando* è stata fatta una cosa, c'è la storia di GitHub.
@@ -478,6 +478,8 @@ C:\Progetto_NoiDemoliamo\
 │   ├── globals.css                 # Tailwind + scrollbar-gutter stable
 │   ├── login/                      # Login multi-ruolo
 │   ├── imposta-password/           # Demolitore che accetta l'invito
+│   ├── recupera-password/          # Password dimenticata: richiesta del link
+│   ├── nuova-password/             # Atterraggio del link email di recupero
 │   ├── privacy/ · termini/         # Pagine legali (con segnaposto [DA COMPLETARE])
 │   ├── inizia/                     # Flusso cliente mini-step
 │   │   ├── page.tsx                # Orchestratore: getSteps dinamico + traduciErrore()
@@ -543,7 +545,9 @@ C:\Progetto_NoiDemoliamo\
 | Pagina | Stato | Note |
 |---|---|---|
 | **Home `/`** | ✅ | Stile app, logo, spunte SVG, WhatsApp fisso |
-| **`/login`** | ✅ | Header blu, mostra/nascondi password, redirect per ruolo (commerciante da aggiungere). Niente "Registrati": i ruoli si registrano in modi diversi |
+| **`/login`** | ✅ | Testata blu alta "Bentornato" col logo a cavallo, campi a pillola che si accendono a fuoco, link "Password dimenticata?", redirect per ruolo (commerciante da aggiungere). Niente "Registrati": i ruoli si registrano in modi diversi |
+| **`/recupera-password`** | ✅ | Password dimenticata: email → link da Supabase; conferma "Controlla la tua email" con nota spam e "Rimanda il link" bloccato 60s |
+| **`/nuova-password`** | ✅ | Atterraggio del link di recupero: nuova password (minimo 8 caratteri, spunta che diventa verde) e "Salva ed entra" nell'area del proprio ruolo |
 | **`/inizia`** | ✅ | Completo e collaudato; full-bleed su mobile |
 | **`/privacy` e `/termini`** | 🟡 | Bozze complete, con segnaposto [DA COMPLETARE] (ragione sociale, P.IVA, sede, email). Da rivedere con Davide |
 | **`/dashboard`** (home cliente) | ✅ | Card pratiche + "Aggiungi un altro veicolo" + pannello Impostazioni |
@@ -552,6 +556,12 @@ C:\Progetto_NoiDemoliamo\
 | **`/admin/demolitori`** | ✅ | Lista a card + tendina sotto la riga (la pagina di dettaglio non esiste più) |
 | **`/demolitore`** | 🟡 | Home fatta; **scheda pratica da ricostruire su dettatura di Davide** |
 | Area commercianti | ❌ | Da costruire |
+
+### Recupero password (`/recupera-password` + `/nuova-password`)
+- Percorso: Accedi → "Password dimenticata?" → email → **il link lo manda Supabase** (template Reset Password riscritto in italiano nella dashboard) → si atterra su `/nuova-password` → nuova password → "Salva ed entra" porta direttamente nell'area del proprio ruolo.
+- **Riservatezza**: non si rivela MAI se un'email è registrata (si va sempre alla conferma "Controlla la tua email"). Rimando del link bloccato 60 secondi.
+- `/imposta-password` resta la pagina degli **inviti** dei demolitori; `/nuova-password` è solo per il recupero. Stessa meccanica di verifica del link (sessione da URL + fallback PKCE), link scaduto = avviso rosso + bottone "Richiedi un nuovo link".
+- ⚠️ **Ogni pagina che riceve un link email di Supabase va autorizzata** in Authentication → URL Configuration → Redirect URLs (oggi 4 righe: imposta-password e nuova-password, ciascuna per localhost e Vercel).
 
 ### Com'è fatto il CRM (`/admin`)
 Clic sulla riga → si srotola una **tendina sotto la riga** (la riga si tinge d'azzurro e fa da testata; cornice blu 2px che ingloba riga+tendina). Riclic o Esc chiude. Cambiare filtro chiude tutto.
@@ -861,6 +871,11 @@ La dashboard demolitore ha login, liste per fase, azioni (fissa/sposta ritiro, v
 4. Rifinire cosa il demolitore NON deve vedere quando nasceranno nuovi stati
 
 Richiede: **Resend attivo** (il dominio noidemoliamo.it è già comprato: va collegato a Vercel e verificato su Resend con SPF/DKIM/DMARC) e un **cron Vercel** per i controlli periodici.
+
+### 📧 EMAIL @NOIDEMOLIAMO.IT (da fare col lavoro Resend)
+Oggi le email di sistema (recupero password, inviti demolitori, cambio email) partono dal **servizio di cortesia di Supabase** (`noreply@mail.app.supabase.io`): va bene per le prove ma ha **limiti bassissimi** (poche email all'ora) e non si usa coi clienti veri. Quando si attiva Resend:
+1. Creare gli indirizzi del dominio: `noreply@noidemoliamo.it` (mittente automatico) e `info@noidemoliamo.it` (contatti e pagine legali)
+2. Agganciare Resend come **SMTP di Supabase** (Authentication → Emails → SMTP Settings): da lì in poi TUTTE le email di sistema partono da noreply@noidemoliamo.it, senza limiti e col nostro nome
 
 ### 🔔 SISTEMA NOTIFICHE VERE (email + SMS)
 Oggi le comunicazioni al cliente vivono SOLO nel banner della sua area. Servono notifiche attive. Canali v1: **email + campanella in-app** (le push vere solo con la futura PWA).
