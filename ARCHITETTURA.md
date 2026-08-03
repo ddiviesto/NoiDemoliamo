@@ -901,7 +901,7 @@ Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.1
 - Valutare la dismissione delle tabelle `documenti` e `documenti_approvazione`
 
 ### 🟡 DECISIONI ANCORA APERTE
-- **Caso 7 (non intestatario)**: nel flusso, libretto e CDC sono obbligatori ("se non ce l'ha non può procedere"), ma oggi il modulo lascia comunque scegliere "smarrito" e crea la pratica → serve un avviso di stop
+- ~~Caso 7 (non intestatario): avviso di stop~~ **DECISO (01/08, niente da cambiare)**: la denuncia di smarrimento si accetta senza domande nel flusso (chi l'ha fatta si verifica dai documenti caricati, come per tutti); senza libretto né denuncia vale il normale "ti chiamiamo noi" → "Da contattare". Il flusso già si comporta così
 - **Denunce di smarrimento Carta d'Identità / Codice Fiscale**: previste dal file casistiche ma assenti dal catalogo DB e dal flusso → decidere se aggiungerle
 - **Assegnazione manuale**: il flusso c'è, da testare fino in fondo
 - **Test dell'amico** sul flusso `/inizia`: in attesa dell'esito

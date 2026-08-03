@@ -338,7 +338,8 @@ Se **Presidente Associazione** delega un'altra persona alla consegna del mezzo a
 
 **Documenti che deve caricare in NoiDemoliamo Area personale dopo la compilazione del modulo (può fare foto direttamente dal telefono o caricamento file):**
 
-* Libretto Circolazione (fronte e retro) (**Se non ha questo documento non può procedere alla Demolizione**)
+* Libretto Circolazione (fronte e retro) (**Se non ha né il Libretto né la Denuncia di smarrimento non può procedere alla Demolizione**)
+* Denuncia di smarrimento Libretto (se smarrito) (**la denuncia è valida solo se fatta dall'intestatario del veicolo**, non dal Proprietario non Intestatario; il controllo si fa in fase di verifica documenti)
 * Certificato di Proprietà Cartaceo (fronte e retro) (**Se non ha questo documento non può procedere alla Demolizione**) (Se è Digitale non deve caricarlo e non serve)
 * Carta Identità **Proprietario non Intestatario** (fronte e retro) o Patente di guida **Proprietario non Intestatario** (fronte e retro) se Carta Identità **Proprietario non Intestatario** non disponibile
 * Codice Fiscale **Proprietario non Intestatario** (fronte e retro)
@@ -355,7 +356,7 @@ Se **Presidente Associazione** delega un'altra persona alla consegna del mezzo a
 
 **Documenti da consegnare al Demolitore al ritiro (nella pagina del cliente ci dovrà essere una sezione riepilogativa. Dovrà ricevere anche un sms, email e notifica APP come promemoria):**
 
-* Libretto di Circolazione originale
+* Libretto di Circolazione originale (o Denuncia di smarrimento Libretto in originale, se smarrito)
 * Certificato di Proprietà Cartaceo originale (se è Digitale no)
 * Denuncia di smarrimento originale Carta Identità **Proprietario non Intestatario** (se smarrita)
 * Denuncia di smarrimento originale Codice Fiscale **Proprietario non Intestatario** (se smarrito)
