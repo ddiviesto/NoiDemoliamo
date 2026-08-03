@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **1 agosto 2026**.
+> Documento di riferimento del progetto. Aggiornato al **3 agosto 2026**.
 > Questo è l'unico file da leggere per capire com'è fatto il sito, come deve funzionare e come si lavora.
 > **Contiene solo cose STABILI e ATTUALI**: regole, flussi, dati, come deve essere il sito.
 > La cronaca delle sessioni non sta qui: se serve sapere *quando* è stata fatta una cosa, c'è la storia di GitHub.
@@ -895,7 +895,6 @@ Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.1
 - **Prossimi flussi**: asta demolitori (B), commercianti (C), acquisto NoiDemoliamo, `/vendi-auto` (D), area commercianti, fatturazione, statistiche
 
 ### 🔥 PULIZIA DA FARE
-- Eliminare le pratiche test dal DB: "ciccio", "Mario Verdi", "Sirio Valenti", "EEEEE"
 - Rimuovere `UploadDocumentoModal.tsx` (legacy, non più usato)
 - Rimuovere `ruolo_richiedente` e `eredita` da types e DB
 - Valutare la dismissione delle tabelle `documenti` e `documenti_approvazione`
