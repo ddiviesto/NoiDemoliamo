@@ -36,6 +36,9 @@ yarn-error.log*
 # mockup di lavoro (si guarda su localhost:3000/mockup.html, mai in deploy)
 /public/mockup.html
 
+# cartella di servizio degli strumenti di Claude (resta solo sul PC)
+/.claude/
+
 # vercel
 .vercel
 
