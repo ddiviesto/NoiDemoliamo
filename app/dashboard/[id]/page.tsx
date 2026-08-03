@@ -35,10 +35,8 @@ export interface Pratica {
   codice_fiscale: string | null
   nome_richiedente: string | null
   telefono: string | null
-  ruolo_richiedente: string | null
   libretto: string | null
   certificato_proprieta: string | null
-  eredita: string | null
   demolitore_id: string | null
   data_ritiro_prevista: string | null
   data_certificato_rottamazione: string | null

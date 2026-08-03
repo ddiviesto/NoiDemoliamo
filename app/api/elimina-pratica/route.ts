@@ -19,9 +19,7 @@ const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 // La cancellazione è "best effort": se una tabella non ha la colonna, si ignora l'errore.
 const TABELLE_COLLEGATE = [
   'pratica_documenti_checklist',
-  'documenti_approvazione',
   'foto_pratiche',
-  'documenti',
   'messaggi_chat',
   'messaggi',
   'pratiche_note',

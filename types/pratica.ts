@@ -10,8 +10,6 @@ export type TipoMezzo =
   | 'velivolo'
   | 'altro'
 
-export type RuoloRichiedente = 'proprietario' | 'delegato' | 'deceduto'
-export type EreditaScelta = 'accetta' | 'rinuncia'
 export type LibrettoStato = 'si' | 'denuncia' | 'no'
 export type CdcStato = 'digitale' | 'cartaceo' | 'smarrito' | 'nessuno'
 export type TipoCambio = 'manuale' | 'automatico' | 'non_so'
@@ -113,10 +111,6 @@ export interface DatiPratica {
   consegna: ConsegnaMezzo | null
   delegatoNome: string
   delegatoTelefono: string
-  // --- Vecchi campi (in rimozione a fine ristrutturazione) ---
-  ruolo: RuoloRichiedente | null
-  eredita: EreditaScelta | null
-  // ---
   libretto: LibrettoStato | null
   cdc: CdcStato | null
   nome: string
@@ -158,8 +152,6 @@ export const datiPraticaIniziali: DatiPratica = {
   consegna: null,
   delegatoNome: '',
   delegatoTelefono: '',
-  ruolo: null,
-  eredita: null,
   libretto: null,
   cdc: null,
   nome: '',

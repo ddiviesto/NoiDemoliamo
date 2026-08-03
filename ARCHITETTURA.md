@@ -125,7 +125,7 @@ RESEND_API_KEY=... + EMAIL_FROM=...   (finché mancano, gli inviti danno il link
 
 ## 3.1 Tabelle esistenti
 
-`casistiche_documenti`, `collaboratori`, `commercianti`, `demolitori`, `demolitori_comuni`, `demolitori_note`, `demolitori_tariffe`, `documenti`, `documenti_approvazione`, `fatture`, `foto_pratiche`, `impostazioni`, `interessi_commercianti`, `messaggi`, `messaggi_chat`, `messaggi_preimpostati`, `notifiche`, `pratica_documenti_checklist`, `pratiche`, `pratiche_note`, `solleciti`, `utenti`, `veicoli_vendita`, `veicoli_vendita_foto`
+`casistiche_documenti`, `collaboratori`, `commercianti`, `demolitori`, `demolitori_comuni`, `demolitori_note`, `demolitori_tariffe`, `fatture`, `foto_pratiche`, `impostazioni`, `interessi_commercianti`, `messaggi`, `messaggi_chat`, `messaggi_preimpostati`, `notifiche`, `pratica_documenti_checklist`, `pratiche`, `pratiche_note`, `solleciti`, `utenti`, `veicoli_vendita`, `veicoli_vendita_foto`
 
 Anagrafiche intoccabili (autocomplete e mappa): `comuni`, `province`, `regioni`.
 
@@ -142,7 +142,6 @@ Tabella centrale del progetto.
 - **Workflow**: `demolitore_id`, `stato`, `stato_precedente`, `data_assegnazione`, `data_ritiro_prevista`, `data_ritiro_effettuato`, `data_certificato_rottamazione`, `data_certificato_pra`, `cert_rottamazione_url`, `cert_pra_url`, `cert_rottamazione_a_mano`, `riassegnata`, `assegnazione_manuale`, `motivo_annullamento`, `in_attesa` + `attesa_*`
 - **Scadenze**: `urgente`, `scadenza_proposta_ritiro`, `scadenza_cert_rottamazione`, `scadenza_cert_pra`
 - **Soldi**: `fee_concordata` (importo una tantum per la singola pratica)
-- **Legacy da rimuovere**: `ruolo_richiedente`, `eredita` (sostituiti dal sistema casistiche)
 
 **Valori `tipo_mezzo`** (text libero, nessun constraint):
 `autovettura, motoveicolo, ciclomotore, minicar, furgone, imbarcazione, pullman, camion, velivolo, altro`
@@ -233,7 +232,7 @@ Fronte/retro: libretto, libretto estero, certificato di proprietà cartaceo, car
 
 ## 3.5 Tabelle legacy
 
-- `documenti` e `documenti_approvazione`: vecchio sistema, sostituito da `pratica_documenti_checklist`. Nessuna pagina le usa più; restano per le pratiche storiche, da valutare la dismissione.
+Nessuna: `documenti` e `documenti_approvazione` (vecchio sistema documenti) e le colonne `pratiche.ruolo_richiedente` / `pratiche.eredita` sono state eliminate il 03/08/2026 con la pulizia legacy.
 
 ## 3.6 `foto_pratiche`
 
@@ -629,7 +628,7 @@ Il componente più importante dell'area cliente. **Design a WIZARD**: il cliente
 
 Il sistema è **istantaneo su tutto**: nessuna pagina deve richiedere il refresh manuale. Hook condiviso `useAggiornaLive({ canale, tabelle, onCambio, pollingMs, attivo })` con 3 livelli:
 
-1. **TEMPO REALE** — Supabase Realtime (postgres_changes). Le tabelle vanno abilitate alla pubblicazione (già fatto: pratiche, pratica_documenti_checklist, foto_pratiche, messaggi_chat, pratiche_note, documenti_approvazione). Il realtime rispetta le RLS.
+1. **TEMPO REALE** — Supabase Realtime (postgres_changes). Le tabelle vanno abilitate alla pubblicazione (già fatto: pratiche, pratica_documenti_checklist, foto_pratiche, messaggi_chat, pratiche_note). Il realtime rispetta le RLS.
 2. **RITORNO SULLA PAGINA** — visibilitychange/focus (max una volta ogni 3s).
 3. **CONTROLLO PERIODICO** — rete di sicurezza: 60s di default (chat 30s, demolitore 20s), solo a pagina visibile.
 
@@ -893,11 +892,6 @@ Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.1
 - **Landing vetrina** su noidemoliamo.it
 - **PWA**, messaggi preimpostati admin, pagina Polizia Locale veicoli abbandonati
 - **Prossimi flussi**: asta demolitori (B), commercianti (C), acquisto NoiDemoliamo, `/vendi-auto` (D), area commercianti, fatturazione, statistiche
-
-### 🔥 PULIZIA DA FARE
-- Rimuovere `UploadDocumentoModal.tsx` (legacy, non più usato)
-- Rimuovere `ruolo_richiedente` e `eredita` da types e DB
-- Valutare la dismissione delle tabelle `documenti` e `documenti_approvazione`
 
 ### 🟡 DECISIONI ANCORA APERTE
 - ~~Caso 7 (non intestatario): avviso di stop~~ **DECISO (01/08, niente da cambiare)**: la denuncia di smarrimento si accetta senza domande nel flusso (chi l'ha fatta si verifica dai documenti caricati, come per tutti); senza libretto né denuncia vale il normale "ti chiamiamo noi" → "Da contattare". Il flusso già si comporta così
