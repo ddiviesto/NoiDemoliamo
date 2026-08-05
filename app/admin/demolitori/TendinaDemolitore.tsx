@@ -769,7 +769,7 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
           {/* CONTATTI */}
           <div style={{ ...stileScheda, borderColor: sezEdit === 'contatti' ? '#93C5FD' : '#E5E7EB' }}>
             <TestataScheda titolo="Contatti" sezione="contatti" />
-            <RigaSc k="Email assegnazione" vista={dem.email_assegnazione || ''} campo={sezEdit === 'contatti' ? <input className={CAMPO} value={sb('email_assegnazione')} onChange={e => setB('email_assegnazione', e.target.value)} /> : undefined} />
+            <RigaSc k="Email assegnazioni pratiche" vista={dem.email_assegnazione || ''} campo={sezEdit === 'contatti' ? <input className={CAMPO} value={sb('email_assegnazione')} onChange={e => setB('email_assegnazione', e.target.value)} /> : undefined} />
             <RigaSc k="Email aziendale" vista={dem.email_aziendale || ''} campo={sezEdit === 'contatti' ? <input className={CAMPO} value={sb('email_aziendale')} onChange={e => setB('email_aziendale', e.target.value)} /> : undefined} />
             <RigaSc k="PEC" vista={dem.pec || ''} campo={sezEdit === 'contatti' ? <input className={CAMPO} value={sb('pec')} onChange={e => setB('pec', e.target.value)} /> : undefined} />
             <RigaSc k="Telefono fisso" vista={dem.telefono_fisso || ''} campo={sezEdit === 'contatti' ? <input className={CAMPO} inputMode="tel" value={sb('telefono_fisso')} onChange={e => setB('telefono_fisso', e.target.value)} /> : undefined} />

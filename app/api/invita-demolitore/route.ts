@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     }
     const email = (dem.email_assegnazione || dem.email_aziendale || '').trim().toLowerCase()
     if (!email) {
-      return NextResponse.json({ error: "Il demolitore non ha un'email: aggiungi prima l'email di assegnazione pratiche in anagrafica." }, { status: 400 })
+      return NextResponse.json({ error: "Il demolitore non ha un'email: aggiungi prima l'email assegnazioni pratiche in anagrafica." }, { status: 400 })
     }
 
     // Link di ritorno: la pagina dove il demolitore imposta la password

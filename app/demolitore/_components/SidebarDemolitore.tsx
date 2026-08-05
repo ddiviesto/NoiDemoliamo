@@ -114,6 +114,9 @@ export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile
           transition: 'width 0.22s ease',
           boxShadow: hover ? '6px 0 24px rgba(15,27,51,0.25)' : 'none',
           padding: '12px 8px',
+          // ⭐ Angoli smussati sul lato destro (richiesta Davide): la
+          // colonnina chiusa non è più un rettangolo a tutta altezza
+          borderRadius: '0 16px 16px 0',
           zIndex: 30,
         }}
         onMouseEnter={() => setHover(true)}

@@ -1,11 +1,13 @@
 'use client'
 
 /**
- * PANNELLO LATERALE A TENDA — AREA DEMOLITORE (23/07/2026).
- * Scivola da destra (stesso pattern del pannello impostazioni del cliente):
- * dentro l'ANAGRAFICA del demolitore in sola lettura (la gestisce solo
- * NoiDemoliamo) e in fondo l'Esci. Qui in futuro si aggiungeranno altre
- * cose (fatturazione, preferenze, ...).
+ * PANNELLO "LA TUA AZIENDA" — AREA DEMOLITORE (mockup A approvato da
+ * Davide, agosto 2026). Scivola da destra: testata blu in stile profilo
+ * (quadratino bianco + nome grande, ✕ a tondo traslucido) e i dati in
+ * sola lettura raggruppati in 3 schede della famiglia (Azienda, Sede,
+ * Contatti), etichetta a sinistra e valore a destra.
+ * Si chiude SOLO con la ✕ (niente chiusura al clic fuori) e non c'è
+ * più l'Esci in fondo: Esci vive nella barra laterale.
  */
 
 import { useEffect, useState } from 'react'
@@ -29,10 +31,11 @@ interface Profilo {
   email_assegnazione: string | null
 }
 
-export default function PannelloAnagrafica({ aperto, onChiudi, onEsci }: {
+export default function PannelloAnagrafica({ aperto, onChiudi }: {
   aperto: boolean
   onChiudi: () => void
-  onEsci: () => void
+  /** non più usato: Esci vive solo nella barra laterale */
+  onEsci?: () => void
 }) {
   const [profilo, setProfilo] = useState<Profilo | null>(null)
   const [caricato, setCaricato] = useState(false)
@@ -52,84 +55,90 @@ export default function PannelloAnagrafica({ aperto, onChiudi, onEsci }: {
 
   return (
     <>
-      {/* velo scuro */}
+      {/* velo scuro (solo visivo: si chiude con la ✕) */}
       <div
-        onClick={onChiudi}
         className="fixed inset-0 z-40 transition-opacity duration-300"
-        style={{ background: 'rgba(15,23,42,0.45)', opacity: aperto ? 1 : 0, pointerEvents: aperto ? 'auto' : 'none' }}
+        style={{ background: 'rgba(15,23,42,0.45)', opacity: aperto ? 1 : 0, pointerEvents: 'none' }}
       />
       {/* tenda da destra */}
       <div
-        className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-[400px] bg-white flex flex-col transition-transform duration-300 shadow-2xl"
-        style={{ transform: aperto ? 'translateX(0)' : 'translateX(105%)' }}
+        className="fixed top-0 right-0 bottom-0 z-50 w-full max-w-[400px] flex flex-col transition-transform duration-300 shadow-2xl"
+        style={{ transform: aperto ? 'translateX(0)' : 'translateX(105%)', background: '#F6F8FB' }}
       >
-        {/* testata blu */}
-        <div className="px-5 py-4 text-white flex items-center gap-3 flex-shrink-0" style={{ background: 'linear-gradient(120deg, #1E3A8A, #1d4ed8 55%, #2563eb)' }}>
-          <span className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.16)' }}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
-          </span>
-          <div className="flex-1 min-w-0">
-            <div className="text-[9px] font-bold uppercase tracking-[1.5px] text-blue-200">La tua azienda</div>
-            <div className="text-[15px] font-extrabold leading-tight truncate">{profilo?.ragione_sociale || '—'}</div>
+        {/* testata profilo */}
+        <div className="px-4 pt-3.5 pb-4 text-white flex-shrink-0" style={{ background: 'linear-gradient(120deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%)' }}>
+          <div className="flex justify-end">
+            <button onClick={onChiudi} aria-label="Chiudi" className="w-[34px] h-[34px] rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-white/30" style={{ background: 'rgba(255,255,255,0.18)' }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+            </button>
           </div>
-          <button onClick={onChiudi} aria-label="Chiudi" className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors" style={{ background: 'rgba(255,255,255,0.16)' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-          </button>
+          <div className="flex items-center gap-3.5 mt-0.5">
+            <div className="w-[52px] h-[52px] bg-white rounded-[14px] flex items-center justify-center flex-shrink-0">
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-[9.5px] font-bold uppercase" style={{ letterSpacing: '0.12em', color: '#BFDBFE' }}>La tua azienda</div>
+              <div className="text-[18px] font-bold leading-tight truncate mt-0.5">{profilo?.ragione_sociale || '—'}</div>
+            </div>
+          </div>
         </div>
 
-        {/* contenuto scorrevole */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-4">
+        {/* le tre schede */}
+        <div className="flex-1 overflow-y-auto p-3.5 flex flex-col gap-3">
 
-          <SezioneA titolo="Azienda">
-            <DatoA label="Ragione sociale" value={profilo?.ragione_sociale} />
-            <DatoA label="Partita IVA" value={profilo?.piva} />
-            <DatoA label="Codice SDI" value={profilo?.codice_sdi} />
-            <DatoA label="PEC" value={profilo?.pec} />
-          </SezioneA>
+          <Scheda
+            titolo="Azienda"
+            icona={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>}
+          >
+            <RigaDato k="Ragione sociale" v={profilo?.ragione_sociale} />
+            <RigaDato k="Partita IVA" v={profilo?.piva} />
+            <RigaDato k="Codice SDI" v={profilo?.codice_sdi} />
+            <RigaDato k="PEC" v={profilo?.pec} />
+          </Scheda>
 
-          <SezioneA titolo="Sede">
-            <DatoA label="Indirizzo" value={sede} />
-          </SezioneA>
+          <Scheda
+            titolo="Sede"
+            icona={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" /><circle cx="12" cy="10" r="3" /></svg>}
+          >
+            <RigaDato k="Indirizzo" v={sede} />
+          </Scheda>
 
-          <SezioneA titolo="Contatti">
-            <DatoA label="Telefono fisso" value={profilo?.telefono_fisso} />
-            <DatoA label="Titolare" value={[profilo?.titolare_nome, profilo?.titolare_cellulare].filter(Boolean).join(' · ') || null} />
-            <DatoA label="Referente" value={[profilo?.referente_nome, profilo?.referente_cellulare].filter(Boolean).join(' · ') || null} />
-            <DatoA label="Email aziendale" value={profilo?.email_aziendale} />
-            <DatoA label="Email per le assegnazioni" value={profilo?.email_assegnazione} />
-          </SezioneA>
+          <Scheda
+            titolo="Contatti"
+            icona={<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>}
+          >
+            <RigaDato k="Telefono fisso" v={profilo?.telefono_fisso} />
+            <RigaDato k="Titolare" v={[profilo?.titolare_nome, profilo?.titolare_cellulare].filter(Boolean).join(' · ') || null} />
+            <RigaDato k="Referente" v={[profilo?.referente_nome, profilo?.referente_cellulare].filter(Boolean).join(' · ') || null} />
+            <RigaDato k="Email aziendale" v={profilo?.email_aziendale} />
+            <RigaDato k="Email assegnazioni pratiche" v={profilo?.email_assegnazione} />
+          </Scheda>
 
-          <p className="text-[11.5px] m-0 rounded-xl px-3 py-2.5" style={{ background: '#EFF6FF', color: '#1E4E8C', lineHeight: 1.5 }}>
-            Questi dati li gestisce NoiDemoliamo: se qualcosa è cambiato (telefono, referente, PEC…) scrivici in chat o chiamaci e li aggiorniamo noi.
-          </p>
-        </div>
-
-        {/* esci in fondo */}
-        <div className="px-5 py-4 flex-shrink-0" style={{ borderTop: '1.5px solid #EEF1F5' }}>
-          <button onClick={onEsci} className="w-full py-3 rounded-xl text-[13.5px] font-bold transition-colors flex items-center justify-center gap-2" style={{ background: '#FEF2F2', color: '#B91C1C', border: '1.5px solid #FECACA' }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-            Esci dall&apos;area demolitore
-          </button>
         </div>
       </div>
     </>
   )
 }
 
-function SezioneA({ titolo, children }: { titolo: string; children: React.ReactNode }) {
+// Scheda della famiglia card: quadratino azzurro + titolo, righe sotto
+function Scheda({ titolo, icona, children }: { titolo: string; icona: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div>
-      <p className="text-[10px] font-extrabold uppercase m-0 mb-2" style={{ color: '#8A97A8', letterSpacing: 0.8 }}>{titolo}</p>
-      <div className="flex flex-col gap-2">{children}</div>
+    <div className="bg-white overflow-hidden" style={{ border: '1.5px solid #E5E7EB', borderRadius: 14 }}>
+      <div className="flex items-center gap-2.5" style={{ padding: '11px 13px' }}>
+        <div className="w-[34px] h-[34px] rounded-[10px] flex items-center justify-center flex-shrink-0" style={{ background: '#DBEAFE' }}>{icona}</div>
+        <span className="text-[13.5px] font-bold" style={{ color: '#111827' }}>{titolo}</span>
+      </div>
+      <div style={{ padding: '2px 13px 10px' }}>{children}</div>
     </div>
   )
 }
 
-function DatoA({ label, value }: { label: string; value: string | null | undefined }) {
+// Riga dato in famiglia: etichetta scura a sinistra, valore grigio a destra
+function RigaDato({ k, v }: { k: string; v: string | null | undefined }) {
   return (
-    <div className="rounded-[10px] px-3 py-2" style={{ background: '#F6F8FB', border: '1px solid #E5E9F0' }}>
-      <div className="text-[9.5px] font-bold uppercase" style={{ color: '#5B6779', letterSpacing: 0.4 }}>{label}</div>
-      <div className="text-[13px] font-semibold mt-0.5 break-words" style={{ color: '#3E4C63' }}>{value || '—'}</div>
+    <div className="flex items-baseline justify-between gap-3 text-[12.5px]" style={{ padding: '7px 0', borderBottom: '1px solid #F5F7FA' }}>
+      <span className="font-semibold flex-shrink-0" style={{ color: '#1E293B' }}>{k}</span>
+      <span className="text-right break-words min-w-0" style={{ color: '#6B7280' }}>{v || '—'}</span>
     </div>
   )
 }

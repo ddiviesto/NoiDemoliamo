@@ -56,6 +56,7 @@ export interface PraticaDemolitore {
   comune_ritiro: string | null
   provincia_ritiro: string | null
   marciante: boolean | null
+  delegato_nome: string | null
   data_assegnazione: string | null
   scadenza_proposta_ritiro: string | null
   data_ritiro_prevista: string | null

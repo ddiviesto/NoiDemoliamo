@@ -140,7 +140,7 @@ Tabella centrale del progetto.
 - **Casistiche**: `casistica` (CHECK sugli 8 codici), `fermo_amministrativo` (si/no/non_so), `targhe_presenti` (bool, null per targhe straniere), `delegato_nome`, `delegato_telefono`, `numero_eredi` (LEGACY: il flusso non lo compila più), `nomi_rinunciatari` (colonna pronta ma non usata: i rinunciatari si scrivono a penna nel modulo ACI)
 - **Documenti dichiarati**: `libretto` (si/denuncia/no, **NULLABLE**), `certificato_proprieta` (**NULLABLE**; la UI propone digitale/cartaceo/smarrito/nessuno, il CHECK ammette anche documento_unico)
 - **Workflow**: `demolitore_id`, `stato`, `stato_precedente`, `data_assegnazione`, `data_ritiro_prevista`, `data_ritiro_effettuato`, `data_certificato_rottamazione`, `data_certificato_pra`, `cert_rottamazione_url`, `cert_pra_url`, `cert_rottamazione_a_mano`, `riassegnata`, `assegnazione_manuale`, `motivo_annullamento`, `in_attesa` + `attesa_*`
-- **Scadenze**: `urgente`, `scadenza_proposta_ritiro`, `scadenza_cert_rottamazione`, `scadenza_cert_pra`
+- **Scadenze**: `urgente`, `scadenza_proposta_ritiro` (⚠️ le scadenze dei certificati NON hanno colonne: si calcolano da `data_ritiro_effettuato` con le regole 1.3, cioè 24 ore per la rottamazione e 15 giorni lavorativi per il PRA)
 - **Soldi**: `fee_concordata` (importo una tantum per la singola pratica)
 
 **Valori `tipo_mezzo`** (text libero, nessun constraint):
@@ -553,7 +553,7 @@ C:\Progetto_NoiDemoliamo\
 | **`/dashboard/[id]`** | ✅ | 4 tab: **Documenti · Ritiro · Stato · Chat** |
 | **`/admin`** | ✅ | **TUTTO il CRM in una pagina**: lista + tendina sotto la riga + pannelli. Ad altezza schermo: scorre solo la lista |
 | **`/admin/demolitori`** | ✅ | Lista a card + tendina sotto la riga (la pagina di dettaglio non esiste più) |
-| **`/demolitore`** | 🟡 | Home fatta; **scheda pratica da ricostruire su dettatura di Davide** |
+| **`/demolitore`** | 🟡 | Home gemella del CRM completata; **scheda pratica da ricostruire su dettatura di Davide** |
 | Area commercianti | ❌ | Da costruire |
 
 ### Recupero password (`/recupera-password` + `/nuova-password`)
@@ -579,10 +579,10 @@ Pannello che **scivola da destra a tutta altezza**. Testata gemella della tendin
 - ⭐ **SCARICO PDF**: bottone Scarica con due strade — "Questo documento"/"Questa foto" (PDF singolo) oppure "**Scegli cosa scaricare**" (caselle nell'elenco). Ne esce **UN PDF unico pronto da inoltrare** (es. solo le foto a un commerciante): pdf-lib lato browser, immagini su A4 con l'etichetta del documento (ruolo casistica + fronte/retro), i PDF del cliente copiati pagina per pagina. **Le pagine delle foto vanno senza etichetta.** Nome file "Documenti TARGA.pdf", o "Foto TARGA.pdf" se contiene solo foto. Se un file non entra, il PDF esce comunque con l'avviso di cosa manca
 
 ### Com'è fatta l'area demolitore
-- ⚠️ **La barra laterale a scomparsa** (`SidebarDemolitore.tsx`) è l'unica cosa sopravvissuta a 3 redesign: **non toccarla**. Colonnina di icone che si apre all'avvicinarsi del mouse (sul telefono menu ☰ a tenda), col nome del demolitore in testa. Voci: Pratiche · La tua azienda · Fatturazione ("PRESTO") · Esci in fondo
-- **Pannello anagrafica** a tenda da destra: dati azienda in sola lettura ("li gestisce NoiDemoliamo")
-- **Home**: layout identico al CRM admin (flusso a pillole tonde). Card pratica dettata da Davide: [PILLOLA di stato per prima] [targa · modello e anno] [la via del ritiro] [countdown 8 ore in rosso a destra]. **Nient'altro di colorato, nessuna icona veicolo**
-- Fasi del flusso demolitore (`_lib/api.ts`, `gruppoDi`): arrivo · fissato · rottamazione · targhe · completate · annullate ("Non a buon fine")
+- ⚠️ **La barra laterale a scomparsa** (`SidebarDemolitore.tsx`) è l'unica cosa sopravvissuta a 3 redesign: **non toccarla**. Colonnina di icone con gli **angoli smussati sul lato destro**, si apre all'avvicinarsi del mouse (sul telefono menu ☰ a tenda), nome del demolitore in testa. Voci: Pratiche · La tua azienda · Fatturazione ("PRESTO") · Esci in fondo
+- **Pannello "La tua azienda"** (mockup A, agosto 2026): tenda da destra con testata blu stile profilo (quadratino bianco + nome grande, ✕ a tondo traslucido) e 3 schede in sola lettura della famiglia card (Azienda · Sede · Contatti, etichetta a sinistra e valore a destra). **Si chiude SOLO con la ✕** (il clic fuori non chiude), niente Esci nel pannello (sta nella sidebar), nessuna nota "li gestisce NoiDemoliamo". Etichetta unica ovunque (pannello, form Nuovo demolitore, scheda CRM): "**Email assegnazioni pratiche**"
+- **Home: GEMELLA del CRM admin** (mockup approvato, agosto 2026): l'area demolitore ha la stessa grafica del CRM ma senza i poteri dell'admin (niente matite né modifiche; le sue azioni vivono nella scheda pratica). Barra azzurra con la ricerca a pillola, fila COMPLETA delle caselle-filtro (In arrivo · fissa il ritiro › Ritiro fissato › Certificato rottamazione › Cancellazione targhe › Completate, più "Non a buon fine" fuori fila: bianca a zero, rossa coi casi), righe della famiglia card: icona veicolo, targa · modello · anno con la via, colonna cliente (delegato / "Ritirata il" / "Completata il" / "Annullata il"), pillola di stato nella palette unica e riquadro metrica a destra (countdown 8 ore rosso sotto le 4 ore o in ritardo, data e ora del ritiro, giorni alle scadenze). ⚠️ Le scadenze dei certificati si CALCOLANO da `data_ritiro_effettuato` (24 ore rottamazione, 15 giorni lavorativi PRA): non hanno colonne nel DB
+- Fasi del flusso demolitore (`_lib/api.ts`, `gruppoDi`): arrivo · fissato · rottamazione · targhe · completate · annullate ("Non a buon fine", col motivo in riga)
 
 ## 5.4 Backend / API
 
@@ -863,11 +863,10 @@ I PDF originali stanno in `docs/moduli/originali/` e viaggiano nel deploy via `o
 ## 8.2 Il prossimo lavoro
 
 ### ▶️ AREA DEMOLITORE — FASE 3
-La dashboard demolitore ha login, liste per fase, azioni (fissa/sposta ritiro, veicolo ritirato, certificati) e chat. **Manca:**
-1. **Home**: le altre caselle del flusso (Ritiro fissato, Certificato rottamazione, Cancellazione targhe, Completate, Non a buon fine col motivo)
-2. **Scheda pratica**: da ricostruire tutta su dettatura di Davide (azione per fase, dati in sola lettura col "Chiama" che va sul DELEGATO se c'è, documenti in sola visione, box "da farti consegnare", chat, note)
-3. **Motore scadenze e notifiche**: campanella in-app, email di sollecito oltre le 8 ore lavorative, promemoria del giorno di ritiro a demolitore e cliente, bottone cliente "Non posso quel giorno" (non bloccante, avvisa demolitore e admin)
-4. Rifinire cosa il demolitore NON deve vedere quando nasceranno nuovi stati
+La dashboard demolitore ha login, la HOME gemella del CRM (fila completa di caselle-filtro, righe famiglia card), il pannello "La tua azienda", le azioni (fissa/sposta ritiro, veicolo ritirato, certificati) e la chat. **Manca:**
+1. **Scheda pratica**: da ricostruire tutta su dettatura di Davide (azione per fase, dati in sola lettura col "Chiama" che va sul DELEGATO se c'è, documenti in sola visione, box "da farti consegnare", chat, note)
+2. **Motore scadenze e notifiche**: campanella in-app, email di sollecito oltre le 8 ore lavorative, promemoria del giorno di ritiro a demolitore e cliente, bottone cliente "Non posso quel giorno" (non bloccante, avvisa demolitore e admin)
+3. Rifinire cosa il demolitore NON deve vedere quando nasceranno nuovi stati
 
 Richiede: **Resend attivo** (il dominio noidemoliamo.it è già comprato: va collegato a Vercel e verificato su Resend con SPF/DKIM/DMARC) e un **cron Vercel** per i controlli periodici.
 

@@ -18,7 +18,7 @@ import { autenticaDemolitore } from '@/lib/demolitoreAuth'
 const CAMPI_LISTA = [
   'id', 'stato', 'targa', 'tipo_mezzo', 'tipo_mezzo_altro', 'marca', 'modello', 'anno', 'km', 'casistica',
   'nome_richiedente', 'telefono', 'codice_fiscale', 'indirizzo_ritiro', 'comune_ritiro', 'provincia_ritiro', 'marciante',
-  'data_assegnazione', 'scadenza_proposta_ritiro', 'data_ritiro_prevista',
+  'delegato_nome', 'data_assegnazione', 'scadenza_proposta_ritiro', 'data_ritiro_prevista',
   'data_ritiro_effettuato', 'data_certificato_rottamazione', 'data_certificato_pra',
   'cert_rottamazione_a_mano', 'motivo_annullamento', 'aggiornato_il', 'creato_il',
 ].join(', ')

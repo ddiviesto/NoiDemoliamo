@@ -321,7 +321,7 @@ export default function GestioneDemolitori() {
                   <Campo label="Telefono fisso" value={form.telefono_fisso} onChange={v => set('telefono_fisso', v)} placeholder="081 1234567" />
                   <Campo label="Email aziendale" value={form.email_aziendale} onChange={v => set('email_aziendale', v)} placeholder="info@azienda.it" />
                   <Campo label="PEC" value={form.pec} onChange={v => set('pec', v)} placeholder="azienda@pec.it" />
-                  <Campo label="Email assegnazione pratiche" value={form.email_assegnazione} onChange={v => set('email_assegnazione', v)} placeholder="pratiche@azienda.it" />
+                  <Campo label="Email assegnazioni pratiche" value={form.email_assegnazione} onChange={v => set('email_assegnazione', v)} placeholder="pratiche@azienda.it" />
                 </div>
               </Sezione>
 
