@@ -16,7 +16,7 @@ import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { useRouter } from 'next/navigation'
 import { chiamataDemolitore, PraticaDemolitore, GruppoPratica, gruppoDi, countdownScadenza } from './_lib/api'
 import SidebarDemolitore from './_components/SidebarDemolitore'
-import PannelloAnagrafica from './_components/PannelloAnagrafica'
+import TendaAzienda from './_components/TendaAzienda'
 import IconaVeicolo from '../components/IconaVeicolo'
 
 type Filtro = 'tutte' | GruppoPratica
@@ -26,13 +26,12 @@ const ORDINE_GRUPPO: Record<GruppoPratica, number> = { arrivo: 0, fissato: 1, ro
 
 export default function HomeDemolitore() {
   const router = useRouter()
-  const [azienda, setAzienda] = useState('')
   const [pratiche, setPratiche] = useState<PraticaDemolitore[]>([])
   const [filtro, setFiltro] = useState<Filtro>('tutte')
   const [ricerca, setRicerca] = useState('')
   const [loading, setLoading] = useState(true)
   const [errore, setErrore] = useState('')
-  const [anagrafica, setAnagrafica] = useState(false)
+  const [aziendaAperta, setAziendaAperta] = useState(false)
   const [menuMobile, setMenuMobile] = useState(false)
   const [, setTick] = useState(0)
 
@@ -46,12 +45,11 @@ export default function HomeDemolitore() {
     async function carica() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
-      const { data: u } = await supabase.from('utenti').select('nome, tipo').eq('id', session.user.id).single()
+      const { data: u } = await supabase.from('utenti').select('tipo').eq('id', session.user.id).single()
       if (u?.tipo !== 'demolitore') {
         router.push(u?.tipo === 'admin' ? '/admin' : '/dashboard')
         return
       }
-      setAzienda(u?.nome || '')
       try {
         const json = await chiamataDemolitore<{ pratiche: PraticaDemolitore[] }>('/api/demolitore-pratiche')
         setPratiche(json.pratiche || [])
@@ -119,7 +117,7 @@ export default function HomeDemolitore() {
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
         onPratiche={() => setFiltro('tutte')}
-        onAzienda={() => setAnagrafica(true)}
+        onAzienda={() => setAziendaAperta(true)}
         onEsci={esci}
       />
 
@@ -134,7 +132,7 @@ export default function HomeDemolitore() {
           </button>
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-none">Pratiche</h1>
-            <p className="text-xs text-gray-500 mt-1">{pratiche.length} totali · {azienda}</p>
+            <p className="text-xs text-gray-500 mt-1">{pratiche.length} totali</p>
           </div>
           <div className="ml-auto">
             {/* Sulla barra azzurra la pillola è BIANCA col bordo celeste */}
@@ -187,7 +185,7 @@ export default function HomeDemolitore() {
         </div>
       </div>
 
-      <PannelloAnagrafica aperto={anagrafica} onChiudi={() => setAnagrafica(false)} onEsci={esci} />
+      <TendaAzienda aperta={aziendaAperta} onChiudi={() => setAziendaAperta(false)} />
     </main>
   )
 }

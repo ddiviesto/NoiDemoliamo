@@ -63,8 +63,9 @@ function VociMenu({ attiva, espansa, nome, onPratiche, onAzienda, onEsci }: {
         <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={28} height={28} className="rounded-lg flex-shrink-0" />
         <span className="transition-opacity duration-150 truncate text-white" style={{ fontSize: 12.5, fontWeight: 800, opacity: espansa ? 1 : 0, maxWidth: 150 }}>{nome || '…'}</span>
       </div>
+      {/* Portablocco: la stessa icona della voce Pratiche del CRM admin */}
       <Voce attiva={attiva === 'pratiche'} onClick={onPratiche} espansa={espansa} label="Pratiche"
-        icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M14 16.5V13a1 1 0 0 0-1-1H3v4.5" /><path d="M3 12V7a1 1 0 0 1 1-1h9l3 4h3a2 2 0 0 1 2 2v4.5" /><circle cx="6.5" cy="17.5" r="2" /><circle cx="17.5" cy="17.5" r="2" /></svg>} />
+        icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" /></svg>} />
       <Voce attiva={attiva === 'azienda'} onClick={onAzienda} espansa={espansa} label="La tua azienda"
         icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>} />
       <Voce disabilitata espansa={espansa} label="Fatturazione"

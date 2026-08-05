@@ -496,7 +496,7 @@ C:\Progetto_NoiDemoliamo\
 │   │                               #   DocumentiApprovazione, ChatAdmin, CronologiaNote
 │   ├── demolitore/                 # AREA DEMOLITORE
 │   │   ├── page.tsx · pratiche/[id]/
-│   │   └── _components/            # SidebarDemolitore, PannelloAnagrafica,
+│   │   └── _components/            # SidebarDemolitore, TendaAzienda,
 │   │                               #   ChatDemolitore, NoteDemolitore
 │   ├── components/                 # AiutoWhatsApp, IconaVeicolo (condivise)
 │   └── api/                        # vedi 5.4
@@ -580,7 +580,7 @@ Pannello che **scivola da destra a tutta altezza**. Testata gemella della tendin
 
 ### Com'è fatta l'area demolitore
 - ⚠️ **La barra laterale a scomparsa** (`SidebarDemolitore.tsx`) è l'unica cosa sopravvissuta a 3 redesign: **non toccarla**. Colonnina di icone con gli **angoli smussati sul lato destro**, si apre all'avvicinarsi del mouse (sul telefono menu ☰ a tenda), nome del demolitore in testa. Voci: Pratiche · La tua azienda · Fatturazione ("PRESTO") · Esci in fondo
-- **Pannello "La tua azienda"** (mockup A, agosto 2026): tenda da destra con testata blu stile profilo (quadratino bianco + nome grande, ✕ a tondo traslucido) e 3 schede in sola lettura della famiglia card (Azienda · Sede · Contatti, etichetta a sinistra e valore a destra). **Si chiude SOLO con la ✕** (il clic fuori non chiude), niente Esci nel pannello (sta nella sidebar), nessuna nota "li gestisce NoiDemoliamo". Etichetta unica ovunque (pannello, form Nuovo demolitore, scheda CRM): "**Email assegnazioni pratiche**"
+- **Tenda "La tua azienda"** (`TendaAzienda.tsx`, mockup A del 05/08 dopo due giri: bocciati il pannello da destra e la pagina intera): si apre **DA SINISTRA**, attaccata alla colonnina della barra, sopra la pagina pratiche che resta visibile dietro il velo. Testata azzurra come le barre del CRM (quadratino + "La tua azienda" + ✕ a tondino bianco col bordo celeste), 3 schede della famiglia in COLONNA UNICA in sola lettura (Azienda · Sede · Contatti, etichetta a sinistra e valore a destra), nessuna nota "li gestisce NoiDemoliamo". Si chiude con la ✕ **o cliccando fuori**. Etichetta unica ovunque (tenda, form Nuovo demolitore, scheda CRM): "**Email assegnazioni pratiche**"
 - **Home: GEMELLA del CRM admin** (mockup approvato, agosto 2026): l'area demolitore ha la stessa grafica del CRM ma senza i poteri dell'admin (niente matite né modifiche; le sue azioni vivono nella scheda pratica). Barra azzurra con la ricerca a pillola, fila COMPLETA delle caselle-filtro (In arrivo · fissa il ritiro › Ritiro fissato › Certificato rottamazione › Cancellazione targhe › Completate, più "Non a buon fine" fuori fila: bianca a zero, rossa coi casi), righe della famiglia card: icona veicolo, targa · modello · anno con la via, colonna cliente (delegato / "Ritirata il" / "Completata il" / "Annullata il"), pillola di stato nella palette unica e riquadro metrica a destra (countdown 8 ore rosso sotto le 4 ore o in ritardo, data e ora del ritiro, giorni alle scadenze). ⚠️ Le scadenze dei certificati si CALCOLANO da `data_ritiro_effettuato` (24 ore rottamazione, 15 giorni lavorativi PRA): non hanno colonne nel DB
 - Fasi del flusso demolitore (`_lib/api.ts`, `gruppoDi`): arrivo · fissato · rottamazione · targhe · completate · annullate ("Non a buon fine", col motivo in riga)
 

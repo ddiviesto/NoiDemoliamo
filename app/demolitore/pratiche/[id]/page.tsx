@@ -15,7 +15,7 @@ import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { useRouter, useParams } from 'next/navigation'
 import { chiamataDemolitore, nomeVeicolo } from '../../_lib/api'
 import SidebarDemolitore from '../../_components/SidebarDemolitore'
-import PannelloAnagrafica from '../../_components/PannelloAnagrafica'
+import TendaAzienda from '../../_components/TendaAzienda'
 import ChatDemolitore from '../../_components/ChatDemolitore'
 
 interface PraticaDettaglio {
@@ -39,7 +39,7 @@ export default function SchedaPraticaDemolitore() {
   const [loading, setLoading] = useState(true)
   const [errore, setErrore] = useState('')
   const [pratica, setPratica] = useState<PraticaDettaglio | null>(null)
-  const [anagrafica, setAnagrafica] = useState(false)
+  const [aziendaAperta, setAziendaAperta] = useState(false)
   const [menuMobile, setMenuMobile] = useState(false)
 
   const carica = useCallback(async () => {
@@ -96,7 +96,7 @@ export default function SchedaPraticaDemolitore() {
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
         onPratiche={() => router.push('/demolitore')}
-        onAzienda={() => setAnagrafica(true)}
+        onAzienda={() => setAziendaAperta(true)}
         onEsci={esci}
       />
 
@@ -130,7 +130,7 @@ export default function SchedaPraticaDemolitore() {
         </div>
       </div>
 
-      <PannelloAnagrafica aperto={anagrafica} onChiudi={() => setAnagrafica(false)} onEsci={esci} />
+      <TendaAzienda aperta={aziendaAperta} onChiudi={() => setAziendaAperta(false)} />
     </main>
   )
 }
