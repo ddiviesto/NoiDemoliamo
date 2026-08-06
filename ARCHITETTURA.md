@@ -671,6 +671,7 @@ Il sistema è **istantaneo su tutto**: nessuna pagina deve richiedere il refresh
 - **Palco del visore documenti**: grigio ardesia `#5D6A7E`
 - **Riquadro metrica urgente** nelle liste a card: `#FCEBEB` / `#A32D2D`
 - **Poche decorazioni**: il colore si usa SOLO dove significa qualcosa
+- ⭐ **AREE DI LAVORO AD ALTEZZA SCHERMO** (06/08, admin e demolitore): la finestra del browser non scorre MAI, scorre solo la colonna dei contenuti sotto la barra azzurra (che arriva intera fino al bordo). La riserva globale dello spazio-barra si spegne lì (classe `area-lavoro` accesa dalle sidebar + foglietto di stile iniettato dai layout `app/admin/layout.tsx` e `app/demolitore/layout.tsx` all'istante zero, per non far lampeggiare la striscia al refresh). Gli scorrimenti interni (liste, chat, pannelli) usano il **bastoncino sottile e stondato** (`#C2CAD6`, hover `#A8B2C1`, regole in globals.css). Ogni NUOVA pagina delle due aree deve seguire questo schema: `h-screen overflow-hidden` sul main e `overflow-auto flex-1 min-h-0` sulla colonna dei contenuti
 
 ### Tipografia dei dati nell'admin (bilanciamento approvato)
 - **Titoli sezione**: `#1E293B` bold uppercase 12px, con iconcina 28px `#DBEAFE`
