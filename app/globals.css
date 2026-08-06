@@ -3,12 +3,38 @@
 /* ⭐ 28/07 (bug trovato da Davide): quando un'apertura allunga la pagina
    compare la barra di scorrimento e tutto slitta a sinistra (Windows).
    Lo spazio della barra è SEMPRE riservato: niente più spostamenti.
+   ⭐ 05/08: le aree di lavoro (admin e demolitore) sono AD ALTEZZA SCHERMO
+   con lo scorrimento DENTRO la colonna dei contenuti: la finestra non
+   scorre mai, quindi lo spazio riservato resta vuoto e si mimetizza con
+   lo sfondo (che lì diventa grigio via JS dalle sidebar).
    ⭐ 28/07 (screen iPhone di Davide): lo sfondo dietro la pagina è LAVANDA,
    così l'effetto elastico di iOS non mostra più il nero. */
 html {
   scrollbar-gutter: stable;
   background: #e0e7ff;
 }
+
+/* ⭐ 05/08 (mockup A approvato): nelle AREE DI LAVORO (admin e demolitore,
+   la classe la mettono le sidebar) lo spazio riservato si SPEGNE — quelle
+   pagine sono ad altezza schermo e la finestra non scorre mai, quindi le
+   barre azzurre arrivano fino al bordo vero. Gli scorrimenti INTERNI
+   (liste, chat, pannelli) hanno la barra SOTTILE E STONDATA: bastoncino
+   grigio discreto che si scurisce al passaggio del mouse. */
+html.area-lavoro {
+  scrollbar-gutter: auto;
+}
+html.area-lavoro * {
+  scrollbar-width: thin;              /* Firefox */
+  scrollbar-color: #C2CAD6 transparent;
+}
+html.area-lavoro *::-webkit-scrollbar { width: 9px; height: 9px; }
+html.area-lavoro *::-webkit-scrollbar-track { background: transparent; }
+html.area-lavoro *::-webkit-scrollbar-thumb {
+  background: #C2CAD6;
+  border-radius: 999px;
+  border: 2px solid #ECEEF2; /* cornicetta color sfondo: sembra più sottile */
+}
+html.area-lavoro *::-webkit-scrollbar-thumb:hover { background: #A8B2C1; }
 
 :root {
   --background: #ffffff;

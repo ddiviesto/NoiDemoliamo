@@ -89,7 +89,9 @@ export default function SchedaPraticaDemolitore() {
   const p = pratica
 
   return (
-    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
+    // ⭐ 05/08: AD ALTEZZA SCHERMO come il CRM admin — la finestra non
+    // scorre mai, scorre solo la colonna dei contenuti
+    <main className="flex" style={{ background: '#ECEEF2', height: '100vh', overflow: 'hidden' }}>
 
       <SidebarDemolitore
         attiva="pratiche"
@@ -100,7 +102,7 @@ export default function SchedaPraticaDemolitore() {
         onEsci={esci}
       />
 
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0 overflow-y-auto">
 
         {/* barra mobile col menu ☰ — bianca come le barre in alto (23/07) */}
         <div className="lg:hidden bg-white flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #E5E7EB' }}>

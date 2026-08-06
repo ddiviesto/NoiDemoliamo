@@ -1,11 +1,13 @@
 'use client'
 
 /**
- * BARRA LATERALE A SCOMPARSA — AREA DEMOLITORE (23/07/2026, mockup approvato).
- * Su PC: colonnina di sole icone a sinistra che si APRE DA SOLA quando il
- * mouse si avvicina (hover). Sul telefono: nascosta, si apre col bottone ☰
- * come tenda da sinistra. Voci: Pratiche · La tua azienda (anagrafica) ·
- * Fatturazione (presto) · Esci in fondo.
+ * BARRA LATERALE — AREA DEMOLITORE. Dal 05/08/2026 è la GEMELLA di
+ * quella dell'admin (richiesta Davide: "deve essere tutto uguale il
+ * sistema"): fissa e sempre aperta su PC, stessa larghezza, niente
+ * angoli smussati né apertura a scomparsa, testata con logo + nome
+ * del demolitore + ruolo DEMOLITORE in maiuscoletto (come
+ * NoiDemoliamo/ADMIN), voce attiva "in vetro", Esci in fondo oltre
+ * la riga. Sul telefono: tenda da sinistra col bottone ☰.
  */
 
 import { useEffect, useState } from 'react'
@@ -14,43 +16,34 @@ import { supabase } from '@/lib/supabase'
 
 export type VoceSidebar = 'pratiche' | 'azienda'
 
-function Voce({ attiva, disabilitata, scura, onClick, icona, label, extra, espansa }: {
+// Voce di navigazione, stessa veste di NavItem dell'AdminSidebar
+function Voce({ attiva, disabilitata, onClick, icona, label, extra }: {
   attiva?: boolean
   disabilitata?: boolean
-  /** per le voci in FONDO alla barra, dove la dissolvenza è quasi bianca */
-  scura?: boolean
   onClick?: () => void
   icona: React.ReactNode
   label: string
   extra?: React.ReactNode
-  espansa: boolean
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabilitata}
-      className="w-full flex items-center gap-3 rounded-[9px] transition-colors"
-      style={{
-        padding: '10px 12px', margin: '1px 0',
-        fontSize: 12.5, fontWeight: attiva ? 700 : 600, whiteSpace: 'nowrap',
-        color: disabilitata ? 'rgba(240,245,255,0.55)' : attiva ? '#fff' : scura ? '#3E5170' : '#F0F5FF',
-        background: attiva ? 'rgba(255,255,255,0.22)' : 'transparent',
-        cursor: disabilitata ? 'default' : 'pointer',
-      }}
-      onMouseEnter={e => { if (!attiva && !disabilitata) e.currentTarget.style.background = scura ? 'rgba(30,58,110,0.08)' : 'rgba(255,255,255,0.12)' }}
+      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors w-full text-left"
+      style={attiva
+        ? { background: 'rgba(255,255,255,0.22)', color: '#fff', fontWeight: 600 }
+        : { color: disabilitata ? 'rgba(240,245,255,0.55)' : '#F0F5FF', cursor: disabilitata ? 'default' : 'pointer' }}
+      onMouseEnter={e => { if (!attiva && !disabilitata) e.currentTarget.style.background = 'rgba(255,255,255,0.12)' }}
       onMouseLeave={e => { if (!attiva) e.currentTarget.style.background = 'transparent' }}
     >
       <span className="flex-shrink-0">{icona}</span>
-      <span className="flex items-center gap-2 transition-opacity duration-150" style={{ opacity: espansa ? 1 : 0 }}>
-        {label}{extra}
-      </span>
+      <span className="flex items-center gap-2 min-w-0">{label}{extra}</span>
     </button>
   )
 }
 
-function VociMenu({ attiva, espansa, nome, onPratiche, onAzienda, onEsci }: {
+function Contenuto({ attiva, nome, onPratiche, onAzienda, onEsci }: {
   attiva: VoceSidebar
-  espansa: boolean
   nome: string
   onPratiche: () => void
   onAzienda: () => void
@@ -58,22 +51,36 @@ function VociMenu({ attiva, espansa, nome, onPratiche, onAzienda, onEsci }: {
 }) {
   return (
     <>
-      {/* In testa: LOGO VERO + NOME DEL DEMOLITORE (richieste Davide 23/07) */}
-      <div className="flex items-center gap-3 whitespace-nowrap" style={{ padding: '4px 10px 13px', borderBottom: '1px solid rgba(255,255,255,0.18)', marginBottom: 8 }}>
-        <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={28} height={28} className="rounded-lg flex-shrink-0" />
-        <span className="transition-opacity duration-150 truncate text-white" style={{ fontSize: 12.5, fontWeight: 800, opacity: espansa ? 1 : 0, maxWidth: 150 }}>{nome || '…'}</span>
+      {/* Testata come l'admin: logo vero, nome, ruolo in maiuscoletto */}
+      <div className="px-4 py-4 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
+        <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={36} height={36} className="rounded-xl flex-shrink-0" />
+        <div className="min-w-0">
+          <div className="text-[13px] font-bold leading-tight">{nome || '…'}</div>
+          <div className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: '#BFDBFE' }}>Demolitore</div>
+        </div>
       </div>
-      {/* Portablocco: la stessa icona della voce Pratiche del CRM admin */}
-      <Voce attiva={attiva === 'pratiche'} onClick={onPratiche} espansa={espansa} label="Pratiche"
-        icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" /></svg>} />
-      <Voce attiva={attiva === 'azienda'} onClick={onAzienda} espansa={espansa} label="La tua azienda"
-        icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>} />
-      <Voce disabilitata espansa={espansa} label="Fatturazione"
-        extra={<span style={{ fontSize: 8.5, fontWeight: 700, background: 'rgba(255,255,255,0.22)', color: '#fff', borderRadius: 999, padding: '1px 7px' }}>PRESTO</span>}
-        icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>} />
-      <div className="mt-auto" style={{ borderTop: '1px solid rgba(255,255,255,0.25)', paddingTop: 8 }}>
-        <Voce onClick={onEsci} espansa={espansa} label="Esci"
-          icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>} />
+
+      <nav className="flex flex-col gap-1 p-2.5 flex-1">
+        {/* Portablocco: la stessa icona della voce Pratiche del CRM admin */}
+        <Voce attiva={attiva === 'pratiche'} onClick={onPratiche} label="Pratiche"
+          icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" /></svg>} />
+        <Voce attiva={attiva === 'azienda'} onClick={onAzienda} label="La tua azienda"
+          icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>} />
+        <Voce disabilitata label="Fatturazione"
+          extra={<span style={{ fontSize: 8.5, fontWeight: 700, background: 'rgba(255,255,255,0.22)', color: '#fff', borderRadius: 999, padding: '1px 7px' }}>PRESTO</span>}
+          icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /></svg>} />
+      </nav>
+
+      {/* Esci in fondo, oltre la riga (come l'admin) */}
+      <div className="p-2.5" style={{ borderTop: '1px solid rgba(255,255,255,0.25)' }}>
+        <button onClick={onEsci} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-white/15" style={{ color: '#F0F5FF' }}>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Esci
+        </button>
       </div>
     </>
   )
@@ -87,8 +94,30 @@ export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile
   onAzienda: () => void
   onEsci: () => void
 }) {
-  const [hover, setHover] = useState(false)
   const [nome, setNome] = useState('')
+
+  // ⭐ 05/08 (segnalazione Davide): lo spazio riservato alla barra di
+  // scorrimento mostra lo sfondo lavanda del sito cliente, che qui si
+  // vede come una barretta blu sul bordo. Nell'area demolitore lo sfondo
+  // dietro la pagina diventa grigio come la pagina: strisce mimetizzate.
+  useEffect(() => {
+    const html = document.documentElement
+    const prevHtml = html.style.background
+    const prevBody = document.body.style.background
+    html.style.background = '#ECEEF2'
+    document.body.style.background = '#ECEEF2'
+    // ⭐ 05/08 (mockup A): accende le regole "area di lavoro" del CSS
+    // globale — via lo spazio riservato alla barra della finestra,
+    // barre di scorrimento interne sottili e stondate
+    html.classList.add('area-lavoro')
+    return () => {
+      html.style.background = prevHtml
+      document.body.style.background = prevBody
+      html.classList.remove('area-lavoro')
+      // via anche il foglietto iniettato dal layout all'istante zero
+      document.getElementById('stile-area-lavoro')?.remove()
+    }
+  }, [])
 
   // Il nome del demolitore in testa alla barra (si carica da solo)
   useEffect(() => {
@@ -105,26 +134,19 @@ export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile
 
   return (
     <>
-      {/* ===== PC: colonnina che si apre all'avvicinarsi del mouse =====
-          ⭐ 23/07 (variante A su mockup): BLU NoiDemoliamo come l'admin */}
-      <div
-        className="hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen overflow-hidden"
+      {/* ===== PC: barra FISSA, gemella dell'AdminSidebar ===== */}
+      <aside
+        className="hidden lg:flex flex-col flex-shrink-0 sticky top-0 h-screen text-white"
         style={{
-          width: hover ? 212 : 58,
+          width: 210,
           background: 'linear-gradient(180deg, #2563eb 0%, #2563eb 65%, #7CA4F2 100%)',
-          transition: 'width 0.22s ease',
-          boxShadow: hover ? '6px 0 24px rgba(15,27,51,0.25)' : 'none',
-          padding: '12px 8px',
-          // ⭐ Angoli smussati sul lato destro (richiesta Davide): la
-          // colonnina chiusa non è più un rettangolo a tutta altezza
-          borderRadius: '0 16px 16px 0',
-          zIndex: 30,
+          // Sopra la tenda "La tua azienda" (z-45): la tenda deve emergere
+          // da DIETRO il bordo della barra, non passarle davanti
+          zIndex: 50,
         }}
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
       >
-        <VociMenu attiva={attiva} espansa={hover} nome={nome} onPratiche={onPratiche} onAzienda={onAzienda} onEsci={onEsci} />
-      </div>
+        <Contenuto attiva={attiva} nome={nome} onPratiche={onPratiche} onAzienda={onAzienda} onEsci={onEsci} />
+      </aside>
 
       {/* ===== TELEFONO: tenda da sinistra col bottone ☰ ===== */}
       <div
@@ -133,10 +155,10 @@ export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile
         style={{ background: 'rgba(17,24,39,0.45)', opacity: apertaMobile ? 1 : 0, pointerEvents: apertaMobile ? 'auto' : 'none' }}
       />
       <div
-        className="lg:hidden fixed top-0 left-0 bottom-0 z-50 flex flex-col shadow-2xl transition-transform duration-300"
-        style={{ width: 240, padding: '14px 10px', background: 'linear-gradient(180deg, #2563eb 0%, #2563eb 65%, #7CA4F2 100%)', transform: apertaMobile ? 'translateX(0)' : 'translateX(-105%)' }}
+        className="lg:hidden fixed top-0 left-0 bottom-0 z-50 flex flex-col shadow-2xl transition-transform duration-300 text-white"
+        style={{ width: 240, background: 'linear-gradient(180deg, #2563eb 0%, #2563eb 65%, #7CA4F2 100%)', transform: apertaMobile ? 'translateX(0)' : 'translateX(-105%)' }}
       >
-        <VociMenu attiva={attiva} espansa={true} nome={nome} onPratiche={() => { onChiudiMobile(); onPratiche() }} onAzienda={() => { onChiudiMobile(); onAzienda() }} onEsci={onEsci} />
+        <Contenuto attiva={attiva} nome={nome} onPratiche={() => { onChiudiMobile(); onPratiche() }} onAzienda={() => { onChiudiMobile(); onAzienda() }} onEsci={onEsci} />
       </div>
     </>
   )

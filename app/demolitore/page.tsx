@@ -110,7 +110,10 @@ export default function HomeDemolitore() {
   }
 
   return (
-    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
+    // ⭐ 05/08: AD ALTEZZA SCHERMO come il CRM admin — la finestra non
+    // scorre mai, scorre solo la colonna dei contenuti (niente binario
+    // di scorrimento della pagina né strisce sul bordo)
+    <main className="flex" style={{ background: '#ECEEF2', height: '100vh', overflow: 'hidden' }}>
 
       <SidebarDemolitore
         attiva="pratiche"
@@ -144,7 +147,7 @@ export default function HomeDemolitore() {
           </div>
         </div>
 
-        <div className="p-4 lg:p-6 overflow-auto">
+        <div className="p-4 lg:p-6 overflow-auto flex-1 min-h-0">
 
           {errore && (
             <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-[12.5px] font-semibold mb-4 bg-white" style={{ border: '1.5px solid #F3C8C8', color: '#9B1C1C' }}>

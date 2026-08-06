@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
@@ -22,6 +22,29 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
   const router = useRouter()
   // false = faccia NAVIGAZIONE, true = faccia IMPOSTAZIONI (flip)
   const [impostazioni, setImpostazioni] = useState(false)
+
+  // ⭐ 05/08 (segnalazione Davide): lo spazio riservato alla barra di
+  // scorrimento mostra lo sfondo lavanda del sito cliente, che nel CRM
+  // grigio si vede come una barretta blu sul bordo destro. Qui lo sfondo
+  // dietro la pagina diventa grigio come la pagina: striscia mimetizzata.
+  useEffect(() => {
+    const html = document.documentElement
+    const prevHtml = html.style.background
+    const prevBody = document.body.style.background
+    html.style.background = '#ECEEF2'
+    document.body.style.background = '#ECEEF2'
+    // ⭐ 05/08 (mockup A): accende le regole "area di lavoro" del CSS
+    // globale — via lo spazio riservato alla barra della finestra,
+    // barre di scorrimento interne sottili e stondate
+    html.classList.add('area-lavoro')
+    return () => {
+      html.style.background = prevHtml
+      document.body.style.background = prevBody
+      html.classList.remove('area-lavoro')
+      // via anche il foglietto iniettato dal layout all'istante zero
+      document.getElementById('stile-area-lavoro')?.remove()
+    }
+  }, [])
 
   // Pulizia account senza pratiche (endpoint /api/pulisci-utenti)
   const [pulisciOpen, setPulisciOpen] = useState(false)

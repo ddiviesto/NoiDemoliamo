@@ -61,16 +61,18 @@ export default function TendaAzienda({ aperta, onChiudi }: {
 
   return (
     <>
-      {/* velo scuro: cliccarlo chiude */}
+      {/* velo scuro SOLO sulla pagina (la barra fissa resta libera e
+          luminosa): cliccarlo chiude */}
       <div
         onClick={onChiudi}
-        className="fixed inset-0 z-40 transition-opacity duration-300"
+        className="fixed inset-0 lg:left-[210px] z-40 transition-opacity duration-300"
         style={{ background: 'rgba(15,23,42,0.38)', opacity: aperta ? 1 : 0, pointerEvents: aperta ? 'auto' : 'none' }}
       />
-      {/* la tenda, attaccata alla colonnina della barra (su telefono dal bordo) */}
+      {/* la tenda scivola da sinistra a destra, dal bordo della barra
+          fissa (su telefono dal bordo dello schermo) */}
       <div
-        className="fixed top-0 bottom-0 left-0 lg:left-[58px] z-50 w-full max-w-[340px] flex flex-col transition-transform duration-300 shadow-2xl overflow-hidden"
-        style={{ transform: aperta ? 'translateX(0)' : 'translateX(-130%)', background: '#F6F8FB', borderRadius: '0 16px 16px 0' }}
+        className="fixed top-0 bottom-0 left-0 lg:left-[210px] z-[45] w-full max-w-[340px] flex flex-col transition-transform duration-300 shadow-2xl overflow-hidden"
+        style={{ transform: aperta ? 'translateX(0)' : 'translateX(-160%)', background: '#F6F8FB', borderRadius: '0 16px 16px 0' }}
       >
         {/* TESTATA AZZURRA come le barre del CRM */}
         <div className="flex items-center gap-3 flex-shrink-0" style={{ background: '#EFF6FF', borderBottom: '1px solid #DBEAFE', padding: '13px 14px' }}>

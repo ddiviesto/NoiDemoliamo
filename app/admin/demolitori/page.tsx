@@ -225,7 +225,7 @@ export default function GestioneDemolitori() {
   // compresa): la rotellina gira solo nell'area contenuti — niente lampo
   // grigio passando da una pagina all'altra (26/07)
   if (loading) return (
-    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
+    <main className="h-screen overflow-hidden flex" style={{ background: '#ECEEF2' }}>
       <AdminSidebar attivo="demolitori" />
       <div className="flex-1 min-w-0 flex items-center justify-center">
         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
@@ -234,7 +234,9 @@ export default function GestioneDemolitori() {
   )
 
   return (
-    <main className="min-h-screen flex" style={{ background: '#ECEEF2' }}>
+    // ⭐ 05/08: AD ALTEZZA SCHERMO come il CRM pratiche — la finestra non
+    // scorre mai, scorre solo la lista (niente binario sulla finestra)
+    <main className="h-screen overflow-hidden flex" style={{ background: '#ECEEF2' }}>
       <AdminSidebar attivo="demolitori" />
 
       <div className="flex-1 min-w-0 flex flex-col">
@@ -258,7 +260,7 @@ export default function GestioneDemolitori() {
           </button>
         </div>
 
-        <div className="p-6 overflow-auto">
+        <div className="p-6 overflow-auto flex-1 min-h-0">
           {filtrati.length === 0 ? (
             <div className="px-4 py-10 text-center text-sm text-gray-500 bg-white" style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)' }}>
               {demolitori.length === 0 ? 'Nessun demolitore. Aggiungi il primo per iniziare.' : 'Nessun demolitore trovato.'}
