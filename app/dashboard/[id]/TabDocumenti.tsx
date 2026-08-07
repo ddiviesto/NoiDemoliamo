@@ -1495,20 +1495,18 @@ function PannelloInviati(props: {
   // Cambiando lato o dati, la domanda "Eliminare?" si chiude da sola
   useEffect(() => { setConferma(null) }, [girata, docs, foto])
 
-  // Le due facce sono sovrapposte: l'altezza del pannello segue quella visibile
+  // Le due facce sono sovrapposte: l'altezza del pannello segue quella visibile.
+  // ⭐ 06/08 (scatto segnalato da Davide): con un ResizeObserver l'altezza
+  // insegue anche l'apertura MORBIDA della lista (grid 0fr→1fr) fotogramma
+  // per fotogramma — copre pure il ridimensionamento della finestra
   useLayoutEffect(() => {
     const faccia = girata ? backRef.current : frontRef.current
-    if (faccia) setAltezza(faccia.scrollHeight)
+    if (!faccia) return
+    setAltezza(faccia.scrollHeight)
+    const osservatore = new ResizeObserver(() => setAltezza(faccia.scrollHeight))
+    osservatore.observe(faccia)
+    return () => osservatore.disconnect()
   }, [girata, props.aperta, docs, foto, mostraFoto])
-
-  useEffect(() => {
-    function misura() {
-      const faccia = girata ? backRef.current : frontRef.current
-      if (faccia) setAltezza(faccia.scrollHeight)
-    }
-    window.addEventListener('resize', misura)
-    return () => window.removeEventListener('resize', misura)
-  }, [girata])
 
   const inVerifica = docs.some(d => d.stato === 'caricato')
 
@@ -1556,12 +1554,18 @@ function PannelloInviati(props: {
             <span style={{ transform: props.aperta ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}><IcoChevronDown size={16} color="#9AA7B5" /></span>
           </button>
 
-          {props.aperta && docs.map(d => (
-            <Riga key={d.id} nome={nomeRitiro(d)} approvato={d.stato === 'approvato'} onClick={() => setGirata(d.id)} />
-          ))}
-          {props.aperta && mostraFoto && foto.length > 0 && (
-            <Riga nome="Foto del veicolo" neutra onClick={() => setGirata('foto')} />
-          )}
+          {/* ⭐ 06/08: apertura MORBIDA di famiglia (grid 0fr↔1fr) — le righe
+              restano montate e si srotolano verso il basso, niente scatti */}
+          <div style={{ display: 'grid', gridTemplateRows: props.aperta ? '1fr' : '0fr', transition: 'grid-template-rows 0.3s ease' }}>
+            <div style={{ overflow: 'hidden' }}>
+              {docs.map(d => (
+                <Riga key={d.id} nome={nomeRitiro(d)} approvato={d.stato === 'approvato'} onClick={() => setGirata(d.id)} />
+              ))}
+              {mostraFoto && foto.length > 0 && (
+                <Riga nome="Foto del veicolo" neutra onClick={() => setGirata('foto')} />
+              )}
+            </div>
+          </div>
         </div>
 
         {/* ============ RETRO: il documento in grande ============ */}

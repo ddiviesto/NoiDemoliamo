@@ -1,15 +1,14 @@
 'use client'
 
 /**
- * CRONOLOGIA DELLA PRATICA — lato demolitore (23/07/2026).
- * Componente pronto, messo da parte durante la ricostruzione guidata
- * da Davide: lo stile si adegua quando decide dove e come mostrarlo.
- *
- * ⭐ 28/07 sera (canali): mostra il CANALE CONDIVISO — gli eventi che
- * riguardano il demolitore (assegnazione, ritiro, certificati) e le note
- * a due voci (le sue e quelle di NoiDemoliamo, firmate). Le note private
- * dell'admin e la fase documenti NON passano mai di qui (filtra il server,
- * /api/demolitore-note).
+ * CRONOLOGIA E NOTE — lato demolitore. ⭐ 07/08: CLONE VISIVO della
+ * CronologiaNote del CRM admin (stessa colonna del quando, stesse
+ * pilloline degli eventi col dettaglio sotto, stesso campo a pillola
+ * col tondo blu della matita). Mostra il CANALE CONDIVISO: gli eventi
+ * che riguardano il demolitore e le note a due voci (le sue e quelle
+ * di NoiDemoliamo, firmate). Le note private dell'admin non passano
+ * mai di qui (filtra il server, /api/demolitore-note).
+ * Va montato DENTRO una scheda della tendina: qui c'è solo il corpo.
  */
 
 import { useCallback, useEffect, useState } from 'react'
@@ -26,6 +25,13 @@ const EVENTI_META: Record<string, { label: string; bg: string; col: string }> = 
   ritirata: { label: 'Veicolo ritirato', bg: '#DBEAFE', col: '#1D4ED8' },
   cert_rottamazione: { label: 'Certificato rottamazione', bg: '#DBEAFE', col: '#1D4ED8' },
   cert_pra: { label: 'Radiazione PRA', bg: '#DBEAFE', col: '#1D4ED8' },
+}
+
+function fmtGiorno(x: string) {
+  return new Date(x).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }).toUpperCase()
+}
+function fmtOra(x: string) {
+  return new Date(x).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: string; bloccata: boolean }) {
@@ -59,48 +65,76 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
   }
 
   return (
-    <div className="bg-white rounded-xl p-4" style={{ border: '1px solid #E5E7EB' }}>
-      <p className="text-[10px] font-bold uppercase m-0" style={{ color: '#8A94A1', letterSpacing: 0.7 }}>Cronologia della pratica</p>
-      <p className="text-[10.5px] m-0 mt-0.5 mb-2.5" style={{ color: '#9AA3AF' }}>Le note le vede anche NoiDemoliamo (es. «chiamato, non risponde»).</p>
+    // Riempie la scheda in altezza: la lista scorre DENTRO e il campo
+    // della nota resta INCHIODATO IN FONDO (come nel CRM)
+    <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+      <div className="overflow-y-auto" style={{ flex: 1, minHeight: 60, maxHeight: 280, overscrollBehavior: 'contain' }}>
+        {voci.length === 0 && (
+          <p style={{ fontSize: 11.5, color: '#9AA7B5', padding: '10px 0' }}>Nessuna voce per ora.</p>
+        )}
+        {voci.map(n => {
+          const meta = n.evento ? (EVENTI_META[n.evento] || { label: n.evento, bg: '#F1F4F8', col: '#64748B' }) : null
+          // Nota a due voci: pillola "Nota" + firma di chi l'ha scritta
+          const firma = n.evento ? null : (n.autore === 'demolitore' ? 'Tu' : 'NoiDemoliamo')
+          // Il dettaglio va SOTTO la pillola (regola 07/08); per l'assegnazione
+          // solo il nome (via le code storiche tipo "(dalla classifica)")
+          const dettaglio = n.evento === 'assegnata' || n.evento === 'riassegnata'
+            ? n.testo.replace(/\s*\((dalla classifica|scelto a mano)\)\s*$/, '')
+            : n.testo
+          return (
+            <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
+              <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
+                {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
+              </div>
+              <div style={{ flex: 1, fontSize: 12.5, color: '#3E4C63', lineHeight: 1.5, minWidth: 0 }}>
+                {meta ? (
+                  <>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: meta.bg, color: meta.col, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>
+                      {meta.label}
+                    </span>
+                    {dettaglio && <span style={{ display: 'block', marginTop: 4 }}>{dettaglio}</span>}
+                  </>
+                ) : (
+                  <>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#DBEAFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
+                      Nota
+                    </span>
+                    {/* ⭐ 07/08: il testo va SOTTO la pillola, allineato */}
+                    <span style={{ display: 'block', marginTop: 4 }}>
+                      {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}
+                      {n.testo}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {erroreNota && <p style={{ fontSize: 11, color: '#9B1C1C', margin: '6px 0 0' }}>{erroreNota}</p>}
+
+      {/* Aggiungi nota: campo a pillola + tondo blu con la matita (clone
+          CRM), sempre in fondo alla scheda */}
       {!bloccata && (
-        <div className="flex gap-2 mb-2.5">
+        <div className="flex gap-1.5 mt-2 items-center" style={{ marginTop: 'auto', paddingTop: 8 }}>
           <input
             value={testo}
             onChange={e => setTesto(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') aggiungi() }}
-            placeholder="Scrivi una nota…"
-            className="flex-1 min-w-0 border rounded-[9px] px-3 py-2 text-base outline-none focus:border-blue-500"
-            style={{ borderColor: '#DDE1E8', background: '#fff', color: '#111827' }}
+            placeholder="Scrivi una nota a NoiDemoliamo…"
+            className="flex-1 min-w-0 border-[1.5px] border-gray-200 rounded-full px-3.5 py-[7px] text-base sm:text-[12.5px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all placeholder:text-gray-400"
           />
-          <button onClick={aggiungi} disabled={salvando || !testo.trim()}
-            className="rounded-[9px] px-3.5 text-[11.5px] font-semibold text-white disabled:opacity-40 flex-shrink-0" style={{ background: '#2563eb' }}>
-            {salvando ? '…' : 'Salva'}
+          <button
+            onClick={aggiungi}
+            disabled={salvando || !testo.trim()}
+            className="flex-shrink-0 flex items-center justify-center transition-all disabled:opacity-40 hover:bg-blue-700"
+            style={{ background: '#2563eb', width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer' }}
+            aria-label="Aggiungi nota"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
           </button>
-        </div>
-      )}
-      {erroreNota && <p className="text-[11px] mb-2 m-0" style={{ color: '#9B1C1C' }}>{erroreNota}</p>}
-      {voci.length === 0 ? (
-        <p className="text-[11.5px] m-0" style={{ color: '#9AA3AF' }}>Nessuna voce per ora.</p>
-      ) : (
-        <div className="flex flex-col gap-1.5">
-          {voci.map(n => {
-            const meta = n.evento ? EVENTI_META[n.evento] : null
-            const firma = n.evento ? null : (n.autore === 'demolitore' ? 'Tu' : 'NoiDemoliamo')
-            return (
-              <div key={n.id} className="rounded-[9px] px-2.5 py-2" style={{ background: '#F9FAFB', border: '1px solid #EFF1F4' }}>
-                <div className="text-[12px]" style={{ color: '#374151', lineHeight: 1.45 }}>
-                  {meta && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: meta.bg, color: meta.col, fontSize: 10, fontWeight: 700, borderRadius: 20, padding: '1px 8px', marginRight: 6, verticalAlign: 'middle' }}>{meta.label}</span>
-                  )}
-                  {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}
-                  {n.testo}
-                </div>
-                <div className="text-[9.5px] mt-0.5" style={{ color: '#9AA3AF' }}>
-                  {new Date(n.creato_il).toLocaleString('it-IT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            )
-          })}
         </div>
       )}
     </div>

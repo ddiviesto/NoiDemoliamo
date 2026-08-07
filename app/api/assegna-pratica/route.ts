@@ -187,7 +187,8 @@ export async function POST(req: NextRequest) {
       // (è l'inizio della sua cronologia: demolitore_id lo lega a lui)
       await supabase.from('pratiche_note').insert({
         pratica_id: praticaId,
-        testo: `${demo.ragione_sociale}${manuale ? ' (scelto a mano)' : ' (dalla classifica)'}`,
+        // ⭐ 07/08 (richiesta Davide): SOLO il nome del demolitore, niente code
+        testo: demo.ragione_sociale,
         evento: aggiornamento.riassegnata ? 'riassegnata' : 'assegnata',
         visibile_demolitore: true,
         demolitore_id: demo.id,

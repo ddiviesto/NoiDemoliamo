@@ -172,24 +172,27 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
                 ? (() => { const s = metaStato(n.testo); return { label: s.label, bg: s.bg, col: s.text } })()
                 : (EVENTI_META[n.evento] || { label: n.evento, bg: '#F1F4F8', col: '#64748B' })
               // ⭐ 28/07 sera (richiesta Davide): "Documento rifiutato" mostra
-              // SOLO il nome del documento (senza il motivo), A CAPO sotto la
-              // pillola e su UNA riga sola (puntini se non ci sta)
+              // SOLO il nome del documento (senza il motivo), su UNA riga
+              // ⭐ 07/08 (mockup approvato): per l'assegnazione SOLO il nome
+              // del demolitore (via le code storiche "(dalla classifica)")
               const dettaglio = n.evento === 'stato' ? ''
                 : n.evento === 'doc_rifiutato' ? n.testo.split(': "')[0]
+                : n.evento === 'assegnata' || n.evento === 'riassegnata' ? n.testo.replace(/\s*\((dalla classifica|scelto a mano)\)\s*$/, '')
                 : n.testo
-              const aCapo = n.evento === 'doc_rifiutato'
               return (
                 <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
                   <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
                     {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
                   </div>
                   <div style={{ flex: 1, fontSize: 12.5, color: '#3E4C63', lineHeight: 1.5, minWidth: 0 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: meta.bg, color: meta.col, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', background: meta.bg, color: meta.col, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>
                       {meta.label}
                     </span>
-                    {aCapo && dettaglio ? (
-                      <span style={{ display: 'block', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{dettaglio}</span>
-                    ) : dettaglio}
+                    {/* ⭐ 07/08 (mockup approvato): il dettaglio va SEMPRE a capo,
+                        allineato al bordo sinistro della pillola */}
+                    {dettaglio && (
+                      <span style={{ display: 'block', marginTop: 4, ...(n.evento === 'doc_rifiutato' ? { whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' } : {}) }}>{dettaglio}</span>
+                    )}
                   </div>
                 </div>
               )
@@ -256,10 +259,16 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
                       {stilePillola.label}
                     </span>
                   )}
-                  {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}
-                  {statoRipresa ? (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: statoRipresa.bg, color: statoRipresa.text, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>{statoRipresa.label}</span>
-                  ) : testoMostrato}
+                  {/* ⭐ 07/08 (richiesta Davide): anche per le NOTE il testo va
+                      SOTTO la pillola, allineato — niente più a capo storti */}
+                  {(firma || testoMostrato || statoRipresa) && (
+                    <span style={{ display: 'block', marginTop: 4 }}>
+                      {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}
+                      {statoRipresa ? (
+                        <span style={{ display: 'inline-flex', alignItems: 'center', background: statoRipresa.bg, color: statoRipresa.text, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>{statoRipresa.label}</span>
+                      ) : testoMostrato}
+                    </span>
+                  )}
                 </div>
               </div>
             )

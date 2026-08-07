@@ -89,6 +89,18 @@ export function gruppoDi(p: Pick<PraticaDemolitore, 'stato'>): GruppoPratica {
   return 'arrivo' // assegnata, in_attesa_conferma_cliente
 }
 
+// Etichette delle casistiche (stessa lingua del CRM admin)
+export const CASISTICA_LABEL: Record<string, string> = {
+  persona_fisica: 'Persona fisica',
+  eredi_accettato: 'Eredi (accettata)',
+  eredi_rinuncia: 'Eredi (con rinuncia)',
+  societa: 'Società',
+  societa_fallita: 'Società fallita',
+  associazione: 'Associazione',
+  non_intestatario: 'Non intestatario',
+  targhe_straniere: 'Targhe straniere',
+}
+
 export const GRUPPO_LABEL: Record<GruppoPratica, string> = {
   arrivo: 'In arrivo · fissa il ritiro',
   fissato: 'Ritiro fissato',

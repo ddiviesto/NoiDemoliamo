@@ -10,13 +10,14 @@
  * Tutto in SOLA LETTURA: le azioni del demolitore vivono nella scheda.
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { useRouter } from 'next/navigation'
-import { chiamataDemolitore, PraticaDemolitore, GruppoPratica, gruppoDi, countdownScadenza } from './_lib/api'
+import { chiamataDemolitore, PraticaDemolitore, GruppoPratica, gruppoDi, countdownScadenza, CASISTICA_LABEL } from './_lib/api'
 import SidebarDemolitore from './_components/SidebarDemolitore'
 import TendaAzienda from './_components/TendaAzienda'
+import TendinaPratica, { prefetchPratica } from './_components/TendinaPratica'
 import IconaVeicolo from '../components/IconaVeicolo'
 
 type Filtro = 'tutte' | GruppoPratica
@@ -26,6 +27,9 @@ const ORDINE_GRUPPO: Record<GruppoPratica, number> = { arrivo: 0, fissato: 1, ro
 
 export default function HomeDemolitore() {
   const router = useRouter()
+  // La ragione sociale: nella riga sta sotto la pillola di stato (come il
+  // CRM mostra il demolitore assegnato)
+  const [azienda, setAzienda] = useState('')
   const [pratiche, setPratiche] = useState<PraticaDemolitore[]>([])
   const [filtro, setFiltro] = useState<Filtro>('tutte')
   const [ricerca, setRicerca] = useState('')
@@ -33,7 +37,18 @@ export default function HomeDemolitore() {
   const [errore, setErrore] = useState('')
   const [aziendaAperta, setAziendaAperta] = useState(false)
   const [menuMobile, setMenuMobile] = useState(false)
+  // ⭐ 06/08 (mockup A): la pratica aperta a TENDINA sotto la riga
+  const [apertaId, setApertaId] = useState<string | null>(null)
+  // Montata = aperta O in chiusura animata (il contenuto resta nel DOM
+  // finché la tendina non ha finito di riavvolgersi, come nel CRM)
+  const [renderId, setRenderId] = useState<string | null>(null)
   const [, setTick] = useState(0)
+
+  useEffect(() => {
+    if (apertaId) { setRenderId(apertaId); return }
+    const t = setTimeout(() => setRenderId(null), 300)
+    return () => clearTimeout(t)
+  }, [apertaId])
 
   // I countdown delle 8 ore si aggiornano da soli ogni minuto
   useEffect(() => {
@@ -41,15 +56,31 @@ export default function HomeDemolitore() {
     return () => clearInterval(t)
   }, [])
 
+  // Esc chiude la tendina (come nel CRM admin)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setApertaId(null) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // Ricarica silenziosa della lista (usata anche dalla tendina dopo le azioni)
+  const ricaricaLista = useCallback(async () => {
+    try {
+      const json = await chiamataDemolitore<{ pratiche: PraticaDemolitore[] }>('/api/demolitore-pratiche')
+      setPratiche(json.pratiche || [])
+    } catch { /* silenzioso */ }
+  }, [])
+
   useEffect(() => {
     async function carica() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
-      const { data: u } = await supabase.from('utenti').select('tipo').eq('id', session.user.id).single()
+      const { data: u } = await supabase.from('utenti').select('nome, tipo').eq('id', session.user.id).single()
       if (u?.tipo !== 'demolitore') {
         router.push(u?.tipo === 'admin' ? '/admin' : '/dashboard')
         return
       }
+      setAzienda(u?.nome || '')
       try {
         const json = await chiamataDemolitore<{ pratiche: PraticaDemolitore[] }>('/api/demolitore-pratiche')
         setPratiche(json.pratiche || [])
@@ -63,18 +94,19 @@ export default function HomeDemolitore() {
 
   useAggiornaLive({
     canale: 'demolitore-lista',
-    onCambio: async () => {
-      try {
-        const json = await chiamataDemolitore<{ pratiche: PraticaDemolitore[] }>('/api/demolitore-pratiche')
-        setPratiche(json.pratiche || [])
-      } catch { /* silenzioso */ }
-    },
+    onCambio: ricaricaLista,
     pollingMs: 20000,
   })
 
   async function esci() {
     await supabase.auth.signOut()
     router.push('/')
+  }
+
+  // Cambiare filtro chiude la tendina aperta (come nel CRM admin)
+  function cambiaFiltro(f: Filtro) {
+    setFiltro(f)
+    setApertaId(null)
   }
 
   const conta = useMemo(() => {
@@ -119,7 +151,7 @@ export default function HomeDemolitore() {
         attiva="pratiche"
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
-        onPratiche={() => setFiltro('tutte')}
+        onPratiche={() => cambiaFiltro('tutte')}
         onAzienda={() => setAziendaAperta(true)}
         onEsci={esci}
       />
@@ -162,27 +194,45 @@ export default function HomeDemolitore() {
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
           <div className="mb-4 overflow-x-auto">
             <div className="flex items-start">
-              <PillolaFase nome="In arrivo · fissa il ritiro" valore={conta.arrivo} attivo={filtro === 'arrivo'} onClick={() => setFiltro(filtro === 'arrivo' ? 'tutte' : 'arrivo')} />
+              <PillolaFase nome="In arrivo · fissa il ritiro" valore={conta.arrivo} attivo={filtro === 'arrivo'} onClick={() => cambiaFiltro(filtro === 'arrivo' ? 'tutte' : 'arrivo')} />
               <FrecciaFase />
-              <PillolaFase nome="Ritiro fissato" valore={conta.fissato} attivo={filtro === 'fissato'} onClick={() => setFiltro(filtro === 'fissato' ? 'tutte' : 'fissato')} />
+              <PillolaFase nome="Ritiro fissato" valore={conta.fissato} attivo={filtro === 'fissato'} onClick={() => cambiaFiltro(filtro === 'fissato' ? 'tutte' : 'fissato')} />
               <FrecciaFase />
-              <PillolaFase nome="Certificato rottamazione" valore={conta.rottamazione} attivo={filtro === 'rottamazione'} onClick={() => setFiltro(filtro === 'rottamazione' ? 'tutte' : 'rottamazione')} />
+              <PillolaFase nome="Certificato rottamazione" valore={conta.rottamazione} attivo={filtro === 'rottamazione'} onClick={() => cambiaFiltro(filtro === 'rottamazione' ? 'tutte' : 'rottamazione')} />
               <FrecciaFase />
-              <PillolaFase nome="Cancellazione targhe" valore={conta.targhe} attivo={filtro === 'targhe'} onClick={() => setFiltro(filtro === 'targhe' ? 'tutte' : 'targhe')} />
+              <PillolaFase nome="Cancellazione targhe" valore={conta.targhe} attivo={filtro === 'targhe'} onClick={() => cambiaFiltro(filtro === 'targhe' ? 'tutte' : 'targhe')} />
               <FrecciaFase />
-              <PillolaFase nome="Completate" valore={conta.completate} attivo={filtro === 'completate'} onClick={() => setFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
+              <PillolaFase nome="Completate" valore={conta.completate} attivo={filtro === 'completate'} onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
               <div style={{ width: 14, flexShrink: 0 }} />
-              <PillolaFase nome="Non a buon fine" valore={conta.annullate} rossa={conta.annullate > 0} attivo={filtro === 'annullate'} onClick={() => setFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
+              <PillolaFase nome="Non a buon fine" valore={conta.annullate} rossa={conta.annullate > 0} attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
                 title={conta.annullate > 0 ? 'Pratiche annullate dopo l\'assegnazione, col motivo' : 'Nessuna pratica annullata'} />
             </div>
           </div>
 
-          {/* LISTA RIGHE (famiglia card del CRM) */}
+          {/* LISTA RIGHE: clic sulla riga → la TENDINA si srotola sotto
+              (blocco unico con la cornice blu, IDENTICO al CRM admin);
+              riclic o Esc chiude, cambiare casella chiude */}
           {ordinate.length === 0 ? (
             <div className="bg-white px-4 py-10 text-center text-sm text-gray-500" style={{ border: '1.5px solid #E5E7EB', borderRadius: 14 }}>Nessuna pratica in questa vista.</div>
           ) : (
             <div className="flex flex-col gap-2.5">
-              {ordinate.map(p => <RigaPratica key={p.id} p={p} onOpen={() => router.push(`/demolitore/pratiche/${p.id}`)} />)}
+              {ordinate.map(p => {
+                const aperta = p.id === apertaId
+                const montata = aperta || p.id === renderId
+                return (
+                  <div
+                    key={p.id}
+                    style={{ border: `2px solid ${aperta ? '#2563EB' : 'transparent'}`, borderRadius: 16, background: aperta ? '#F7F8FB' : 'transparent', boxShadow: aperta ? '0 4px 16px rgba(37,99,235,0.16)' : 'none', transition: 'all .28s ease' }}
+                  >
+                    <RigaPratica p={p} azienda={azienda} aperta={aperta} onOpen={() => setApertaId(aperta ? null : p.id)} />
+                    <div style={{ display: 'grid', gridTemplateRows: aperta ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
+                      <div style={{ overflow: 'hidden' }}>
+                        {montata && <TendinaPratica p={p} onCambiata={ricaricaLista} />}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
@@ -289,58 +339,74 @@ function pillolaStato(p: PraticaDemolitore, gruppo: GruppoPratica): { label: str
   }
 }
 
-// Riga pratica (mockup approvato): icona veicolo, targa e via, colonna
-// cliente, pillola di stato, riquadro metrica a destra
-function RigaPratica({ p, onOpen }: { p: PraticaDemolitore; onOpen: () => void }) {
+// Riga pratica: GEMELLA ESATTA della riga del CRM admin (07/08, richiesta
+// Davide) — stesse colonne (veicolo 1.6, cliente 1.3 e stato 1.4 coi
+// divisori), hover che tinge di celeste, icona verde con la spunta per le
+// completate, casistica sotto il nome del cliente, ragione sociale sotto
+// la pillola di stato (come il CRM mostra il demolitore assegnato)
+function RigaPratica({ p, azienda, aperta, onOpen }: { p: PraticaDemolitore; azienda: string; aperta: boolean; onOpen: () => void }) {
   const gruppo = gruppoDi(p)
   const chiusa = gruppo === 'completate' || gruppo === 'annullate'
   const pillola = pillolaStato(p, gruppo)
+  const [hover, setHover] = useState(false)
 
-  const via = [
-    p.indirizzo_ritiro,
-    p.comune_ritiro && !(p.indirizzo_ritiro || '').toLowerCase().includes((p.comune_ritiro || '').toLowerCase()) ? p.comune_ritiro : null,
-    p.provincia_ritiro ? `(${p.provincia_ritiro})` : null,
-  ].filter(Boolean).join(' · ')
-
-  // Sottotitolo della colonna cliente, per fase
-  const subCliente =
-    gruppo === 'completate' ? `Completata${p.data_certificato_pra ? ` il ${fmtGiorno(p.data_certificato_pra)}` : ''}` :
-    gruppo === 'annullate' ? `Annullata${p.aggiornato_il ? ` il ${fmtGiorno(p.aggiornato_il)}` : ''}` :
-    (gruppo === 'rottamazione' || gruppo === 'targhe') ? `Ritirata${p.data_ritiro_effettuato ? ` il ${fmtGiorno(p.data_ritiro_effettuato)}` : ''}` :
-    p.delegato_nome ? `Delegato: ${p.delegato_nome}` : 'Consegna in prima persona'
+  // Sulla riga azzurra (aperta o hover) la pillola diventa BIANCA col
+  // bordino del suo colore — le rosse restano rosse (regole del CRM)
+  const rossa = pillola.bg === '#F3D9D9'
+  const evidenzia = (aperta || hover) && !rossa
 
   return (
     <div
       onClick={onOpen}
-      className="group bg-white cursor-pointer transition-all hover:shadow-md hover:-translate-y-[1px]"
-      style={{ border: '1.5px solid #E5E7EB', borderRadius: 14, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa ? 0.82 : 1 }}
+      // ⭐ 07/08: al passaggio del mouse si PRECARICANO i dettagli — al clic
+      // la tendina si apre già piena, senza dati che compaiono dopo
+      onMouseEnter={() => { setHover(true); prefetchPratica(p.id) }}
+      onMouseLeave={() => setHover(false)}
+      className={`group cursor-pointer transition-all ${aperta ? '' : 'hover:!bg-[#EFF6FF] hover:!border-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]'}`}
+      style={{ background: aperta ? '#EFF6FF' : '#fff', border: `1.5px solid ${aperta ? 'transparent' : '#E5E7EB'}`, borderRadius: aperta ? '13px 13px 0 0' : 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: aperta ? 'none' : '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa && !aperta ? 0.82 : 1 }}
     >
-      {/* Icona veicolo nel quadratino azzurro (componente condiviso) */}
-      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 46, height: 46, borderRadius: 12, background: '#DBEAFE' }}>
-        <IconaVeicolo tipo={p.tipo_mezzo} />
+      {/* Quadratino icona veicolo (o spunta verde se completata), come il CRM */}
+      <div className="flex items-center justify-center flex-shrink-0" style={{ width: 46, height: 46, borderRadius: 12, background: gruppo === 'completate' ? '#DCF3E4' : '#DBEAFE' }}>
+        {gruppo === 'completate'
+          ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+          : <IconaVeicolo tipo={p.tipo_mezzo} />}
       </div>
 
-      {/* Targa · marca modello · anno + la via */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div className="text-[15px] font-bold text-gray-900 truncate">
-          {p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}{p.anno ? ` · ${p.anno}` : ''}
+      {/* Veicolo: targa · marca modello · anno · km, sotto il COMUNE
+          (la via intera vive nella tendina, come nel CRM) */}
+      <div style={{ flex: 1.6, minWidth: 0 }}>
+        {/* ⭐ 07/08 (richiesta Davide): il titolo resta NERO anche da aperta,
+            come il nome del cliente — il blu stonava */}
+        <div className="text-[15px] font-bold truncate" style={{ color: '#111827' }}>
+          {p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}{p.anno ? ` · ${p.anno}` : ''}{p.km != null ? ` · ${p.km.toLocaleString('it-IT')} km` : ''}
         </div>
-        <div className="text-[12px] truncate" style={{ color: '#4B5563', marginTop: 2 }} title={gruppo === 'annullate' && p.motivo_annullamento ? p.motivo_annullamento : undefined}>
-          {via || '—'}{gruppo === 'annullate' && p.motivo_annullamento ? ` · ${p.motivo_annullamento}` : ''}
+        <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }} title={gruppo === 'annullate' && p.motivo_annullamento ? p.motivo_annullamento : undefined}>
+          {p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}` : (p.tipo_mezzo || '—')}
+          {gruppo === 'annullate' && p.motivo_annullamento ? ` · ${p.motivo_annullamento}` : ''}
         </div>
       </div>
 
-      {/* Colonna cliente (su telefono si nasconde) */}
-      <div className="hidden md:block flex-shrink-0" style={{ width: 1, alignSelf: 'stretch', background: '#EEF1F5' }} />
-      <div className="hidden md:block flex-shrink-0" style={{ width: 180 }}>
-        <div className="text-[13px] font-bold text-gray-900 truncate">{p.nome_richiedente || '—'}</div>
-        <div className="text-[11.5px] truncate" style={{ color: '#4B5563', marginTop: 1 }}>{subCliente}</div>
+      {/* Cliente: nome, sotto la casistica e l'eventuale delegato (come il CRM) */}
+      <div className="hidden md:block" style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+        <div className="text-[13.5px] font-semibold text-gray-900 truncate">{p.nome_richiedente || '—'}</div>
+        <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
+          {p.casistica ? (CASISTICA_LABEL[p.casistica] || p.casistica) : (p.tipo_mezzo || '—')}
+          {p.delegato_nome && <> · delega a <b style={{ color: '#374151', fontWeight: 600 }}>{p.delegato_nome}</b></>}
+        </div>
       </div>
 
-      {/* Pillola di stato (palette unica) */}
-      <span className="hidden sm:inline-block text-[11px] font-bold rounded-full flex-shrink-0" style={{ background: pillola.bg, color: pillola.color, padding: '4px 12px', whiteSpace: 'nowrap' }}>
-        {pillola.label}
-      </span>
+      {/* Stato: pillola + la ragione sociale sotto, con l'iconcina */}
+      <div className="hidden sm:block" style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
+        <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ background: evidenzia ? '#fff' : pillola.bg, color: pillola.color, border: `1px solid ${evidenzia ? `${pillola.color}55` : 'transparent'}`, padding: '3px 11px', whiteSpace: 'nowrap' }}>
+          {pillola.label}
+        </span>
+        {azienda && (
+          <div className="flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: '#374151', marginTop: 5 }}>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.9" className="flex-shrink-0"><path d="M3 21h18M6 21V7l6-4 6 4v14" /></svg>
+            <span className="truncate">{azienda}</span>
+          </div>
+        )}
+      </div>
 
       {/* Riquadro metrica a destra */}
       <Metrica p={p} gruppo={gruppo} />

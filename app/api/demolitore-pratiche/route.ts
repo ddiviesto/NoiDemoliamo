@@ -135,7 +135,9 @@ export async function POST(req: NextRequest) {
     for (const riga of checklist) {
       const doc = riga.casistiche_documenti
       if (!doc?.richiede_consegna) continue
-      const nome = doc.template_pdf ? `${doc.nome} — modulo firmato in originale` : doc.nome
+      // ⭐ 07/08 (regola 11, segnalato da Davide): niente trattini "—" nei
+      // testi visibili — al loro posto i due punti
+      const nome = doc.template_pdf ? `${doc.nome}: modulo firmato in originale` : doc.nome
       if (!daConsegnare.includes(nome)) daConsegnare.push(nome)
     }
 

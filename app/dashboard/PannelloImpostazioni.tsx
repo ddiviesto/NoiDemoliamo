@@ -387,7 +387,7 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
             inEdit: sezione === 'telefono',
             onApri: () => apriSezione('telefono'),
             onSalva: salvaTelefono,
-            hint: 'Lo userà il demolitore per fissare il ritiro · vale anche per le pratiche in corso',
+            hint: 'Lo userà il demolitore per fissare il ritiro · vale anche per le pratiche in corso. Se sulla pratica hai indicato un delegato alla consegna col suo numero, il demolitore chiamerà lui per organizzare il ritiro.',
             campi: <input className={INPUT_CLS} type="tel" inputMode="tel" value={nuovoTelefono} onChange={e => setNuovoTelefono(e.target.value)} placeholder="Numero di telefono" />,
           })}
 

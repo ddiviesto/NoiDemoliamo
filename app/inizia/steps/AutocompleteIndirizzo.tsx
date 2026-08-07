@@ -307,8 +307,14 @@ export default function AutocompleteIndirizzo({
         )}
       </div>
 
+      {/* ⭐ 06/08 (trovato da Davide nella scheda Ritiro del CRM): in versione
+          COMPATTA il menu GALLEGGIA sopra il contenuto (absolute + z-50) con
+          le righe piccole da gestionale — prima entrava nel flusso della
+          scheda e spingeva giù tutto, con le righe grandi da telefono */}
       {open && suggestions.length > 0 && (
-        <div className="mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+        <div className={compatto
+          ? 'absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden max-h-60 overflow-y-auto animate-in fade-in slide-in-from-top-1 duration-150'
+          : 'mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150'}>
           {suggestions.map((s, i) => {
             const pred = s.placePrediction
             if (!pred) return null
@@ -320,20 +326,20 @@ export default function AutocompleteIndirizzo({
                 type="button"
                 onClick={() => selezionaSuggerimento(s)}
                 onMouseEnter={() => setActiveIdx(i)}
-                className={`w-full text-left flex items-center gap-3 px-4 py-3 transition-colors border-b border-gray-100 last:border-b-0 ${i === activeIdx ? 'bg-blue-50' : 'hover:bg-blue-50'}`}
+                className={`w-full text-left flex items-center transition-colors border-b border-gray-100 last:border-b-0 ${compatto ? 'gap-2.5 px-3 py-2' : 'gap-3 px-4 py-3'} ${i === activeIdx ? 'bg-blue-50' : 'hover:bg-blue-50'}`}
               >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${i === activeIdx ? 'bg-blue-100 text-blue-700' : 'bg-blue-50 text-blue-600'}`}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <div className={`${compatto ? 'w-6 h-6 rounded-md' : 'w-8 h-8 rounded-lg'} flex items-center justify-center flex-shrink-0 transition-colors ${i === activeIdx ? 'bg-blue-100 text-blue-700' : 'bg-blue-50 text-blue-600'}`}>
+                  <svg width={compatto ? 12 : 16} height={compatto ? 12 : 16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
                     <circle cx="12" cy="10" r="3" />
                   </svg>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900 truncate">
+                  <div className={`${compatto ? 'text-[12.5px]' : 'text-sm'} font-medium text-gray-900 truncate`}>
                     {highlight(main, query)}
                   </div>
                   {secondary && (
-                    <div className="text-xs text-gray-500 truncate">{secondary}</div>
+                    <div className={`${compatto ? 'text-[11px]' : 'text-xs'} text-gray-500 truncate`}>{secondary}</div>
                   )}
                 </div>
               </button>
@@ -343,7 +349,9 @@ export default function AutocompleteIndirizzo({
       )}
 
       {open && !loading && suggestions.length === 0 && query.trim().length >= 2 && (
-        <div className="mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg p-4 text-center text-sm text-gray-400">
+        <div className={compatto
+          ? 'absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-center text-[12.5px] text-gray-400'
+          : 'mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg p-4 text-center text-sm text-gray-400'}>
           Nessun risultato
         </div>
       )}

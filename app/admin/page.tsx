@@ -9,6 +9,7 @@ import AdminSidebar from './_components/AdminSidebar'
 // Card vere del dettaglio, aperte IN LINEA dentro la tendina (26/07)
 import DocumentiApprovazione, { nomeAdmin } from './pratiche/[id]/DocumentiApprovazione'
 import IconaVeicolo from '../components/IconaVeicolo'
+import AutocompleteIndirizzo from '../inizia/steps/AutocompleteIndirizzo'
 import ChatAdmin from './pratiche/[id]/ChatAdmin'
 import CronologiaNote from './pratiche/[id]/CronologiaNote'
 
@@ -116,12 +117,31 @@ const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_rich
 // vengono dai campi della pratica (con la coda di Google come riserva).
 function indirizzoRitiroCompleto(p: { indirizzo_ritiro: string | null; comune_ritiro: string | null; provincia_ritiro: string | null; cap_ritiro: string | null }) {
   const intero = (p.indirizzo_ritiro || '').trim()
-  const taglio = intero.search(/,?\s*\d{5}\b/)
-  const viaCivico = (taglio > 0 ? intero.slice(0, taglio) : intero).trim().replace(/,$/, '')
   const daCampi = [p.cap_ritiro, p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}` : ''].filter(Boolean).join(' ')
-  const daGoogle = taglio > 0 ? intero.slice(taglio).replace(/^,?\s*/, '') : ''
-  const secondaRiga = daCampi || daGoogle
-  return [viaCivico || '—', secondaRiga].filter(Boolean).join('\n')
+
+  // Dove spezzare la prima riga (via e civico)? 1° tentativo: al CAP.
+  // ⭐ 06/08 (doppioni trovati da Davide): 2° tentativo alla ", comune"
+  // (gli indirizzi Google SENZA civico spesso non hanno il CAP).
+  let taglio = intero.search(/,?\s*\d{5}\b/)
+  if (taglio < 0 && p.comune_ritiro) {
+    const idx = intero.toLowerCase().indexOf(`, ${p.comune_ritiro.toLowerCase()}`)
+    if (idx >= 0) taglio = idx
+  }
+  let viaCivico: string
+  let coda = ''
+  if (taglio >= 0) {
+    viaCivico = intero.slice(0, taglio).trim().replace(/,$/, '')
+    coda = intero.slice(taglio).replace(/^,?\s*/, '')
+  } else {
+    viaCivico = intero.replace(/,$/, '')
+  }
+
+  // Rete di sicurezza anti-doppione: se il comune è già scritto nella
+  // prima riga, la seconda non si stampa proprio
+  const comuneGiaDentro = !!p.comune_ritiro && viaCivico.toLowerCase().includes(p.comune_ritiro.toLowerCase())
+  const secondaRiga = comuneGiaDentro ? '' : (daCampi || coda)
+  const righe = [viaCivico, secondaRiga].filter(Boolean)
+  return righe.length ? righe.join('\n') : '—'
 }
 
 // Data corta con l'anno per i boxini di riga (gg/mm/aa)
@@ -497,7 +517,17 @@ export default function AdminDashboard() {
           if (typeof bozza[c] === 'boolean') dati[c] = bozza[c]
         }
       } else {
-        dati.indirizzo_ritiro = sb('indirizzo_ritiro')
+        // ⭐ 06/08: l'indirizzo si salva SOLO se scelto dall'autocomplete di
+        // Google (col pacchetto completo: comune, provincia, CAP e coordinate
+        // per copertura e assegnazione). Testo digitato a mano = ignorato.
+        if (bozza['indirizzo_scelto'] === true) {
+          dati.indirizzo_ritiro = sb('indirizzo_ritiro')
+          dati.comune_ritiro = sb('comune_ritiro')
+          dati.provincia_ritiro = sb('provincia_ritiro')
+          dati.cap_ritiro = sb('cap_ritiro')
+          if (typeof bozza['lat'] === 'number') dati.lat = bozza['lat']
+          if (typeof bozza['lng'] === 'number') dati.lng = bozza['lng']
+        }
         if (sb('spazio_carro_attrezzi')) dati.spazio_carro_attrezzi = sb('spazio_carro_attrezzi')
       }
       if (Object.keys(dati).length > 0) {
@@ -803,7 +833,9 @@ export default function AdminDashboard() {
                         immatricolazione dopo il modello, sotto solo il comune */}
                     <div style={{ flex: 1.6, minWidth: 0 }}>
                       {/* ⭐ 28/07 sera (richiesta Davide): anche i KM dopo l'anno */}
-                      <div className="text-[15px] font-bold truncate" style={{ color: aperta ? '#1D4ED8' : '#111827' }}>{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}{p.anno ? ` · ${p.anno}` : ''}{p.km != null && p.km !== '' ? ` · ${Number(p.km).toLocaleString('it-IT')} km` : ''}</div>
+                      {/* ⭐ 07/08 (richiesta Davide): il titolo resta NERO anche
+                          da aperta, come il nome del cliente — il blu stonava */}
+                      <div className="text-[15px] font-bold truncate" style={{ color: '#111827' }}>{p.targa || 'Targa mancante'}{p.marca && ` · ${p.marca} ${p.modello || ''}`}{p.anno ? ` · ${p.anno}` : ''}{p.km != null && p.km !== '' ? ` · ${Number(p.km).toLocaleString('it-IT')} km` : ''}</div>
                       <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
                         {p.comune_ritiro ? `${p.comune_ritiro}${p.provincia_ritiro ? ` (${p.provincia_ritiro})` : ''}` : (p.tipo_mezzo || '—')}
                       </div>
@@ -1154,7 +1186,10 @@ export default function AdminDashboard() {
                             // ⭐ 28/07 (richiesta Davide): il delegato vive QUI, sotto
                             // l'email — è una persona, non un dato del ritiro
                             ...(p.casistica === 'non_intestatario' || p.casistica === 'targhe_straniere' ? [
-                              { k: 'Delegato per la consegna', vista: 'Delega non ammessa', pillola: true },
+                              // ⭐ 06/08 (richiesta Davide): conta far capire se c'è un
+                              // delegato o no — il "perché" (delega non ammessa dalla
+                              // casistica) lo fa già rispettare la matita
+                              { k: 'Delegato per la consegna', vista: 'Nessun delegato', pillola: true },
                             ] : [
                               { k: 'Delegato per la consegna', vista: p.delegato_nome || 'Consegna in prima persona', pillola: true, campo: <input className={CAMPO_TENDINA} placeholder="Vuoto = in prima persona" value={sb('delegato_nome')} onChange={e => setB('delegato_nome', e.target.value)} /> },
                               { k: 'Tel. delegato', vista: p.delegato_telefono || '—', pillola: true, campo: <input className={CAMPO_TENDINA} inputMode="tel" value={sb('delegato_telefono')} onChange={e => setB('delegato_telefono', e.target.value)} /> },
@@ -1279,7 +1314,27 @@ export default function AdminDashboard() {
                             // (la riga "Comune" era un doppione: Google lo include già)
                             // ⭐ 28/07 sera: indirizzo in due righe (via+civico, poi
                             // CAP e comune), valore a destra con la sua etichetta
-                            { k: 'Indirizzo', vista: indirizzoRitiroCompleto(p), multiriga: true, campo: <input className={CAMPO_TENDINA} value={sb('indirizzo_ritiro')} onChange={e => setB('indirizzo_ritiro', e.target.value)} /> },
+                            // ⭐ 06/08 (trovato da Davide col flusso di prova): l'indirizzo
+                            // si cambia SOLO con l'autocomplete di Google — scegliendo dal
+                            // menu si aggiornano anche comune, provincia, CAP e coordinate
+                            // (quelli che guidano copertura e assegnazione). Scrivere senza
+                            // scegliere non salva nulla.
+                            { k: 'Indirizzo', vista: indirizzoRitiroCompleto(p), multiriga: true, campo: (
+                              <AutocompleteIndirizzo
+                                compatto
+                                valoreIniziale={sb('indirizzo_ritiro')}
+                                placeholder="Cerca il nuovo indirizzo…"
+                                onSelezione={d => {
+                                  setB('indirizzo_ritiro', d.indirizzo)
+                                  setB('comune_ritiro', d.comune || '')
+                                  setB('provincia_ritiro', d.provincia || '')
+                                  setB('cap_ritiro', d.cap || '')
+                                  if (typeof d.lat === 'number') setB('lat', d.lat)
+                                  if (typeof d.lng === 'number') setB('lng', d.lng)
+                                  setB('indirizzo_scelto', true)
+                                }}
+                              />
+                            ) },
                             { k: 'Spazio carro', vista: p.spazio_carro_attrezzi ? (SPAZIO_LABEL[p.spazio_carro_attrezzi] || p.spazio_carro_attrezzi) : '—', pillola: true, campo: (
                               <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('spazio_carro_attrezzi')} onChange={e => setB('spazio_carro_attrezzi', e.target.value)}>
                                 <option value="" disabled>Scegli…</option>
@@ -1705,6 +1760,12 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
           <span style={{ minWidth: 0 }}>
             <span style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#1D4ED8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Assegnazione{pratica.targa ? ` · ${pratica.targa}` : ''}</span>
             <span style={{ display: 'block', fontSize: 11, color: '#4B5563', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {/* ⭐ 07/08 (mockup A): DOVE si trova il mezzo, prima di tutto —
+                  i km dei candidati si leggono con la partenza sotto gli occhi */}
+              {(() => {
+                const dove = indirizzoRitiroCompleto(pratica).replace('\n', ', ')
+                return dove !== '—' ? <><b style={{ color: '#1E293B' }}>{dove}</b>{' · '}</> : null
+              })()}
               {assegnata ? `Assegnata a ${demolitoreNome || 'un demolitore'}`
                 : !puoAssegnare ? 'Prima approva tutti i documenti'
                 : caricando ? 'Calcolo la classifica…'

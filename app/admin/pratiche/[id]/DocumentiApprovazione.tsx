@@ -548,7 +548,9 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     const daApprovare = aggiornate.filter(d => d.richiede_upload)
     const primaMancava = docs.filter(d => d.richiede_upload).some(d => d.stato !== 'approvato')
     if (primaMancava && daApprovare.length > 0 && daApprovare.every(d => d.stato === 'approvato')) {
-      supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: 'Tutti i documenti sono a posto', evento: 'doc_approvati' }).then(() => {})
+      // ⭐ 06/08 (richiesta Davide): niente testo — la pillola dell'evento
+      // dice già tutto, il testo lo ripeteva soltanto
+      supabase.from('pratiche_note').insert({ pratica_id: praticaId, testo: '', evento: 'doc_approvati' }).then(() => {})
     }
   }
 
