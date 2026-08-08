@@ -59,6 +59,24 @@ function fmtOra(x: string) {
   return new Date(x).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 }
 
+// ⭐ 07/08 (sobbalzo segnalato da Davide): CACHE delle note + PRECARICO
+// al passaggio del mouse sulla riga del CRM — la scheda Cronologia della
+// tendina si apre già piena, senza voci che sbucano dopo
+const cacheNote = new Map<string, Nota[]>()
+const prefetchNoteInCorso = new Set<string>()
+
+export async function prefetchCronologia(praticaId: string) {
+  if (cacheNote.has(praticaId) || prefetchNoteInCorso.has(praticaId)) return
+  prefetchNoteInCorso.add(praticaId)
+  const { data, error } = await supabase
+    .from('pratiche_note')
+    .select('*')
+    .eq('pratica_id', praticaId)
+    .order('creato_il', { ascending: false })
+  if (!error) cacheNote.set(praticaId, (data as Nota[]) || [])
+  prefetchNoteInCorso.delete(praticaId)
+}
+
 // ⭐ 23/07: card A SCOMPARSA — chiusa all'apertura, la testata apre e chiude
 // ⭐ 27/07: modalità `finestra` (scelta B su mockup): finestrella fissa in
 // basso a destra come la Chat, con l'ingrandisci — usata dalla tendina CRM
@@ -78,7 +96,8 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
   demolitoreId?: string | null
   nomeDemolitore?: string | null
 }) {
-  const [note, setNote] = useState<Nota[]>([])
+  // Parte dalla cache quando c'è (precaricata all'hover): zero sobbalzi
+  const [note, setNote] = useState<Nota[]>(() => cacheNote.get(praticaId) || [])
   const [tabellaAssente, setTabellaAssente] = useState(false)
   const [nuova, setNuova] = useState('')
   const [salvando, setSalvando] = useState(false)
@@ -94,6 +113,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
       .order('creato_il', { ascending: false })
     if (error) { setTabellaAssente(true); return }
     setTabellaAssente(false)
+    cacheNote.set(praticaId, (data as Nota[]) || [])
     setNote((data as Nota[]) || [])
   }
 
@@ -124,7 +144,11 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
       .select()
       .single()
     if (!error && data) {
-      setNote(prev => [data as Nota, ...prev])
+      setNote(prev => {
+        const nuove = [data as Nota, ...prev]
+        cacheNote.set(praticaId, nuove)
+        return nuove
+      })
       setNuova('')
     } else {
       alert('Errore nel salvataggio della nota. Riprova.')

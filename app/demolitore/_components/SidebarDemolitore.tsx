@@ -14,7 +14,7 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
-export type VoceSidebar = 'pratiche' | 'azienda'
+export type VoceSidebar = 'pratiche' | 'ritiri' | 'azienda'
 
 // Voce di navigazione, stessa veste di NavItem dell'AdminSidebar
 function Voce({ attiva, disabilitata, onClick, icona, label, extra }: {
@@ -42,10 +42,11 @@ function Voce({ attiva, disabilitata, onClick, icona, label, extra }: {
   )
 }
 
-function Contenuto({ attiva, nome, onPratiche, onAzienda, onEsci }: {
+function Contenuto({ attiva, nome, onPratiche, onRitiri, onAzienda, onEsci }: {
   attiva: VoceSidebar
   nome: string
   onPratiche: () => void
+  onRitiri: () => void
   onAzienda: () => void
   onEsci: () => void
 }) {
@@ -64,6 +65,9 @@ function Contenuto({ attiva, nome, onPratiche, onAzienda, onEsci }: {
         {/* Portablocco: la stessa icona della voce Pratiche del CRM admin */}
         <Voce attiva={attiva === 'pratiche'} onClick={onPratiche} label="Pratiche"
           icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4" /></svg>} />
+        {/* ⭐ 07/08 (mockup approvato): l'agenda dei ritiri pianificati */}
+        <Voce attiva={attiva === 'ritiri'} onClick={onRitiri} label="Ritiri"
+          icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>} />
         <Voce attiva={attiva === 'azienda'} onClick={onAzienda} label="La tua azienda"
           icona={<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></svg>} />
         <Voce disabilitata label="Fatturazione"
@@ -86,11 +90,12 @@ function Contenuto({ attiva, nome, onPratiche, onAzienda, onEsci }: {
   )
 }
 
-export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile, onPratiche, onAzienda, onEsci }: {
+export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile, onPratiche, onRitiri, onAzienda, onEsci }: {
   attiva: VoceSidebar
   apertaMobile: boolean
   onChiudiMobile: () => void
   onPratiche: () => void
+  onRitiri: () => void
   onAzienda: () => void
   onEsci: () => void
 }) {
@@ -145,7 +150,7 @@ export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile
           zIndex: 50,
         }}
       >
-        <Contenuto attiva={attiva} nome={nome} onPratiche={onPratiche} onAzienda={onAzienda} onEsci={onEsci} />
+        <Contenuto attiva={attiva} nome={nome} onPratiche={onPratiche} onRitiri={onRitiri} onAzienda={onAzienda} onEsci={onEsci} />
       </aside>
 
       {/* ===== TELEFONO: tenda da sinistra col bottone ☰ ===== */}
@@ -158,7 +163,7 @@ export default function SidebarDemolitore({ attiva, apertaMobile, onChiudiMobile
         className="lg:hidden fixed top-0 left-0 bottom-0 z-50 flex flex-col shadow-2xl transition-transform duration-300 text-white"
         style={{ width: 240, background: 'linear-gradient(180deg, #2563eb 0%, #2563eb 65%, #7CA4F2 100%)', transform: apertaMobile ? 'translateX(0)' : 'translateX(-105%)' }}
       >
-        <Contenuto attiva={attiva} nome={nome} onPratiche={() => { onChiudiMobile(); onPratiche() }} onAzienda={() => { onChiudiMobile(); onAzienda() }} onEsci={onEsci} />
+        <Contenuto attiva={attiva} nome={nome} onPratiche={() => { onChiudiMobile(); onPratiche() }} onRitiri={() => { onChiudiMobile(); onRitiri() }} onAzienda={() => { onChiudiMobile(); onAzienda() }} onEsci={onEsci} />
       </div>
     </>
   )

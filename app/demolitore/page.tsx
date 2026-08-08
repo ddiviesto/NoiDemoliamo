@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { useRouter } from 'next/navigation'
-import { chiamataDemolitore, PraticaDemolitore, GruppoPratica, gruppoDi, countdownScadenza, CASISTICA_LABEL } from './_lib/api'
+import { chiamataDemolitore, PraticaDemolitore, GruppoPratica, gruppoDi, countdownScadenza, CASISTICA_LABEL, nomeVeicolo } from './_lib/api'
 import SidebarDemolitore from './_components/SidebarDemolitore'
 import TendaAzienda from './_components/TendaAzienda'
 import TendinaPratica, { prefetchPratica } from './_components/TendinaPratica'
@@ -25,15 +25,22 @@ type Filtro = 'tutte' | GruppoPratica
 // L'ordine della fila (e della lista): prima le cose da fare
 const ORDINE_GRUPPO: Record<GruppoPratica, number> = { arrivo: 0, fissato: 1, rottamazione: 2, targhe: 3, completate: 4, annullate: 5 }
 
+// ⭐ 08/08 ("si disconnette" segnalato da Davide): CACHE DI SESSIONE —
+// navigando tra Pratiche e Ritiri la pagina riparte dai dati già visti
+// (aggiornati poi in silenzio), niente rotellina nuda a schermo intero
+type ImpegnoPersonale = { id: string; quando: string; titolo: string; luogo: string | null }
+let cacheHome: { pratiche: PraticaDemolitore[]; impegni: ImpegnoPersonale[] } | null = null
+
 export default function HomeDemolitore() {
   const router = useRouter()
-  // La ragione sociale: nella riga sta sotto la pillola di stato (come il
-  // CRM mostra il demolitore assegnato)
-  const [azienda, setAzienda] = useState('')
-  const [pratiche, setPratiche] = useState<PraticaDemolitore[]>([])
+  const [pratiche, setPratiche] = useState<PraticaDemolitore[]>(() => cacheHome?.pratiche || [])
+  // Gli impegni PERSONALI del demolitore (pagina Ritiri): contano nella
+  // scena globale della nuvoletta "Fissa il ritiro"
+  const [impegni, setImpegni] = useState<ImpegnoPersonale[]>(() => cacheHome?.impegni || [])
   const [filtro, setFiltro] = useState<Filtro>('tutte')
   const [ricerca, setRicerca] = useState('')
-  const [loading, setLoading] = useState(true)
+  // Rotellina solo al PRIMO ingresso in assoluto: con la cache si riparte pieni
+  const [loading, setLoading] = useState(() => !cacheHome)
   const [errore, setErrore] = useState('')
   const [aziendaAperta, setAziendaAperta] = useState(false)
   const [menuMobile, setMenuMobile] = useState(false)
@@ -68,6 +75,12 @@ export default function HomeDemolitore() {
     try {
       const json = await chiamataDemolitore<{ pratiche: PraticaDemolitore[] }>('/api/demolitore-pratiche')
       setPratiche(json.pratiche || [])
+      cacheHome = { pratiche: json.pratiche || [], impegni: cacheHome?.impegni || [] }
+    } catch { /* silenzioso */ }
+    try {
+      const json = await chiamataDemolitore<{ impegni: ImpegnoPersonale[] }>('/api/demolitore-impegni', { azione: 'lista' })
+      setImpegni(json.impegni || [])
+      cacheHome = { pratiche: cacheHome?.pratiche || [], impegni: json.impegni || [] }
     } catch { /* silenzioso */ }
   }, [])
 
@@ -80,17 +93,35 @@ export default function HomeDemolitore() {
         router.push(u?.tipo === 'admin' ? '/admin' : '/dashboard')
         return
       }
-      setAzienda(u?.nome || '')
       try {
         const json = await chiamataDemolitore<{ pratiche: PraticaDemolitore[] }>('/api/demolitore-pratiche')
         setPratiche(json.pratiche || [])
+        cacheHome = { pratiche: json.pratiche || [], impegni: cacheHome?.impegni || [] }
+        // ⭐ 07/08: /demolitore?apri=<id> apre subito la TENDINA di quella
+        // pratica (ci arrivano le card della pagina Ritiri)
+        const apriId = new URLSearchParams(window.location.search).get('apri')
+        if (apriId && (json.pratiche || []).some(x => x.id === apriId)) {
+          setFiltro('tutte')
+          setApertaId(apriId)
+          prefetchPratica(apriId)
+          window.history.replaceState(null, '', '/demolitore')
+        }
       } catch (e) {
         setErrore(e instanceof Error ? e.message : 'Errore nel caricamento')
       }
+      try {
+        const json = await chiamataDemolitore<{ impegni: ImpegnoPersonale[] }>('/api/demolitore-impegni', { azione: 'lista' })
+        setImpegni(json.impegni || [])
+        cacheHome = { pratiche: cacheHome?.pratiche || [], impegni: json.impegni || [] }
+      } catch { /* silenzioso */ }
       setLoading(false)
     }
     carica()
   }, [router])
+
+  // Il fascicolo della pagina Ritiri si prepara in anticipo: il passaggio
+  // di pagina è istantaneo (⭐ 08/08)
+  useEffect(() => { router.prefetch('/demolitore/ritiri') }, [router])
 
   useAggiornaLive({
     canale: 'demolitore-lista',
@@ -115,6 +146,16 @@ export default function HomeDemolitore() {
     return c
   }, [pratiche])
 
+  // ⭐ 07/08 (scena globale, mockup approvato): l'agenda dei ritiri già
+  // fissati + gli IMPEGNI PERSONALI, passata alla tendina — la nuvoletta
+  // "Fissa il ritiro" mostra la giornata e spegne le ore già prese
+  const agendaRitiri = useMemo(() => [
+    ...pratiche
+      .filter(x => x.data_ritiro_prevista && x.stato !== 'annullata')
+      .map(x => ({ id: x.id, quando: x.data_ritiro_prevista!, targa: x.targa, veicolo: nomeVeicolo(x), comune: x.comune_ritiro, nome: x.nome_richiedente })),
+    ...impegni.map(i => ({ id: `impegno-${i.id}`, quando: i.quando, targa: null, veicolo: i.titolo, comune: i.luogo, nome: null, personale: true })),
+  ], [pratiche, impegni])
+
   // Filtro + ricerca (come nel CRM admin)
   const q = ricerca.trim().toLowerCase()
   const filtrate = pratiche.filter(p => {
@@ -133,14 +174,9 @@ export default function HomeDemolitore() {
     return (a.scadenza_proposta_ritiro || a.aggiornato_il || '').localeCompare(b.scadenza_proposta_ritiro || b.aggiornato_il || '')
   })
 
-  if (loading) {
-    return (
-      <main className="min-h-screen flex items-center justify-center" style={{ background: '#ECEEF2' }}>
-        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-      </main>
-    )
-  }
-
+  // ⭐ 08/08: NIENTE più rotellina nuda a schermo intero — la struttura
+  // (barra e sidebar) resta in piedi e la rotellina vive nell'area
+  // contenuti; navigando tra le pagine sembrava una disconnessione
   return (
     // ⭐ 05/08: AD ALTEZZA SCHERMO come il CRM admin — la finestra non
     // scorre mai, scorre solo la colonna dei contenuti (niente binario
@@ -151,7 +187,8 @@ export default function HomeDemolitore() {
         attiva="pratiche"
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
-        onPratiche={() => cambiaFiltro('tutte')}
+        onPratiche={() => { setAziendaAperta(false); cambiaFiltro('tutte') }}
+        onRitiri={() => router.push('/demolitore/ritiri')}
         onAzienda={() => setAziendaAperta(true)}
         onEsci={esci}
       />
@@ -167,7 +204,7 @@ export default function HomeDemolitore() {
           </button>
           <div>
             <h1 className="text-lg font-bold text-gray-900 leading-none">Pratiche</h1>
-            <p className="text-xs text-gray-500 mt-1">{pratiche.length} totali</p>
+            <p className="text-xs text-gray-500 mt-1">{loading ? '…' : `${pratiche.length} totali`}</p>
           </div>
           <div className="ml-auto">
             {/* Sulla barra azzurra la pillola è BIANCA col bordo celeste */}
@@ -179,6 +216,11 @@ export default function HomeDemolitore() {
           </div>
         </div>
 
+        {loading ? (
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : (
         <div className="p-4 lg:p-6 overflow-auto flex-1 min-h-0">
 
           {errore && (
@@ -198,9 +240,11 @@ export default function HomeDemolitore() {
               <FrecciaFase />
               <PillolaFase nome="Ritiro fissato" valore={conta.fissato} attivo={filtro === 'fissato'} onClick={() => cambiaFiltro(filtro === 'fissato' ? 'tutte' : 'fissato')} />
               <FrecciaFase />
-              <PillolaFase nome="Certificato rottamazione" valore={conta.rottamazione} attivo={filtro === 'rottamazione'} onClick={() => cambiaFiltro(filtro === 'rottamazione' ? 'tutte' : 'rottamazione')} />
+              {/* ⭐ 08/08 (richiesta Davide): le caselle dei certificati dicono
+                  chiaramente che si sta ASPETTANDO il caricamento */}
+              <PillolaFase nome="Attesa Certificato di Rottamazione" valore={conta.rottamazione} attivo={filtro === 'rottamazione'} onClick={() => cambiaFiltro(filtro === 'rottamazione' ? 'tutte' : 'rottamazione')} />
               <FrecciaFase />
-              <PillolaFase nome="Cancellazione targhe" valore={conta.targhe} attivo={filtro === 'targhe'} onClick={() => cambiaFiltro(filtro === 'targhe' ? 'tutte' : 'targhe')} />
+              <PillolaFase nome="Attesa Certificato cancellazione targhe" valore={conta.targhe} attivo={filtro === 'targhe'} onClick={() => cambiaFiltro(filtro === 'targhe' ? 'tutte' : 'targhe')} />
               <FrecciaFase />
               <PillolaFase nome="Completate" valore={conta.completate} attivo={filtro === 'completate'} onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
               <div style={{ width: 14, flexShrink: 0 }} />
@@ -224,10 +268,10 @@ export default function HomeDemolitore() {
                     key={p.id}
                     style={{ border: `2px solid ${aperta ? '#2563EB' : 'transparent'}`, borderRadius: 16, background: aperta ? '#F7F8FB' : 'transparent', boxShadow: aperta ? '0 4px 16px rgba(37,99,235,0.16)' : 'none', transition: 'all .28s ease' }}
                   >
-                    <RigaPratica p={p} azienda={azienda} aperta={aperta} onOpen={() => setApertaId(aperta ? null : p.id)} />
+                    <RigaPratica p={p} aperta={aperta} onOpen={() => setApertaId(aperta ? null : p.id)} />
                     <div style={{ display: 'grid', gridTemplateRows: aperta ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
                       <div style={{ overflow: 'hidden' }}>
-                        {montata && <TendinaPratica p={p} onCambiata={ricaricaLista} />}
+                        {montata && <TendinaPratica p={p} agenda={agendaRitiri} onCambiata={ricaricaLista} />}
                       </div>
                     </div>
                   </div>
@@ -236,6 +280,7 @@ export default function HomeDemolitore() {
             </div>
           )}
         </div>
+        )}
       </div>
 
       <TendaAzienda aperta={aziendaAperta} onChiudi={() => setAziendaAperta(false)} />
@@ -342,9 +387,9 @@ function pillolaStato(p: PraticaDemolitore, gruppo: GruppoPratica): { label: str
 // Riga pratica: GEMELLA ESATTA della riga del CRM admin (07/08, richiesta
 // Davide) — stesse colonne (veicolo 1.6, cliente 1.3 e stato 1.4 coi
 // divisori), hover che tinge di celeste, icona verde con la spunta per le
-// completate, casistica sotto il nome del cliente, ragione sociale sotto
-// la pillola di stato (come il CRM mostra il demolitore assegnato)
-function RigaPratica({ p, azienda, aperta, onOpen }: { p: PraticaDemolitore; azienda: string; aperta: boolean; onOpen: () => void }) {
+// completate, casistica sotto il nome del cliente. Sotto la pillola di
+// stato NIENTE ragione sociale (07/08: era il nome del demolitore stesso)
+function RigaPratica({ p, aperta, onOpen }: { p: PraticaDemolitore; aperta: boolean; onOpen: () => void }) {
   const gruppo = gruppoDi(p)
   const chiusa = gruppo === 'completate' || gruppo === 'annullate'
   const pillola = pillolaStato(p, gruppo)
@@ -395,17 +440,13 @@ function RigaPratica({ p, azienda, aperta, onOpen }: { p: PraticaDemolitore; azi
         </div>
       </div>
 
-      {/* Stato: pillola + la ragione sociale sotto, con l'iconcina */}
+      {/* Stato: solo la pillola — ⭐ 07/08 (richiesta Davide): via la
+          ragione sociale sotto (era il nome del demolitore stesso, inutile
+          nella SUA area; nel CRM invece resta, lì dice chi è assegnato) */}
       <div className="hidden sm:block" style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
         <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ background: evidenzia ? '#fff' : pillola.bg, color: pillola.color, border: `1px solid ${evidenzia ? `${pillola.color}55` : 'transparent'}`, padding: '3px 11px', whiteSpace: 'nowrap' }}>
           {pillola.label}
         </span>
-        {azienda && (
-          <div className="flex items-center gap-1.5 text-[12.5px] font-semibold" style={{ color: '#374151', marginTop: 5 }}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.9" className="flex-shrink-0"><path d="M3 21h18M6 21V7l6-4 6 4v14" /></svg>
-            <span className="truncate">{azienda}</span>
-          </div>
-        )}
       </div>
 
       {/* Riquadro metrica a destra */}

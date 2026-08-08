@@ -34,8 +34,27 @@ function fmtOra(x: string) {
   return new Date(x).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
 }
 
+// ⭐ 07/08 (sobbalzo segnalato da Davide): stessa CACHE + PRECARICO dei
+// dettagli della tendina — le voci della cronologia si scaricano già
+// all'hover sulla riga, così la scheda si apre piena dal primo fotogramma
+const cacheNote = new Map<string, VoceCronologia[]>()
+const prefetchNoteInCorso = new Set<string>()
+
+export async function prefetchNote(praticaId: string) {
+  if (cacheNote.has(praticaId) || prefetchNoteInCorso.has(praticaId)) return
+  prefetchNoteInCorso.add(praticaId)
+  try {
+    const json = await chiamataDemolitore<{ note: VoceCronologia[] }>('/api/demolitore-note', { pratica_id: praticaId })
+    cacheNote.set(praticaId, json.note || [])
+  } catch { /* silenzioso */ }
+  prefetchNoteInCorso.delete(praticaId)
+}
+
 export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: string; bloccata: boolean }) {
-  const [voci, setVoci] = useState<VoceCronologia[]>([])
+  // Parte dalla cache quando c'è (precaricata all'hover): zero sobbalzi
+  const [voci, setVoci] = useState<VoceCronologia[]>(() => cacheNote.get(praticaId) || [])
+  // Finché non so ancora niente non mostro nulla (nemmeno "Nessuna voce")
+  const [caricate, setCaricate] = useState(() => cacheNote.has(praticaId))
   const [testo, setTesto] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erroreNota, setErroreNota] = useState('')
@@ -43,7 +62,9 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
   const carica = useCallback(async () => {
     try {
       const json = await chiamataDemolitore<{ note: VoceCronologia[] }>('/api/demolitore-note', { pratica_id: praticaId })
+      cacheNote.set(praticaId, json.note || [])
       setVoci(json.note || [])
+      setCaricate(true)
     } catch { /* silenzioso */ }
   }, [praticaId])
 
@@ -57,6 +78,7 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
     try {
       const json = await chiamataDemolitore<{ note: VoceCronologia[] }>('/api/demolitore-note', { pratica_id: praticaId, testo: t })
       setTesto('')
+      cacheNote.set(praticaId, json.note || [])
       setVoci(json.note || [])
     } catch (e) {
       setErroreNota(e instanceof Error ? e.message : 'Errore nel salvataggio')
@@ -69,7 +91,7 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
     // della nota resta INCHIODATO IN FONDO (come nel CRM)
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
       <div className="overflow-y-auto" style={{ flex: 1, minHeight: 60, maxHeight: 280, overscrollBehavior: 'contain' }}>
-        {voci.length === 0 && (
+        {caricate && voci.length === 0 && (
           <p style={{ fontSize: 11.5, color: '#9AA7B5', padding: '10px 0' }}>Nessuna voce per ora.</p>
         )}
         {voci.map(n => {

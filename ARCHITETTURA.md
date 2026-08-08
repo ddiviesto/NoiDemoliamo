@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **3 agosto 2026**.
+> Documento di riferimento del progetto. Aggiornato all'**8 agosto 2026**.
 > Questo è l'unico file da leggere per capire com'è fatto il sito, come deve funzionare e come si lavora.
 > **Contiene solo cose STABILI e ATTUALI**: regole, flussi, dati, come deve essere il sito.
 > La cronaca delle sessioni non sta qui: se serve sapere *quando* è stata fatta una cosa, c'è la storia di GitHub.
@@ -125,7 +125,7 @@ RESEND_API_KEY=... + EMAIL_FROM=...   (finché mancano, gli inviti danno il link
 
 ## 3.1 Tabelle esistenti
 
-`casistiche_documenti`, `collaboratori`, `commercianti`, `demolitori`, `demolitori_comuni`, `demolitori_note`, `demolitori_tariffe`, `fatture`, `foto_pratiche`, `impostazioni`, `interessi_commercianti`, `messaggi`, `messaggi_chat`, `messaggi_preimpostati`, `notifiche`, `pratica_documenti_checklist`, `pratiche`, `pratiche_note`, `solleciti`, `utenti`, `veicoli_vendita`, `veicoli_vendita_foto`
+`casistiche_documenti`, `collaboratori`, `commercianti`, `demolitori`, `demolitori_comuni`, `demolitori_impegni`, `demolitori_note`, `demolitori_tariffe`, `fatture`, `foto_pratiche`, `impostazioni`, `interessi_commercianti`, `messaggi`, `messaggi_chat`, `messaggi_preimpostati`, `notifiche`, `pratica_documenti_checklist`, `pratiche`, `pratiche_note`, `solleciti`, `utenti`, `veicoli_vendita`, `veicoli_vendita_foto`
 
 Anagrafiche intoccabili (autocomplete e mappa): `comuni`, `province`, `regioni`.
 
@@ -282,7 +282,8 @@ Il **ritiro effettivo** (`data_ritiro_effettuato`) fa entrare la pratica in fatt
 ## 3.11 Altre tabelle
 
 - `utenti`: profilo utente (collegato a Supabase Auth via id), `tipo` ('cliente'|'admin'|'demolitore'|...), `demolitore_id`, `email`
-- `messaggi_preimpostati`: frasi rapide, `categoria` 'chat' | 'rifiuto'
+- `messaggi_preimpostati`: frasi rapide. `categoria` 'chat' | 'rifiuto' (dell'admin, `demolitore_id` NULL) | **'chat_demolitore'** (le frasi PERSONALI di ogni demolitore, `demolitore_id` valorizzato; le semina l'endpoint alla prima apertura della chat e le gestisce lui col "Gestisci")
+- `demolitori_impegni`: **impegni PERSONALI del demolitore** (id, demolitore_id, quando, titolo, luogo) per la pagina Ritiri. PRIVATI: RLS accesa senza policy browser, ci si arriva solo da `/api/demolitore-impegni` (service role); nemmeno l'admin li vede
 - `veicoli_vendita` + `veicoli_vendita_foto`: flusso D (vendita), separate da `pratiche`
 
 ## 3.12 Tabelle ANCORA DA CREARE
@@ -495,10 +496,12 @@ C:\Progetto_NoiDemoliamo\
 │   │   └── pratiche/[id]/          # solo COMPONENTI condivisi (la pagina non esiste più):
 │   │                               #   DocumentiApprovazione, ChatAdmin, CronologiaNote
 │   ├── demolitore/                 # AREA DEMOLITORE
-│   │   ├── page.tsx · pratiche/[id]/
+│   │   ├── page.tsx · ritiri/ · pratiche/[id]/
 │   │   └── _components/            # SidebarDemolitore, TendaAzienda,
+│   │                               #   TendinaPratica (+ PickerRitiro),
 │   │                               #   ChatDemolitore, NoteDemolitore
-│   ├── components/                 # AiutoWhatsApp, IconaVeicolo (condivise)
+│   ├── components/                 # AiutoWhatsApp, IconaVeicolo,
+│   │                               #   VisoreDocumenti (visore CONDIVISO)
 │   └── api/                        # vedi 5.4
 ├── lib/                            # supabase, assegnazione, province, googleMaps, email,
 │                                   #   aggiornaLive, statiCliente, statiCrm, demolitoreAuth, moduli/
@@ -553,7 +556,7 @@ C:\Progetto_NoiDemoliamo\
 | **`/dashboard/[id]`** | ✅ | 4 tab: **Documenti · Ritiro · Stato · Chat** |
 | **`/admin`** | ✅ | **TUTTO il CRM in una pagina**: lista + tendina sotto la riga + pannelli. Ad altezza schermo: scorre solo la lista |
 | **`/admin/demolitori`** | ✅ | Lista a card + tendina sotto la riga (la pagina di dettaglio non esiste più) |
-| **`/demolitore`** | 🟡 | Home E scheda pratica a tendina complete, FOTOCOPIA del CRM; manca il **visore documenti condiviso** (oggi elenco semplice coi link) |
+| **`/demolitore`** | ✅ | Home e scheda pratica a tendina FOTOCOPIA del CRM, visore documenti CONDIVISO in sola lettura, pagina **Ritiri** (agenda a timeline + impegni personali) |
 | Area commercianti | ❌ | Da costruire |
 
 ### Recupero password (`/recupera-password` + `/nuova-password`)
@@ -573,7 +576,7 @@ Clic sulla riga → si srotola una **tendina sotto la riga** (la riga si tinge d
 - **Chat e Cronologia a finestrella** in basso a destra, affiancate in un contenitore unico (non si sovrappongono mai, nemmeno ingrandite)
 
 ### Visore documenti admin (`DocumentiApprovazione.tsx`)
-Pannello che **scivola da destra a tutta altezza**. Testata gemella della tendina (icona veicolo, "targa · modello · anno", cliente sotto). Elenco a sinistra con miniature vere e stato a **pallino** colorato; le foto del veicolo sono solo **miniature in griglia**, senza descrizioni. Palco ardesia con frecce **a rotazione** (dall'ultimo si riparte dal primo, anche da tastiera).
+Pannello che **scivola da destra a tutta altezza**. ⭐ I pezzi del palco (`ZoomImg`, `PdfZoom`, `nomeAdmin`, `scaricaPdfVoci`) vivono nel componente CONDIVISO `app/components/VisoreDocumenti.tsx`, usato anche dall'area demolitore in sola lettura: i due visori restano gemelli. Testata gemella della tendina (icona veicolo, "targa · modello · anno", cliente sotto). Elenco a sinistra con miniature vere e stato a **pallino** colorato; le foto del veicolo sono solo **miniature in griglia**, senza descrizioni. Palco ardesia con frecce **a rotazione** (dall'ultimo si riparte dal primo, anche da tastiera).
 - **Zoom**: rotella sempre attiva quando ci sei sopra, trascina per spostarti, barretta − / % / + / Adatta in basso. Fronte e retro affiancati hanno zoom indipendente. I PDF diventano immagini (`PdfZoom`, pdfjs-dist) e passano nello stesso visore, con la pillolina "Pag. 1/3"
 - **Approva / Rifiuta nel visore**: "✓ Approva" pillola bianca bordo celeste testo blu (passa da solo al prossimo documento da verificare), "Rifiuta" scritta rosso spento che apre la **nuvoletta** col motivo e le frasi pronte a chips (gestibili in linea)
 - ⭐ **SCARICO PDF**: bottone Scarica con due strade — "Questo documento"/"Questa foto" (PDF singolo) oppure "**Scegli cosa scaricare**" (caselle nell'elenco). Ne esce **UN PDF unico pronto da inoltrare** (es. solo le foto a un commerciante): pdf-lib lato browser, immagini su A4 con l'etichetta del documento (ruolo casistica + fronte/retro), i PDF del cliente copiati pagina per pagina. **Le pagine delle foto vanno senza etichetta.** Nome file "Documenti TARGA.pdf", o "Foto TARGA.pdf" se contiene solo foto. Se un file non entra, il PDF esce comunque con l'avviso di cosa manca
@@ -582,9 +585,13 @@ Pannello che **scivola da destra a tutta altezza**. Testata gemella della tendin
 - **La barra laterale** (`SidebarDemolitore.tsx`): dal 05/08 è la **GEMELLA ESATTA dell'AdminSidebar**: fissa e sempre aperta su PC (210px, niente angoli smussati né apertura a scomparsa, entrambe provate e tolte), blu in dissolvenza, testata con logo + nome del demolitore + "DEMOLITORE" in maiuscoletto (come NoiDemoliamo/ADMIN), voce attiva "in vetro", icona Pratiche a portablocco, Esci in fondo oltre la riga. Sul telefono resta il menu ☰ a tenda. Voci: Pratiche · La tua azienda · Fatturazione ("PRESTO") · Esci
 - **Tenda "La tua azienda"** (`TendaAzienda.tsx`, mockup approvato 05/08 dopo tre giri: bocciati il pannello da destra, la pagina intera e la tenda sulla colonnina a scomparsa): scivola **da sinistra a destra uscendo dal bordo della barra fissa**; il velo scuro copre SOLO la pagina (la barra resta luminosa e cliccabile). Testata azzurra come le barre del CRM: scrittina "LA TUA AZIENDA" in maiuscoletto e NOME del demolitore protagonista nel grigio dei valori (`#3E4C63`), ✕ a tondino bianco col bordo celeste. 3 schede della famiglia in COLONNA UNICA in sola lettura (Azienda · Sede · Contatti, etichetta a sinistra e valore a destra), indirizzo senza doppioni, dati freschi a OGNI apertura. Si chiude con la ✕ **o cliccando sul velo**. Etichetta unica ovunque (tenda, form Nuovo demolitore, scheda CRM): "**Email assegnazioni pratiche**"
 - **Home e scheda pratica: FOTOCOPIA del CRM admin** (rifatta da capo il 07/08 su richiesta di Davide: "deve apparire come in admin, senza i poteri"). Barra azzurra con la ricerca a pillola, fila COMPLETA delle caselle-filtro (In arrivo · fissa il ritiro › Ritiro fissato › Certificato rottamazione › Cancellazione targhe › Completate, più "Non a buon fine" fuori fila: bianca a zero, rossa coi casi). **Riga della lista GEMELLA di quella del CRM**: stesse colonne (veicolo 1.6 con targa · marca · anno · km e il comune sotto, cliente 1.3 con la casistica e la delega, stato 1.4 con la pillola e la ragione sociale sotto), hover celeste, spunta verde per le completate, titolo sempre NERO anche da aperta (in entrambe le aree). ⚠️ Le scadenze dei certificati si CALCOLANO da `data_ritiro_effettuato` (24 ore rottamazione, 15 giorni lavorativi PRA): non hanno colonne nel DB
-- **Tendina della pratica** (`TendinaPratica.tsx`): clic sulla riga → si srotola sotto col blocco unico e la cornice blu, IDENTICA al CRM (riclic/Esc chiude, cambiare casella chiude). Fila azioni a pillole sulla coda azzurra della testata: l'**azione della fase** ("Fissa il ritiro" con data e ora in nuvoletta · "Veicolo ritirato" e "Sposta il ritiro" col motivo obbligatorio · "Carica certificato rottamazione" e "Consegnato a mano" · "Carica cancellazione targhe"), "Documenti e Foto" col contatore, "Chat" con la spia rossa, e la **pillola "Trattativa Extra · N€"** quando l'admin ha impostato l'importo. Le **5 schede gemelle di quelle del CRM** (Cronologia e Note · Cliente · Casistiche · Veicolo · Ritiro), stesse misure e pilloline, TUTTE ALLA STESSA ALTEZZA, in sola lettura (niente matite): il "Chiama" va sul DELEGATO quando c'è, la scheda Ritiro ha gli "Originali da consegnare" con le spunte blu. **Precarico all'hover**: i dettagli si scaricano al passaggio del mouse sulla riga, la tendina si apre già piena senza sobbalzi
-- **Cronologia e chat: cloni di quelli del CRM.** La cronologia mostra il canale condiviso (eventi + note firmate, pillola sopra e testo sotto: regola valida in ENTRAMBE le cronologie), campo nota in fondo alla scheda. La **chat si apre a FINESTRELLA** fissa in basso a destra come quella admin (testata blu col nome e la targa, ingrandisci, ✕), coi **RAPIDI fissi** sul canale Cliente (4 frasi da demolitore, non gestibili da lui); a chat vuota il palco resta pulito
-- Fasi del flusso demolitore (`_lib/api.ts`, `gruppoDi` + `CASISTICA_LABEL` condivisa): arrivo · fissato · rottamazione · targhe · completate · annullate ("Non a buon fine", col motivo in riga)
+- **Tendina della pratica** (`TendinaPratica.tsx`): clic sulla riga → si srotola sotto col blocco unico e la cornice blu, IDENTICA al CRM (riclic/Esc chiude, cambiare casella chiude). Fila azioni a pillole sulla coda azzurra della testata, in QUEST'ORDINE: "**Documenti e Foto**" col contatore (apre il visore condiviso) · "**Chat**" con la spia rossa · l'**azione della fase** ("Fissa il ritiro" · "Veicolo ritirato" e "Sposta il ritiro" col motivo obbligatorio · "Carica certificato rottamazione" e "Consegnato a mano" · "Carica cancellazione targhe") · la **pillola "Trattativa Extra · N€"** quando c'è. Le **5 schede gemelle di quelle del CRM** (Cronologia e Note · Cliente · Casistiche · Veicolo · Ritiro), stesse misure, TUTTE ALLA STESSA ALTEZZA, in sola lettura: il "Chiama" va sul DELEGATO quando c'è, la scheda Ritiro ha gli "Originali da consegnare" con le spunte blu. **Precarico all'hover**: dettagli E cronologia si scaricano al passaggio del mouse sulla riga (cache), la tendina si apre già piena senza sobbalzi. Le **nuvolette** della fila vivono in un PORTALE sul body (il sipario dell'animazione non le taglia; su schermi bassi scorrono al loro interno)
+- ⭐ **"Fissa il ritiro" e "Sposta il ritiro" = nuvoletta LARGA con la SCENA GLOBALE** (`PickerRitiro`, mockup approvato 08/08): niente campo data coi trattini — GIORNO a pillole (7 giorni, "Oggi" in celeste chiaro, numerino blu dei ritiri già fissati, "Altro giorno…" tratteggiata che srotola il calendarietto SEMPRE a 6 righe fisse, zero sobbalzi) + ORA a pillole mezz'ora per mezz'ora 8-18 (le già prese e le passate sono spente tratteggiate) + colonna "**La tua giornata**" dove il NUOVO ritiro appare al posto giusto con l'etichetta prima di confermare. L'agenda conta pratiche E impegni personali. Riepilogo blu e Conferma si sbloccano solo a scelta completa
+- **Visore documenti CONDIVISO** (`app/components/VisoreDocumenti.tsx`): "Documenti e Foto" apre LO STESSO pannello del CRM (scivola da destra, testata azzurra, elenco con miniature, palco ardesia con zoom, PDF sfogliabili, frecce a rotazione, Scarica col PDF unico) in **SOLA LETTURA** (niente Approva/Rifiuta), coi nomi dei documenti col RUOLO della casistica. I pezzi (`ZoomImg`, `PdfZoom`, `nomeAdmin`, `scaricaPdfVoci`) vivono nel componente condiviso e li usa ANCHE il visore admin: i due restano gemelli per sempre. Dati dagli endpoint demolitore (URL sempre rifirmati dal server: il bucket è privato)
+- **Cronologia e chat: cloni di quelli del CRM.** La cronologia mostra il canale condiviso (pillola sopra e testo sotto, in ENTRAMBE le cronologie), campo nota in fondo. La **chat si apre a FINESTRELLA** come quella admin; sul canale Cliente i **RAPIDI sono DEL demolitore e li gestisce lui** ("Gestisci" in linea come l'admin, frasi in `messaggi_preimpostati` categoria 'chat_demolitore'; le 4 di partenza le semina l'endpoint, cancellarle tutte le fa tornare). A chat vuota il palco resta pulito
+- ⭐ **Pagina "Ritiri"** (`/demolitore/ritiri`, voce in sidebar): l'agenda dei ritiri, SETTIMANA A COLONNE lun-sab (la domenica compare solo se ha voci). Barra pulita (titolo + contatore, bottone "Aggiungi impegno" con l'icona calendario, MAI il segno più); navigazione SUL calendario in PAROLE senza trattini ("Questa settimana", sotto "dal 3 all'8 agosto"; il mese fa da contesto a sinistra; "Torna a oggi" solo se spostati). Colonne con testata (giorno + conteggio a pillolina, oggi con l'anello celeste) e dentro **il FILO della giornata**: card agganciate alla timeline coi pallini (blu = da fare, verde = ritirato con spunta, grigio = personale) e la **pillola di stato** della palette unica. Card = ora, targa · modello, comune; **clic → la pratica** (deep link `/demolitore?apri=<id>`, gemello di quello admin). Le colonne scorrono al loro interno (regge 10-20 ritiri al giorno), la storia resta navigando indietro. **Impegni PERSONALI**: card grigie PERSONALE, aggiunta dalla nuvoletta (picker + "Cosa devi fare?" + "Dove" facoltativo), eliminazione con conferma sulla card; li vede solo lui
+- ⭐ **Niente "disconnessioni" tra le pagine**: struttura (sidebar + barra) SEMPRE in piedi, rotellina solo nell'area contenuti e SOLO al primo ingresso; le pagine hanno la cache di sessione (si riparte dai dati già visti, aggiornati in silenzio) e si prefetchano a vicenda
+- Fasi del flusso demolitore (`_lib/api.ts`, `gruppoDi` + `CASISTICA_LABEL` condivisa): arrivo · fissato · rottamazione · targhe · completate · annullate. Caselle della home: "In arrivo · fissa il ritiro" › "Ritiro fissato" › "**Attesa Certificato di Rottamazione**" › "**Attesa Certificato cancellazione targhe**" › "Completate" + "Non a buon fine" fuori fila
 
 ## 5.4 Backend / API
 
@@ -603,7 +610,7 @@ Pannello che **scivola da destra a tutta altezza**. Testata gemella della tendin
 - **`/api/email-cliente`** — l'email vera di login (il browser admin non può leggere `utenti` per RLS).
 - **`/api/pulisci-utenti`** — cancella account clienti senza pratiche (mai admin/operatori).
 - **`/api/invita-demolitore`** · **`/api/accesso-demolitore`** · **`/api/elimina-demolitore`**
-- **Area demolitore** (il ruolo demolitore non tocca MAI il DB direttamente, RLS): `/api/demolitore-pratiche`, `/api/demolitore-azioni` (fissa/sposta ritiro — **spostare richiede il motivo, il server rifiuta senza** —, segna ritirata, rottamazione a mano), `/api/demolitore-certificato`, `/api/demolitore-chat`, `/api/demolitore-note`, `/api/demolitore-profilo`. Auth condivisa in `lib/demolitoreAuth.ts`.
+- **Area demolitore** (il ruolo demolitore non tocca MAI il DB direttamente, RLS): `/api/demolitore-pratiche` (il dettaglio RIFIRMA sempre gli URL dei documenti del bucket privato), `/api/demolitore-azioni` (fissa/sposta ritiro — **spostare richiede il motivo, il server rifiuta senza** —, segna ritirata, rottamazione a mano), `/api/demolitore-certificato`, `/api/demolitore-chat`, `/api/demolitore-rapidi` (frasi rapide SUE della chat, semina + gestione), `/api/demolitore-impegni` (impegni personali della pagina Ritiri), `/api/demolitore-note`, `/api/demolitore-profilo`. Auth condivisa in `lib/demolitoreAuth.ts`.
 - **`lib/googleMaps.ts`** — carica lo script UNA volta per pagina (autocomplete e mappa convivono senza conflitto).
 
 ## 5.5 Verifica PRA ACI — ABBANDONATA per ora
@@ -866,10 +873,9 @@ I PDF originali stanno in `docs/moduli/originali/` e viaggiano nel deploy via `o
 ## 8.2 Il prossimo lavoro
 
 ### ▶️ AREA DEMOLITORE — FASE 3
-La dashboard demolitore ha login, la HOME e la SCHEDA PRATICA a tendina fotocopia del CRM (azioni per fase funzionanti sul flusso intero), il pannello "La tua azienda", cronologia e chat cloni di quelli admin. **Manca:**
-1. **Visore documenti condiviso**: "Documenti e Foto" deve aprire LO STESSO visore dell'admin (palco scuro, zoom, PDF sfogliabili, Scarica col PDF unico) ma senza Approva/Rifiuta: serve una variante alimentata dagli endpoint demolitore (RLS: lui non legge il DB). Oggi c'è l'elenco semplice coi link firmati
-2. **Motore scadenze e notifiche**: campanella in-app, email di sollecito oltre le 8 ore lavorative, promemoria del giorno di ritiro a demolitore e cliente, bottone cliente "Non posso quel giorno" (non bloccante, avvisa demolitore e admin)
-3. Rifinire cosa il demolitore NON deve vedere quando nasceranno nuovi stati
+La dashboard demolitore è COMPLETA sul flusso: home e scheda pratica fotocopia del CRM, visore documenti condiviso in sola lettura, chat coi rapidi gestibili, pagina Ritiri (agenda a timeline con gli impegni personali e la scena globale nel fissare i ritiri). **Manca:**
+1. **Motore scadenze e notifiche**: campanella in-app, email di sollecito oltre le 8 ore lavorative, promemoria del giorno di ritiro a demolitore e cliente, bottone cliente "Non posso quel giorno" (non bloccante, avvisa demolitore e admin)
+2. Rifinire cosa il demolitore NON deve vedere quando nasceranno nuovi stati
 
 Richiede: **Resend attivo** (il dominio noidemoliamo.it è già comprato: va collegato a Vercel e verificato su Resend con SPF/DKIM/DMARC) e un **cron Vercel** per i controlli periodici.
 

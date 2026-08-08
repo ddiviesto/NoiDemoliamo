@@ -11,7 +11,7 @@ import DocumentiApprovazione, { nomeAdmin } from './pratiche/[id]/DocumentiAppro
 import IconaVeicolo from '../components/IconaVeicolo'
 import AutocompleteIndirizzo from '../inizia/steps/AutocompleteIndirizzo'
 import ChatAdmin from './pratiche/[id]/ChatAdmin'
-import CronologiaNote from './pratiche/[id]/CronologiaNote'
+import CronologiaNote, { prefetchCronologia } from './pratiche/[id]/CronologiaNote'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -817,7 +817,7 @@ export default function AdminDashboard() {
                       si tinge dell'azzurro dell'apertura (#EFF6FF) */}
                   <div
                     onClick={() => apriPratica(p)}
-                    onMouseEnter={() => setHoverId(p.id)}
+                    onMouseEnter={() => { setHoverId(p.id); prefetchCronologia(p.id) }}
                     onMouseLeave={() => setHoverId(null)}
                     className={`group cursor-pointer transition-all ${aperta ? '' : 'hover:!bg-[#EFF6FF] hover:!border-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]'}`}
                     style={{ background: aperta ? '#EFF6FF' : '#fff', border: `1.5px solid ${aperta ? 'transparent' : '#E5E7EB'}`, borderRadius: aperta ? '13px 13px 0 0' : 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: aperta ? 'none' : '0 1px 3px rgba(16,24,40,0.07)', opacity: chiusa && !aperta ? 0.82 : 1 }}

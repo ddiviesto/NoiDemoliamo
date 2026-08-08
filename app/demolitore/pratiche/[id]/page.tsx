@@ -98,6 +98,7 @@ export default function SchedaPraticaDemolitore() {
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
         onPratiche={() => router.push('/demolitore')}
+        onRitiri={() => router.push('/demolitore/ritiri')}
         onAzienda={() => setAziendaAperta(true)}
         onEsci={esci}
       />

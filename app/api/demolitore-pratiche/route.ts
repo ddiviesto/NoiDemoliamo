@@ -25,6 +25,17 @@ const CAMPI_LISTA = [
 
 interface FileDoc { url: string; nome?: string; lato?: string }
 
+// ⭐ 07/08 (documenti bianchi nel visore, segnalato da Davide): i file sono
+// salvati con l'URL COMPLETO del bucket privato — così com'è non si apre.
+// Come fa l'admin: si estrae il percorso dopo /documenti-pratiche/ e si
+// firma quello. Torna null se l'URL non è del bucket.
+function estraiPathBucket(url: string): string | null {
+  const marker = '/documenti-pratiche/'
+  const idx = url.indexOf(marker)
+  if (idx === -1) return null
+  return url.substring(idx + marker.length).split('?')[0]
+}
+
 // file_url può essere: array JSON, stringa JSON, o singolo path (legacy)
 function leggiFile(fileUrl: unknown): FileDoc[] {
   if (!fileUrl) return []
@@ -116,11 +127,14 @@ export async function POST(req: NextRequest) {
       const files: FileDoc[] = []
       for (const f of leggiFile(riga.file_url)) {
         if (!f.url) continue
-        if (f.url.startsWith('http')) {
-          files.push(f)
-        } else {
-          const { data: firmato } = await supabase.storage.from('documenti-pratiche').createSignedUrl(f.url, 3600)
+        // URL completo del bucket privato O percorso nudo → si firma sempre;
+        // un http di un altro dominio passa così com'è
+        const path = f.url.startsWith('http') ? estraiPathBucket(f.url) : f.url
+        if (path) {
+          const { data: firmato } = await supabase.storage.from('documenti-pratiche').createSignedUrl(path, 3600)
           if (firmato?.signedUrl) files.push({ ...f, url: firmato.signedUrl })
+        } else if (f.url.startsWith('http')) {
+          files.push(f)
         }
       }
       if (files.length > 0) {

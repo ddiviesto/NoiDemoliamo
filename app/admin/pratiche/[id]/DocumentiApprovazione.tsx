@@ -3,6 +3,12 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
+// ⭐ 07/08: i pezzi del visore (zoom, PDF sfogliabili, nomi col ruolo,
+// scarico PDF unico) vivono nel componente CONDIVISO, usato anche
+// dall'area demolitore: i due visori restano gemelli per sempre
+import { ZoomImg, PdfZoom, isPdfUrl, nomeAdmin, scaricaPdfVoci, type VocePdf } from '@/app/components/VisoreDocumenti'
+
+export { nomeAdmin }
 
 // ============================================================
 // APPROVAZIONE DOCUMENTI — nuovo sistema (pratica_documenti_checklist)
@@ -57,28 +63,9 @@ interface DatiPratica {
   targhe_presenti: boolean | null
 }
 
-// ⭐ 26/07: NOMI PRECISI per l'admin. Il catalogo parla al cliente ("La tua
-// carta d'identità"): qui il possessivo diventa il RUOLO vero secondo la
-// casistica, così Davide incrocia il documento coi dati dichiarati.
-const RUOLO_CASISTICA: Record<string, string> = {
-  persona_fisica: "dell'intestatario",
-  eredi_accettato: "dell'erede che gestisce la pratica",
-  eredi_rinuncia: "dell'erede che gestisce la pratica",
-  societa: 'del legale rappresentante',
-  societa_fallita: 'del legale rappresentante',
-  associazione: 'del rappresentante',
-  non_intestatario: 'del richiedente',
-  targhe_straniere: 'del proprietario',
-}
-
-// Esportata: la usa anche la scheda Ritiro del CRM (28/07) per la lista
-// degli originali da consegnare, così i nomi parlano sempre col ruolo
-export function nomeAdmin(nome: string, casistica: string | null | undefined): string {
-  const ruolo = casistica ? RUOLO_CASISTICA[casistica] : null
-  const m = nome.match(/^(la tua|il tuo)\s+(.+)$/i)
-  if (m && ruolo) return m[2].charAt(0).toUpperCase() + m[2].slice(1) + ' ' + ruolo
-  return nome
-}
+// ⭐ 26/07: NOMI PRECISI per l'admin — la funzione `nomeAdmin` (possessivo
+// del catalogo cliente → RUOLO vero della casistica) vive nel visore
+// condiviso ed è ri-esportata qui sopra per la scheda Ritiro del CRM.
 
 interface Props {
   praticaId: string
@@ -125,26 +112,9 @@ function estraiPathBucket(url: string, bucket: string): string | null {
   return url.substring(idx + marker.length).split('?')[0]
 }
 
-function isPdfUrl(url: string | null | undefined): boolean {
-  if (!url) return false
-  return /\.pdf($|\?)/i.test(url)
-}
-
 function ordinaleErede(n: number): string {
   const o = ['', '1°', '2°', '3°', '4°', '5°', '6°', '7°', '8°', '9°', '10°']
   return o[n] || `${n}°`
-}
-
-// ---- helper scarico PDF (27/07) ----
-function bytesDaDataUrl(dataUrl: string): Uint8Array {
-  const bin = atob(dataUrl.split(',')[1])
-  const arr = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i)
-  return arr
-}
-
-function nomeFileSicuro(s: string): string {
-  return s.replace(/[\\/:*?"<>|]/g, '').trim()
 }
 
 // Stile card condiviso (identico alle card della lista pratiche)
@@ -176,151 +146,8 @@ function BottoniCdc({ azione, onScegli }: { azione: boolean; onScegli: (cdc: 'ca
   )
 }
 
-// ============================================================
-// VISORE: IMMAGINE ZOOMABILE (26/07, mockup approvato: A + barretta
-// della B). Doppio clic sul punto da leggere = ingrandisce lì; da
-// ingrandito trascini per spostarti e la rotella regola; barretta
-// − / % / + / Adatta sempre visibile in basso.
-// ============================================================
-
-const SCALE_ZOOM = [1, 1.5, 2, 3, 4]
-
-function ZoomImg({ src, alt, badge }: { src: string; alt: string; badge?: string }) {
-  const box = useRef<HTMLDivElement>(null)
-  const [t, setT] = useState({ s: 1, x: 0, y: 0 })
-  const drag = useRef<{ x: number; y: number } | null>(null)
-
-  // Il doppio clic è stato TOLTO (26/07, richiesta Davide): con la rotella
-  // sempre attiva non serviva più.
-
-  // La rotella regola lo zoom SEMPRE, appena sei sopra (26/07: prima solo
-  // da ingranditi). Listener manuale non-passivo: React registra onWheel
-  // come passivo e il preventDefault non avrebbe effetto.
-  useEffect(() => {
-    const el = box.current
-    if (!el) return
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault()
-      setT(prev => {
-        const s = Math.min(5, Math.max(1, prev.s * (e.deltaY < 0 ? 1.15 : 0.87)))
-        return s === 1 ? { s: 1, x: 0, y: 0 } : { ...prev, s }
-      })
-    }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [])
-
-  function zoomStep(dir: 1 | -1) {
-    setT(prev => {
-      let i = SCALE_ZOOM.findIndex(x => x >= prev.s - 0.01)
-      if (i === -1) i = SCALE_ZOOM.length - 1
-      const s = SCALE_ZOOM[Math.min(SCALE_ZOOM.length - 1, Math.max(0, i + dir))]
-      return s === 1 ? { s: 1, x: 0, y: 0 } : { ...prev, s }
-    })
-  }
-
-  const bottoneBarra: React.CSSProperties = { border: 'none', background: 'transparent', color: '#fff', width: 26, height: 26, borderRadius: 999, fontSize: 14, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }
-
-  return (
-    <div
-      ref={box}
-      onPointerDown={e => { if (t.s > 1 && !(e.target as HTMLElement).closest('[data-barra-zoom]')) { drag.current = { x: e.clientX, y: e.clientY }; box.current?.setPointerCapture(e.pointerId) } }}
-      onPointerMove={e => { if (drag.current) { const d = drag.current; drag.current = { x: e.clientX, y: e.clientY }; setT(prev => ({ ...prev, x: prev.x + e.clientX - d.x, y: prev.y + e.clientY - d.y })) } }}
-      onPointerUp={() => { drag.current = null }}
-      style={{ position: 'relative', width: '100%', height: '100%', background: 'transparent', borderRadius: 12, overflow: 'hidden', touchAction: 'none', cursor: t.s > 1 ? 'grab' : 'default' }}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        alt={alt}
-        draggable={false}
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', transform: `translate(${t.x}px, ${t.y}px) scale(${t.s})`, transformOrigin: 'center center', userSelect: 'none' }}
-      />
-      {badge && (
-        <span style={{ position: 'absolute', top: 8, left: 8, background: 'rgba(15,23,42,0.65)', color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: 0.5, borderRadius: 20, padding: '2px 9px', zIndex: 2 }}>{badge}</span>
-      )}
-      {/* Barretta di zoom sempre visibile */}
-      <div data-barra-zoom style={{ position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: 8, display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(15,23,42,0.72)', borderRadius: 999, padding: 3, zIndex: 2 }}>
-        <button type="button" onClick={() => zoomStep(-1)} style={bottoneBarra}>−</button>
-        <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700, minWidth: 40, textAlign: 'center' }}>{Math.round(t.s * 100)}%</span>
-        <button type="button" onClick={() => zoomStep(1)} style={bottoneBarra}>+</button>
-        <button type="button" onClick={() => setT({ s: 1, x: 0, y: 0 })} style={{ ...bottoneBarra, width: 'auto', padding: '0 9px', fontSize: 10 }}>Adatta</button>
-      </div>
-    </div>
-  )
-}
-
-// ============================================================
-// PDF NEL VISORE (26/07): le pagine del PDF diventano IMMAGINI e passano
-// nello STESSO visore delle foto (doppio clic, trascina, rotella, barretta).
-// Via il visore integrato del browser con la sua barra grigia.
-// ============================================================
-
-function PdfZoom({ src, badge }: { src: string; badge?: string }) {
-  const [pagine, setPagine] = useState<string[] | null>(null)
-  const [errore, setErrore] = useState(false)
-  const [pagina, setPagina] = useState(0)
-
-  useEffect(() => {
-    let vivo = true
-    async function rendi() {
-      try {
-        const pdfjs = await import('pdfjs-dist')
-        pdfjs.GlobalWorkerOptions.workerSrc = new URL('pdfjs-dist/build/pdf.worker.min.mjs', import.meta.url).toString()
-        const doc = await pdfjs.getDocument({ url: src }).promise
-        const urls: string[] = []
-        const max = Math.min(doc.numPages, 20)
-        for (let i = 1; i <= max; i++) {
-          const page = await doc.getPage(i)
-          const base = page.getViewport({ scale: 1 })
-          const viewport = page.getViewport({ scale: Math.min(3, 1600 / base.width) })
-          const canvas = document.createElement('canvas')
-          canvas.width = viewport.width
-          canvas.height = viewport.height
-          await page.render({ canvas, canvasContext: canvas.getContext('2d')!, viewport }).promise
-          urls.push(canvas.toDataURL('image/jpeg', 0.92))
-          if (!vivo) return
-        }
-        if (vivo) setPagine(urls)
-      } catch (e) {
-        console.error('Errore lettura PDF:', e)
-        if (vivo) setErrore(true)
-      }
-    }
-    rendi()
-    return () => { vivo = false }
-  }, [src])
-
-  // Sul palco scuro (27/07): niente sfondi chiari, testi e rotellina in chiaro
-  if (errore) return (
-    <div style={{ width: '100%', height: '100%', borderRadius: 12, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-      <p style={{ fontSize: 12, color: '#E2E8F0' }}>Non riesco a mostrare questo PDF qui.</p>
-      <a href={src} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, fontWeight: 700, color: '#BFDBFE', textDecoration: 'underline' }}>Aprilo in un&apos;altra scheda</a>
-    </div>
-  )
-  if (!pagine) return (
-    <div style={{ width: '100%', height: '100%', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div className="w-5 h-5 border-2 border-white/70 border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
-  const bottonePag: React.CSSProperties = { border: 'none', background: 'transparent', color: '#fff', width: 24, height: 24, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }
-  return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <ZoomImg key={pagina} src={pagine[pagina]} alt={`Pagina ${pagina + 1}`} badge={badge} />
-      {pagine.length > 1 && (
-        <div style={{ position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 2, background: 'rgba(15,23,42,0.72)', borderRadius: 999, padding: 3, zIndex: 3 }}>
-          <button type="button" onClick={() => setPagina(p => (p - 1 + pagine.length) % pagine.length)} style={bottonePag} aria-label="Pagina precedente">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
-          </button>
-          <span style={{ color: '#fff', fontSize: 10.5, fontWeight: 700, padding: '0 4px' }}>Pag. {pagina + 1}/{pagine.length}</span>
-          <button type="button" onClick={() => setPagina(p => (p + 1) % pagine.length)} style={bottonePag} aria-label="Pagina successiva">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
+// Nota 07/08: ZoomImg e PdfZoom (l'immagine zoomabile e il PDF sfogliabile
+// del palco) vivono nel visore CONDIVISO app/components/VisoreDocumenti.tsx.
 
 // ============================================================
 // COMPONENTE
@@ -698,70 +525,13 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
     setPdfInCorso(true)
     setPdfErrore(null)
     try {
-      const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib')
-      const out = await PDFDocument.create()
-      const font = await out.embedFont(StandardFonts.Helvetica)
-      const falliti: string[] = []
-      for (const v of daIncludere) {
-        const titolo = titoloVoce(v)
-        const files: { url: string; nome: string; lato?: string }[] = v.tipo === 'doc'
-          ? leggiFile(v.doc.file_url).map(f => ({ url: signedMap[f.url] || f.url, nome: f.nome, lato: f.lato }))
-          : [{ url: v.foto.url, nome: titolo }]
-        for (const f of files) {
-          const etichetta = f.lato ? `${titolo} (${f.lato})` : titolo
-          try {
-            const res = await fetch(f.url)
-            if (!res.ok) throw new Error(`HTTP ${res.status}`)
-            const blob = await res.blob()
-            const bytes = new Uint8Array(await blob.arrayBuffer())
-            if (bytes[0] === 0x25 && bytes[1] === 0x50 && bytes[2] === 0x44 && bytes[3] === 0x46) {
-              // È un PDF: pagine copiate così come sono
-              const src = await PDFDocument.load(bytes, { ignoreEncryption: true })
-              for (const pg of await out.copyPages(src, src.getPageIndices())) out.addPage(pg)
-            } else {
-              let img
-              if (bytes[0] === 0xFF && bytes[1] === 0xD8) img = await out.embedJpg(bytes)
-              else if (bytes[0] === 0x89 && bytes[1] === 0x50) img = await out.embedPng(bytes)
-              else {
-                // Formato non nativo per pdf-lib (es. WebP): passa dal canvas
-                const bmp = await createImageBitmap(blob)
-                const canvas = document.createElement('canvas')
-                canvas.width = bmp.width
-                canvas.height = bmp.height
-                canvas.getContext('2d')!.drawImage(bmp, 0, 0)
-                img = await out.embedJpg(bytesDaDataUrl(canvas.toDataURL('image/jpeg', 0.9)))
-              }
-              // Pagina A4 verticale; l'etichetta in alto SOLO sui documenti —
-              // le FOTO vanno pulite, senza scritte (richiesta Davide 27/07:
-              // "solo anteprima, più ordinato")
-              const conEtichetta = v.tipo === 'doc'
-              const A4W = 595.28, A4H = 841.89, margine = 36
-              const page = out.addPage([A4W, A4H])
-              if (conEtichetta) page.drawText(etichetta.slice(0, 95), { x: margine, y: A4H - 26, size: 9, font, color: rgb(0.42, 0.47, 0.55) })
-              const areaW = A4W - margine * 2
-              const areaH = A4H - margine * 2 - (conEtichetta ? 14 : 0)
-              const k = Math.min(areaW / img.width, areaH / img.height)
-              page.drawImage(img, { x: (A4W - img.width * k) / 2, y: margine + (areaH - img.height * k) / 2, width: img.width * k, height: img.height * k })
-            }
-          } catch (e) {
-            console.error('File saltato nel PDF:', f.nome, e)
-            falliti.push(etichetta)
-          }
-        }
-      }
-      if (out.getPageCount() === 0) throw new Error('Nessun file incluso')
-      // ⭐ 27/07 notte (richiesta Davide): il nome racconta il contenuto —
-      // SOLO FOTO (tutte o alcune) = "Foto", un documento solo = il suo
-      // nome, misto = "Documenti"
-      const soloFoto = daIncludere.every(v => v.tipo === 'foto')
-      const base = daIncludere.length === 1 && !soloFoto ? titoloVoce(daIncludere[0]) : soloFoto ? 'Foto' : 'Documenti'
-      const nomeFile = nomeFileSicuro(`${base}${targa ? ` ${targa}` : ''}`) + '.pdf'
-      const blobOut = new Blob([await out.save() as BlobPart], { type: 'application/pdf' })
-      const link = document.createElement('a')
-      link.href = URL.createObjectURL(blobOut)
-      link.download = nomeFile
-      link.click()
-      URL.revokeObjectURL(link.href)
+      // ⭐ 07/08: il motore del PDF unico (pagine A4, etichette, nome file)
+      // sta nel visore CONDIVISO — qui si preparano solo le voci con gli
+      // URL firmati del bucket privato
+      const items: VocePdf[] = daIncludere.map(v => v.tipo === 'doc'
+        ? { titolo: titoloVoce(v), tipo: 'doc' as const, files: leggiFile(v.doc.file_url).map(f => ({ url: signedMap[f.url] || f.url, nome: f.nome, lato: f.lato })) }
+        : { titolo: titoloVoce(v), tipo: 'foto' as const, files: [{ url: v.foto.url, nome: titoloVoce(v) }] })
+      const falliti = await scaricaPdfVoci(items, targa)
       if (falliti.length > 0) {
         setPdfErrore(`PDF scaricato, ma senza: ${falliti.join(', ')}.`)
       } else {

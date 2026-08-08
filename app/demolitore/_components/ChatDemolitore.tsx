@@ -15,13 +15,10 @@ import { useAggiornaLive } from '@/lib/aggiornaLive'
 
 interface MessaggioChat { id: string; mittente_tipo: string; testo: string; creato_il: string }
 
-// Frasi RAPIDE del demolitore verso il cliente (un tocco = frase nel campo)
-const RAPIDI_CLIENTE = [
-  'Buongiorno! La chiamo a breve per accordarci sul ritiro.',
-  'Posso passare domani mattina: le va bene?',
-  'Sono in arrivo.',
-  'Sono arrivato: la aspetto al veicolo.',
-]
+// ⭐ 07/08 (richiesta Davide): le frasi RAPIDE verso il cliente sono DEL
+// demolitore e le gestisce lui ("Gestisci" come nella chat admin). Vivono
+// sul server (/api/demolitore-rapidi); le 4 di partenza le semina l'endpoint
+interface FraseRapida { id: string; testo: string; ordine: number }
 
 export default function ChatDemolitore({ praticaId, bloccata, finestra, titolo, onChiudi }: {
   praticaId: string
@@ -39,8 +36,21 @@ export default function ChatDemolitore({ praticaId, bloccata, finestra, titolo, 
   const [erroreChat, setErroreChat] = useState('')
   const [espansa, setEspansa] = useState(false)
   const [chiudendo, setChiudendo] = useState(false)
+  // RAPIDI: null = in caricamento (non si mostra nulla, niente lampi)
+  const [rapidi, setRapidi] = useState<FraseRapida[] | null>(null)
+  const [rapidiGestibili, setRapidiGestibili] = useState(false)
+  const [gestisci, setGestisci] = useState(false)
   const riquadroRef = useRef<HTMLDivElement>(null)
   const messaggiJson = useRef('')
+
+  const caricaRapidi = useCallback(async () => {
+    try {
+      const json = await chiamataDemolitore<{ frasi: FraseRapida[]; gestibili: boolean }>('/api/demolitore-rapidi', { azione: 'lista' })
+      setRapidi(json.frasi || [])
+      setRapidiGestibili(!!json.gestibili)
+    } catch { setRapidi([]) }
+  }, [])
+  useEffect(() => { caricaRapidi() }, [caricaRapidi])
 
   // Chiusura CON animazione (scivola via verso destra), poi si smonta
   function chiudi() {
@@ -97,7 +107,16 @@ export default function ChatDemolitore({ praticaId, bloccata, finestra, titolo, 
   // con l'angolo "parlato", le altre bianche bordate a sinistra), stessa
   // firma sotto la bolla e stesso campo + tondo blu d'invio.
   // Il CORPO è unico: cambia solo il guscio (card o finestrella).
-  const corpo = (
+  // "Gestisci" NON apre finestre: il corpo si trasforma nella gestione
+  // delle frasi rapide, con la freccetta per tornare ai messaggi (come admin)
+  const corpo = gestisci ? (
+    <GestisciRapidi
+      frasi={rapidi || []}
+      compatta={!!finestra}
+      onChiudi={() => setGestisci(false)}
+      onAggiornate={(frasi) => setRapidi(frasi)}
+    />
+  ) : (
     <>
       {/* Pilloline dei due canali (gemelle della chat admin) */}
       <div className="flex gap-1.5 flex-wrap" style={{ marginTop: finestra ? 8 : 0 }}>
@@ -139,21 +158,25 @@ export default function ChatDemolitore({ praticaId, bloccata, finestra, titolo, 
 
       {erroreChat && <p className="text-[11px] mt-2 m-0" style={{ color: '#9B1C1C' }}>{erroreChat}</p>}
       {/* ⭐ 07/08 (richiesta Davide): RAPIDI a chips sul canale Cliente,
-          come nella chat del CRM admin — un tocco e la frase è nel campo */}
-      {!bloccata && tab === 'cliente' && (
+          come nella chat del CRM admin — un tocco e la frase è nel campo,
+          "Gestisci" per modificarle (sono le SUE frasi, salvate sul server) */}
+      {!bloccata && tab === 'cliente' && rapidi && (rapidi.length > 0 || rapidiGestibili) && (
         <div className="flex items-center gap-1.5 flex-wrap" style={{ padding: '7px 0 0' }}>
           <span style={{ fontSize: 9, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6 }}>RAPIDI</span>
-          {RAPIDI_CLIENTE.map(frase => (
+          {rapidi.map(f => (
             <button
-              key={frase}
-              onClick={() => setTesto(frase)}
-              title={frase}
+              key={f.id}
+              onClick={() => setTesto(f.testo)}
+              title={f.testo}
               className="transition-colors hover:border-blue-200 hover:text-blue-700 hover:bg-blue-50"
               style={{ background: '#F3F5F9', border: '1px solid #E5E7EB', color: '#374151', fontSize: 10.5, fontWeight: 600, borderRadius: 999, padding: '3px 10px', maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', cursor: 'pointer' }}
             >
-              {frase}
+              {f.testo}
             </button>
           ))}
+          {rapidiGestibili && (
+            <button onClick={() => setGestisci(true)} style={{ background: 'none', border: 'none', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, textDecoration: 'underline', textUnderlineOffset: 2, cursor: 'pointer' }}>Gestisci</button>
+          )}
         </div>
       )}
       {bloccata ? (
@@ -216,5 +239,126 @@ export default function ChatDemolitore({ praticaId, bloccata, finestra, titolo, 
   // ---- CARD simple (scheda pratica vecchia e usi in linea) ----
   return (
     <div className="bg-white rounded-xl p-3" style={{ border: '1.5px solid #E5E7EB' }}>{corpo}</div>
+  )
+}
+
+// ============================================================
+// GESTIONE FRASI RAPIDE — IN LINEA dentro la chat (07/08): CLONE del
+// GestisciPreimpostati della chat admin, ma sul server del demolitore
+// (/api/demolitore-rapidi): niente accesso diretto al DB. Il corpo
+// della chat si trasforma e la freccetta riporta ai messaggi.
+// ============================================================
+
+function GestisciRapidi({ frasi, compatta, onChiudi, onAggiornate }: {
+  frasi: FraseRapida[]
+  compatta?: boolean
+  onChiudi: () => void
+  onAggiornate: (frasi: FraseRapida[]) => void
+}) {
+  const [bozze, setBozze] = useState<Record<string, string>>({})
+  const [nuovo, setNuovo] = useState('')
+  const [occupato, setOccupato] = useState(false)
+  const [erroreGestione, setErroreGestione] = useState('')
+
+  async function esegui(payload: Record<string, unknown>) {
+    setOccupato(true)
+    setErroreGestione('')
+    try {
+      const json = await chiamataDemolitore<{ frasi: FraseRapida[] }>('/api/demolitore-rapidi', payload)
+      onAggiornate(json.frasi || [])
+      setOccupato(false)
+      return true
+    } catch (e) {
+      setErroreGestione(e instanceof Error ? e.message : 'Errore, riprova')
+      setOccupato(false)
+      return false
+    }
+  }
+
+  async function salvaModifica(f: FraseRapida) {
+    const t = (bozze[f.id] ?? f.testo).trim()
+    if (!t || t === f.testo) { setBozze(b => { const n = { ...b }; delete n[f.id]; return n }); return }
+    if (await esegui({ azione: 'modifica', id: f.id, testo: t })) {
+      setBozze(b => { const n = { ...b }; delete n[f.id]; return n })
+    }
+  }
+
+  async function elimina(f: FraseRapida) {
+    await esegui({ azione: 'elimina', id: f.id })
+  }
+
+  async function aggiungi() {
+    const t = nuovo.trim()
+    if (!t) return
+    if (await esegui({ azione: 'aggiungi', testo: t })) setNuovo('')
+  }
+
+  return (
+    <div style={{ padding: compatta ? '8px 0 0' : '8px 0 0', ...(compatta ? { flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' } : {}) }}>
+      {/* Testata: freccetta indietro + titolo con la barretta blu */}
+      <div className="flex items-center gap-2">
+        <button onClick={onChiudi} aria-label="Torna alla chat" className="flex items-center justify-center transition-colors hover:bg-blue-50" style={{ width: 24, height: 24, borderRadius: 8, background: 'none', border: '1.5px solid #E5E7EB', color: '#1D4ED8', cursor: 'pointer', flexShrink: 0 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
+        </button>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 12.5, fontWeight: 700, color: '#0F1B33' }}>
+          <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+          Messaggi rapidi
+        </span>
+      </div>
+      <p style={{ fontSize: 10.5, color: '#8B95A5', lineHeight: 1.45, margin: '5px 0 8px' }}>Un tocco in chat le mette nella casella (le puoi ritoccare prima di inviare).</p>
+
+      {/* Elenco frasi: campo slim + Salva quando cambia + cestino discreto */}
+      <div className="overflow-y-auto flex flex-col gap-1.5" style={compatta ? { flex: 1, minHeight: 0 } : { maxHeight: 260 }}>
+        {frasi.length === 0 && (
+          <p style={{ fontSize: 11, color: '#9AA7B5', padding: '6px 0' }}>Nessuna frase salvata: scrivi la prima qui sotto.</p>
+        )}
+        {frasi.map(f => {
+          const bozza = bozze[f.id] ?? f.testo
+          const modificata = bozza.trim() !== f.testo
+          return (
+            <div key={f.id} className="flex gap-1.5 items-center">
+              <textarea
+                value={bozza}
+                onChange={e => setBozze(b => ({ ...b, [f.id]: e.target.value }))}
+                rows={1}
+                className="flex-1 min-w-0 border-[1.5px] border-gray-200 px-3 py-[6px] text-base sm:text-[11.5px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all resize-none"
+                style={{ borderRadius: 15 }}
+              />
+              {modificata && (
+                <button onClick={() => salvaModifica(f)} disabled={occupato} className="flex-shrink-0 transition-colors hover:bg-blue-700 disabled:opacity-40" style={{ background: '#2563eb', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', border: 'none', cursor: 'pointer' }}>
+                  Salva
+                </button>
+              )}
+              <button onClick={() => elimina(f)} disabled={occupato} aria-label="Elimina frase" className="flex-shrink-0 flex items-center justify-center transition-colors hover:bg-red-50 hover:text-red-700 disabled:opacity-40" style={{ width: 24, height: 24, borderRadius: 8, background: 'none', border: 'none', color: '#A65D5D', cursor: 'pointer' }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><line x1="10" y1="11" x2="10" y2="17" /><line x1="14" y1="11" x2="14" y2="17" /></svg>
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
+      {erroreGestione && <p style={{ fontSize: 10.5, color: '#9B1C1C', margin: '6px 0 0' }}>{erroreGestione}</p>}
+
+      {/* Nuova frase: campo a pillola + Aggiungi blu, come la chat */}
+      <div className="flex gap-1.5 items-center" style={{ marginTop: 8, paddingTop: 8, borderTop: '1px solid #F1F4F8' }}>
+        <textarea
+          value={nuovo}
+          onChange={e => setNuovo(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); aggiungi() } }}
+          rows={1}
+          placeholder="Nuova frase rapida…"
+          className="flex-1 min-w-0 border-[1.5px] border-gray-200 px-3 py-[6px] text-base sm:text-[11.5px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all placeholder:text-gray-400 resize-none"
+          style={{ borderRadius: 15 }}
+        />
+        <button
+          onClick={aggiungi}
+          disabled={occupato || !nuovo.trim()}
+          className="flex-shrink-0 transition-colors hover:bg-blue-700 disabled:opacity-40"
+          style={{ background: '#2563eb', color: '#fff', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '5px 12px', border: 'none', cursor: 'pointer' }}
+        >
+          Aggiungi
+        </button>
+      </div>
+    </div>
   )
 }
