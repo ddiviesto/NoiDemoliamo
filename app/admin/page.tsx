@@ -302,8 +302,10 @@ export default function AdminDashboard() {
   const [docStats, setDocStats] = useState<Record<string, { totale: number; approvati: number; daVerificare: number }>>({})
   const [nonLetti, setNonLetti] = useState<Record<string, number>>({})
   // ⭐ 28/07 (variante B su mockup): gli ORIGINALI da consegnare al ritiro,
-  // mostrati con le spunte in fondo alla scheda Ritiro
-  const [daPortare, setDaPortare] = useState<Record<string, string[]>>({})
+  // in fondo alla scheda Ritiro. ⭐ 08/08 (richiesta Davide): LISTA COMPLETA
+  // dei documenti: spunta = originale da consegnare, "Caricato online" =
+  // il cliente l'ha già inviato (sta nel visore documenti)
+  const [daPortare, setDaPortare] = useState<Record<string, { nome: string; consegna: boolean; caricato: boolean }[]>>({})
 
   // ⭐ 27/07 sera (richiesta Davide): spostarsi sul flusso CHIUDE la pratica
   // aperta (tendina, chat e nuvolette) — niente tendine rimaste appese
@@ -363,26 +365,37 @@ export default function AdminDashboard() {
   async function aggiornaContatori(praticaId: string, fresca?: Pratica | null) {
     const { data } = await supabase
       .from('pratica_documenti_checklist')
-      .select('stato, casistiche_documenti(richiede_upload, richiede_consegna, nome, ordine, codice)')
+      .select('stato, casistiche_documenti(richiede_upload, richiede_consegna, nome, ordine, codice, template_pdf)')
       .eq('pratica_id', praticaId)
-    const righeTutte = ((data || []) as { stato: string; casistiche_documenti: { richiede_upload?: boolean; richiede_consegna?: boolean; nome?: string; ordine?: number; codice?: string } | null }[])
+    const righeTutte = ((data || []) as { stato: string; casistiche_documenti: { richiede_upload?: boolean; richiede_consegna?: boolean; nome?: string; ordine?: number; codice?: string; template_pdf?: string | null } | null }[])
     const righe = righeTutte.filter(r => r.casistiche_documenti?.richiede_upload)
     setDocStats(prev => ({ ...prev, [praticaId]: {
       totale: righe.length,
       approvati: righe.filter(r => r.stato === 'approvato').length,
       daVerificare: righe.filter(r => r.stato === 'caricato').length,
     } }))
-    // ⭐ 28/07: ORIGINALI da consegnare al ritiro per la scheda Ritiro —
-    // stessa regola del box del cliente: documenti col flag richiede_consegna,
-    // libretto escluso se "da chiarire" (libretto no); nomi col ruolo casistica
+    // ⭐ 28/07 → 08/08: la LISTA COMPLETA dei documenti per la scheda Ritiro
+    // (nomi col ruolo casistica, nomenclatura unica): originali da consegnare
+    // (spunta) + caricati online dal cliente (pillolina). Libretto escluso
+    // quando è "da chiarire" (libretto no).
     const pr = fresca || pratiche.find(x => x.id === praticaId)
-    const consegna = righeTutte
-      .map(r => r.casistiche_documenti)
-      .filter((c): c is NonNullable<typeof c> => !!c?.richiede_consegna)
-      .filter(c => !(pr?.libretto === 'no' && (c.codice === 'LIBRETTO_CIRCOLAZIONE' || c.codice === 'LIBRETTO_ESTERO')))
-      .sort((a, b) => (a.ordine ?? 0) - (b.ordine ?? 0))
-      .map(c => nomeAdmin(c.nome || 'Documento', pr?.casistica))
-    setDaPortare(prev => ({ ...prev, [praticaId]: consegna }))
+    const listaRitiro: { nome: string; consegna: boolean; caricato: boolean }[] = []
+    const righeOrdinate = [...righeTutte].sort((a, b) => (a.casistiche_documenti?.ordine ?? 0) - (b.casistiche_documenti?.ordine ?? 0))
+    for (const r of righeOrdinate) {
+      const c = r.casistiche_documenti
+      if (!c || (!c.richiede_consegna && !c.richiede_upload)) continue
+      if (pr?.libretto === 'no' && (c.codice === 'LIBRETTO_CIRCOLAZIONE' || c.codice === 'LIBRETTO_ESTERO')) continue
+      const nome = nomeAdmin(c.template_pdf && c.richiede_consegna ? `${c.nome || 'Documento'}: modulo firmato in originale` : (c.nome || 'Documento'), pr?.casistica)
+      const caricato = !!c.richiede_upload && ['caricato', 'approvato'].includes(r.stato)
+      const esistente = listaRitiro.find(x => x.nome === nome)
+      if (esistente) {
+        esistente.consegna = esistente.consegna || !!c.richiede_consegna
+        esistente.caricato = esistente.caricato || caricato
+      } else {
+        listaRitiro.push({ nome, consegna: !!c.richiede_consegna, caricato })
+      }
+    }
+    setDaPortare(prev => ({ ...prev, [praticaId]: listaRitiro }))
     // Non letti DIRETTI A TE: dal cliente (canale cliente↔NoiDemoliamo,
     // vecchi inclusi) e dal demolitore (canale demolitore↔NoiDemoliamo)
     const { data: nonLettiRighe } = await supabase
@@ -1355,15 +1368,23 @@ export default function AdminDashboard() {
                                 </div>
                               )}
                               {(daPortare[p.id]?.length ?? 0) > 0 && (
-                                // ⭐ 28/07 (variante B su mockup): gli ORIGINALI che il
-                                // cliente deve consegnare al ritiro, con le spunte blu
+                                // ⭐ 28/07 → 08/08 (richiesta Davide): LISTA COMPLETA dei
+                                // documenti — spunta blu = originale da consegnare,
+                                // fotocamera = solo online, pillolina = già caricato
                                 <div style={{ paddingTop: 8 }}>
                                   <div style={{ fontSize: 9.5, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>Originali da consegnare al ritiro</div>
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                                    {daPortare[p.id].map((nome, i) => (
-                                      <span key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11.5, color: '#374151', lineHeight: 1.35 }}>
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
-                                        {nome}
+                                    {daPortare[p.id].map((doc, i) => (
+                                      <span key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11.5, color: '#374151', lineHeight: 1.35, opacity: doc.consegna ? 1 : 0.85 }}>
+                                        {doc.consegna ? (
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
+                                        ) : (
+                                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><rect x="3" y="7" width="18" height="13" rx="2" /><circle cx="12" cy="13.5" r="3.5" /><path d="M8 7l1.5-2.5h5L16 7" /></svg>
+                                        )}
+                                        <span>
+                                          {doc.nome}
+                                          {doc.caricato && <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, background: '#EFF6FF', border: '1px solid #DBEAFE', color: '#1D4ED8', borderRadius: 999, padding: '1px 7px', whiteSpace: 'nowrap' }}>Caricato online</span>}
+                                        </span>
                                       </span>
                                     ))}
                                   </div>

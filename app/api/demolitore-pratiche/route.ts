@@ -13,6 +13,12 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { autenticaDemolitore } from '@/lib/demolitoreAuth'
+import { calcolaDistanzeStradali } from '@/lib/assegnazione'
+
+// ⭐ 08/08: cache del VIAGGIO (km · minuti, Google Distance Matrix) per non
+// pagare una chiamata a ogni apertura del pannello. In memoria: si svuota
+// al riavvio del server, va benissimo (il tragitto non cambia).
+const cacheViaggi = new Map<string, { km: number; minuti: number } | null>()
 
 // Campi mostrati nelle liste (niente dati superflui in giro)
 const CAMPI_LISTA = [
@@ -108,7 +114,7 @@ export async function POST(req: NextRequest) {
     // Checklist documenti + catalogo (per approvati e "da consegnare")
     const { data: righe } = await supabase
       .from('pratica_documenti_checklist')
-      .select('id, stato, file_url, indice_erede, casistiche_documenti (codice, nome, richiede_consegna, richiede_upload, template_pdf)')
+      .select('id, stato, file_url, indice_erede, casistiche_documenti (codice, nome, richiede_consegna, richiede_upload, template_pdf, ordine)')
       .eq('pratica_id', praticaId)
 
     type RigaChecklist = {
@@ -116,7 +122,7 @@ export async function POST(req: NextRequest) {
       stato: string
       file_url: unknown
       indice_erede: number | null
-      casistiche_documenti: { codice: string; nome: string; richiede_consegna: boolean; richiede_upload: boolean; template_pdf: string | null } | null
+      casistiche_documenti: { codice: string; nome: string; richiede_consegna: boolean; richiede_upload: boolean; template_pdf: string | null; ordine: number | null } | null
     }
     const checklist = (righe || []) as unknown as RigaChecklist[]
 
@@ -155,12 +161,57 @@ export async function POST(req: NextRequest) {
       if (!daConsegnare.includes(nome)) daConsegnare.push(nome)
     }
 
+    // ⭐ 08/08 (richiesta Davide): la LISTA COMPLETA dei documenti della
+    // pratica per "Originali da consegnare al ritiro" — quelli da farsi
+    // consegnare in originale (consegna: true) E quelli che il cliente ha
+    // caricato online (caricato: true, li trova in Documenti e Foto).
+    // Come nel CRM: libretto fuori lista quando è "da chiarire".
+    const documentiRitiro: { nome: string; consegna: boolean; caricato: boolean }[] = []
+    const ordinate = [...checklist].sort((a, b) => (a.casistiche_documenti?.ordine ?? 0) - (b.casistiche_documenti?.ordine ?? 0))
+    for (const riga of ordinate) {
+      const doc = riga.casistiche_documenti
+      if (!doc || (!doc.richiede_consegna && !doc.richiede_upload)) continue
+      const libretto = doc.codice === 'LIBRETTO_CIRCOLAZIONE' || doc.codice === 'LIBRETTO_ESTERO'
+      if (libretto && (pratica as { libretto?: string | null }).libretto === 'no') continue
+      const nome = doc.template_pdf && doc.richiede_consegna ? `${doc.nome}: modulo firmato in originale` : doc.nome
+      // "Caricato online" = il cliente l'ha INVIATO (stato caricato/approvato)
+      const caricato = !!doc.richiede_upload && ['caricato', 'approvato'].includes(riga.stato)
+      const esistente = documentiRitiro.find(x => x.nome === nome)
+      if (esistente) {
+        esistente.consegna = esistente.consegna || !!doc.richiede_consegna
+        esistente.caricato = esistente.caricato || caricato
+      } else {
+        documentiRitiro.push({ nome, consegna: !!doc.richiede_consegna, caricato })
+      }
+    }
+
+    // ⭐ 08/08: il VIAGGIO sede → indirizzo di ritiro (pillola in testata
+    // del pannello Fissa il ritiro), con la cache per pratica
+    let viaggio: { km: number; minuti: number } | null = null
+    const pr = pratica as { lat?: number | null; lng?: number | null }
+    const chiaveViaggio = `${demolitoreId}:${praticaId}`
+    if (pr.lat != null && pr.lng != null) {
+      if (cacheViaggi.has(chiaveViaggio)) {
+        viaggio = cacheViaggi.get(chiaveViaggio) || null
+      } else {
+        const apiKey = process.env.GOOGLE_MAPS_SERVER_KEY
+        const { data: demo } = await supabase.from('demolitori').select('lat, lng').eq('id', demolitoreId).single()
+        if (apiKey && demo?.lat != null && demo?.lng != null) {
+          const esiti = await calcolaDistanzeStradali(apiKey, pr.lat, pr.lng, [{ lat: demo.lat, lng: demo.lng }])
+          viaggio = esiti[0] ? { km: Math.round(esiti[0].km), minuti: Math.round(esiti[0].minuti) } : null
+          cacheViaggi.set(chiaveViaggio, viaggio)
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       pratica,
       foto: (foto || []).map(f => f.url),
       documenti_approvati: documentiApprovati,
       da_consegnare: daConsegnare,
+      documenti_ritiro: documentiRitiro,
+      viaggio,
     })
   } catch (err) {
     console.error('Errore endpoint demolitore-pratiche:', err)

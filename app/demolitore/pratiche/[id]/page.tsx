@@ -94,12 +94,12 @@ export default function SchedaPraticaDemolitore() {
     <main className="flex" style={{ background: '#ECEEF2', height: '100vh', overflow: 'hidden' }}>
 
       <SidebarDemolitore
-        attiva="pratiche"
+        attiva={aziendaAperta ? 'azienda' : 'pratiche'}
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
         onPratiche={() => router.push('/demolitore')}
         onRitiri={() => router.push('/demolitore/ritiri')}
-        onAzienda={() => setAziendaAperta(true)}
+        onAzienda={() => setAziendaAperta(x => !x)}
         onEsci={esci}
       />
 

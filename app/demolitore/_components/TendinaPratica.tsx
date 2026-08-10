@@ -49,6 +49,30 @@ interface Dettaglio {
   foto: string[]
   documenti_approvati: { nome: string; files: FileDoc[] }[]
   da_consegnare: string[]
+  /** ⭐ 08/08: LISTA COMPLETA dei documenti per "Originali da consegnare al
+      ritiro" — consegna = originale da farsi consegnare, caricato = il
+      cliente l'ha già inviato online (sta in Documenti e Foto) */
+  documenti_ritiro?: { nome: string; consegna: boolean; caricato: boolean }[]
+  /** viaggio sede → ritiro (Google, dal server, con la cache) */
+  viaggio?: { km: number; minuti: number } | null
+}
+
+// Una voce della lista "Originali da consegnare al ritiro" (usata anche
+// dal pannello Fissa il ritiro); nomi già col ruolo casistica dal padre
+export function VoceOriginale({ doc }: { doc: { nome: string; consegna: boolean; caricato: boolean } }) {
+  return (
+    <span style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11.5, color: '#374151', lineHeight: 1.35, opacity: doc.consegna ? 1 : 0.85 }}>
+      {doc.consegna ? (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
+      ) : (
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><rect x="3" y="7" width="18" height="13" rx="2" /><circle cx="12" cy="13.5" r="3.5" /><path d="M8 7l1.5-2.5h5L16 7" /></svg>
+      )}
+      <span>
+        {doc.nome}
+        {doc.caricato && <span style={{ marginLeft: 5, fontSize: 9, fontWeight: 700, background: '#EFF6FF', border: '1px solid #DBEAFE', color: '#1D4ED8', borderRadius: 999, padding: '1px 7px', whiteSpace: 'nowrap' }}>Caricato online</span>}
+      </span>
+    </span>
+  )
 }
 
 // ⭐ 07/08 (scena globale, mockup approvato): una voce dell'agenda dei
@@ -123,10 +147,26 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
   useLayoutEffect(() => {
     if (!nuvola || !filaRef.current) { setPosNuvola(null); return }
     const rect = filaRef.current.getBoundingClientRect()
-    const larghezza = nuvola === 'fissa' || nuvola === 'sposta' ? 640 : 320
-    const left = Math.max(8, Math.min(rect.left + 16, window.innerWidth - larghezza - 16))
+    const left = Math.max(8, Math.min(rect.left + 16, window.innerWidth - 320 - 16))
     setPosNuvola({ top: rect.bottom + 2, left })
   }, [nuvola])
+
+  // ⭐ 08/08 (concept approvato da Davide): Fissa/Sposta il ritiro è un
+  // PANNELLO che scivola da destra come Documenti e Foto — chiusura con
+  // l'animazione e pagina bloccata dietro finché è aperto
+  const pannelloAperto = nuvola === 'fissa' || nuvola === 'sposta'
+  const [chiudendoPannello, setChiudendoPannello] = useState(false)
+  function chiudiPannello() {
+    if (busy || chiudendoPannello) return
+    setChiudendoPannello(true)
+    setTimeout(() => { setChiudendoPannello(false); setNuvola(null); setErrore('') }, 240)
+  }
+  useEffect(() => {
+    if (!pannelloAperto) return
+    const prima = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prima }
+  }, [pannelloAperto])
 
   const carica = useCallback(async () => {
     try {
@@ -172,6 +212,12 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
   const d = dett?.pratica
   const numDocumenti = (dett?.documenti_approvati.length || 0) + (dett?.foto.length || 0)
 
+  // ⭐ 08/08: LISTA COMPLETA per "Originali da consegnare al ritiro"
+  // (nomenclatura unica: nomi col ruolo casistica, come admin). Se la
+  // cache è vecchia e non ha documenti_ritiro, si ripiega su da_consegnare
+  const listaRitiro = (dett?.documenti_ritiro || (dett?.da_consegnare || []).map(n => ({ nome: n, consegna: true, caricato: false })))
+    .map(x => ({ ...x, nome: nomeAdmin(x.nome, d?.casistica) }))
+
   // Indirizzo in DUE righe come nel CRM (via e civico sopra, CAP e comune
   // sotto), reso con white-space pre-line
   const indirizzoDueRighe = (() => {
@@ -207,6 +253,65 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
 
   // Il telefono operativo: quello del DELEGATO quando c'è (regola del progetto)
   const telefonoDaChiamare = d?.delegato_nome && d?.delegato_telefono ? d.delegato_telefono : d?.telefono || p.telefono
+  const nomeDaChiamare = d?.delegato_nome && d?.delegato_telefono ? `${d.delegato_nome} (delegato)` : (p.nome_richiedente || 'Cliente')
+
+  // ⭐ 08/08 (concept approvato): la card "UTILE MENTRE SEI AL TELEFONO"
+  // del pannello Fissa/Sposta — il pannello copre le schede, quindi porta
+  // dentro tutto ciò che serve mentre ci si accorda col cliente
+  const rigaUtile: React.CSSProperties = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, minHeight: 26, borderBottom: '1px solid #EAEFF5', fontSize: 11 }
+  const cardUtile = d ? (
+    <div style={{ background: '#fff', border: '1.5px solid #E5E9F0', borderRadius: 13, overflow: 'hidden' }}>
+      {/* ⭐ 08/08 (richiesta Davide): si chiama "Informazioni per il ritiro" */}
+      <div className="flex items-center" style={{ gap: 7, padding: '9px 12px', background: '#F1F5FA', borderBottom: '1px solid #E5E9F0' }}>
+        <span style={{ color: '#2563eb', display: 'flex', flexShrink: 0 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+        </span>
+        <b style={{ fontSize: 11.5, fontWeight: 700, color: '#0F1B33' }}>Informazioni per il ritiro</b>
+      </div>
+      <div style={{ padding: '8px 12px' }}>
+        <div style={rigaUtile}>
+          <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>Chiama</span>
+          {telefonoDaChiamare ? (
+            <a href={`tel:${telefonoDaChiamare}`} className="inline-flex items-center transition-colors hover:bg-blue-50" style={{ gap: 5, background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 10px', textDecoration: 'none', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.34 1.85.57 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
+              {nomeDaChiamare} · {telefonoDaChiamare}
+            </a>
+          ) : <span style={{ color: '#6B7280' }}>—</span>}
+        </div>
+        {condizioni.length > 0 && (
+          <div style={{ ...rigaUtile, alignItems: 'flex-start', paddingTop: 4, paddingBottom: 4 }}>
+            <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>Condizioni</span>
+            <span className="flex flex-wrap justify-end" style={{ gap: 4 }}>
+              {condizioni.map(c => (
+                <span key={c.label} style={{ fontSize: 9.5, fontWeight: 700, borderRadius: 999, padding: '2px 8px', background: c.buona ? '#EAF3DE' : '#FBDADA', color: c.buona ? '#27500A' : '#9B1C1C', whiteSpace: 'nowrap' }}>{c.label}</span>
+              ))}
+            </span>
+          </div>
+        )}
+        {d.spazio_carro_attrezzi && (
+          <div style={rigaUtile}>
+            <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>Spazio carro</span>
+            <span style={{ fontSize: 9.5, fontWeight: 700, borderRadius: 999, padding: '2px 8px', background: '#EFF6FF', border: '1px solid #DBEAFE', color: '#1D4ED8', whiteSpace: 'nowrap' }}>{SPAZIO_LABEL[d.spazio_carro_attrezzi] || d.spazio_carro_attrezzi}</span>
+          </div>
+        )}
+        {d.casistica && (
+          <div style={rigaUtile}>
+            <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap' }}>Casistica</span>
+            <span style={{ color: '#6B7280', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{CASISTICA_LABEL[d.casistica] || d.casistica}</span>
+          </div>
+        )}
+        {listaRitiro.length > 0 && (
+          <>
+            <div style={{ fontWeight: 600, color: '#1E293B', fontSize: 11, padding: '6px 0 4px' }}>Originali da consegnare al ritiro</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {listaRitiro.map((doc, i) => <VoceOriginale key={i} doc={doc} />)}
+            </div>
+            <p style={{ fontSize: 9, color: '#9AA7B5', lineHeight: 1.5, marginTop: 6, paddingTop: 6, borderTop: '1px solid #EAEFF5' }}>Spunta blu = fatti consegnare l&apos;originale · &quot;Caricato online&quot; = ce l&apos;hai in Documenti e Foto</p>
+          </>
+        )}
+      </div>
+    </div>
+  ) : null
 
   return (
     <>
@@ -287,14 +392,42 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
             taglia; se lo schermo è basso scorrono al loro interno ===== */}
         {nuvola && posNuvola && createPortal(
           <>
-            <div style={{ position: 'fixed', inset: 0, zIndex: 55 }} onClick={() => { if (!busy) { setNuvola(null); setErrore('') } }} />
-            {/* ⭐ 07/08 (mockup approvato): per fissare o spostare la nuvoletta
-                è LARGA — dentro c'è la scena globale coi ritiri già fissati */}
-            <div className="bg-white" style={{ position: 'fixed', top: posNuvola.top, left: posNuvola.left, width: nuvola === 'fissa' || nuvola === 'sposta' ? 640 : 320, maxWidth: 'calc(100vw - 16px)', maxHeight: `calc(100vh - ${posNuvola.top + 12}px)`, overflowY: 'auto', overscrollBehavior: 'contain', border: '1.5px solid #DBEAFE', borderRadius: 14, boxShadow: '0 14px 34px rgba(15,23,42,0.18)', padding: 14, zIndex: 56 }}>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 55, background: pannelloAperto ? 'rgba(15,23,42,0.10)' : 'transparent' }} onClick={() => { if (!busy) { if (pannelloAperto) chiudiPannello(); else { setNuvola(null); setErrore('') } } }} />
 
-              {(nuvola === 'fissa' || nuvola === 'sposta') && (
-                <>
-                  <div className="text-[13px] font-bold text-gray-900 mb-2">{nuvola === 'fissa' ? 'Quando passi a ritirarlo?' : 'Sposta il ritiro'}</div>
+            {pannelloAperto ? (
+              /* ⭐ 08/08 (concept approvato): PANNELLO da destra a tutta
+                  altezza come Documenti e Foto — testata azzurra col viaggio,
+                  scena globale + card "Utile mentre sei al telefono", piede
+                  a barra. Entra ed esce scivolando (regola 6.7) */
+              <div className="fixed top-0 right-0 bottom-0 bg-white flex flex-col overflow-hidden" style={{ width: 'min(900px, calc(100vw - 230px))', minWidth: 'min(100vw, 560px)', borderLeft: '1.5px solid #E5E7EB', boxShadow: '-18px 0 44px rgba(15,23,42,0.22)', animation: 'pannello-ritiro .24s ease', transition: 'transform .24s ease', transform: chiudendoPannello ? 'translateX(105%)' : undefined, zIndex: 56 }}>
+                <style>{'@keyframes pannello-ritiro{from{transform:translateX(105%)}to{transform:none}}'}</style>
+
+                {/* Testata gemella del visore: icona, titolo, veicolo e la
+                    pillola del VIAGGIO (km · minuti dal server) */}
+                <div className="flex items-center" style={{ gap: 12, padding: '10px 16px', background: '#EFF6FF', borderBottom: '1px solid #DBEAFE', flexShrink: 0 }}>
+                  <span style={{ width: 38, height: 38, borderRadius: 10, background: '#DBEAFE', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                  </span>
+                  <span style={{ minWidth: 0 }}>
+                    <b style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1D4ED8', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nuvola === 'fissa' ? 'Fissa il ritiro' : 'Sposta il ritiro'}</b>
+                    <span style={{ display: 'block', fontSize: 11.5, color: '#4B5563', marginTop: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {[p.targa, [p.marca, p.modello].filter(Boolean).join(' '), p.indirizzo_ritiro || p.comune_ritiro].filter(Boolean).join(' · ')}
+                    </span>
+                  </span>
+                  <span style={{ flex: 1 }} />
+                  {/* ⭐ 08/08 (richiesta Davide): solo testo, niente icona */}
+                  {dett?.viaggio && (
+                    <span className="flex-shrink-0" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 14px', whiteSpace: 'nowrap' }}>
+                      {dett.viaggio.km} km · circa {dett.viaggio.minuti} min
+                    </span>
+                  )}
+                  <button onClick={chiudiPannello} className="text-gray-400 hover:text-gray-700 flex-shrink-0" style={{ fontSize: 22, background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
+                </div>
+
+                {/* Corpo scorrevole: picker con a fianco giornata + card utile.
+                    ⭐ Sfondo GRIGIO delle aree di lavoro (richiesta Davide):
+                    le card bianche staccano come nel CRM */}
+                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', padding: '14px 16px', background: '#ECEEF2' }}>
                   {/* key={nuvola}: il picker riparte pulito a ogni apertura */}
                   <PickerRitiro
                     key={nuvola}
@@ -302,53 +435,84 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
                     nuovoTarga={p.targa}
                     nuovoNome={p.nome_richiedente}
                     nuovoComune={p.comune_ritiro}
+                    latoExtra={cardUtile}
+                    pannello
                     onScelta={iso => setQuando(iso || '')}
                   />
                   {nuvola === 'sposta' && (
-                    <textarea value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Motivo dello spostamento (obbligatorio)"
-                      rows={2} className="w-full text-base sm:text-[12.5px] text-gray-900 outline-none mt-2 placeholder:text-gray-400" style={{ border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '8px 10px', resize: 'none' }} />
+                    <div style={{ marginTop: 13 }}>
+                      <SezTesta label="Motivo dello spostamento" icona={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>} />
+                      <textarea value={motivo} onChange={e => setMotivo(e.target.value)} placeholder="Scrivi il motivo (obbligatorio): resta nella cronologia che vede NoiDemoliamo"
+                        rows={2} className="w-full text-base sm:text-[12.5px] text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-300 transition-colors" style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '8px 10px', resize: 'none' }} />
+                    </div>
                   )}
-                  <p className="text-[11px] mt-2" style={{ color: '#8B95A5', lineHeight: 1.45 }}>
-                    La data vale subito: il cliente la vede nella sua area. Chiamalo prima per accordarvi.
-                    {nuvola === 'sposta' && ' Il motivo resta nella cronologia che vede NoiDemoliamo.'}
-                  </p>
-                </>
-              )}
-
-              {nuvola === 'ritirata' && (
-                <div className="text-[13px] text-gray-900" style={{ lineHeight: 1.5 }}>
-                  Confermi di aver <b>ritirato il veicolo</b> e gli originali del cliente?
+                  {errore && (
+                    <div className="text-[11.5px] font-semibold mt-2" style={{ color: '#9B1C1C' }}>{errore}</div>
+                  )}
                 </div>
-              )}
 
-              {nuvola === 'amano' && (
-                <div className="text-[13px] text-gray-900" style={{ lineHeight: 1.5 }}>
-                  Confermi di aver <b>consegnato a mano</b> il certificato di rottamazione al ritiro? La pratica passa all&apos;attesa della cancellazione targhe.
+                {/* Piede a barra: la nota (o il riepilogo blu a scelta
+                    completa) a sinistra, Annulla e Conferma a destra */}
+                <div className="flex items-center flex-shrink-0" style={{ gap: 10, padding: '11px 16px', borderTop: '1px solid #EEF1F5', background: '#FCFDFE' }}>
+                  {quando ? (
+                    <span className="flex items-center" style={{ gap: 7, fontSize: 12, fontWeight: 700, color: '#1D4ED8', minWidth: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                      <span className="truncate">Ritiro {fraseQuando(quando)}</span>
+                    </span>
+                  ) : (
+                    /* ⭐ 08/08 (richiesta Davide): via il "la data vale subito" */
+                    <span style={{ fontSize: 10, color: '#9AA7B5', lineHeight: 1.4, minWidth: 0 }}>Chiama prima il cliente per accordarvi:<br />vedrà la data nella sua area.</span>
+                  )}
+                  <button onClick={chiudiPannello} disabled={busy} className="ml-auto flex-shrink-0 transition-colors hover:bg-gray-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '7px 14px', cursor: 'pointer' }}>Annulla</button>
+                  <button
+                    disabled={busy || !quando || (nuvola === 'sposta' && !motivo.trim())}
+                    onClick={() => {
+                      if (nuvola === 'fissa') azione('fissa_ritiro', { quando })
+                      else azione('fissa_ritiro', { quando, motivo })
+                    }}
+                    className="flex-shrink-0 transition-all hover:brightness-105 disabled:opacity-60"
+                    style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '7px 16px', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.3)' }}
+                  >
+                    {busy ? 'Un attimo…' : 'Conferma'}
+                  </button>
                 </div>
-              )}
-
-              {errore && (
-                <div className="text-[11.5px] font-semibold mt-2" style={{ color: '#9B1C1C' }}>{errore}</div>
-              )}
-
-              <div className="flex gap-2 justify-end mt-3">
-                <button onClick={() => { setNuvola(null); setErrore('') }} disabled={busy} className="transition-colors hover:bg-gray-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 13px', cursor: 'pointer' }}>Annulla</button>
-                <button
-                  // Conferma si sblocca a scelta completa (mockup approvato)
-                  disabled={busy || ((nuvola === 'fissa' || nuvola === 'sposta') && (!quando || (nuvola === 'sposta' && !motivo.trim())))}
-                  onClick={() => {
-                    if (nuvola === 'fissa') azione('fissa_ritiro', { quando })
-                    else if (nuvola === 'sposta') azione('fissa_ritiro', { quando, motivo })
-                    else if (nuvola === 'ritirata') azione('segna_ritirata')
-                    else if (nuvola === 'amano') azione('rottamazione_a_mano')
-                  }}
-                  className="transition-all hover:brightness-105 disabled:opacity-60"
-                  style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 15px', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.3)' }}
-                >
-                  {busy ? 'Un attimo…' : 'Conferma'}
-                </button>
               </div>
-            </div>
+            ) : (
+                /* Nuvolette piccole (ritirata / consegnato a mano), ancorate
+                   alla fila delle pillole come sempre */
+                <div className="bg-white" style={{ position: 'fixed', top: posNuvola.top, left: posNuvola.left, width: 320, maxWidth: 'calc(100vw - 16px)', maxHeight: `calc(100vh - ${posNuvola.top + 12}px)`, overflowY: 'auto', overscrollBehavior: 'contain', border: '1.5px solid #DBEAFE', borderRadius: 16, boxShadow: '0 18px 44px rgba(15,23,42,0.20)', padding: 14, zIndex: 56 }}>
+                  {nuvola === 'ritirata' && (
+                    <div className="text-[13px] text-gray-900" style={{ lineHeight: 1.5 }}>
+                      Confermi di aver <b>ritirato il veicolo</b> e gli originali del cliente?
+                    </div>
+                  )}
+
+                  {nuvola === 'amano' && (
+                    <div className="text-[13px] text-gray-900" style={{ lineHeight: 1.5 }}>
+                      Confermi di aver <b>consegnato a mano</b> il certificato di rottamazione al ritiro? La pratica passa all&apos;attesa della cancellazione targhe.
+                    </div>
+                  )}
+
+                  {errore && (
+                    <div className="text-[11.5px] font-semibold mt-2" style={{ color: '#9B1C1C' }}>{errore}</div>
+                  )}
+
+                  <div className="flex gap-2 justify-end mt-3">
+                    <button onClick={() => { setNuvola(null); setErrore('') }} disabled={busy} className="transition-colors hover:bg-gray-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 13px', cursor: 'pointer' }}>Annulla</button>
+                    <button
+                      disabled={busy}
+                      onClick={() => {
+                        if (nuvola === 'ritirata') azione('segna_ritirata')
+                        else if (nuvola === 'amano') azione('rottamazione_a_mano')
+                      }}
+                      className="transition-all hover:brightness-105 disabled:opacity-60"
+                      style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 15px', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.3)' }}
+                    >
+                      {busy ? 'Un attimo…' : 'Conferma'}
+                    </button>
+                  </div>
+                </div>
+              )}
           </>,
           document.body,
         )}
@@ -450,16 +614,11 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
                   <div style={{ fontSize: 11, color: '#4B5563', fontStyle: 'italic', lineHeight: 1.5 }}>{d.spazio_carro_attrezzi_note}</div>
                 </div>
               )}
-              {(dett?.da_consegnare.length || 0) > 0 && (
+              {listaRitiro.length > 0 && (
                 <div style={{ paddingTop: 8 }}>
                   <div style={{ fontSize: 9.5, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6 }}>Originali da consegnare al ritiro</div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    {dett!.da_consegnare.map((voce, i) => (
-                      <span key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 7, fontSize: 11.5, color: '#374151', lineHeight: 1.35 }}>
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><polyline points="20 6 9 17 4 12" /></svg>
-                        {voce}
-                      </span>
-                    ))}
+                    {listaRitiro.map((doc, i) => <VoceOriginale key={i} doc={doc} />)}
                   </div>
                 </div>
               )}
@@ -501,23 +660,55 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
 }
 
 // ============================================================
-// PICKER DEL RITIRO CON LA SCENA GLOBALE (07/08, mockup approvato):
-// niente campo coi trattini — giorno a pillole (7 giorni col numerino
-// dei ritiri già fissati + "Altro giorno…" che srotola il calendarietto),
-// ore a pillole (le già prese e quelle passate sono spente), e a destra
-// "La tua giornata": i ritiri in agenda del giorno scelto, col NUOVO
-// che entra al suo posto appena scegli l'ora. L'incastro si vede
-// prima di confermare.
+// PICKER DEL RITIRO CON LA SCENA GLOBALE (07-08/08, veste B approvata):
+// niente campo coi trattini — GIORNO a pillole (7 giorni col numerino
+// dei ritiri già fissati + "Altro giorno…" che srotola il calendarietto
+// con le CELLE CHE SI SCALDANO di celeste col carico, variante C), ORE
+// ordinate in MATTINA e POMERIGGIO (le già prese sono sbarrate), e a
+// destra "La tua giornata" come card vera: i ritiri in agenda del giorno
+// scelto, col NUOVO che entra al suo posto appena scegli l'ora.
+// Il calendarietto RESTA APERTO scegliendo un giorno: si sfoglia
+// l'agenda e la giornata a destra si aggiorna.
 // ============================================================
 
-const ORE_RITIRO = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00']
+const ORE_MATTINA = ['08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00']
+const ORE_POMERIGGIO = ['14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30', '18:00']
 const GIORNI_BREVI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab']
 const MESI_LUNGHI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
 
 function chiaveGiorno(d: Date) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}` }
 function oraLocale(iso: string) { return new Date(iso).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) }
 
-export function PickerRitiro({ agenda, nuovoTarga = null, nuovoNome = null, nuovoComune = null, senzaGiornata, onScelta }: {
+// "ven 14 agosto, ore 10:00" — per il riepilogo nel piede della nuvoletta
+export function fraseQuando(iso: string): string {
+  const d = new Date(iso)
+  return `${GIORNI_BREVI[d.getDay()]} ${d.getDate()} ${MESI_LUNGHI[d.getMonth()]}, ore ${oraLocale(iso)}`
+}
+
+// La cella del calendario si SCALDA di celeste col carico (variante C
+// approvata da Davide: "fa vedere subito dove ci sono i buchi")
+function tintaCarico(n: number): { bg: string; testo: string } | null {
+  if (n <= 0) return null
+  if (n >= 10) return { bg: '#A5C8F5', testo: '#0E2F73' }
+  if (n >= 7) return { bg: '#BFD8F9', testo: '#123B8F' }
+  if (n >= 4) return { bg: '#D4E5FB', testo: '#1E3A8A' }
+  if (n >= 2) return { bg: '#E5EFFD', testo: '#374151' }
+  return { bg: '#F3F8FF', testo: '#374151' }
+}
+
+// Testata di sezione della nuvoletta: iconcina blu + etichetta + filo
+// (esportata: la usa anche la nuvoletta "Aggiungi impegno" dei Ritiri)
+export function SezTesta({ icona, label }: { icona: React.ReactNode; label: string }) {
+  return (
+    <div className="flex items-center" style={{ gap: 7, marginBottom: 7 }}>
+      <span style={{ color: '#2563eb', display: 'flex', flexShrink: 0 }}>{icona}</span>
+      <b style={{ fontSize: 10, fontWeight: 800, letterSpacing: 0.7, color: '#5B6779', textTransform: 'uppercase' }}>{label}</b>
+      <span style={{ flex: 1, height: 1, background: '#EEF1F5' }} />
+    </div>
+  )
+}
+
+export function PickerRitiro({ agenda, nuovoTarga = null, nuovoNome = null, nuovoComune = null, senzaGiornata, latoExtra, pannello, onScelta }: {
   /** i ritiri già fissati delle ALTRE pratiche (la propria è esclusa dal padre) */
   agenda: VoceAgendaRitiro[]
   nuovoTarga?: string | null
@@ -525,6 +716,11 @@ export function PickerRitiro({ agenda, nuovoTarga = null, nuovoNome = null, nuov
   nuovoComune?: string | null
   /** solo la colonna della scelta, senza "La tua giornata" (nuvoletta impegni) */
   senzaGiornata?: boolean
+  /** card in più sotto "La tua giornata" (es. "Informazioni per il ritiro") */
+  latoExtra?: React.ReactNode
+  /** ⭐ layout PANNELLO (Fissa/Sposta): calendario protagonista sempre
+      aperto + ore a SLOT PARLANTI (gli occupati dicono cosa c'è) */
+  pannello?: boolean
   onScelta: (iso: string | null) => void
 }) {
   const oggi = new Date()
@@ -585,21 +781,88 @@ export function PickerRitiro({ agenda, nuovoTarga = null, nuovoNome = null, nuov
       ].sort((a, b) => a.ora.localeCompare(b.ora))
     : []
 
-  const sezioncina: React.CSSProperties = { fontSize: 9.5, fontWeight: 800, letterSpacing: 0.6, color: '#9AA7B5', textTransform: 'uppercase', margin: '10px 0 6px' }
   const stileChip = (sel: boolean, spenta?: boolean): React.CSSProperties => ({
     position: 'relative',
     background: sel ? '#2563eb' : '#fff',
     border: `1.5px ${spenta ? 'dashed' : 'solid'} ${sel ? '#2563eb' : '#E5E7EB'}`,
-    color: sel ? '#fff' : spenta ? '#B6BFCC' : '#374151',
-    fontSize: 11.5, fontWeight: 600, borderRadius: 999, padding: '5px 11px',
+    color: sel ? '#fff' : spenta ? '#C2CAD6' : '#374151',
+    fontSize: 11.5, fontWeight: 600, borderRadius: 11, padding: '6px 10px',
     cursor: spenta ? 'default' : 'pointer', transition: 'all .15s',
+    boxShadow: sel ? '0 3px 8px rgba(37,99,235,0.25)' : 'none',
   })
+
+  // Un gruppetto di ore con l'etichetta laterale (MATT. / POM.)
+  const gruppoOre = (etichetta: string, ore: string[]) => (
+    <div className="flex items-start" style={{ gap: 9, marginBottom: 6 }}>
+      <span style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 0.5, color: '#9AA7B5', textTransform: 'uppercase', width: 34, flexShrink: 0, paddingTop: 8, textAlign: 'right' }}>{etichetta}</span>
+      <div className="flex flex-wrap" style={{ gap: 6 }}>
+        {ore.map(o => {
+          const spentaPerche = oraSpenta(o)
+          const sel = ora === o
+          return (
+            <button
+              key={o}
+              type="button"
+              title={spentaPerche || undefined}
+              onClick={spentaPerche ? undefined : () => scegli(giorno, o)}
+              className={sel || spentaPerche ? '' : 'hover:!border-blue-300 hover:!text-blue-700'}
+              style={{ ...stileChip(sel, !!spentaPerche), minWidth: 52, textAlign: 'center', fontVariantNumeric: 'tabular-nums', textDecoration: spentaPerche ? 'line-through' : 'none', textDecorationColor: '#D8DEE7' }}
+            >
+              {o}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  // ⭐ SLOT PARLANTI del pannello: colonna verticale di orari dove gli
+  // occupati DICONO COSA C'È ("CK456ZY · Milano") e lo slot scelto dice
+  // "il tuo nuovo ritiro" — l'agenda della giornata è dentro la scelta
+  const slotOre = (etichetta: string, ore: string[]) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 8.5, fontWeight: 800, letterSpacing: 0.5, color: '#9AA7B5', textTransform: 'uppercase', marginBottom: 5 }}>{etichetta}</div>
+      {ore.map(o => {
+        const occupatoDa = giorno ? delGiorno(giorno).find(v => oraLocale(v.quando) === o) : undefined
+        const spentaPerche = oraSpenta(o)
+        const sel = ora === o
+        return (
+          <button
+            key={o}
+            type="button"
+            title={spentaPerche || undefined}
+            onClick={spentaPerche ? undefined : () => scegli(giorno, o)}
+            className={sel || spentaPerche ? '' : 'hover:!border-blue-300'}
+            // ⭐ 08/08 (richiesta Davide): righe SOTTILI — la pillola non deve
+            // essere più grande del suo contenuto
+            style={{
+              display: 'flex', alignItems: 'center', gap: 6, width: '100%', textAlign: 'left',
+              border: `1.5px ${spentaPerche ? 'dashed' : 'solid'} ${sel ? '#2563eb' : '#E5E7EB'}`,
+              background: sel ? '#2563eb' : spentaPerche ? '#F6F8FB' : '#fff',
+              borderRadius: 9, padding: '3px 9px', marginBottom: 4,
+              cursor: spentaPerche ? 'default' : 'pointer',
+              boxShadow: sel ? '0 3px 8px rgba(37,99,235,0.25)' : 'none', transition: 'all .13s',
+            }}
+          >
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: sel ? '#fff' : spentaPerche ? '#C2CAD6' : '#1E293B', fontVariantNumeric: 'tabular-nums', width: 38, flexShrink: 0, lineHeight: 1.6, textDecoration: occupatoDa ? 'line-through' : 'none', textDecorationColor: '#D8DEE7' }}>{o}</span>
+            <span style={{ marginLeft: 'auto', fontSize: 9.5, fontWeight: occupatoDa ? 600 : 400, color: sel ? 'rgba(255,255,255,0.85)' : occupatoDa ? '#8A94A3' : '#C6CDD8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              {occupatoDa
+                ? [occupatoDa.targa || occupatoDa.veicolo, occupatoDa.comune].filter(Boolean).join(' · ')
+                : sel ? 'il tuo nuovo ritiro' : spentaPerche === 'Ora già passata' ? 'passata' : ''}
+            </span>
+          </button>
+        )
+      })}
+    </div>
+  )
 
   return (
     <div className="flex gap-4 flex-wrap">
       {/* ===== Colonna della scelta ===== */}
       <div style={{ flex: 1.25, minWidth: 250 }}>
-        <div style={{ ...sezioncina, marginTop: 0 }}>Giorno</div>
+        <SezTesta label="Giorno" icona={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>} />
+        {/* Nel PANNELLO niente fila dei giorni: il calendario è protagonista */}
+        {!pannello && (
         <div className="flex flex-wrap" style={{ gap: 6 }}>
           {Array.from({ length: 7 }, (_, i) => traGiorni(i)).map(d => {
             const sel = !!giorno && chiaveGiorno(d) === chiaveGiorno(giorno)
@@ -610,13 +873,13 @@ export function PickerRitiro({ agenda, nuovoTarga = null, nuovoNome = null, nuov
                 key={chiaveGiorno(d)}
                 type="button"
                 onClick={() => { setCalAperto(false); scegli(d, null) }}
-                className={sel ? '' : 'hover:!border-blue-200 hover:!text-blue-700'}
+                className={sel ? '' : 'hover:!border-blue-300 hover:!text-blue-700'}
                 // ⭐ 08/08 (richiesta Davide): "Oggi" veste il celeste chiaro
                 // di casa (non selezionata), così il demolitore si orienta
-                style={{ ...stileChip(sel), ...(eOggi && !sel ? { background: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1D4ED8' } : {}), textAlign: 'center', minWidth: 50, padding: '5px 8px' }}
+                style={{ ...stileChip(sel), ...(eOggi && !sel ? { background: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1D4ED8' } : {}), textAlign: 'center', minWidth: 54, padding: '6px 9px' }}
               >
                 {etichettaGiorno(d)}
-                <span style={{ display: 'block', fontSize: 9, fontWeight: 700, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.4 }}>{d.getDate()} {MESI_LUNGHI[d.getMonth()].slice(0, 3)}</span>
+                <span style={{ display: 'block', fontSize: 8.5, fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 1 }}>{d.getDate()} {MESI_LUNGHI[d.getMonth()].slice(0, 3)}</span>
                 {n > 0 && (
                   <span style={{ position: 'absolute', top: -5, right: -4, background: sel ? '#fff' : '#1D4ED8', color: sel ? '#1D4ED8' : '#fff', fontSize: 8.5, fontWeight: 800, minWidth: 14, height: 14, borderRadius: 999, display: 'flex', alignItems: 'center', justifyContent: 'center', border: `1.5px solid ${sel ? '#2563eb' : '#fff'}`, padding: '0 3px' }}>{n}</span>
                 )}
@@ -628,122 +891,165 @@ export function PickerRitiro({ agenda, nuovoTarga = null, nuovoNome = null, nuov
           <button
             type="button"
             onClick={() => setCalAperto(x => !x)}
-            style={{ ...stileChip(!!giornoLontano), borderStyle: giornoLontano ? 'solid' : 'dashed', color: giornoLontano ? '#fff' : '#1D4ED8', textAlign: 'center', minWidth: 50, padding: '5px 8px' }}
+            style={{ ...stileChip(!!giornoLontano), borderStyle: giornoLontano ? 'solid' : 'dashed', color: giornoLontano ? '#fff' : '#1D4ED8', textAlign: 'center', minWidth: 54, padding: '6px 9px' }}
           >
             {giornoLontano ? `${GIORNI_BREVI[giornoLontano.getDay()]} ${giornoLontano.getDate()}` : 'Altro giorno…'}
-            <span style={{ display: 'block', fontSize: 9, fontWeight: 700, opacity: 0.65, textTransform: 'uppercase', letterSpacing: 0.4 }}>
+            <span style={{ display: 'block', fontSize: 8.5, fontWeight: 700, opacity: 0.6, textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 1 }}>
               {giornoLontano ? `${giornoLontano.getDate()} ${MESI_LUNGHI[giornoLontano.getMonth()].slice(0, 3)}` : 'calendario'}
             </span>
           </button>
         </div>
+        )}
 
-        {/* Calendarietto a scomparsa (apertura morbida, regola 6.7) */}
-        <div style={{ display: 'grid', gridTemplateRows: calAperto ? '1fr' : '0fr', transition: 'grid-template-rows .22s ease' }}>
-          <div style={{ overflow: 'hidden' }}>
-            <div style={{ border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '9px 10px 10px', marginTop: 8 }}>
-              <div className="flex items-center justify-between" style={{ marginBottom: 7 }}>
+        {/* Calendarietto: nel PANNELLO è SEMPRE aperto (protagonista);
+            nella nuvoletta si srotola morbido da "Altro giorno…". Le celle
+            si SCALDANO col carico e il numerino dice quanti impegni */}
+        <div style={pannello ? undefined : { display: 'grid', gridTemplateRows: calAperto ? '1fr' : '0fr', transition: 'grid-template-rows .22s ease' }}>
+          <div style={pannello ? undefined : { overflow: 'hidden' }}>
+            <div style={{ background: '#fff', border: '1.5px solid #E5E9F0', borderRadius: 13, padding: '10px 12px 12px', marginTop: 8 }}>
+              <div className="flex items-center justify-between" style={{ marginBottom: 8 }}>
                 <button
                   type="button"
                   disabled={meseVista.getFullYear() === oggi.getFullYear() && meseVista.getMonth() === oggi.getMonth()}
                   onClick={() => setMeseVista(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
-                  style={{ width: 24, height: 24, borderRadius: 8, border: '1.5px solid #E5E7EB', background: 'none', color: '#1D4ED8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                  className="disabled:!text-gray-300 disabled:cursor-default"
+                  style={{ width: 26, height: 26, borderRadius: 999, border: '1.5px solid #DBEAFE', background: '#fff', color: '#1D4ED8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  className="disabled:!text-gray-300 disabled:!border-gray-200 disabled:cursor-default"
                   aria-label="Mese precedente"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6" /></svg>
                 </button>
-                <b style={{ fontSize: 12, color: '#0F1B33', textTransform: 'capitalize' }}>{MESI_LUNGHI[meseVista.getMonth()]} {meseVista.getFullYear()}</b>
+                <b style={{ fontSize: 12.5, color: '#0F1B33', textTransform: 'capitalize' }}>{MESI_LUNGHI[meseVista.getMonth()]} {meseVista.getFullYear()}</b>
                 <button
                   type="button"
                   onClick={() => setMeseVista(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-                  style={{ width: 24, height: 24, borderRadius: 8, border: '1.5px solid #E5E7EB', background: 'none', color: '#1D4ED8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  style={{ width: 26, height: 26, borderRadius: 999, border: '1.5px solid #DBEAFE', background: '#fff', color: '#1D4ED8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                   aria-label="Mese successivo"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
                 </button>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3 }}>
                 {['lun', 'mar', 'mer', 'gio', 'ven', 'sab', 'dom'].map(g => (
-                  <div key={g} style={{ fontSize: 9, fontWeight: 800, color: '#9AA7B5', textAlign: 'center', padding: '3px 0 5px', textTransform: 'uppercase' }}>{g}</div>
+                  <div key={g} style={{ fontSize: 9, fontWeight: 800, color: '#9AA7B5', textAlign: 'center', padding: '3px 0 6px', textTransform: 'uppercase' }}>{g}</div>
                 ))}
                 {Array.from({ length: vuoteCal }, (_, i) => <div key={`v${i}`} />)}
                 {Array.from({ length: giorniNelMese }, (_, i) => {
                   const d = new Date(meseVista.getFullYear(), meseVista.getMonth(), i + 1)
                   const passato = d < new Date(oggi.getFullYear(), oggi.getMonth(), oggi.getDate())
                   const sel = !!giorno && chiaveGiorno(d) === chiaveGiorno(giorno)
+                  const n = passato ? 0 : delGiorno(d).length
+                  const tinta = tintaCarico(n)
                   return (
                     <button
                       key={i}
                       type="button"
                       disabled={passato}
-                      onClick={() => { setCalAperto(false); scegli(d, null) }}
-                      className={passato || sel ? '' : 'hover:!bg-[#EFF6FF] hover:!text-blue-700'}
+                      // ⭐ Il calendario RESTA aperto scegliendo un giorno: si
+                      // sfoglia l'agenda e la giornata a destra si aggiorna
+                      onClick={() => scegli(d, null)}
+                      title={n > 0 ? `${n} ${n === 1 ? 'impegno' : 'impegni'} in agenda` : undefined}
+                      className={passato || sel || tinta ? '' : 'hover:!bg-[#EFF6FF] hover:!text-blue-700'}
                       style={{
-                        border: 'none', borderRadius: 8, padding: '5px 0', fontSize: 11.5, fontWeight: 600,
-                        background: sel ? '#2563eb' : 'none',
-                        color: sel ? '#fff' : passato ? '#C7CCD4' : '#374151',
-                        boxShadow: chiaveGiorno(d) === chiaveGiorno(oggi) && !sel ? 'inset 0 0 0 1.5px #BFDBFE' : 'none',
+                        position: 'relative', border: 'none', borderRadius: 10, padding: '6px 0 15px',
+                        fontSize: 11.5, fontWeight: sel || n >= 7 ? 700 : 600, fontVariantNumeric: 'tabular-nums',
+                        background: sel ? '#2563eb' : tinta ? tinta.bg : 'none',
+                        color: sel ? '#fff' : passato ? '#C7CCD4' : tinta ? tinta.testo : '#374151',
+                        boxShadow: sel ? '0 3px 8px rgba(37,99,235,0.25)' : chiaveGiorno(d) === chiaveGiorno(oggi) ? 'inset 0 0 0 1.5px #93B8F5' : 'none',
                         cursor: passato ? 'default' : 'pointer',
                       }}
                     >
                       {i + 1}
+                      {n > 0 && (
+                        <span style={{ position: 'absolute', left: 0, right: 0, bottom: 4, display: 'flex', justifyContent: 'center' }}>
+                          <span style={{ fontSize: 8, fontWeight: 800, color: '#1D4ED8', background: 'rgba(255,255,255,0.8)', borderRadius: 999, padding: '0.5px 5px', lineHeight: 1.3 }}>{n}</span>
+                        </span>
+                      )}
                     </button>
                   )
                 })}
                 {/* Celle di coda invisibili: completano le 6 righe fisse
                     (stesse misure delle celle vere, così la riga ha altezza) */}
                 {Array.from({ length: codaCal }, (_, i) => (
-                  <div key={`c${i}`} style={{ padding: '5px 0', fontSize: 11.5, fontWeight: 600, visibility: 'hidden' }}>0</div>
+                  <div key={`c${i}`} style={{ padding: '6px 0 15px', fontSize: 11.5, fontWeight: 600, visibility: 'hidden' }}>0</div>
                 ))}
+              </div>
+              {/* Legendina del carico: chiaro = leggero, scuro = pieno */}
+              <div className="flex items-center flex-wrap" style={{ gap: 10, marginTop: 8, paddingTop: 8, borderTop: '1px solid #E9EEF4' }}>
+                <span style={{ fontSize: 9, fontWeight: 700, color: '#9AA7B5' }}>più chiaro = giornata leggera</span>
+                <span className="flex" style={{ gap: 2 }}>
+                  <i style={{ width: 10, height: 10, borderRadius: 3, background: '#F3F8FF', border: '1px solid #E1EAF6' }} />
+                  <i style={{ width: 10, height: 10, borderRadius: 3, background: '#D4E5FB' }} />
+                  <i style={{ width: 10, height: 10, borderRadius: 3, background: '#A5C8F5' }} />
+                </span>
+                <span style={{ fontSize: 9, fontWeight: 700, color: '#9AA7B5' }}>più scuro = piena</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div style={sezioncina}>Ora</div>
-        <div className="flex flex-wrap" style={{ gap: 6 }}>
-          {ORE_RITIRO.map(o => {
-            const spentaPerche = oraSpenta(o)
-            const sel = ora === o
-            return (
-              <button
-                key={o}
-                type="button"
-                title={spentaPerche || undefined}
-                onClick={spentaPerche ? undefined : () => scegli(giorno, o)}
-                className={sel || spentaPerche ? '' : 'hover:!border-blue-200 hover:!text-blue-700'}
-                style={stileChip(sel, !!spentaPerche)}
-              >
-                {o}
-              </button>
+        <div style={{ marginTop: 13 }}>
+          <SezTesta label="Ora" icona={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>} />
+          {pannello ? (
+            giorno ? (
+              <div className="flex" style={{ gap: 12 }}>
+                {slotOre('Mattina', ORE_MATTINA)}
+                {slotOre('Pomeriggio', ORE_POMERIGGIO)}
+              </div>
+            ) : (
+              <p style={{ fontSize: 11, color: '#9AA7B5', padding: '2px 0' }}>Scegli un giorno dal calendario: qui compaiono gli slot con la tua agenda.</p>
             )
-          })}
+          ) : (
+            <>
+              {gruppoOre('Matt.', ORE_MATTINA)}
+              {gruppoOre('Pom.', ORE_POMERIGGIO)}
+            </>
+          )}
         </div>
       </div>
 
-      {/* ===== "La tua giornata": la scena globale del giorno scelto ===== */}
+      {/* ===== Colonna di destra: "La tua giornata" (card vera con testata
+          e stati curati) + l'eventuale card extra del pannello ===== */}
       {!senzaGiornata && (
-      <div style={{ flex: 1, minWidth: 210, background: '#F6F8FB', border: '1.5px solid #E5E9F0', borderRadius: 12, padding: '10px 12px', alignSelf: 'stretch' }}>
-        <div className="flex items-center" style={{ gap: 7, marginBottom: 6 }}>
-          <span style={{ width: 3, height: 12, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: '#0F1B33' }}>
-            {giorno ? `${etichettaGiorno(giorno)}, ${giorno.getDate()} ${MESI_LUNGHI[giorno.getMonth()]}` : 'La tua giornata'}
+      <div style={{ flex: 1, minWidth: 210, alignSelf: 'stretch', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ background: '#fff', border: '1.5px solid #E5E9F0', borderRadius: 13, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 170 }}>
+        <div className="flex items-center" style={{ gap: 7, padding: '9px 12px', background: '#F1F5FA', borderBottom: '1px solid #E5E9F0', flexShrink: 0 }}>
+          <span style={{ color: '#2563eb', display: 'flex', flexShrink: 0 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
           </span>
+          <b style={{ fontSize: 11.5, fontWeight: 700, color: '#0F1B33' }}>
+            {giorno ? `${etichettaGiorno(giorno)}, ${giorno.getDate()} ${MESI_LUNGHI[giorno.getMonth()]}` : 'La tua giornata'}
+          </b>
+          {giorno && vociGiornata.length > 0 && (
+            <span style={{ marginLeft: 'auto', fontSize: 9, fontWeight: 800, background: '#DBEAFE', color: '#1D4ED8', borderRadius: 999, padding: '2px 8px' }}>{vociGiornata.length}</span>
+          )}
         </div>
+        <div style={{ flex: 1, padding: '8px 12px' }}>
         {!giorno ? (
-          <p style={{ fontSize: 10.5, color: '#9AA7B5', padding: '10px 0' }}>Scegli un giorno per vedere i ritiri già fissati.</p>
+          <div className="h-full flex flex-col items-center justify-center text-center" style={{ gap: 4, padding: '16px 10px' }}>
+            <span style={{ width: 44, height: 44, borderRadius: 999, background: '#EDF2F9', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#A9B6C8', marginBottom: 4 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+            </span>
+            <b style={{ fontSize: 11, color: '#7C8798', fontWeight: 700 }}>Scegli un giorno</b>
+            <span style={{ fontSize: 10, color: '#A9B6C8', lineHeight: 1.5 }}>Qui vedrai i ritiri già in agenda,<br />per incastrare bene il nuovo.</span>
+          </div>
         ) : vociGiornata.length === 0 ? (
-          <p style={{ fontSize: 10.5, color: '#9AA7B5', padding: '10px 0' }}>Giornata libera: nessun ritiro fissato.</p>
+          <div className="h-full flex flex-col items-center justify-center text-center" style={{ gap: 4, padding: '16px 10px' }}>
+            <span style={{ width: 44, height: 44, borderRadius: 999, background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5B8A3C', marginBottom: 4 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+            </span>
+            <b style={{ fontSize: 11, color: '#7C8798', fontWeight: 700 }}>Giornata libera</b>
+            <span style={{ fontSize: 10, color: '#A9B6C8', lineHeight: 1.5 }}>Nessun ritiro fissato:<br />scegli l&apos;ora che preferisci.</span>
+          </div>
         ) : (
           vociGiornata.map((v, i) => (
             <div
               key={i}
               className="flex items-center"
               style={v.nuovo
-                ? { gap: 8, background: '#EFF6FF', border: '1px dashed #93B8F5', borderRadius: 9, padding: '6px 8px', marginTop: 4 }
-                : { gap: 8, padding: '6px 0', borderBottom: '1px solid #ECF0F5' }}
+                ? { gap: 8, background: '#EFF6FF', border: '1px dashed #93B8F5', borderRadius: 10, padding: '7px 9px', marginTop: 5 }
+                : { gap: 8, padding: '7px 0', borderBottom: '1px solid #EAEFF5' }}
             >
-              <span style={{ fontSize: 11.5, fontWeight: 800, color: v.personale ? '#5B6779' : '#1D4ED8', width: 40, flexShrink: 0 }}>{v.ora}</span>
+              <span style={{ fontSize: 11.5, fontWeight: 800, color: v.personale ? '#5B6779' : '#1D4ED8', width: 40, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>{v.ora}</span>
               <span style={{ minWidth: 0, flex: 1 }}>
                 <b style={{ display: 'block', fontSize: 11, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {[v.targa, v.nuovo ? v.nome : v.veicolo].filter(Boolean).join(' · ') || v.nome || 'Ritiro'}
@@ -759,6 +1065,9 @@ export function PickerRitiro({ agenda, nuovoTarga = null, nuovoNome = null, nuov
             </div>
           ))
         )}
+        </div>
+      </div>
+      {latoExtra}
       </div>
       )}
     </div>

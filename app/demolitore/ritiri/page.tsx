@@ -26,7 +26,7 @@ import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { chiamataDemolitore, PraticaDemolitore, nomeVeicolo, gruppoDi, GruppoPratica } from '../_lib/api'
 import SidebarDemolitore from '../_components/SidebarDemolitore'
 import TendaAzienda from '../_components/TendaAzienda'
-import { PickerRitiro, VoceAgendaRitiro } from '../_components/TendinaPratica'
+import { PickerRitiro, VoceAgendaRitiro, SezTesta, fraseQuando } from '../_components/TendinaPratica'
 
 const GIORNI_BREVI = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab']
 const MESI_LUNGHI = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre']
@@ -242,14 +242,18 @@ export default function RitiriDemolitore() {
     <main className="flex" style={{ background: '#ECEEF2', height: '100vh', overflow: 'hidden' }}>
 
       <SidebarDemolitore
-        attiva="ritiri"
+        // ⭐ 08/08 (richiesta Davide): con la tenda aperta l'evidenziazione
+        // della barra passa su "La tua azienda"
+        attiva={aziendaAperta ? 'azienda' : 'ritiri'}
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
         onPratiche={() => router.push('/demolitore')}
         // ⭐ 08/08 (segnalato da Davide): riclic su "Ritiri" con la tenda
         // aperta = la tenda si richiude
         onRitiri={() => setAziendaAperta(false)}
-        onAzienda={() => setAziendaAperta(true)}
+        // ⭐ 08/08 (richiesta Davide): la voce fa da interruttore — riclic
+        // con la tenda aperta = si richiude
+        onAzienda={() => setAziendaAperta(x => !x)}
         onEsci={esci}
       />
 
@@ -282,38 +286,64 @@ export default function RitiriDemolitore() {
               {nuvolaAperta && (
                 <>
                   <div style={{ position: 'fixed', inset: 0, zIndex: 40 }} onClick={() => { if (!busyImpegno) setNuvolaAperta(false) }} />
-                  <div className="bg-white" style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 420, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 90px)', overflowY: 'auto', overscrollBehavior: 'contain', border: '1.5px solid #DBEAFE', borderRadius: 14, boxShadow: '0 14px 34px rgba(15,23,42,0.18)', padding: 14, zIndex: 41 }}>
-                    <div className="text-[13px] font-bold text-gray-900 mb-2">Aggiungi un impegno personale</div>
-                    <PickerRitiro
-                      agenda={agendaPicker}
-                      senzaGiornata
-                      onScelta={iso => setQuandoImpegno(iso || '')}
-                    />
-                    <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.6, color: '#9AA7B5', textTransform: 'uppercase', margin: '10px 0 6px' }}>Cosa devi fare?</div>
-                    <input
-                      value={titoloImpegno}
-                      onChange={e => setTitoloImpegno(e.target.value)}
-                      placeholder="Es. Ritiro furgone da officina Bianchi"
-                      className="w-full text-base sm:text-[12.5px] text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-300 transition-colors"
-                      style={{ border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '8px 10px' }}
-                    />
-                    <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.6, color: '#9AA7B5', textTransform: 'uppercase', margin: '10px 0 6px' }}>Dove (facoltativo)</div>
-                    <input
-                      value={luogoImpegno}
-                      onChange={e => setLuogoImpegno(e.target.value)}
-                      placeholder="Comune o indirizzo…"
-                      className="w-full text-base sm:text-[12.5px] text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-300 transition-colors"
-                      style={{ border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '8px 10px' }}
-                    />
-                    {erroreImpegno && <div className="text-[11.5px] font-semibold mt-2" style={{ color: '#9B1C1C' }}>{erroreImpegno}</div>}
-                    <p className="text-[11px] mt-2" style={{ color: '#8B95A5', lineHeight: 1.45 }}>Lo vedi solo tu: NoiDemoliamo non tocca i tuoi impegni. Ti serve per incastrare bene i ritiri.</p>
-                    <div className="flex gap-2 justify-end mt-3">
-                      <button onClick={() => setNuvolaAperta(false)} disabled={busyImpegno} className="transition-colors hover:bg-gray-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 13px', cursor: 'pointer' }}>Annulla</button>
+                  {/* ⭐ 08/08 (veste B approvata): testata azzurra, corpo con
+                      le sezioni e il piede a barra, come Fissa il ritiro */}
+                  <div className="bg-white" style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 430, maxWidth: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 90px)', overflowY: 'auto', overscrollBehavior: 'contain', border: '1.5px solid #DBEAFE', borderRadius: 16, boxShadow: '0 18px 44px rgba(15,23,42,0.20)', padding: 0, zIndex: 41 }}>
+
+                    <div className="flex items-center" style={{ gap: 11, padding: '12px 16px', background: '#EFF6FF', borderBottom: '1px solid #DBEAFE' }}>
+                      <span style={{ width: 36, height: 36, borderRadius: 10, background: '#DBEAFE', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                      </span>
+                      <span style={{ minWidth: 0 }}>
+                        <b style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>Aggiungi un impegno personale</b>
+                        <span style={{ display: 'block', fontSize: 11, color: '#4B5563', marginTop: 1 }}>Lo vedi solo tu: NoiDemoliamo non lo tocca</span>
+                      </span>
+                    </div>
+
+                    <div style={{ padding: '14px 16px' }}>
+                      <PickerRitiro
+                        agenda={agendaPicker}
+                        senzaGiornata
+                        onScelta={iso => setQuandoImpegno(iso || '')}
+                      />
+                      <div style={{ marginTop: 13 }}>
+                        <SezTesta label="Cosa devi fare?" icona={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>} />
+                        <input
+                          value={titoloImpegno}
+                          onChange={e => setTitoloImpegno(e.target.value)}
+                          placeholder="Es. Ritiro furgone da officina Bianchi"
+                          className="w-full text-base sm:text-[12.5px] text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-300 transition-colors"
+                          style={{ border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '8px 10px' }}
+                        />
+                      </div>
+                      <div style={{ marginTop: 13 }}>
+                        <SezTesta label="Dove (facoltativo)" icona={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" /><circle cx="12" cy="10" r="3" /></svg>} />
+                        <input
+                          value={luogoImpegno}
+                          onChange={e => setLuogoImpegno(e.target.value)}
+                          placeholder="Comune o indirizzo…"
+                          className="w-full text-base sm:text-[12.5px] text-gray-900 outline-none placeholder:text-gray-400 focus:border-blue-300 transition-colors"
+                          style={{ border: '1.5px solid #E5E7EB', borderRadius: 10, padding: '8px 10px' }}
+                        />
+                      </div>
+                      {erroreImpegno && <div className="text-[11.5px] font-semibold mt-2" style={{ color: '#9B1C1C' }}>{erroreImpegno}</div>}
+                    </div>
+
+                    <div className="flex items-center" style={{ gap: 10, padding: '11px 16px', borderTop: '1px solid #EEF1F5', background: '#FCFDFE' }}>
+                      {quandoImpegno ? (
+                        <span className="flex items-center" style={{ gap: 7, fontSize: 12, fontWeight: 700, color: '#1D4ED8', minWidth: 0 }}>
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
+                          <span className="truncate">Impegno {fraseQuando(quandoImpegno)}</span>
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: 10, color: '#9AA7B5', lineHeight: 1.4, minWidth: 0 }}>Ti serve per incastrare bene i ritiri:<br />conta nella scena globale.</span>
+                      )}
+                      <button onClick={() => setNuvolaAperta(false)} disabled={busyImpegno} className="ml-auto flex-shrink-0 transition-colors hover:bg-gray-50" style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '7px 14px', cursor: 'pointer' }}>Annulla</button>
                       <button
                         onClick={salvaImpegno}
                         disabled={busyImpegno || !quandoImpegno || !titoloImpegno.trim()}
-                        className="transition-all hover:brightness-105 disabled:opacity-60"
-                        style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 15px', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.3)' }}
+                        className="flex-shrink-0 transition-all hover:brightness-105 disabled:opacity-60"
+                        style={{ background: 'linear-gradient(90deg, #1d4ed8, #2563eb)', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '7px 16px', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.3)' }}
                       >
                         {busyImpegno ? 'Un attimo…' : 'Salva impegno'}
                       </button>

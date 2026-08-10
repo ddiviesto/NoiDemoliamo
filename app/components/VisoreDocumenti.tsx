@@ -455,7 +455,7 @@ export default function VisoreDocumenti({ apriTrigger, documenti, foto, targa, v
           {/* ELENCO A SINISTRA con le miniature; in modalità selezione
               compaiono le caselle e il clic sceglie la voce. Niente pallini
               di stato: qui è tutto già approvato */}
-          <div style={{ width: 262, borderRight: '1px solid #EEF1F5', background: '#FAFBFD', overflowY: 'auto', overscrollBehavior: 'contain', padding: '10px 0', flexShrink: 0 }}>
+          <div style={{ width: 262, borderRight: '1px solid #E0E4EB', background: '#ECEEF2', overflowY: 'auto', overscrollBehavior: 'contain', padding: '10px 0', flexShrink: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '0 16px 8px' }}>DOCUMENTI · {nDocs}</div>
             {documenti.map((doc, i) => {
               const v = voci[i]
@@ -518,7 +518,8 @@ export default function VisoreDocumenti({ apriTrigger, documenti, foto, targa, v
             )}
           </div>
 
-          {/* AREA PRINCIPALE */}
+          {/* AREA PRINCIPALE — bianca (richiesta Davide 08/08: il grigio
+              delle aree di lavoro resta solo sulla colonnina di sinistra) */}
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px 16px', minWidth: 0 }}>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, minWidth: 0 }}>
               <span style={{ fontWeight: 600, fontSize: 13.5, color: '#374151', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{titoloVoce(voce)}</span>

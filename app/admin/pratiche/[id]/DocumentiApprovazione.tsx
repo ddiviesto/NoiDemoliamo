@@ -808,7 +808,7 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
 
               {/* ELENCO A SINISTRA con le MINIATURE (27/07); in modalità
                   selezione compaiono le caselle e il clic sceglie la voce */}
-              <div style={{ width: 262, borderRight: '1px solid #EEF1F5', background: '#FAFBFD', overflowY: 'auto', overscrollBehavior: 'contain', padding: '10px 0', flexShrink: 0 }}>
+              <div style={{ width: 262, borderRight: '1px solid #E0E4EB', background: '#ECEEF2', overflowY: 'auto', overscrollBehavior: 'contain', padding: '10px 0', flexShrink: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 800, color: '#9AA7B5', letterSpacing: 0.6, padding: '0 16px 8px' }}>DOCUMENTI · {vociDocs.length}</div>
                 {/* ⭐ 27/07 notte (variante A su mockup): nomi a peso normale
                     (600 solo sull'attiva) e stato a PALLINO colorato — verde
@@ -876,7 +876,8 @@ export default function DocumentiApprovazione({ praticaId, aperta, onToggle, onS
                 )}
               </div>
 
-              {/* AREA PRINCIPALE */}
+              {/* AREA PRINCIPALE — bianca (richiesta Davide 08/08: il grigio
+                  delle aree di lavoro resta solo sulla colonnina di sinistra) */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', padding: '12px 16px', minWidth: 0 }}>
                 {/* Titolo a peso medio grigio scuro (variante A): via il nero pieno */}
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 9, minWidth: 0 }}>

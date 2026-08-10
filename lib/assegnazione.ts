@@ -180,8 +180,10 @@ async function velocitaMediaDemolitore(
  * Chiama Google Distance Matrix API per ottenere distanza/durata stradale
  * tra il punto di partenza (demolitore) e di arrivo (pratica).
  * Una sola chiamata gestisce più demolitori in batch (più efficiente).
+ * Esportata: la usa anche /api/demolitore-pratiche per la pillola
+ * "km · minuti" nel pannello Fissa il ritiro.
  */
-async function calcolaDistanzeStradali(
+export async function calcolaDistanzeStradali(
   apiKey: string,
   destLat: number,
   destLng: number,

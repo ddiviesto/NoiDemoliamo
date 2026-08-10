@@ -184,12 +184,16 @@ export default function HomeDemolitore() {
     <main className="flex" style={{ background: '#ECEEF2', height: '100vh', overflow: 'hidden' }}>
 
       <SidebarDemolitore
-        attiva="pratiche"
+        // ⭐ 08/08 (richiesta Davide): con la tenda aperta l'evidenziazione
+        // della barra passa su "La tua azienda"
+        attiva={aziendaAperta ? 'azienda' : 'pratiche'}
         apertaMobile={menuMobile}
         onChiudiMobile={() => setMenuMobile(false)}
         onPratiche={() => { setAziendaAperta(false); cambiaFiltro('tutte') }}
         onRitiri={() => router.push('/demolitore/ritiri')}
-        onAzienda={() => setAziendaAperta(true)}
+        // ⭐ 08/08 (richiesta Davide): la voce fa da interruttore — riclic
+        // con la tenda aperta = si richiude
+        onAzienda={() => setAziendaAperta(x => !x)}
         onEsci={esci}
       />
 
