@@ -30,6 +30,9 @@ interface Nota {
   evento?: string | null
   visibile_demolitore?: boolean
   demolitore_id?: string | null
+  // ⭐ 12/08: il DESTINATARIO l'ha vista? (spia delle note non lette;
+  // finché la colonna non esiste resta undefined e la spia tace)
+  letta?: boolean
 }
 
 // Pilloline parlanti degli eventi automatici (il codice sta in `evento`;
@@ -162,6 +165,22 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
     (n.visibile_demolitore || n.autore === 'demolitore') && (!n.demolitore_id || n.demolitore_id === demolitoreId)
   const noteMostrate = canale === 'demolitore' ? note.filter(inCanaleDemolitore) : note
 
+  // ⭐ 12/08 (mockup approvato): SPIA ROSSA delle note non lette — conta
+  // solo le NOTE SCRITTE dal demolitore (eventi esclusi). Aprire la
+  // linguetta Demolitore le segna lette; `appenaLette` tiene ferma
+  // l'evidenziazione durante la visita (la spia intanto si azzera)
+  const [appenaLette, setAppenaLette] = useState<Set<string>>(new Set())
+  const nuoveDalDemolitore = note.filter(n => !n.evento && n.autore === 'demolitore' && n.letta === false && inCanaleDemolitore(n))
+  const spiaNote = nuoveDalDemolitore.filter(n => !appenaLette.has(n.id)).length
+  useEffect(() => {
+    if (canale !== 'demolitore') return
+    const ids = nuoveDalDemolitore.filter(n => !appenaLette.has(n.id)).map(n => n.id)
+    if (ids.length === 0) return
+    setAppenaLette(prev => new Set([...prev, ...ids]))
+    supabase.from('pratiche_note').update({ letta: true }).in('id', ids).then(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canale, note])
+
   // Corpo unico (timeline + campo nota): la CARD lo mostra sotto la testata,
   // la FINESTRELLA lo riempie in altezza (27/07)
   const corpo = tabellaAssente ? (
@@ -176,11 +195,13 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
           {demolitoreId && (
             <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexShrink: 0 }}>
               <button onClick={() => setCanale('tutte')} style={{ fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer', border: `1.5px solid ${canale === 'tutte' ? '#BFDBFE' : '#E5E7EB'}`, background: canale === 'tutte' ? '#EFF6FF' : '#fff', color: canale === 'tutte' ? '#1D4ED8' : '#6B7280' }}>NoiDemoliamo</button>
-              {/* ⭐ 12/08 (richiesta Davide): via il numerino grigio della
-                  quantità (confondeva: sembrava un "non letti"); al suo
-                  posto arriverà la SPIA ROSSA delle note non lette */}
-              <button onClick={() => setCanale('demolitore')} style={{ fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer', border: `1.5px solid ${canale === 'demolitore' ? '#BFDBFE' : '#E5E7EB'}`, background: canale === 'demolitore' ? '#EFF6FF' : '#fff', color: canale === 'demolitore' ? '#1D4ED8' : '#6B7280' }}>
+              {/* ⭐ 12/08 (mockup approvato): la SPIA ROSSA conta le note del
+                  demolitore non ancora lette; si azzera aprendo la linguetta */}
+              <button onClick={() => setCanale('demolitore')} style={{ position: 'relative', fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer', border: `1.5px solid ${canale === 'demolitore' ? '#BFDBFE' : '#E5E7EB'}`, background: canale === 'demolitore' ? '#EFF6FF' : '#fff', color: canale === 'demolitore' ? '#1D4ED8' : '#6B7280' }}>
                 Demolitore
+                {spiaNote > 0 && (
+                  <span style={{ position: 'absolute', top: -6, right: -6, minWidth: 16, height: 16, borderRadius: 999, background: '#DC2626', color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff', padding: '0 4px' }}>{spiaNote}</span>
+                )}
               </button>
             </div>
           )}
@@ -256,8 +277,13 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               : tipo === 'annullata' ? { bg: '#F3D9D9', col: '#A94444', label: 'Annullata' }
               : tipo === 'demolitore' ? { bg: '#DBEAFE', col: '#1D4ED8', label: 'Nota demolitore' }
               : { bg: '#EEF1F5', col: '#5B6779', label: 'Nota privata' }
+            // ⭐ 12/08: la nota del demolitore ancora "fresca" resta
+            // evidenziata durante la visita (la spia intanto si è azzerata)
+            const nuova = n.autore === 'demolitore' && n.letta === false
             return (
-              <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
+              <div key={n.id} style={nuova
+                ? { display: 'flex', gap: 10, padding: '9px 10px', background: '#F7FAFF', border: '1px solid #DBEAFE', borderRadius: 10, marginBottom: 4 }
+                : { display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
                 <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
                   {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
                 </div>
@@ -284,6 +310,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
                       {stilePillola.label}
                     </span>
                   )}
+                  {nuova && <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 999, background: '#DC2626', marginLeft: 6, verticalAlign: 'middle' }} />}
                   {/* ⭐ 07/08 (richiesta Davide): anche per le NOTE il testo va
                       SOTTO la pillola, allineato — niente più a capo storti */}
                   {(firma || testoMostrato || statoRipresa) && (

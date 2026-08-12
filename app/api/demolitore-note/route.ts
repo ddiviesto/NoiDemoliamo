@@ -25,6 +25,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const praticaId: string | undefined = body.pratica_id
     const testo: string | undefined = typeof body.testo === 'string' ? body.testo.trim() : undefined
+    // ⭐ 12/08 (spia note): true quando la cronologia viene APERTA davvero
+    // (il precarico all'hover NON lo manda, così la spia non si azzera
+    // prima del tempo)
+    const segnaLette: boolean = body.segna_lette === true
     if (!praticaId) return NextResponse.json({ error: 'Manca la pratica' }, { status: 400 })
 
     const { pratica, errore } = await praticaDelDemolitore(supabase, praticaId, demolitoreId, 'id, stato')
@@ -48,20 +52,46 @@ export async function POST(req: NextRequest) {
     }
 
     // Il canale condiviso: voci visibili al demolitore, legate a LUI
-    // (le righe vecchie senza demolitore_id restano visibili per compatibilità)
-    const { data: note, error: errN } = await supabase
+    // (le righe vecchie senza demolitore_id restano visibili per compatibilità).
+    // ⭐ 12/08: si prova a leggere anche `letta` (spia note); se la colonna
+    // non esiste ancora si ripiega sulla lettura senza, e la spia tace
+    type NotaDem = { id: string; testo: string; creato_il: string; autore: string | null; evento: string | null; demolitore_id: string | null; letta?: boolean }
+    let note: NotaDem[] = []
+    const conLetta = await supabase
       .from('pratiche_note')
-      .select('id, testo, creato_il, autore, evento, demolitore_id')
+      .select('id, testo, creato_il, autore, evento, demolitore_id, letta')
       .eq('pratica_id', praticaId)
       .eq('visibile_demolitore', true)
       .order('creato_il', { ascending: false })
-    if (errN) {
-      console.error('Errore lettura note demolitore:', errN)
-      return NextResponse.json({ error: 'Errore nel caricamento delle note' }, { status: 500 })
+    if (!conLetta.error) {
+      note = (conLetta.data || []) as unknown as NotaDem[]
+    } else {
+      const senzaLetta = await supabase
+        .from('pratiche_note')
+        .select('id, testo, creato_il, autore, evento, demolitore_id')
+        .eq('pratica_id', praticaId)
+        .eq('visibile_demolitore', true)
+        .order('creato_il', { ascending: false })
+      if (senzaLetta.error) {
+        console.error('Errore lettura note demolitore:', senzaLetta.error)
+        return NextResponse.json({ error: 'Errore nel caricamento delle note' }, { status: 500 })
+      }
+      note = (senzaLetta.data || []) as unknown as NotaDem[]
     }
 
-    const sue = (note || []).filter(n => !n.demolitore_id || n.demolitore_id === demolitoreId)
-    return NextResponse.json({ success: true, note: sue })
+    const sue = note.filter(n => !n.demolitore_id || n.demolitore_id === demolitoreId)
+
+    // Le NOTE di NoiDemoliamo non ancora lette: se la cronologia è stata
+    // APERTA si segnano lette adesso, e nella risposta restano marcate
+    // `nuova` così la pagina le evidenzia durante la visita
+    const nuoveIds = sue
+      .filter(n => !n.evento && n.autore !== 'demolitore' && n.letta === false)
+      .map(n => n.id)
+    if (segnaLette && nuoveIds.length > 0) {
+      await supabase.from('pratiche_note').update({ letta: true }).in('id', nuoveIds)
+    }
+    const conNuova = sue.map(n => ({ ...n, nuova: nuoveIds.includes(n.id) }))
+    return NextResponse.json({ success: true, note: conNuova })
   } catch (err) {
     console.error('Errore endpoint demolitore-note:', err)
     return NextResponse.json({ error: 'Errore interno' }, { status: 500 })

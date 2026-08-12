@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { chiamataDemolitore } from '../_lib/api'
 
-interface VoceCronologia { id: string; testo: string; creato_il: string; autore?: string; evento?: string | null }
+interface VoceCronologia { id: string; testo: string; creato_il: string; autore?: string; evento?: string | null; nuova?: boolean }
 
 // Pilloline parlanti degli eventi condivisi (stessa lingua del CRM)
 const EVENTI_META: Record<string, { label: string; bg: string; col: string }> = {
@@ -61,7 +61,10 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
 
   const carica = useCallback(async () => {
     try {
-      const json = await chiamataDemolitore<{ note: VoceCronologia[] }>('/api/demolitore-note', { pratica_id: praticaId })
+      // ⭐ 12/08 (spia note): la cronologia è APERTA davvero → le note di
+      // NoiDemoliamo si segnano lette (tornano marcate `nuova` una volta,
+      // per l'evidenziazione). Il precarico all'hover NON manda il flag
+      const json = await chiamataDemolitore<{ note: VoceCronologia[] }>('/api/demolitore-note', { pratica_id: praticaId, segna_lette: true })
       cacheNote.set(praticaId, json.note || [])
       setVoci(json.note || [])
       setCaricate(true)
@@ -104,7 +107,11 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
             ? n.testo.replace(/\s*\((dalla classifica|scelto a mano)\)\s*$/, '')
             : n.testo
           return (
-            <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
+            // ⭐ 12/08: la nota di NoiDemoliamo appena arrivata resta
+            // evidenziata durante la visita (spia già azzerata dal server)
+            <div key={n.id} style={n.nuova
+              ? { display: 'flex', gap: 10, padding: '9px 10px', background: '#F7FAFF', border: '1px solid #DBEAFE', borderRadius: 10, marginBottom: 4 }
+              : { display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
               <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
                 {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
               </div>
@@ -122,6 +129,7 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                       Nota
                     </span>
+                    {n.nuova && <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 999, background: '#DC2626', marginLeft: 6, verticalAlign: 'middle' }} />}
                     {/* ⭐ 07/08: il testo va SOTTO la pillola, allineato */}
                     <span style={{ display: 'block', marginTop: 4 }}>
                       {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}

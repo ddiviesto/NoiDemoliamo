@@ -259,6 +259,7 @@ I messaggi vecchi hanno `conversazione` NULL e le interfacce li mostrano col vec
 `id`, `pratica_id`, `testo`, `autore` ('admin'|'demolitore'), `evento`, `visibile_demolitore`, `demolitore_id`, `creato_il`. **Solo admin** in lettura piena.
 È la memoria dell'admin: note manuali + **eventi automatici** (cambio stato, documento rifiutato, documenti approvati, assegnata/riassegnata/disassegnata, ritiro fissato/spostato, ritirata, certificati, trattativa, attesa/ripresa, annullo/riattivazione).
 Due canali: **NoiDemoliamo = registro completo**; la pillolina **Demolitore** è solo un FILTRO della vista di lui, e da lì gli si scrive.
+⭐ **Spia delle note non lette (12/08)**: colonna `letta` = il destinatario l'ha vista. Conta SOLO le note scritte (eventi esclusi): lato admin spia rossa sulla linguetta Demolitore (si azzera aprendola), lato demolitore spia rossa sulla pillola di stato in riga (si azzera aprendo la tendina: il precarico all'hover NON la azzera). La nota fresca resta evidenziata d'azzurro col puntino durante la visita. Mai numerini di quantità sulle linguette.
 
 ## 3.9 `impostazioni`
 

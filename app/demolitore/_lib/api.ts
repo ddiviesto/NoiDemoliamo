@@ -69,6 +69,8 @@ export interface PraticaDemolitore {
   creato_il: string | null
   /** messaggi del cliente non ancora letti (dal server) */
   non_letti?: number
+  /** ⭐ 12/08: note di NoiDemoliamo non ancora lette (spia sulla riga) */
+  note_non_lette?: number
 }
 
 // ============================================================

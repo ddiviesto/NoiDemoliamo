@@ -98,6 +98,26 @@ export async function POST(req: NextRequest) {
           conta[m.pratica_id] = (conta[m.pratica_id] || 0) + 1
         }
         for (const p of pratiche) p.non_letti = conta[p.id] || 0
+
+        // ⭐ 12/08 (spia note): le NOTE di NoiDemoliamo non ancora lette,
+        // per pratica — accendono la spia sulla riga. Se la colonna letta
+        // non esiste ancora, silenzio (niente spie)
+        const { data: noteNuove, error: errNote } = await supabase
+          .from('pratiche_note')
+          .select('pratica_id, demolitore_id')
+          .in('pratica_id', pratiche.map(p => p.id))
+          .eq('visibile_demolitore', true)
+          .eq('letta', false)
+          .is('evento', null)
+          .neq('autore', 'demolitore')
+        if (!errNote) {
+          const contaNote: Record<string, number> = {}
+          for (const n of (noteNuove || []) as { pratica_id: string; demolitore_id: string | null }[]) {
+            if (n.demolitore_id && n.demolitore_id !== demolitoreId) continue
+            contaNote[n.pratica_id] = (contaNote[n.pratica_id] || 0) + 1
+          }
+          for (const p of pratiche as (typeof pratiche[number] & { note_non_lette?: number })[]) p.note_non_lette = contaNote[p.id] || 0
+        }
       }
       return NextResponse.json({ success: true, pratiche })
     }

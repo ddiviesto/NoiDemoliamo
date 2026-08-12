@@ -456,8 +456,13 @@ function RigaPratica({ p, aperta, onOpen }: { p: PraticaDemolitore; aperta: bool
           ragione sociale sotto (era il nome del demolitore stesso, inutile
           nella SUA area; nel CRM invece resta, lì dice chi è assegnato) */}
       <div className="hidden sm:block" style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-        <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ background: evidenzia ? '#fff' : pillola.bg, color: pillola.color, border: `1px solid ${evidenzia ? `${pillola.color}55` : 'transparent'}`, padding: '3px 11px', whiteSpace: 'nowrap' }}>
+        <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ position: 'relative', background: evidenzia ? '#fff' : pillola.bg, color: pillola.color, border: `1px solid ${evidenzia ? `${pillola.color}55` : 'transparent'}`, padding: '3px 11px', whiteSpace: 'nowrap' }}>
           {pillola.label}
+          {/* ⭐ 12/08 (mockup approvato): SPIA delle note di NoiDemoliamo non
+              lette — si azzera aprendo la tendina (la cronologia le segna) */}
+          {(p.note_non_lette || 0) > 0 && (
+            <span style={{ position: 'absolute', top: -8, right: -8, minWidth: 16, height: 16, borderRadius: 999, background: '#DC2626', color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff', padding: '0 4px' }}>{p.note_non_lette}</span>
+          )}
         </span>
       </div>
 
