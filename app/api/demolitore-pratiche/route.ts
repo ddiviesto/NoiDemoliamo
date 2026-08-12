@@ -77,17 +77,26 @@ export async function POST(req: NextRequest) {
         console.error('Errore elenco pratiche demolitore:', error)
         return NextResponse.json({ error: 'Errore nel caricamento delle pratiche' }, { status: 500 })
       }
-      // Pallino chat: messaggi del cliente non ancora letti, per pratica
-      const pratiche = (data || []) as unknown as { id: string; non_letti?: number }[]
+      // Pallino chat: messaggi del cliente non ancora letti, per pratica.
+      // ⭐ 12/08 (deciso con Davide): come per la chat, contano SOLO i
+      // messaggi da quando la pratica è del demolitore attuale — quelli
+      // dell'era del predecessore non esistono per lui
+      const pratiche = (data || []) as unknown as { id: string; data_assegnazione?: string | null; non_letti?: number }[]
       if (pratiche.length > 0) {
         const { data: nonLetti } = await supabase
           .from('messaggi_chat')
-          .select('pratica_id')
+          .select('pratica_id, creato_il')
           .in('pratica_id', pratiche.map(p => p.id))
           .eq('mittente_tipo', 'cliente')
           .eq('letto', false)
+        const daQuando: Record<string, string | null> = {}
+        for (const p of pratiche) daQuando[p.id] = p.data_assegnazione || null
         const conta: Record<string, number> = {}
-        for (const m of nonLetti || []) conta[m.pratica_id] = (conta[m.pratica_id] || 0) + 1
+        for (const m of (nonLetti || []) as { pratica_id: string; creato_il: string }[]) {
+          const soglia = daQuando[m.pratica_id]
+          if (soglia && m.creato_il < soglia) continue
+          conta[m.pratica_id] = (conta[m.pratica_id] || 0) + 1
+        }
         for (const p of pratiche) p.non_letti = conta[p.id] || 0
       }
       return NextResponse.json({ success: true, pratiche })

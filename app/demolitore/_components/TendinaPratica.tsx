@@ -369,12 +369,12 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
             </PillolaAzione>
           )}
 
-          {/* ⭐ Trattativa Extra: quando l'admin ha impostato l'importo, il
+          {/* ⭐ Trattativa: quando l'admin ha impostato l'importo, il
               demolitore vede la pillola con la cifra */}
+          {/* ⭐ 12/08 (richiesta Davide): niente simbolo, solo testo e importo */}
           {d?.fee_concordata != null && (
-            <span className="flex items-center gap-1.5" style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" /></svg>
-              Trattativa Extra · {d.fee_concordata}€
+            <span style={{ background: '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}>
+              Trattativa · {d.fee_concordata}€
             </span>
           )}
 

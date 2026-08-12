@@ -44,7 +44,7 @@ const EVENTI_META: Record<string, { label: string; bg: string; col: string }> = 
   ritirata: { label: 'Veicolo ritirato', bg: '#DBEAFE', col: '#1D4ED8' },
   cert_rottamazione: { label: 'Certificato rottamazione', bg: '#DBEAFE', col: '#1D4ED8' },
   cert_pra: { label: 'Radiazione PRA', bg: '#DBEAFE', col: '#1D4ED8' },
-  trattativa: { label: 'Trattativa extra', bg: '#DBEAFE', col: '#1D4ED8' },
+  trattativa: { label: 'Trattativa', bg: '#DBEAFE', col: '#1D4ED8' },
 }
 
 const PREFISSO_ATTESA = 'Messa in attesa'
@@ -161,7 +161,6 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
   const inCanaleDemolitore = (n: Nota) =>
     (n.visibile_demolitore || n.autore === 'demolitore') && (!n.demolitore_id || n.demolitore_id === demolitoreId)
   const noteMostrate = canale === 'demolitore' ? note.filter(inCanaleDemolitore) : note
-  const contaCondivise = note.filter(inCanaleDemolitore).length
 
   // Corpo unico (timeline + campo nota): la CARD lo mostra sotto la testata,
   // la FINESTRELLA lo riempie in altezza (27/07)
@@ -177,8 +176,11 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
           {demolitoreId && (
             <div style={{ display: 'flex', gap: 4, marginBottom: 8, flexShrink: 0 }}>
               <button onClick={() => setCanale('tutte')} style={{ fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer', border: `1.5px solid ${canale === 'tutte' ? '#BFDBFE' : '#E5E7EB'}`, background: canale === 'tutte' ? '#EFF6FF' : '#fff', color: canale === 'tutte' ? '#1D4ED8' : '#6B7280' }}>NoiDemoliamo</button>
+              {/* ⭐ 12/08 (richiesta Davide): via il numerino grigio della
+                  quantità (confondeva: sembrava un "non letti"); al suo
+                  posto arriverà la SPIA ROSSA delle note non lette */}
               <button onClick={() => setCanale('demolitore')} style={{ fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: '4px 11px', cursor: 'pointer', border: `1.5px solid ${canale === 'demolitore' ? '#BFDBFE' : '#E5E7EB'}`, background: canale === 'demolitore' ? '#EFF6FF' : '#fff', color: canale === 'demolitore' ? '#1D4ED8' : '#6B7280' }}>
-                Demolitore{contaCondivise > 0 && <span style={{ fontWeight: 600, opacity: 0.7, marginLeft: 3 }}>{contaCondivise}</span>}
+                Demolitore
               </button>
             </div>
           )}
@@ -274,9 +276,8 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
                       {tipo === 'annullata' && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
                       )}
-                      {tipo === 'demolitore' && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 16.5V13a1 1 0 0 0-1-1H3v4.5" /><path d="M3 12V7a1 1 0 0 1 1-1h9l3 4h3a2 2 0 0 1 2 2v4.5" /><circle cx="6.5" cy="17.5" r="2" /><circle cx="17.5" cy="17.5" r="2" /></svg>
-                      )}
+                      {/* ⭐ 12/08 (richiesta Davide): niente iconcina sulla
+                          pillola "Nota demolitore", parla il testo */}
                       {tipo === null && (
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
                       )}

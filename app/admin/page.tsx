@@ -903,10 +903,11 @@ export default function AdminDashboard() {
                           {p.motivo_annullamento}
                         </div>
                       )}
+                      {/* ⭐ 11/08 (richiesta Davide): via l'iconcina del capannone
+                          (a 13px sembrava una campanella) — solo il nome */}
                       {p.demolitore_id && demolitori[p.demolitore_id] && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="1.9" style={{ flexShrink: 0 }}><path d="M3 21h18M6 21V7l6-4 6 4v14" /></svg>
-                          <span className="text-[12.5px] font-semibold truncate" style={{ color: '#374151' }}>{demolitori[p.demolitore_id]}</span>
+                        <div style={{ marginTop: 5 }}>
+                          <span className="text-[12.5px] font-semibold truncate" style={{ color: '#374151', display: 'block' }}>{demolitori[p.demolitore_id]}</span>
                         </div>
                       )}
                     </div>
@@ -956,7 +957,7 @@ export default function AdminDashboard() {
                             TORNA e apre DIRETTAMENTE il visore sul primo da
                             verificare (le miniature si caricano lì dentro, la
                             tendina non balla). Ordine: Documenti e Foto · Chat ·
-                            Stato pratica · Trattativa Extra · Assegnazione.
+                            Stato pratica · Trattativa · Assegnazione.
                             ⭐ 28/07 (richiesta Davide): la pillola dice anche
                             "Foto" perché nel visore ci sono pure le foto. */}
                         <button
@@ -1066,9 +1067,8 @@ export default function AdminDashboard() {
                             className="flex items-center gap-1.5 transition-all hover:bg-blue-100"
                             style={{ background: nuvolaImporto ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap' }}
                           >
-                            {/* Simbolo dell'EURO (via il dollaro, 27/07) */}
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10h12" /><path d="M4 14h9" /><path d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" /></svg>
-                            Trattativa Extra
+                            {/* ⭐ 12/08 (richiesta Davide): niente simbolo dell'euro */}
+                            Trattativa
                             {p.fee_concordata != null && <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{p.fee_concordata}€</span>}
                           </button>
                           {nuvolaImporto && (
@@ -1079,9 +1079,9 @@ export default function AdminDashboard() {
                                   questa pratica, va in prefattura così), campo con
                                   etichetta, Salva; "Rimuovi" quando è attiva */}
                               <div style={{ position: 'absolute', top: 'calc(100% + 6px)', left: 0, width: 295, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 13, boxShadow: '0 10px 28px rgba(15,23,42,0.18)', padding: '13px 14px', zIndex: 6 }}>
-                                <div className="text-[12px] font-bold" style={{ color: '#0F1B33' }}>Trattativa Extra</div>
+                                <div className="text-[12px] font-bold" style={{ color: '#0F1B33' }}>Trattativa</div>
                                 <div className="text-[11px] mt-1" style={{ color: '#5B6779', lineHeight: 1.55 }}>
-                                  Importo concordato con il demolitore <b>solo per questa pratica</b>: sostituisce la sua tariffa e a fine mese entra così in proforma fattura.
+                                  Importo concordato con il demolitore <b>solo per questa pratica</b>: sostituisce la sua tariffa e a fine mese entra così in proforma fattura. Vale anche <b>zero</b>: per questo mezzo non paga nulla.
                                 </div>
                                 <div className="flex items-center gap-2 mt-2.5">
                                   <label className="text-[11.5px] font-semibold whitespace-nowrap" style={{ color: '#1E293B' }}>Importo concordato</label>
@@ -1101,7 +1101,9 @@ export default function AdminDashboard() {
                                     <button onClick={() => salvaImporto(p, null)} disabled={importoBusy} className="mr-auto disabled:opacity-50" style={{ background: 'none', border: 'none', color: '#A94444', fontSize: 11, fontWeight: 500, textDecoration: 'underline', cursor: 'pointer' }}>Rimuovi</button>
                                   )}
                                   <button
-                                    onClick={() => { const n = parseFloat(importoVal.replace(',', '.')); if (isNaN(n) || n <= 0) { setImportoErr('Scrivi un importo valido.'); return } salvaImporto(p, n) }}
+                                    // ⭐ 12/08 (richiesta Davide): lo ZERO è un importo
+                                    // valido — "per questo mezzo il demolitore non paga"
+                                    onClick={() => { const n = parseFloat(importoVal.replace(',', '.')); if (isNaN(n) || n < 0) { setImportoErr('Scrivi un importo valido.'); return } salvaImporto(p, n) }}
                                     disabled={importoBusy}
                                     className="transition-colors hover:bg-blue-700 disabled:opacity-50"
                                     style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 11.5, fontWeight: 700, borderRadius: 8, padding: '6px 15px', cursor: 'pointer' }}

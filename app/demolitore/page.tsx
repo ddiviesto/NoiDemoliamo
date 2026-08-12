@@ -357,10 +357,18 @@ function restanti(scadenza: Date | null): { big: string; ritardo: boolean } | nu
 
 // Le scadenze dei certificati non stanno nel DB: si calcolano dal giorno
 // del ritiro con le regole del progetto (1.3) — certificato di rottamazione
-// entro 24 ORE, radiazione PRA entro 15 GIORNI LAVORATIVI (sab/dom esclusi)
+// entro 24 ORE LAVORATIVE (⭐ 12/08, precisato da Davide: i weekend non
+// contano — chi ritira venerdì è in regola caricando lunedì), radiazione
+// PRA entro 15 GIORNI LAVORATIVI (sab/dom esclusi)
 function scadenzaCertRottamazione(p: PraticaDemolitore): Date | null {
   if (!p.data_ritiro_effettuato) return null
-  return new Date(new Date(p.data_ritiro_effettuato).getTime() + 24 * 3600000)
+  const d = new Date(p.data_ritiro_effettuato)
+  let ore = 0
+  while (ore < 24) {
+    d.setHours(d.getHours() + 1)
+    if (d.getDay() !== 0 && d.getDay() !== 6) ore++
+  }
+  return d
 }
 
 function scadenzaCertPra(p: PraticaDemolitore): Date | null {
@@ -471,8 +479,19 @@ function Metrica({ p, gruppo }: { p: PraticaDemolitore; gruppo: GruppoPratica })
     if (cd) {
       const minuti = Math.round((new Date(p.scadenza_proposta_ritiro!).getTime() - Date.now()) / 60000)
       urgente = cd.inRitardo || minuti <= 240
-      big = cd.inRitardo ? 'In ritardo' : cd.testo.replace(' per fissare', '')
-      cap = cd.inRitardo ? cd.testo.replace('In ritardo ', '') : 'per fissare'
+      if (cd.inRitardo) {
+        // ⭐ 12/08 (variante B approvata): il ritardo parla in GIORNI E ORE
+        // protagonisti ("4g 18h · di ritardo"), mai più "114H 17M"
+        const abs = Math.abs(minuti)
+        const g = Math.floor(abs / 1440)
+        const h = Math.floor((abs % 1440) / 60)
+        const m = Math.round(abs % 60)
+        big = g > 0 ? `${g}g ${h}h` : h > 0 ? `${h}h ${m}m` : `${m}m`
+        cap = 'di ritardo'
+      } else {
+        big = cd.testo.replace(' per fissare', '')
+        cap = 'per fissare'
+      }
     } else {
       cap = 'per fissare'
     }

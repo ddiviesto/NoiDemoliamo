@@ -9,6 +9,9 @@
  * (demolitore↔admin, canale 26/07 — SQL 2026-07-26-chat-conversazioni.sql).
  * I messaggi vecchi (conversazione NULL) valgono come demolitore↔cliente.
  * Sicurezza: la pratica deve essere assegnata al demolitore autenticato.
+ * ⭐ 12/08 (deciso con Davide): dopo una RIASSEGNAZIONE il nuovo demolitore
+ * NON vede la chat del precedente — si mostrano solo i messaggi da
+ * data_assegnazione in poi (admin e cliente continuano a vedere tutto).
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -26,8 +29,11 @@ export async function POST(req: NextRequest) {
     const canale: 'cliente' | 'noidemoliamo' = body.canale === 'noidemoliamo' ? 'noidemoliamo' : 'cliente'
     if (!praticaId) return NextResponse.json({ error: 'Manca la pratica' }, { status: 400 })
 
-    const { pratica, errore } = await praticaDelDemolitore(supabase, praticaId, demolitoreId, 'id, stato')
+    const { pratica, errore } = await praticaDelDemolitore(supabase, praticaId, demolitoreId, 'id, stato, data_assegnazione')
     if (!pratica) return NextResponse.json({ error: errore }, { status: 404 })
+    // Il "sipario" della riassegnazione: la storia prima della SUA
+    // assegnazione non esiste per lui
+    const daQuando = (pratica as { data_assegnazione?: string | null }).data_assegnazione || null
 
     // ===== INVIO =====
     if (testo) {
@@ -60,9 +66,11 @@ export async function POST(req: NextRequest) {
     }
     type Riga = { id: string; mittente_tipo: string; testo: string; creato_il: string; conversazione: string | null }
     const messaggi = ((data || []) as Riga[]).filter(m =>
-      canale === 'cliente'
+      (canale === 'cliente'
         ? m.conversazione === 'cliente_demolitore' || (m.conversazione == null && (m.mittente_tipo === 'demolitore' || m.mittente_tipo === 'cliente'))
-        : m.conversazione === 'demolitore_noidemoliamo'
+        : m.conversazione === 'demolitore_noidemoliamo')
+      // ⭐ 12/08: solo i messaggi da quando la pratica è SUA
+      && (!daQuando || m.creato_il >= daQuando)
     )
 
     // Aprire il canale = leggere: si segnano letti i messaggi diretti al demolitore

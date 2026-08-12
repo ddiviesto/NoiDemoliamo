@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import MappaComuni, { CoperturaRecord } from './[id]/MappaComuni'
@@ -158,6 +158,22 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   const [invitando, setInvitando] = useState(false)
   const [messaggioInvito, setMessaggioInvito] = useState<{ ok: boolean; testo: string } | null>(null)
   const [linkInvito, setLinkInvito] = useState<string | null>(null)
+  // ⭐ 11/08 ("Copia non fa nulla", segnalato da Davide): la copia dà la
+  // CONFERMA visiva e ha il ripiego se il browser blocca gli appunti
+  const [linkCopiato, setLinkCopiato] = useState(false)
+  const inputLinkRef = useRef<HTMLInputElement>(null)
+  async function copiaLinkInvito() {
+    if (!linkInvito) return
+    try {
+      await navigator.clipboard.writeText(linkInvito)
+    } catch {
+      // Ripiego vecchia scuola: seleziona il campo e copia da lì
+      inputLinkRef.current?.select()
+      document.execCommand('copy')
+    }
+    setLinkCopiato(true)
+    setTimeout(() => setLinkCopiato(false), 2000)
+  }
   const [revocaConferma, setRevocaConferma] = useState(false)
   const [revocando, setRevocando] = useState(false)
   const [erroreRevoca, setErroreRevoca] = useState('')
@@ -632,8 +648,8 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
                 {/* Link di riserva quando l'email non è configurata */}
                 {linkInvito && (
                   <div style={{ display: 'flex', gap: 5, marginTop: 7 }}>
-                    <input readOnly value={linkInvito} onFocus={e => e.target.select()} style={{ flex: 1, minWidth: 0, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '5px 8px', fontSize: 10, color: '#4B5563', outline: 'none', background: '#F8FAFC' }} />
-                    <button onClick={() => navigator.clipboard.writeText(linkInvito)} style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '5px 10px', cursor: 'pointer' }}>Copia</button>
+                    <input ref={inputLinkRef} readOnly value={linkInvito} onFocus={e => e.target.select()} style={{ flex: 1, minWidth: 0, border: '1.5px solid #E5E7EB', borderRadius: 8, padding: '5px 8px', fontSize: 10, color: '#4B5563', outline: 'none', background: '#F8FAFC' }} />
+                    <button onClick={copiaLinkInvito} style={{ background: linkCopiato ? '#DCF3E4' : '#EFF6FF', border: `1.5px solid ${linkCopiato ? '#C8E6D5' : '#BFDBFE'}`, color: linkCopiato ? '#1F7A43' : '#1D4ED8', fontSize: 10.5, fontWeight: 700, borderRadius: 8, padding: '5px 10px', cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all .15s' }}>{linkCopiato ? 'Copiato!' : 'Copia'}</button>
                   </div>
                 )}
                 {revocaConferma && (
