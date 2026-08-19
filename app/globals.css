@@ -122,3 +122,19 @@ body {
   flex-shrink: 0;
 }
 
+
+/* ============================================================
+   SITO PUBBLICO (vetrina: home a due porte, /demolizione, /valutazione)
+   ⭐ 17/08 (struttura A approvata sul mockup). Qui stanno solo le poche
+   regole che gli stili in linea non sanno fare: le tendine delle domande
+   e l'alzata delle due finestre al passaggio del mouse.
+   ============================================================ */
+.sito-faq summary { list-style: none; }
+.sito-faq summary::-webkit-details-marker { display: none; }
+.sito-faq details[open] { border-color: #BFDBFE; }
+.sito-faq details[open] .piu { transform: rotate(45deg); }
+
+.sito-finestra:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 30px 66px rgba(15, 27, 51, 0.16);
+}

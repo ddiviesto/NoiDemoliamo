@@ -503,7 +503,8 @@ C:\Progetto_NoiDemoliamo\
 │   │                               #   TendinaPratica (+ PickerRitiro),
 │   │                               #   ChatDemolitore, NoteDemolitore
 │   ├── components/                 # AiutoWhatsApp, IconaVeicolo,
-│   │                               #   VisoreDocumenti (visore CONDIVISO)
+│   │                               #   VisoreDocumenti (visore CONDIVISO),
+│   │                               #   SitoBarra · SitoPiede · SitoPezzi (vetrina)
 │   └── api/                        # vedi 5.4
 ├── lib/                            # supabase, assegnazione, province, googleMaps, email,
 │                                   #   aggiornaLive, statiCliente, statiCrm, demolitoreAuth, moduli/
@@ -548,7 +549,7 @@ C:\Progetto_NoiDemoliamo\
 
 | Pagina | Stato | Note |
 |---|---|---|
-| **Home `/`** | ✅ | Stile app, logo, spunte SVG, WhatsApp fisso |
+| **Home `/`** | ✅ | **LA VETRINA** (rifatta 18/08, vedi 5.8). Barra a isola, titolone, due porte, i 4 passi, "Zero Stress, Zero Costi", footer blu |
 | **`/login`** | ✅ | Testata blu alta "Bentornato" col logo a cavallo, campi a pillola che si accendono a fuoco, link "Password dimenticata?", redirect per ruolo (commerciante da aggiungere). Niente "Registrati": i ruoli si registrano in modi diversi |
 | **`/recupera-password`** | ✅ | Password dimenticata: email → link da Supabase; conferma "Controlla la tua email" con nota spam e "Rimanda il link" bloccato 60s |
 | **`/nuova-password`** | ✅ | Atterraggio del link di recupero: nuova password (minimo 8 caratteri, spunta che diventa verde) e "Salva ed entra" nell'area del proprio ruolo |
@@ -648,6 +649,36 @@ Il sistema è **istantaneo su tutto**: nessuna pagina deve richiedere il refresh
 - Eventi a raffica ("approva tutti") → UNA sola ricarica (debounce 400ms nell'hook).
 - **Area demolitore**: niente accesso diretto al DB → hook senza tabelle (solo livelli 2+3). Va in pausa (`attivo: false`) mentre un form è aperto, per non sovrascrivere ciò che si scrive.
 - ⭐ **Ogni nuova pagina con dati condivisi deve usare questo hook**, e le sue nuove tabelle vanno aggiunte alla pubblicazione realtime nella stessa SQL di creazione.
+
+## 5.8 IL SITO PUBBLICO (vetrina) — `/`
+
+La vecchia cardina bianca centrata **non esiste più**: `/` è il sito vetrina. Pezzi condivisi in `app/components/`: `SitoBarra` (client), `SitoPiede`, `SitoPezzi`.
+
+**Com'è fatta la home, dall'alto in basso** (struttura "a due porte" + veste "isola galleggiante", approvate sul mockup il 17-18/08):
+1. **Barra a ISOLA GALLEGGIANTE**: pillola di vetro (blur + saturate) larga 1000px, **staccata dai bordi**, appiccicata in cima mentre si scorre. Dentro: logo, "Accedi", bottone pieno "Richiedi ora" → `/inizia`. Niente striscia bianca attaccata ai bordi (bocciata).
+2. **Titolone** `clamp(34px, 5.6vw, 62px)` su due righe, la seconda in **sfumatura blu→viola** (background-clip). Sotto, una frase.
+3. **LE DUE PORTE**, affiancate: **"Voglio rottamarla"** (card blu piena, → `/inizia`) e **"Voglio sapere quanto vale"** (card di vetro, → WhatsApp finché non nasce `/vendi-auto`). Ognuna: iconcina nel quadrotto, pillola verde, testo, 3 spunte, bottone.
+4. **"Tu fai una cosa sola: compilare il modulo"**: i **4 passi** in card di vetro ad altezza piena (Compili il Modulo · Prepariamo le Carte · Fissiamo il Giorno del Ritiro · Chiudiamo la Pratica), ognuna con la pillolina del tempo **spinta in fondo** (così restano allineate) e il **fulmine PIENO** come iconcina.
+5. **"Zero Stress, Zero Costi"** (occhiello "La nostra missione"): testo della missione, **citazione** con barretta blu a sinistra, e accanto la lista delle 6 voci a **0 €**.
+6. **Footer**: fascia a tutta larghezza con gli **angoli alti tondi (40px)** nel blu del marchio che vira al viola, alone luminoso in alto a destra; nome grande + frase a sinistra, tre colonne (Servizio · Contatti · Legale), riga finale.
+
+**Sfondo**: base **lilla chiara `#F5F3FE`** (la stessa aria del flusso `/inizia`) con 3 aloni radiali (azzurro in alto a sinistra, viola a destra, lilla più carico in basso). Le sezioni **non sono bianche piene**: sono pannelli di vetro `rgba(255,255,255,0.82)`, così lo sfondo si vede sempre e le card staccano.
+
+### ⭐ REGOLE DI SCRITTURA DELLA VETRINA (date da Davide, valgono su tutte le pagine pubbliche)
+- **MAI raccontare come funziona dentro**: niente "il sistema", niente automatismi. È tecnologia, non si regala ai concorrenti. Si dice solo **"a tutto pensiamo Noi"**.
+- **MAI elencare le casistiche** (defunto, società, libretto smarrito…): si dice "qualsiasi sia la tua situazione".
+- **MAI spiegare da dove arrivano i soldi**, e mai far pensare che il cliente debba **portare** il mezzo da qualche parte.
+- **"Noi" con la MAIUSCOLA** ovunque significhi NoiDemoliamo: richiama il marchio.
+- Verso il cliente il partner si chiama **"Centro di Demolizione Autorizzato"**, mai "demolitore" (quello è il nome interno).
+- **Niente frecce** nei bottoni: il bottone dice dove porta con le parole.
+- **Maiuscole sulle parole importanti** nei titoli-etichetta e nelle voci di lista (Pratica di Demolizione, Compili il Modulo), minuscole su di/le/del/la.
+- Iconcine **piene**, mai a linee sottili: rimpicciolite a 13-15px le linee cadono a metà pixel e sembrano sgranate.
+
+### Da fare sulla vetrina
+- **Pagine dei servizi** `/demolizione` e `/valutazione`: erano state fatte e sono state **cancellate** il 18/08 per finire prima la home. Vanno rifatte con questa veste (i testi buoni: 4 passi, 0 €, situazioni particolari, domande).
+- **Domande frequenti**: tolte dalla home, si deve decidere dove metterle (pagina dedicata o dentro il flusso).
+- **Dati azienda** (ragione sociale, P.IVA, sede) nel footer e nelle pagine legali.
+- Il **logo** non compare mai in grande: solo il quadratino nella barra.
 
 ---
 
@@ -899,7 +930,7 @@ Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.1
 - **Proforma fattura**: al "ritirata" la pratica entra nel giro fatturazione (da progettare con Davide)
 - **Test cross-platform Android** (LambdaTest/BrowserStack): tastiere, scroll, foto, autocomplete. Mai fatto su device reale
 - **Pagine legali `/privacy` e `/termini` da rivedere insieme**: quali dati anagrafici di NoiDemoliamo inserire (ragione sociale, P.IVA, sede, email — idealmente info@noidemoliamo.it) e completare i [DA COMPLETARE]
-- **Landing vetrina** su noidemoliamo.it
+- **Sito vetrina** (vedi 5.8): la home è fatta; restano le pagine dei servizi, dove mettere le domande e i dati azienda. Poi il dominio noidemoliamo.it da collegare a Vercel
 - **PWA**, messaggi preimpostati admin, pagina Polizia Locale veicoli abbandonati
 - **Prossimi flussi**: asta demolitori (B), commercianti (C), acquisto NoiDemoliamo, `/vendi-auto` (D), area commercianti, fatturazione, statistiche
 
@@ -912,7 +943,7 @@ Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.1
 ## 8.3 Problemi noti / cosmetici
 
 - Errore RLS minore in `/inizia` (non blocca)
-- Console "1 Issue" generica → da indagare
+- ~~Console "1 Issue" generica~~ **RISOLTO 18/08**: era lo `<script>` dentro i layout di admin e demolitore ("Encountered a script tag while rendering React component"). Ora è un `<style>` vero, che vale sia al primo caricamento sia navigando (prima il grigio dell'area di lavoro si applicava SOLO al refresh). ⚠️ Regola: **mai `<script>` dentro un componente React** — React non lo esegue lato client
 - Avviso LCP sul logo in `/login` (suggerimento performance, non errore)
 - ⚠️ Lo zoom col pizzico nel visore cliente è bloccato dal viewport anti-zoom del flusso: se servirà, controllo di zoom dedicato
 
