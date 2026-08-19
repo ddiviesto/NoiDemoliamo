@@ -41,8 +41,8 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
       html.style.background = prevHtml
       document.body.style.background = prevBody
       html.classList.remove('area-lavoro')
-      // via anche il foglietto iniettato dal layout all'istante zero
-      document.getElementById('stile-area-lavoro')?.remove()
+      // ⭐ 17/08: il foglietto dell'area di lavoro NON si tocca più a mano —
+      // ora è un <style> del layout e lo toglie React uscendo dall'area
     }
   }, [])
 
