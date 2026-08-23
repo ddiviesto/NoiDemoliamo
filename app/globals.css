@@ -169,3 +169,25 @@ body {
 @media (min-width: 640px) and (hover: hover) {
   .flusso-scena button:hover { transition: transform .16s, box-shadow .16s; }
 }
+
+/* ⭐ 19/08 (impianto B): su PC le proporzioni del flusso cambiano — le
+   tessere non sono più quadrate (erano quadroni da 113px) e i bottoni di
+   pagina non attraversano più tutta la colonna, diventano pillole. */
+@media (min-width: 640px) {
+  .flusso-scena .aspect-square { aspect-ratio: auto; min-height: 84px; }
+  .flusso-scena .btn-pagina { width: auto; align-self: flex-start; padding-left: 40px; padding-right: 40px; }
+}
+
+/* ⭐ 19/08 (Davide: "i testi piccoli non si leggono"): su PC il flusso alza
+   le misure minime — nessun testo sotto i 13px. */
+@media (min-width: 640px) {
+  .flusso-scena .text-\[10px\] { font-size: 12.5px; }
+  .flusso-scena .text-\[10\.5px\] { font-size: 12.5px; }
+  .flusso-scena .text-\[11px\] { font-size: 13px; }
+  .flusso-scena .text-\[11\.5px\] { font-size: 13px; }
+  .flusso-scena .text-\[12px\] { font-size: 13.5px; }
+  .flusso-scena .text-\[12\.5px\] { font-size: 13.5px; }
+  .flusso-scena .text-\[13px\] { font-size: 14px; }
+  .flusso-scena .text-\[13\.5px\] { font-size: 14.5px; }
+  .flusso-scena .text-xs { font-size: 13.5px; }
+}

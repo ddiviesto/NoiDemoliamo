@@ -527,8 +527,10 @@ C:\Progetto_NoiDemoliamo\
 
 ### Com'è impaginato un passo (`GuscioFlusso`)
 - **TELEFONO** (quasi tutto il traffico): card bianca a tutto schermo, **testata blu** con la freccia tonda e "Passo N di M", **fascetta azzurra** col servizio e il mezzo, barra di avanzamento sottile, titolo 21px.
-- **PC** (⭐ impianto "senza scatola", 19/08): niente card. Fondo **lilla con gli aloni** come la home, **isola galleggiante** di vetro in cima (logo + pillolina "Richiesta demolizione/valutazione gratuita" + mezzo), riga con freccia tonda, barra sfumata blu-viola e "PASSO N DI M", poi **titolo 36px** con la parola tra `*asterischi*` in sfumatura blu-viola.
-- La **fascetta** dice sempre al cliente in che richiesta si trova e con che mezzo. Niente puntino di separazione, e il nome del mezzo **non** si ripete nella testata blu.
+- **PC** (⭐ impianto "senza scatola" + due colonne, 19/08): niente card. Fondo **lilla con gli aloni** come la home, **isola galleggiante** di vetro in cima (logo + pillolina "Richiesta demolizione/valutazione gratuita" + mezzo), riga con freccia tonda, barra sfumata blu-viola e "PASSO N DI M". Sotto, **due colonne** larghe in tutto 1120px: a **sinistra** il titolo 36px (parola tra `*asterischi*` in sfumatura blu-viola), la spiegazione, l'eventuale avviso del passo e **"A CHE PUNTO SEI"** (passo attuale + i tre successivi + "altri N passi"); a **destra** le scelte e il bottone.
+- ⚠️ **Il blocco NON si centra in verticale**: ogni passo è alto diverso e il contenuto ballava su e giù cambiando passo. Parte sempre dallo stesso punto, in alto.
+- Su PC **nessun testo scende sotto i 13px** (le etichette delle tessere erano 10px) e i bottoni di pagina diventano **pillole** larghe quanto basta, non barre a tutta colonna.
+- La **fascetta** (telefono) e la **pillolina nell'isola** (PC) dicono sempre al cliente in che richiesta si trova e con che mezzo. Niente puntino di separazione, e il nome del mezzo **non** si ripete nella testata.
 
 ### `/vendi-auto` — i 13 passi della valutazione
 ```

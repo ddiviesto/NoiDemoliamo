@@ -9,7 +9,7 @@ import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndiri
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
-import { RuoloButton, InfoBadge, ErrorBadge, TitoloPasso } from './steps/PezziFlusso'
+import { RuoloButton, InfoBadge, ErrorBadge } from './steps/PezziFlusso'
 import { GuscioFlusso } from './steps/GuscioFlusso'
 import { StepIntestazione } from './steps/StepIntestazione'
 import { articolo, articoloDel, pronomeTuo, nomeVeicolo, veicoloHaCambio, isFemminile } from '@/lib/nomiVeicolo'
@@ -435,6 +435,25 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
 
 // ============================================================
 
+
+// ⭐ 19/08: i nomi brevi dei passi per la colonna "A che punto sei" (solo PC)
+const NOME_PASSO: Record<string, string> = {
+  'tipo-veicolo': 'Tipo di veicolo',
+  intestazione: 'Intestazione',
+  eredi: 'Eredi',
+  'societa-fallita': 'Società',
+  'identifica-veicolo': 'Identifica il mezzo',
+  'condizioni-veicolo': 'Condizioni',
+  indirizzo: 'Indirizzo',
+  targa: 'Targa',
+  cf: 'Codice fiscale',
+  foto: 'Foto',
+  fermo: 'Fermo amministrativo',
+  consegna: 'Chi consegna',
+  libretto: 'Libretto',
+  cdc: 'Certificato di proprietà',
+  account: 'Crea il tuo account',
+}
 
 function getSteps(dati: DatiPratica) {
   const base = ['tipo-veicolo', 'intestazione']
@@ -938,27 +957,31 @@ export default function IniziaPage() {
       passo={idxCorrente + 1}
       totale={total}
       titoloBanner={meta.titoloBanner}
+      titolo={curStep === 'cdc' ? 'Hai il *Certificato di Proprietà*?' : curStep === 'account' ? (utenteLoggato ? 'Conferma e invia' : 'Ultimo passo!') : meta.titoloPagina}
+      sotto={curStep === 'cdc' ? 'È il documento che dimostra chi è il proprietario del mezzo.' : curStep === 'account' ? (utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.') : meta.sottoPagina}
       icona={<meta.icona />}
       onIndietro={idxCorrente > 0 ? back : () => router.push(utenteLoggato ? '/dashboard' : '/')}
+      passiEtichette={steps.map(k => NOME_PASSO[k] ?? k)}
+      lato={curStep === 'tipo-veicolo' ? (
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-3 mb-5 flex items-center gap-3">
+                <div className="w-11 h-11 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-200">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 12l2 2 4-4"/>
+                    <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.68.94 6.36 2.64"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-bold text-blue-900 leading-tight mb-0.5">Pensiamo a tutto noi</div>
+                  <div className="text-xs text-blue-800 leading-snug">
+                    In base alle tue risposte ti diremo quali documenti preparare.
+                  </div>
+                </div>
+              </div>
+      ) : undefined}
     >
 
         {curStep === 'tipo-veicolo' && (
           <>
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-2xl p-3 mb-5 flex items-center gap-3">
-              <div className="w-11 h-11 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md shadow-blue-200">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M9 12l2 2 4-4"/>
-                  <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.68.94 6.36 2.64"/>
-                </svg>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-sm font-bold text-blue-900 leading-tight mb-0.5">Pensiamo a tutto noi</div>
-                <div className="text-xs text-blue-800 leading-snug">
-                  In base alle tue risposte ti diremo quali documenti preparare.
-                </div>
-              </div>
-            </div>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <StepTipoVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -969,7 +992,6 @@ export default function IniziaPage() {
 
         {curStep === 'identifica-veicolo' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <StepIdentificaVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -980,7 +1002,6 @@ export default function IniziaPage() {
 
         {curStep === 'condizioni-veicolo' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <StepCondizioniVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -991,7 +1012,6 @@ export default function IniziaPage() {
 
         {curStep === 'indirizzo' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <div className="flex flex-col gap-4">
               {indirizzoConfermato ? (
                 <>
@@ -1088,7 +1108,6 @@ export default function IniziaPage() {
 
         {curStep === 'targa' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <div className="flex flex-col gap-3">
               {erroreTarga && <ErrorBadge>Inserisci la targa per continuare.</ErrorBadge>}
               <input
@@ -1154,7 +1173,6 @@ export default function IniziaPage() {
 
         {curStep === 'cf' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <div className="flex flex-col gap-3">
               {erroreCf && <ErrorBadge>{cfAccetta11 ? 'Inserisci una partita IVA (11 cifre) o un codice fiscale valido (16 caratteri).' : 'Inserisci un codice fiscale valido di 16 caratteri.'}</ErrorBadge>}
               <div>
@@ -1213,7 +1231,6 @@ export default function IniziaPage() {
 
         {curStep === 'foto' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} />
             <p className="text-[14px] text-gray-700 leading-relaxed mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto corretto.</p>
             <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-sm text-blue-800 mb-4">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
@@ -1416,7 +1433,6 @@ export default function IniziaPage() {
 
         {curStep === 'intestazione' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <StepIntestazione
               valore={dati.intestazione}
               onScegli={setIntestazione}
@@ -1428,7 +1444,6 @@ export default function IniziaPage() {
 
         {curStep === 'eredi' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreEredi && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1466,7 +1481,6 @@ export default function IniziaPage() {
 
         {curStep === 'societa-fallita' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreSocietaFallita && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1492,7 +1506,6 @@ export default function IniziaPage() {
 
         {curStep === 'fermo' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreFermo && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1543,7 +1556,6 @@ export default function IniziaPage() {
 
         {curStep === 'consegna' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreConsegna && <div className="mb-3"><ErrorBadge>Seleziona chi consegnerà il mezzo per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1603,7 +1615,6 @@ export default function IniziaPage() {
 
         {curStep === 'libretto' && (
           <>
-            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreLibretto && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1642,9 +1653,6 @@ export default function IniziaPage() {
 
         {curStep === 'cdc' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">Hai il <span style={{ color: '#1D4ED8' }}>Certificato di Proprietà</span>?</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-3">È il documento che dimostra chi è il proprietario del mezzo.</p>
-
             {/* Avviso anti-confusione: molti lo scambiano per il libretto */}
             <div className="flex items-start gap-2.5 rounded-xl py-2.5 px-3 mb-3" style={{ background: '#FDF4E0', border: '1.5px solid #EFD9A7' }}>
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
@@ -1711,9 +1719,6 @@ export default function IniziaPage() {
 
         {curStep === 'account' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{utenteLoggato ? 'Conferma e invia' : 'Ultimo passo!'}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.'}</p>
-
             {utenteLoggato && (
               <div className="flex items-start gap-2.5 rounded-2xl p-3.5 mb-4 text-[13px] leading-relaxed bg-white" style={{ border: '1.5px solid #E5E7EB', color: '#374151' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>

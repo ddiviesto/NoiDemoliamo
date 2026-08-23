@@ -24,7 +24,7 @@ import { StepCondizioniVeicolo } from '../inizia/steps/StepCondizioniVeicolo'
 import AutocompleteIndirizzo, { DatiIndirizzo } from '../inizia/steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
-import { TitoloPasso, InfoBadge } from '../inizia/steps/PezziFlusso'
+import { InfoBadge } from '../inizia/steps/PezziFlusso'
 import { GuscioFlusso } from '../inizia/steps/GuscioFlusso'
 import { articolo, articoloDel, nomeVeicolo, isFemminile } from '@/lib/nomiVeicolo'
 import { StepIntestazione } from '../inizia/steps/StepIntestazione'
@@ -75,6 +75,13 @@ function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string): { bann
     case 'account':
       return { banner: 'Crea il tuo account', titolo: 'Crea il tuo *account*', sotto: 'Ti serve per vedere la nostra proposta e rispondere.' }
   }
+}
+
+const ETICHETTE: Record<Passo, string> = {
+  'tipo-veicolo': 'Tipo di veicolo', intestazione: 'Intestazione', identifica: 'Identifica il mezzo',
+  motore: 'Motore', dotazioni: 'Dotazioni', condizioni: 'Condizioni', revisione: 'Revisione e bollo',
+  manutenzione: 'Manutenzione', difetti: 'Difetti', foto: 'Foto', indirizzo: 'Indirizzo',
+  targa: 'Targa', account: 'Crea il tuo account',
 }
 
 const ALIMENTAZIONI = ['Benzina', 'Diesel', 'GPL', 'Metano', 'Ibrida', 'Elettrica']
@@ -345,10 +352,12 @@ export default function VendiAuto() {
       passo={idx + 1}
       totale={PASSI.length}
       titoloBanner={meta.banner}
+      titolo={meta.titolo}
+      sotto={meta.sotto}
       onIndietro={indietro}
+      passiEtichette={PASSI.map(k => ETICHETTE[k])}
       icona={<svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82zM7 7h.01" /></svg>}
     >
-        <TitoloPasso titolo={meta.titolo} sotto={meta.sotto} />
 
         {/* ---------- contenuto ---------- */}
         {passo === 'tipo-veicolo' && (

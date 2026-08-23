@@ -16,22 +16,34 @@
 // ============================================================
 
 import Image from 'next/image'
+import { TitoloPasso } from './PezziFlusso'
 
-export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, icona, onIndietro, children }: {
+export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, titolo, sotto, icona, onIndietro, lato, passiEtichette, children }: {
   servizio: string
   mezzo: string
   passo: number          // 1-based
   totale: number
   titoloBanner: string
+  titolo: string         // col *asterisco* sulla parola da evidenziare
+  sotto?: string
   icona: React.ReactNode
   onIndietro: () => void
+  lato?: React.ReactNode        // roba da mettere nella colonna di sinistra su PC (sul telefono va sopra il contenuto)
+  passiEtichette?: string[]     // i nomi dei passi, per "A che punto sei"
   children: React.ReactNode
 }) {
   const pct = Math.round((passo / totale) * 100)
 
+  // "A che punto sei": il passo attuale e i tre successivi, poi quanti ne restano
+  const daMostrare = passiEtichette?.slice(passo - 1, passo + 3) ?? []
+  const restanti = (passiEtichette?.length ?? 0) - (passo - 1) - daMostrare.length
+
   return (
-    <main className="flusso-scena min-h-screen flex items-start justify-center p-0 sm:p-7 sm:pt-6">
-      <div className="w-full max-w-md sm:max-w-[980px]">
+    // ⚠️ 19/08 (Davide): il blocco NON si centra in verticale. Ogni passo è alto
+    // diverso e il contenuto ballava su e giù cambiando passo: parte sempre
+    // dallo stesso punto, in alto.
+    <main className="flusso-scena min-h-screen flex items-start justify-center p-0 sm:p-7 sm:pt-8">
+      <div className="w-full max-w-md sm:max-w-[1120px]">
 
         {/* ---------- ISOLA GALLEGGIANTE (solo PC) ---------- */}
         <div
@@ -109,7 +121,55 @@ export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, ico
             <div className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
           </div>
 
-          {children}
+          {/* ⭐ 19/08 (impianto B approvato): su PC DUE COLONNE — a sinistra il
+              titolo e la spiegazione, a destra le scelte. Così la larghezza si
+              usa davvero, invece di gonfiare tessere e bottoni. Sul telefono
+              resta tutto incolonnato come prima. */}
+          <div className="sm:flex sm:gap-10 sm:items-start">
+            <div className="sm:flex-[0.95] sm:pt-1">
+              <TitoloPasso titolo={titolo} sotto={sotto} />
+
+              {/* l'avviso del passo: sul telefono resta qui sopra il contenuto,
+                  su PC riempie la colonna di sinistra */}
+              {lato && <div className="sm:mt-6">{lato}</div>}
+
+              {/* "A CHE PUNTO SEI" — solo PC */}
+              {daMostrare.length > 0 && (
+                <div className="hidden sm:block" style={{ marginTop: 26, paddingTop: 20, borderTop: '1px solid rgba(15,27,51,0.08)' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#8A94A3', marginBottom: 10 }}>
+                    A che punto sei
+                  </div>
+                  {daMostrare.map((etichetta, i) => {
+                    const attivo = i === 0
+                    return (
+                      <div key={etichetta + i} className="flex items-center gap-2.5" style={{ padding: '5px 0', fontSize: 14, color: attivo ? '#1B2E6B' : '#7C8AA5', fontWeight: attivo ? 700 : 400 }}>
+                        <span
+                          className="flex items-center justify-center flex-shrink-0"
+                          style={{
+                            width: 21, height: 21, borderRadius: 999, fontSize: 11, fontWeight: 700,
+                            background: attivo ? 'linear-gradient(135deg,#2563eb,#4f46e5)' : 'rgba(15,27,51,0.07)',
+                            color: attivo ? '#fff' : '#8A94A3',
+                          }}
+                        >
+                          {passo + i}
+                        </span>
+                        {etichetta}
+                      </div>
+                    )
+                  })}
+                  {restanti > 0 && (
+                    <div className="flex items-center gap-2.5" style={{ padding: '5px 0', fontSize: 14, color: '#7C8AA5' }}>
+                      <span className="flex items-center justify-center flex-shrink-0" style={{ width: 21, height: 21, borderRadius: 999, fontSize: 11, fontWeight: 700, background: 'rgba(15,27,51,0.07)', color: '#8A94A3' }}>…</span>
+                      altri {restanti} pass{restanti === 1 ? 'o' : 'i'}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="sm:flex-[1.05] sm:min-w-0">
+              {children}
+            </div>
+          </div>
         </div>
       </div>
     </main>
