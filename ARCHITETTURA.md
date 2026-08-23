@@ -357,16 +357,18 @@ Admin "Proponi ai Commercianti" (prezzo richiesto, somma cliente opzionale, dura
 ```
 **Anti-furbi**: commerciante che bypassa NoiDemoliamo → disattivato.
 
-## 4.4 Flusso D — Vendita auto su richiesta cliente (DA COSTRUIRE)
+## 4.4 Flusso D — Valutazione su richiesta cliente 🟡 IL FLUSSO C'È, MANCA L'ADMIN
 
 ```
-Cliente "Vendi auto" → /vendi-auto → dati + foto + prezzo (o "valutate voi")
-→ valutazione automatica → admin decide:
-┌─ IMPRESENTABILE: propone demolizione gratuita
-├─ BUONA: asta tra COMMERCIANTI (flusso C)
-└─ MOLTO BUONA: admin compra per NoiDemoliamo
+Cliente "Voglio sapere quanto vale" → /vendi-auto (13 passi) → richiesta in `veicoli_vendita`
+→ admin la vede in VALUTAZIONI e decide:
+┌─ NON CONVIENE: propone la DEMOLIZIONE GRATUITA → il cliente accetta o rifiuta dalla sua area
+├─ BUONA: offerta / asta tra COMMERCIANTI (flusso C)
+└─ MOLTO BUONA: acquisto diretto NoiDemoliamo
 ```
-DB: `veicoli_vendita`, non `pratiche`.
+DB: `veicoli_vendita` + `foto_veicoli_vendita`, **non** `pratiche`. SQL: `docs/sql/2026-08-19-veicoli-vendita.sql`.
+
+⭐ **La domanda che regge tutto**: nel flusso della valutazione si chiede SOLO l'**intestazione** (serve già a valutare e decide la casistica dopo). Codice fiscale, libretto, certificato di proprietà, fermo e chi consegna **non si chiedono**: verrebbero chiesti a chi voleva solo sapere un prezzo. Si chiedono al cliente **dopo** che ha accettato la demolizione, e solo allora nasce la pratica.
 
 **Migrazione tra flussi**: vendita → demolizione (pratica copiata in `pratiche` con stato `da_assegnare`); demolizione → commercianti (flusso C); demolizione → acquisto NoiDemoliamo (con OK del cliente).
 
@@ -483,10 +485,13 @@ C:\Progetto_NoiDemoliamo\
 │   ├── recupera-password/          # Password dimenticata: richiesta del link
 │   ├── nuova-password/             # Atterraggio del link email di recupero
 │   ├── privacy/ · termini/         # Pagine legali (con segnaposto [DA COMPLETARE])
-│   ├── inizia/                     # Flusso cliente mini-step
+│   ├── vendi-auto/                 # FLUSSO VALUTAZIONE (13 passi, vedi 5.2)
+│   ├── inizia/                     # Flusso cliente mini-step (demolizione)
 │   │   ├── page.tsx                # Orchestratore: getSteps dinamico + traduciErrore()
-│   │   └── steps/                  # StepTipoVeicolo, StepIdentificaVeicolo,
-│   │                               #   StepCondizioniVeicolo, AutocompleteIndirizzo
+│   │   └── steps/                  # CONDIVISI COI DUE FLUSSI: GuscioFlusso,
+│   │                               #   PezziFlusso, StepIntestazione, StepTipoVeicolo,
+│   │                               #   StepIdentificaVeicolo, StepCondizioniVeicolo,
+│   │                               #   AutocompleteIndirizzo
 │   ├── dashboard/                  # AREA CLIENTE
 │   │   ├── page.tsx                # Home "Le tue pratiche"
 │   │   ├── PannelloImpostazioni.tsx
@@ -506,7 +511,7 @@ C:\Progetto_NoiDemoliamo\
 │   │                               #   VisoreDocumenti (visore CONDIVISO),
 │   │                               #   SitoBarra · SitoPiede · SitoPezzi (vetrina)
 │   └── api/                        # vedi 5.4
-├── lib/                            # supabase, assegnazione, province, googleMaps, email,
+├── lib/                            # supabase, assegnazione, province, googleMaps, email, nomiVeicolo,
 │                                   #   aggiornaLive, statiCliente, statiCrm, demolitoreAuth, moduli/
 ├── types/pratica.ts                # Intestazione, Casistica (8), derivaCasistica, delegaAmmessa…
 ├── docs/                           # casistiche/ · moduli/ · sql/
@@ -516,7 +521,25 @@ C:\Progetto_NoiDemoliamo\
 └── AGENTS.md · package.json
 ```
 
-## 5.2 Flusso `/inizia`
+## 5.2 I DUE FLUSSI (demolizione `/inizia` e valutazione `/vendi-auto`)
+
+⭐ **REGOLA (19/08): i due flussi sono GEMELLI e i pezzi comuni stanno in un posto solo.** In `app/inizia/steps/`: `GuscioFlusso` (l'impaginazione), `PezziFlusso` (riquadri-scelta, avvisi, titolo del passo), `StepIntestazione` (la schermata "A chi è intestato", identica nei due), più `StepTipoVeicolo` · `StepIdentificaVeicolo` · `StepCondizioniVeicolo` · `AutocompleteIndirizzo`. Le formule dei nomi dei mezzi ("l'autovettura", "del furgone") stanno in `lib/nomiVeicolo.ts`. **Se si cambia una di queste cose, cambia in tutti e due i flussi: non si duplica mai.**
+
+### Com'è impaginato un passo (`GuscioFlusso`)
+- **TELEFONO** (quasi tutto il traffico): card bianca a tutto schermo, **testata blu** con la freccia tonda e "Passo N di M", **fascetta azzurra** col servizio e il mezzo, barra di avanzamento sottile, titolo 21px.
+- **PC** (⭐ impianto "senza scatola", 19/08): niente card. Fondo **lilla con gli aloni** come la home, **isola galleggiante** di vetro in cima (logo + pillolina "Richiesta demolizione/valutazione gratuita" + mezzo), riga con freccia tonda, barra sfumata blu-viola e "PASSO N DI M", poi **titolo 36px** con la parola tra `*asterischi*` in sfumatura blu-viola.
+- La **fascetta** dice sempre al cliente in che richiesta si trova e con che mezzo. Niente puntino di separazione, e il nome del mezzo **non** si ripete nella testata blu.
+
+### `/vendi-auto` — i 13 passi della valutazione
+```
+1 Tipo di veicolo · 2 Intestazione · 3 Identifica il mezzo · 4 Motore e alimentazione
+5 Dotazioni · 6 Condizioni · 7 Revisione e bollo · 8 Manutenzione · 9 Cosa non va
+10 Foto (6 riquadri guidati: davanti, dietro, i due lati, interni, cruscotto coi km)
+11 Dove si trova · 12 Targa · 13 Crea il tuo account → salva in `veicoli_vendita`
+```
+Riusa i passi 1, 3, 6, 11, 12, 13 del flusso demolizione. **Non** chiede lo spazio per il carro attrezzi (serve al ritiro, non alla valutazione).
+
+## 5.2b Flusso `/inizia` (demolizione)
 
 ### Ordine step (14-15 visibili; `getSteps` è dinamico in base alle risposte)
 ```
@@ -925,6 +948,14 @@ Oggi le comunicazioni al cliente vivono SOLO nel banner della sua area. Servono 
 
 Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.12.
 
+### ▶️ VALUTAZIONI IN ADMIN (il pezzo che manca al flusso D)
+Il flusso `/vendi-auto` c'è e salva; **manca tutto il lato admin e la risposta del cliente**:
+1. ⚠️ **La SQL `docs/sql/2026-08-19-veicoli-vendita.sql` va ESEGUITA su Supabase**, altrimenti l'invio della richiesta fallisce
+2. **Voce "Valutazioni" nella sidebar admin** (strada A scelta da Davide il 19/08, lista separata dalle Pratiche) con le caselle: Da valutare › Offerta inviata › In vendita › Passate a demolizione › Chiuse
+3. Sulla riga: bottoni **"Offri demolizione"** e **"Fai un'offerta"**
+4. **Lato cliente**: email + notifica con la proposta, card nella sua area con **Accetto / No, grazie**
+5. Se accetta: le 4 domande che mancano (codice fiscale, libretto, certificato di proprietà, chi consegna) e **nascita della pratica** in `pratiche` con la casistica derivata dall'intestazione già raccolta
+
 ### 🔥 ALTRO IN CODA
 - **Sistema recensioni** (vedi 4.9): tabella + stato + pagina cliente bloccante + integrazione nell'algoritmo + push su Google Maps
 - **Proforma fattura**: al "ritirata" la pratica entra nel giro fatturazione (da progettare con Davide)
@@ -932,7 +963,7 @@ Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.1
 - **Pagine legali `/privacy` e `/termini` da rivedere insieme**: quali dati anagrafici di NoiDemoliamo inserire (ragione sociale, P.IVA, sede, email — idealmente info@noidemoliamo.it) e completare i [DA COMPLETARE]
 - **Sito vetrina** (vedi 5.8): la home è fatta; restano le pagine dei servizi, dove mettere le domande e i dati azienda. Poi il dominio noidemoliamo.it da collegare a Vercel
 - **PWA**, messaggi preimpostati admin, pagina Polizia Locale veicoli abbandonati
-- **Prossimi flussi**: asta demolitori (B), commercianti (C), acquisto NoiDemoliamo, `/vendi-auto` (D), area commercianti, fatturazione, statistiche
+- **Prossimi flussi**: asta demolitori (B), commercianti (C), acquisto NoiDemoliamo, area commercianti, fatturazione, statistiche
 
 ### 🟡 DECISIONI ANCORA APERTE
 - ~~Caso 7 (non intestatario): avviso di stop~~ **DECISO (01/08, niente da cambiare)**: la denuncia di smarrimento si accetta senza domande nel flusso (chi l'ha fatta si verifica dai documenti caricati, come per tutti); senza libretto né denuncia vale il normale "ti chiamiamo noi" → "Da contattare". Il flusso già si comporta così

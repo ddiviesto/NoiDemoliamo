@@ -9,6 +9,10 @@ import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndiri
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
+import { RuoloButton, InfoBadge, ErrorBadge, TitoloPasso } from './steps/PezziFlusso'
+import { GuscioFlusso } from './steps/GuscioFlusso'
+import { StepIntestazione } from './steps/StepIntestazione'
+import { articolo, articoloDel, pronomeTuo, nomeVeicolo, veicoloHaCambio, isFemminile } from '@/lib/nomiVeicolo'
 
 // ============================================================
 // ICONE SVG GENERALI
@@ -237,62 +241,6 @@ const ICONE_VEICOLO: Record<TipoMezzo, () => React.ReactNode> = {
 // FRASI DINAMICHE
 // ============================================================
 
-function articolo(tipo: TipoMezzo | null, tipoAltro?: string): string {
-  if (!tipo) return 'il veicolo'
-  if (tipo === 'altro' && tipoAltro?.trim()) return `il ${tipoAltro.trim().toLowerCase()}`
-  const map: Record<TipoMezzo, string> = {
-    autovettura: "l'autovettura", motoveicolo: 'il motoveicolo', ciclomotore: 'il ciclomotore',
-    minicar: 'la minicar', furgone: 'il furgone', imbarcazione: "l'imbarcazione", pullman: 'il pullman',
-    camion: 'il camion', velivolo: 'il velivolo', altro: 'il mezzo',
-  }
-  return map[tipo]
-}
-
-function articoloDel(tipo: TipoMezzo | null, tipoAltro?: string): string {
-  if (!tipo) return 'del veicolo'
-  if (tipo === 'altro' && tipoAltro?.trim()) return `del ${tipoAltro.trim().toLowerCase()}`
-  const map: Record<TipoMezzo, string> = {
-    autovettura: "dell'autovettura", motoveicolo: 'del motoveicolo', ciclomotore: 'del ciclomotore',
-    minicar: 'della minicar', furgone: 'del furgone', imbarcazione: "dell'imbarcazione", pullman: 'del pullman',
-    camion: 'del camion', velivolo: 'del velivolo', altro: 'del mezzo',
-  }
-  return map[tipo]
-}
-
-function pronomeTuo(tipo: TipoMezzo | null, tipoAltro?: string): string {
-  if (!tipo) return 'tuo veicolo'
-  if (tipo === 'altro' && tipoAltro?.trim()) return `tuo ${tipoAltro.trim().toLowerCase()}`
-  const map: Record<TipoMezzo, string> = {
-    autovettura: 'tua autovettura', motoveicolo: 'tuo motoveicolo', ciclomotore: 'tuo ciclomotore',
-    minicar: 'tua minicar', furgone: 'tuo furgone', imbarcazione: 'tua imbarcazione', pullman: 'tuo pullman',
-    camion: 'tuo camion', velivolo: 'tuo velivolo', altro: 'tuo mezzo',
-  }
-  return map[tipo]
-}
-
-function nomeVeicolo(tipo: TipoMezzo | null, tipoAltro?: string): string {
-  if (!tipo) return 'Veicolo'
-  if (tipo === 'altro' && tipoAltro?.trim()) {
-    const t = tipoAltro.trim()
-    return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase()
-  }
-  const map: Record<TipoMezzo, string> = {
-    autovettura: 'Autovettura', motoveicolo: 'Motoveicolo', ciclomotore: 'Ciclomotore',
-    minicar: 'Minicar', furgone: 'Furgone', imbarcazione: 'Imbarcazione', pullman: 'Pullman',
-    camion: 'Camion', velivolo: 'Velivolo', altro: 'Altro mezzo',
-  }
-  return map[tipo]
-}
-
-function veicoloHaCambio(tipo: TipoMezzo | null): boolean {
-  if (!tipo) return true
-  return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'furgone' || tipo === 'pullman' || tipo === 'camion' || tipo === 'altro'
-}
-
-function isFemminile(tipo: TipoMezzo | null): boolean {
-  if (!tipo) return false
-  return tipo === 'autovettura' || tipo === 'minicar' || tipo === 'imbarcazione'
-}
 
 // ============================================================
 // TRADUZIONE ERRORI IN ITALIANO
@@ -335,7 +283,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
     return {
       icona: Icona,
-      titoloBanner: tipo ? `Veicolo: ${nomeVeicolo(tipo, tipoAltro)}` : 'Tipo di veicolo',
+      titoloBanner: 'Tipo di veicolo',
       titoloPagina: 'Che tipo di *veicolo* è?',
       sottoPagina: 'Seleziona il tipo di mezzo per iniziare.',
     }
@@ -344,7 +292,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
     return {
       icona: Icona,
-      titoloBanner: `Identifica: ${nomeVeicolo(tipo, tipoAltro)}`,
+      titoloBanner: 'Identifica il mezzo',
       titoloPagina: `Identifica *${articolo(tipo, tipoAltro)}*`,
       sottoPagina: veicoloHaCambio(tipo) ? 'Anno, km, marca, modello e cambio.' : 'Anno, km, marca e modello.',
     }
@@ -352,7 +300,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
   if (stepKey === 'condizioni-veicolo') {
     return {
       icona: IconaCondizioni,
-      titoloBanner: `Condizioni: ${nomeVeicolo(tipo, tipoAltro)}`,
+      titoloBanner: 'Condizioni',
       titoloPagina: `In che *condizioni* è ${articolo(tipo, tipoAltro)}?`,
       sottoPagina: 'Rispondi alle 4 domande, ti bastano pochi secondi.',
     }
@@ -364,14 +312,14 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     case 'indirizzo':
       return {
         icona: Icona,
-        titoloBanner: `Indirizzo: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloBanner: 'Indirizzo',
         titoloPagina: `*Dove si trova* ${articolo(tipo, tipoAltro)}?`,
         sottoPagina: `Inserisci l'indirizzo esatto dove si trova fisicamente ${articolo(tipo, tipoAltro)}: il demolitore verrà lì a ritirarlo.`,
       }
     case 'targa':
       return {
         icona: Icona,
-        titoloBanner: `Targa: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloBanner: 'Targa',
         titoloPagina: `Qual è la *targa* ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: intestazione === 'targhe_straniere'
           ? 'Inserisci la targa estera così come appare sul mezzo.'
@@ -420,7 +368,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     case 'foto':
       return {
         icona: IconaFoto,
-        titoloBanner: `Foto: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloBanner: 'Foto',
         titoloPagina: `*Foto* ${articoloDel(tipo, tipoAltro)}`,
         sottoPagina: `Le foto ci aiutano a capire le condizioni ${articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto più adatto per il ritiro.`,
       }
@@ -462,7 +410,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     case 'libretto':
       return {
         icona: IconaLibretto,
-        titoloBanner: `Libretto: ${nomeVeicolo(tipo, tipoAltro)}`,
+        titoloBanner: 'Libretto di circolazione',
         titoloPagina: `Hai il *libretto di circolazione* ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: 'Il libretto originale va consegnato al demolitore al momento del ritiro. Così riceverai il primo documento per bloccare o spostare l\'assicurazione.',
       }
@@ -487,62 +435,6 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
 
 // ============================================================
 
-// Evidenzia in blu le parti del titolo racchiuse tra *asterischi*.
-// Es. "Hai il *libretto di circolazione*?" → "libretto di circolazione" in blu.
-function evidenzia(testo: string): React.ReactNode {
-  const parti = testo.split('*')
-  return parti.map((p, i) => (i % 2 === 1 ? <span key={i} style={{ color: '#1D4ED8' }}>{p}</span> : p))
-}
-
-// ⭐ 28/07 sera (mockup B): `uniforme` = tutti i riquadri della lista alla
-// stessa altezza (quella del più alto coi testi a capo) — niente più riquadro
-// che spicca perché il suo titolo va su due righe
-function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder, uniforme }: { iconSvg: React.ReactNode; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean; uniforme?: boolean }) {
-  // Opzione più "solida" e leggibile: bordo netto, icona grande, titolo scuro protagonista.
-  // La selezionata è inconfondibile: bordo blu pieno, sfondo azzurro, icona blu piena.
-  const baseBg = selected ? 'bg-[#EFF6FF]' : errorBorder ? 'bg-white' : 'bg-white hover:bg-blue-50/40'
-  const borderStyle: React.CSSProperties = selected
-    ? { border: '2px solid #1D4ED8', boxShadow: '0 2px 8px rgba(37,99,235,0.12)' }
-    : errorBorder
-      ? { border: '2px solid #FCA5A5' }
-      : { border: '2px solid #D7DCE5' }
-  return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 p-3.5 rounded-[13px] text-left transition-all active:scale-[0.995] ${baseBg}`} style={{ ...borderStyle, minHeight: uniforme ? 92 : undefined }}>
-      <div className={`w-[42px] h-[42px] rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? 'bg-blue-600 text-white' : 'bg-[#DBEAFE] text-blue-600'}`}>
-        {iconSvg}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="font-bold text-[15px] leading-snug" style={{ color: '#0F172A' }}>{label}</div>
-        <div className="text-[12.5px] mt-0.5" style={{ color: selected ? '#1E4E8C' : '#4B5563' }}>{sub}</div>
-      </div>
-      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${selected ? 'border-blue-600 bg-blue-600' : 'border-gray-300 bg-white'}`}>
-        {selected && (
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-        )}
-      </div>
-    </button>
-  )
-}
-
-function InfoBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2.5 rounded-xl p-3 text-[13.5px] leading-relaxed" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1E3A8A' }}>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
-      <span>{children}</span>
-    </div>
-  )
-}
-
-function ErrorBadge({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2.5 rounded-xl p-3 text-[13.5px] leading-relaxed" style={{ background: '#FEF6F6', border: '1.5px solid #F3C8C8', color: '#9B1C1C' }}>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#C0392B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-      <span>{children}</span>
-    </div>
-  )
-}
 
 function getSteps(dati: DatiPratica) {
   const base = ['tipo-veicolo', 'intestazione']
@@ -1040,24 +932,15 @@ export default function IniziaPage() {
     // ⭐ 28/07 sera (mockup approvato): sul TELEFONO /inizia è A TUTTO SCHERMO
     // come home e pratica — bianco fino ai bordi, banner blu fuso con la
     // cornice del browser (theme-color già blu). Su PC resta la card centrata.
-    <main className="min-h-screen flex items-start justify-center p-0 sm:p-4 sm:pt-8 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
-      <div className="bg-white rounded-none sm:rounded-3xl w-full max-w-md shadow-none sm:shadow-lg p-7 relative min-h-screen sm:min-h-0">
-
-        <BannerStep
-          stepKey={curStep}
-          curIdx={idxCorrente}
-          total={total}
-          tipo={tipo}
-          tipoAltro={tipoAltro}
-          intestazione={dati.intestazione}
-          onBack={idxCorrente > 0 ? back : () => router.push(utenteLoggato ? '/dashboard' : '/')}
-        />
-
-        {/* ⭐ 29/07 (mockup A approvato): via la riga logo "NoiDemoliamo" —
-            il brand è già il banner blu, la pagina guadagna aria */}
-        <div className="h-1 bg-gray-100 rounded-full mb-5 mt-1 overflow-hidden">
-          <div className="h-full bg-blue-600 rounded-full transition-all duration-500 ease-out" style={{ width: `${pct}%` }} />
-        </div>
+    <GuscioFlusso
+      servizio="Richiesta demolizione gratuita"
+      mezzo={nomeVeicolo(tipo, tipoAltro)}
+      passo={idxCorrente + 1}
+      totale={total}
+      titoloBanner={meta.titoloBanner}
+      icona={<meta.icona />}
+      onIndietro={idxCorrente > 0 ? back : () => router.push(utenteLoggato ? '/dashboard' : '/')}
+    >
 
         {curStep === 'tipo-veicolo' && (
           <>
@@ -1075,8 +958,7 @@ export default function IniziaPage() {
                 </div>
               </div>
             </div>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <StepTipoVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -1087,8 +969,7 @@ export default function IniziaPage() {
 
         {curStep === 'identifica-veicolo' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <StepIdentificaVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -1099,8 +980,7 @@ export default function IniziaPage() {
 
         {curStep === 'condizioni-veicolo' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            {meta.sottoPagina && <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>}
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <StepCondizioniVeicolo
               dati={dati.veicolo}
               onUpdate={v => setDati(prev => ({ ...prev, veicolo: { ...prev.veicolo, ...v } }))}
@@ -1111,8 +991,7 @@ export default function IniziaPage() {
 
         {curStep === 'indirizzo' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <div className="flex flex-col gap-4">
               {indirizzoConfermato ? (
                 <>
@@ -1209,8 +1088,7 @@ export default function IniziaPage() {
 
         {curStep === 'targa' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <div className="flex flex-col gap-3">
               {erroreTarga && <ErrorBadge>Inserisci la targa per continuare.</ErrorBadge>}
               <input
@@ -1276,8 +1154,7 @@ export default function IniziaPage() {
 
         {curStep === 'cf' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             <div className="flex flex-col gap-3">
               {erroreCf && <ErrorBadge>{cfAccetta11 ? 'Inserisci una partita IVA (11 cifre) o un codice fiscale valido (16 caratteri).' : 'Inserisci un codice fiscale valido di 16 caratteri.'}</ErrorBadge>}
               <div>
@@ -1336,7 +1213,7 @@ export default function IniziaPage() {
 
         {curStep === 'foto' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
+            <TitoloPasso titolo={meta.titoloPagina} />
             <p className="text-[14px] text-gray-700 leading-relaxed mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto corretto.</p>
             <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-sm text-blue-800 mb-4">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
@@ -1539,75 +1416,19 @@ export default function IniziaPage() {
 
         {curStep === 'intestazione' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
-            {erroreIntestazione && <div className="mb-3"><ErrorBadge>Seleziona a chi è intestato il mezzo per continuare.</ErrorBadge></div>}
-            {/* ⭐ 28/07 sera (mockup B): righe di griglia TUTTE uguali — ogni
-                riquadro alto quanto il più alto, a qualsiasi larghezza */}
-            <div className="grid gap-2" style={{ gridAutoRows: '1fr' }}>
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-                label="A un privato cittadino"
-                sub="Il proprietario è una persona, non un'azienda"
-                selected={dati.intestazione === 'me'}
-                onClick={() => setIntestazione('me')}
-                errorBorder={erroreIntestazione}
-                uniforme
-              />
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="1"/><line x1="9" y1="7" x2="10" y2="7"/><line x1="14" y1="7" x2="15" y2="7"/><line x1="9" y1="11" x2="10" y2="11"/><line x1="14" y1="11" x2="15" y2="11"/><path d="M9 22v-4h6v4"/></svg>}
-                label="A una società o azienda"
-                sub="Mezzo intestato a una ditta con partita IVA"
-                selected={dati.intestazione === 'societa'}
-                onClick={() => setIntestazione('societa')}
-                errorBorder={erroreIntestazione}
-                uniforme
-              />
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 2048 2048" fill="currentColor"><path d="M1504 128q113 0 212 43t173 116t116 173t43 212q0 109-41 209t-118 176l-865 864l-865-864Q83 981 42 881T0 672q0-112 42-211t117-173t173-117t212-43q83 0 148 19t120 52t106 81t106 103q55-56 105-103t106-80t121-53t148-19m294 838q59-59 90-135t31-159q0-87-32-162t-88-131t-132-87t-163-32q-84 0-149 26t-120 70t-105 97t-106 111q-54-54-105-109t-106-99t-121-72t-148-28q-86 0-162 32t-132 89t-89 133t-33 162q0 83 31 159t91 135l774 774z"/></svg>}
-                label="A una persona deceduta"
-                sub="Il proprietario è venuto a mancare"
-                selected={dati.intestazione === 'deceduto'}
-                onClick={() => setIntestazione('deceduto')}
-                errorBorder={erroreIntestazione}
-                uniforme
-              />
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="9" cy="7" r="3"/><circle cx="17" cy="7" r="3"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M19 15a4 4 0 0 1 3 4v2"/></svg>}
-                label="A un'associazione"
-                sub="Mezzo intestato a un ente o associazione"
-                selected={dati.intestazione === 'associazione'}
-                onClick={() => setIntestazione('associazione')}
-                errorBorder={erroreIntestazione}
-                uniforme
-              />
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 3h5v5"/><path d="M21 3l-7 7"/><path d="M8 21H3v-5"/><path d="M3 21l7-7"/></svg>}
-                label="Passaggio di proprietà non completato"
-                sub="Non risulto proprietario sui documenti"
-                selected={dati.intestazione === 'altra_persona'}
-                onClick={() => setIntestazione('altra_persona')}
-                errorBorder={erroreIntestazione}
-                uniforme
-              />
-              <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15 15 0 0 1 0 20a15 15 0 0 1 0-20"/></svg>}
-                label="Il mezzo ha targhe straniere"
-                sub="Veicolo immatricolato all'estero"
-                selected={dati.intestazione === 'targhe_straniere'}
-                onClick={() => setIntestazione('targhe_straniere')}
-                errorBorder={erroreIntestazione}
-                uniforme
-              />
-            </div>
-            <button onClick={handleContinuaIntestazione} className="btn-pagina mt-4">Continua</button>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
+            <StepIntestazione
+              valore={dati.intestazione}
+              onScegli={setIntestazione}
+              onContinua={handleContinuaIntestazione}
+              errore={erroreIntestazione}
+            />
           </>
         )}
 
         {curStep === 'eredi' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreEredi && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1645,8 +1466,7 @@ export default function IniziaPage() {
 
         {curStep === 'societa-fallita' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreSocietaFallita && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1672,8 +1492,7 @@ export default function IniziaPage() {
 
         {curStep === 'fermo' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreFermo && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1724,8 +1543,7 @@ export default function IniziaPage() {
 
         {curStep === 'consegna' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreConsegna && <div className="mb-3"><ErrorBadge>Seleziona chi consegnerà il mezzo per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -1785,8 +1603,7 @@ export default function IniziaPage() {
 
         {curStep === 'libretto' && (
           <>
-            <h1 className="text-[21px] font-extrabold text-[#0F172A] tracking-tight mb-1">{evidenzia(meta.titoloPagina)}</h1>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-4">{meta.sottoPagina}</p>
+            <TitoloPasso titolo={meta.titoloPagina} sotto={meta.sottoPagina} />
             {erroreLibretto && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
@@ -2040,9 +1857,7 @@ export default function IniziaPage() {
           </>
         )}
 
-      </div>
-
       <AiutoWhatsApp />
-    </main>
+    </GuscioFlusso>
   )
 }

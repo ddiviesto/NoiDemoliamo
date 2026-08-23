@@ -138,3 +138,34 @@ body {
   transform: translateY(-6px);
   box-shadow: 0 30px 66px rgba(15, 27, 51, 0.16);
 }
+
+/* ============================================================
+   I FLUSSI SU PC (demolizione e valutazione)
+   ⭐ 19/08 (impianto C approvato da Davide): sul TELEFONO resta tutto
+   com'è (card bianca a tutto schermo con la testata blu). Su PC il
+   flusso entra nel mondo del sito nuovo: fondo lilla con gli aloni,
+   niente scatola, titolo grande con la parola in sfumatura.
+   ============================================================ */
+.flusso-scena { background: #ffffff; }
+
+@media (min-width: 640px) {
+  .flusso-scena {
+    background:
+      radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228, 236, 255, 0) 62%),
+      radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233, 227, 255, 0) 62%),
+      radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222, 214, 251, 0) 66%),
+      #F5F3FE;
+  }
+  /* su PC la parola evidenziata del titolo va in sfumatura blu-viola */
+  .flusso-titolo .parola {
+    background: linear-gradient(100deg, #2563eb, #7c3aed);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+/* le tessere del flusso su PC si sollevano al passaggio del mouse */
+@media (min-width: 640px) and (hover: hover) {
+  .flusso-scena button:hover { transition: transform .16s, box-shadow .16s; }
+}

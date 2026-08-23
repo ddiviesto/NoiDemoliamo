@@ -177,8 +177,7 @@ export default function Home() {
             </>}
           />
           <Porta
-            href={'https://wa.me/393518280493?text=' + encodeURIComponent('Ciao, vorrei sapere quanto vale la mia auto prima di rottamarla.')}
-            esterno
+            href="/vendi-auto"
             titolo="Voglio sapere quanto vale"
             pillola="Valutazione gratuita"
             testo="Prima di rottamarla senti la cifra: se conviene venderla, l'acquirente lo troviamo Noi."
