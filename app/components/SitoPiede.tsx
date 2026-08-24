@@ -11,6 +11,7 @@
 
 import Link from 'next/link'
 import { WHATSAPP_NUMERO } from './SitoPezzi'
+import Marchio from './Marchio'
 
 function Colonna({ titolo, children }: { titolo: string; children: React.ReactNode }) {
   return (
@@ -75,7 +76,7 @@ export default function SitoPiede() {
         </div>
 
         <div className="flex flex-wrap justify-between gap-3" style={{ paddingTop: 20, fontSize: 12.5, color: '#A9C4FF' }}>
-          <div>NoiDemoliamo</div>
+          <div><Marchio misura={13} chiaro /></div>
           <div>Demolizione auto gratuita in tutta Italia</div>
         </div>
       </div>

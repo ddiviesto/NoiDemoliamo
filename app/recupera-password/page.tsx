@@ -84,7 +84,7 @@ export default function RecuperaPassword() {
             </svg>
           </Link>
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
+            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
             <div className="text-sm font-semibold leading-tight">Recupera la password</div>
           </div>
         </div>

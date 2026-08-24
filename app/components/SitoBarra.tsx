@@ -12,6 +12,7 @@
 
 import Link from 'next/link'
 import Image from 'next/image'
+import Marchio from './Marchio'
 
 export default function SitoBarra() {
   return (
@@ -33,7 +34,7 @@ export default function SitoBarra() {
           priority
           style={{ borderRadius: 10 }}
         />
-        <span style={{ fontSize: 15.5, fontWeight: 700, color: '#0F1B33', letterSpacing: '-0.3px' }}>NoiDemoliamo</span>
+        <Marchio misura={17} />
       </Link>
 
       <div className="flex items-center gap-0.5">

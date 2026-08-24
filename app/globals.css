@@ -404,3 +404,34 @@ body {
 
 
 
+
+/* ============================================================
+   IL MARCHIO — la scritta "NoiDemoliamo"
+   ⭐ 25/08 (scelto da Davide sul mockup: carattere Outfit, "Noi" leggero):
+   il nome ha un carattere SUO, diverso da quello dei testi. Prima era
+   scritto col carattere di sistema e non sembrava un marchio, sembrava
+   una parola qualsiasi.
+   ⚠️ Vale SOLO per il nome scritto come marchio (barra del sito, piede,
+   isola del flusso, testate, sidebar). Quando "NoiDemoliamo" compare
+   dentro una frase o come firma di un messaggio resta testo normale.
+   ============================================================ */
+.marchio {
+  font-family: var(--font-marchio), -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.6px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.marchio .noi { font-weight: 500; }
+.marchio .dem { font-weight: 800; }
+/* sul chiaro: "Noi" in grigio-blu, "Demoliamo" quasi nero */
+.marchio { color: #0F1B33; }
+.marchio .noi { color: #46536B; }
+/* sul blu (testate, piede, email): "Noi" azzurro chiaro, "Demoliamo" bianco */
+.marchio--chiaro { color: #fff; }
+.marchio--chiaro .noi { color: #BFD3F5; }
+/* la versione piccola in maiuscolo sopra i titoli delle testate blu */
+.marchio--occhiello {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.6px;
+}

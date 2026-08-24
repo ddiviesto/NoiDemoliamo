@@ -165,7 +165,7 @@ export default function DashboardCliente() {
           {/* Logo vero (variante A su mockup 22/07): lo stesso di /inizia e login */}
           <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={38} height={38} className="rounded-xl flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
+            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
             <div className="text-sm font-semibold leading-tight truncate">
               {nomeUtente ? `Ciao, ${nomeUtente}!` : 'La tua area personale'}
             </div>

@@ -25,7 +25,7 @@ export default function Privacy() {
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
           <TornaIndietro />
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
+            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
             <div className="text-sm font-semibold leading-tight">Informativa privacy</div>
           </div>
         </div>

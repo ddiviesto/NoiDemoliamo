@@ -65,7 +65,7 @@ export default function Login() {
                 <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
               </svg>
             </Link>
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-blue-100">NoiDemoliamo</div>
+            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
           </div>
           <h1 className="text-[22px] font-bold mt-4 leading-tight">Bentornato</h1>
           <p className="text-[13px] mt-1" style={{ color: '#DBEAFE' }}>Entra nella tua area personale</p>

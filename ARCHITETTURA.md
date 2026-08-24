@@ -720,7 +720,8 @@ La vecchia cardina bianca centrata **non esiste più**: `/` è il sito vetrina. 
 
 ## 6.1 Tipografia — REGOLA FISSA
 
-- **Font: quello di sistema** (Tailwind sans), su TUTTE le pagine. **NESSUN font custom.** Inter è stato provato e bocciato: pagine con font diversi tra loro non piacciono.
+- **Font dei TESTI: quello di sistema** (Tailwind sans), su TUTTE le pagine. **NESSUN font custom nei testi.** Inter è stato provato e bocciato: pagine con font diversi tra loro non piacciono.
+- ⭐ **UNICA ECCEZIONE, IL MARCHIO (25/08, scelto da Davide sul mockup)**: la scritta **NoiDemoliamo** ha un carattere suo, **Outfit**, con **"Noi" leggero (500)** e **"Demoliamo" pieno (800)**. Prima era scritta col carattere di sistema e non sembrava un marchio, sembrava una parola qualsiasi. Sta in **un componente solo**, `app/components/Marchio.tsx` (`<Marchio misura chiaro occhiello />`), veste in `globals.css` (`.marchio`), carattere caricato in `layout.tsx`. Si usa **solo dove il nome è marchio**: barra del sito, piede, isola del flusso, testate blu, sidebar. ⚠️ Quando "NoiDemoliamo" compare **dentro una frase** o come **firma di un messaggio** in chat resta testo normale.
 - **Titoli pagina**: `text-xl font-semibold text-gray-900` / `text-lg font-bold` (dashboard)
 - **Body** `text-sm text-gray-700` · **Caption** `text-xs text-gray-500` · **Micro** `text-[10px]`/`text-[11px]`
 - ⭐ **Grassetti: massimo 700.** I pesi 800 "urlano" e sono bocciati. I titoli delle card sono 14/700, i sottotitoli 11 grigi, i testi secondari 600.

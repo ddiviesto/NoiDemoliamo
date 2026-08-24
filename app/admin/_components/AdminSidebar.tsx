@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
+import Marchio from '../../components/Marchio'
 import { supabase } from '@/lib/supabase'
 
 // ============================================================
@@ -115,7 +116,7 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
         {/* Il logo VERO in alto a sinistra (23/07, come nell'area cliente) */}
         <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={36} height={36} className="rounded-xl flex-shrink-0" />
         <div>
-          <div className="text-sm font-bold leading-none">NoiDemoliamo</div>
+          <div className="leading-none"><Marchio misura={15} chiaro /></div>
           <div className="text-[10px] font-semibold uppercase tracking-wide mt-1" style={{ color: '#BFDBFE' }}>Admin</div>
         </div>
       </div>
