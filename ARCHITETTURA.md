@@ -582,7 +582,7 @@ Riusa i passi 1, 3, 6, 11, 12, 13 del flusso demolizione. **Non** chiede lo spaz
 | **`/inizia`** | ✅ | Completo e collaudato; full-bleed su mobile |
 | **`/privacy` e `/termini`** | 🟡 | Bozze complete, con segnaposto [DA COMPLETARE] (ragione sociale, P.IVA, sede, email). Da rivedere con Davide |
 | **`/dashboard`** (home cliente) | ✅ | Card pratiche + "Aggiungi un altro veicolo" + pannello Impostazioni |
-| **`/dashboard/[id]`** | ✅ | 4 tab: **Documenti · Ritiro · Stato · Chat** |
+| **`/dashboard/[id]`** | ✅ | 4 tab: **Documenti · Ritiro · Stato · Chat**. ⭐ 24/08: sul TELEFONO le quattro linguette stanno **in fondo allo schermo** (barra bianca fissa, icona sopra e parola sotto, la voce aperta azzurra), dove arriva il pollice; su PC restano sopra il contenuto, a pillole. Veste in `globals.css` (`.fila-linguette`, `.linguetta`); il contenuto tiene lo spazio con `.spazio-linguette` e il tondo WhatsApp sale sopra la barra (`<AiutoWhatsApp alzato />`) |
 | **`/admin`** | ✅ | **TUTTO il CRM in una pagina**: lista + tendina sotto la riga + pannelli. Ad altezza schermo: scorre solo la lista |
 | **`/admin/demolitori`** | ✅ | Lista a card + tendina sotto la riga (la pagina di dettaglio non esiste più) |
 | **`/demolitore`** | ✅ | Home e scheda pratica a tendina FOTOCOPIA del CRM, visore documenti CONDIVISO in sola lettura, pagina **Ritiri** (agenda a timeline + impegni personali) |

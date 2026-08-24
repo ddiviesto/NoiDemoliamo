@@ -291,3 +291,64 @@ body {
   .scelte-fila { flex-direction: row; }
 }
 
+
+/* ============================================================
+   LINGUETTE DELLA PRATICA (area cliente)
+   ⭐ 24/08 (variante C approvata da Davide sul mockup dell'app):
+   sul TELEFONO le quattro linguette (Documenti · Ritiro · Stato · Chat)
+   NON stanno più sopra il contenuto ma in fondo allo schermo, dove arriva
+   il pollice: barra bianca fissa, icona sopra e parola sotto, la voce
+   aperta si accende di azzurro. Su PC restano dov'erano, a pillole.
+   ============================================================ */
+.fila-linguette {
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 40;
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, .97);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #ECEFF4;
+  box-shadow: 0 -6px 20px rgba(15, 27, 51, .06);
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+}
+.linguetta {
+  --sfondo: #fff;                     /* serve al bordino del contatore */
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 7px 2px;
+  border-radius: 14px;
+  background: transparent;
+  color: #8A94A3;
+  transition: color .16s, background .16s;
+}
+.linguetta--attiva { --sfondo: #EFF6FF; background: #EFF6FF; color: #1D4ED8; }
+
+/* lo spazio sotto al contenuto, così la barra non copre l'ultima riga */
+.spazio-linguette { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+
+@media (min-width: 640px) {
+  .fila-linguette {
+    position: static;
+    background: #EFF3F9;
+    backdrop-filter: none;
+    border-top: none;
+    box-shadow: none;
+    border-radius: 16px;
+    padding: 4px;
+  }
+  .linguetta { --sfondo: #EFF3F9; min-height: 58px; padding: 10px 8px; border-radius: 12px; color: #5F6C7E; }
+  .linguetta--attiva { --sfondo: #2563eb; background: #2563eb; color: #fff; }
+  .spazio-linguette { padding-bottom: 16px; }
+}
+
+/* il tondo verde di WhatsApp sale sopra la barra delle linguette (solo
+   telefono: su PC la barra sta nel flusso e non copre niente) */
+.whatsapp-alzato { bottom: calc(92px + env(safe-area-inset-bottom)) !important; }
+@media (min-width: 640px) {
+  .whatsapp-alzato { bottom: 16px !important; }
+}
+

@@ -387,7 +387,7 @@ export default function DettaglioPraticaCliente() {
           </span>
         </div>
 
-        <div className="p-4 flex flex-col gap-3">
+        <div className="p-4 flex flex-col gap-3 spazio-linguette">
 
           {/* BANNER STATO DINAMICO — ⭐ 28/07 sera: la versione `tenue` è
               rosa di famiglia con testo rosso scuro (via il rosso pieno) */}
@@ -424,8 +424,10 @@ export default function DettaglioPraticaCliente() {
             </button>
           )}
 
-          {/* TAB BAR a pillole */}
-          <div className="rounded-2xl p-1 flex gap-1" style={{ background: '#EFF3F9' }}>
+          {/* LE QUATTRO LINGUETTE — ⭐ 24/08 (variante C approvata): sul
+              telefono scendono in fondo allo schermo (barra fissa, sotto il
+              pollice), su PC restano qui a pillole. Veste in globals.css */}
+          <div className="fila-linguette">
             <TabButton attivo={tab === 'documenti'} onClick={() => setTab('documenti')} Icona={IconaDocumenti} label="Documenti" badge={docRifiutati > 0 ? docRifiutati : 0} />
             <TabButton attivo={tab === 'ritiro'} onClick={apriTabRitiro} Icona={IconaRitiro} label="Ritiro" puntino={ritiroNuovo} />
             <TabButton attivo={tab === 'stato'} onClick={() => setTab('stato')} Icona={IconaStato} label="Stato" />
@@ -452,7 +454,7 @@ export default function DettaglioPraticaCliente() {
 
       {/* ⭐ 29/07 (mockup approvato): sulla tab CHAT niente bottone WhatsApp
           — lì si parla già con NoiDemoliamo, e copriva il tasto d'invio */}
-      {tab !== 'chat' && <AiutoWhatsApp />}
+      {tab !== 'chat' && <AiutoWhatsApp alzato />}
     </main>
   )
 }
@@ -471,10 +473,7 @@ function TabButton(props: {
   return (
     <button
       onClick={props.onClick}
-      className="flex-1 rounded-xl py-2.5 px-2 flex flex-col items-center gap-1 transition-all relative min-h-[58px]"
-      style={props.attivo
-        ? { background: '#2563eb', color: '#fff' }
-        : { background: 'transparent', color: '#5F6C7E' }}
+      className={`linguetta${props.attivo ? ' linguetta--attiva' : ''}`}
     >
       {/* Il contatore sta ATTACCATO all'icona (non sperso nell'angolo del
           riquadro), col bordino del colore dello sfondo per staccare bene */}
@@ -483,7 +482,7 @@ function TabButton(props: {
         {mostraBadge && (
           <span
             className="absolute min-w-[18px] h-[18px] text-[10px] font-bold px-1 rounded-full leading-none flex items-center justify-center bg-red-500 text-white"
-            style={{ top: -7, right: -13, border: `2px solid ${props.attivo ? '#2563eb' : '#EFF3F9'}` }}
+            style={{ top: -7, right: -13, border: '2px solid var(--sfondo)' }}
           >
             {props.badge}
           </span>
@@ -491,7 +490,7 @@ function TabButton(props: {
         {!mostraBadge && props.puntino && (
           <span
             className="absolute w-[12px] h-[12px] rounded-full bg-red-500"
-            style={{ top: -4, right: -8, border: `2px solid ${props.attivo ? '#2563eb' : '#EFF3F9'}` }}
+            style={{ top: -4, right: -8, border: '2px solid var(--sfondo)' }}
           />
         )}
       </span>

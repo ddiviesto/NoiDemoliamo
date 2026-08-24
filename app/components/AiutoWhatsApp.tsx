@@ -12,7 +12,10 @@ import { useEffect, useState } from 'react'
 
 const WHATSAPP_URL = 'https://wa.me/393518280493'
 
-export default function AiutoWhatsApp() {
+// ⭐ 24/08: `alzato` = c'è la barra delle linguette in fondo allo schermo
+// (scheda pratica del cliente sul telefono), quindi il tondo verde sale
+// sopra la barra invece di finirci sotto. Su PC la barra non c'è: resta giù.
+export default function AiutoWhatsApp({ alzato }: { alzato?: boolean } = {}) {
   const [mostraEtichetta, setMostraEtichetta] = useState(true)
   // ⭐ 29/07 (mockup approvato, giro iPhone): mentre il cliente SCRIVE il
   // bottone si fa da parte — con la tastiera aperta copriva Salva e i campi
@@ -67,7 +70,7 @@ export default function AiutoWhatsApp() {
   }, [])
 
   return (
-    <div style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, opacity: scrivendo || inDiscesa ? 0 : 1, transform: scrivendo || inDiscesa ? 'scale(0.6)' : 'scale(1)', pointerEvents: scrivendo || inDiscesa ? 'none' : 'auto', transition: 'opacity 0.25s ease, transform 0.25s ease' }}>
+    <div className={alzato ? 'whatsapp-alzato' : undefined} style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, display: 'flex', alignItems: 'center', gap: 8, opacity: scrivendo || inDiscesa ? 0 : 1, transform: scrivendo || inDiscesa ? 'scale(0.6)' : 'scale(1)', pointerEvents: scrivendo || inDiscesa ? 'none' : 'auto', transition: 'opacity 0.25s ease, transform 0.25s ease' }}>
       {mostraEtichetta && (
         <span style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 20, padding: '6px 12px', fontSize: 11.5, fontWeight: 600, color: '#374151', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>
           Serve aiuto?
