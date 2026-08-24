@@ -361,25 +361,25 @@ body {
    porte. Il movimento lo comanda ScenaHome.tsx, qui c'è solo la veste.
    ⚠️ Sotto i 640px la scena non esiste: le porte si incolonnano.
    ============================================================ */
+/* ⭐ 25/08 (Davide): la scena occupa TUTTA la larghezza delle due porte, così
+   carro, 500 e acquirente stanno larghi e non sembrano ammucchiati. */
 .scena-home {
   position: relative;
   height: 260px;
-  max-width: 1040px;
-  margin: 26px auto 6px;
+  margin: 26px auto 10px;
 }
+/* ⚠️ Misure in PERCENTUALE, non in pixel: così i tre restano nelle stesse
+   proporzioni a qualsiasi larghezza. Il rapporto è quello vero (il carro è
+   lungo il doppio della 500, la persona le arriva sopra il tetto).
+   ⭐ 25/08 (Davide: "distanziali di più"): il carro esce un po' dal bordo a
+   sinistra e la 500 sta appena a destra del centro, altrimenti si appoggia
+   sulla punta della rampa e sembrano ammucchiati. */
 .scena-posto { position: absolute; bottom: 0; }
-/* scala vera: il carro è lungo il doppio della 500 */
-.scena-sx { left: -44px; width: 560px; }
+.scena-sx { left: -7%; width: 44%; }
 .scena-sx img { transform: scaleX(-1); }        /* rampa rivolta verso la 500 */
-.scena-centro { left: 50%; transform: translateX(-50%); width: 280px; z-index: 3; }
-.scena-dx { right: 10px; }
+.scena-centro { left: 56%; transform: translateX(-50%); width: 22%; z-index: 3; }
+.scena-dx { right: -1%; width: 8.4%; }
 .scena-posto img { display: block; width: 100%; height: auto; }
-.scena-dx img { width: auto; height: 172px; }   /* la persona è alta 1,70 m */
-
-.scena-terra {
-  position: absolute; left: 0; right: 0; bottom: 14px; height: 1px;
-  background: linear-gradient(90deg, rgba(15,27,51,0), rgba(15,27,51,.14) 20%, rgba(15,27,51,.14) 80%, rgba(15,27,51,0));
-}
 .scena-ombra {
   position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
   width: 76%; height: 14px; border-radius: 50%;
@@ -401,4 +401,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .scena-auto, .scena-meta, .scena-ombra { transition: none; }
 }
+
+
 

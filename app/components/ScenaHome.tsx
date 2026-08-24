@@ -135,8 +135,8 @@ export default function ScenaHome() {
 
   return (
     <div ref={palco} className="scena-home hidden sm:block" aria-hidden="true">
-      <span className="scena-terra" />
-
+      {/* ⚠️ 25/08 (Davide): niente riga di terra sotto i mezzi, tagliava le
+          ruote a metà. A tenere a terra la 500 basta la sua ombra. */}
       <span className="scena-posto scena-sx" data-posto="sx">
         <span className="scena-meta">
           <Image src="/carro-attrezzi.png" alt="" width={1200} height={477} priority />
