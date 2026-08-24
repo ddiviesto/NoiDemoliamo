@@ -9,7 +9,7 @@ import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndiri
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
-import { RuoloButton, InfoBadge, ErrorBadge } from './steps/PezziFlusso'
+import { RuoloButton, InfoBadge, ErrorBadge, CampoModulo, SceltaPillola, classeCampo } from './steps/PezziFlusso'
 import { GuscioFlusso } from './steps/GuscioFlusso'
 import { StepIntestazione } from './steps/StepIntestazione'
 import { articolo, articoloDel, pronomeTuo, nomeVeicolo, veicoloHaCambio, isFemminile } from '@/lib/nomiVeicolo'
@@ -509,25 +509,6 @@ function BannerStep({ stepKey, curIdx, total, tipo, tipoAltro, intestazione, onB
 }
 
 // ============================================================
-function SpazioPill({ label, color, selected, onClick, icon }: { label: string; color: 'green' | 'amber' | 'red'; selected: boolean; onClick: () => void; icon: React.ReactNode }) {
-  const colors = {
-    green: selected ? 'border-green-500 bg-green-50 text-green-700 shadow-[0_0_0_3px_rgba(34,197,94,0.15)]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-green-300',
-    amber: selected ? 'border-amber-500 bg-amber-50 text-amber-700 shadow-[0_0_0_3px_rgba(245,158,11,0.15)]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-amber-300',
-    red: selected ? 'border-red-500 bg-red-50 text-red-700 shadow-[0_0_0_3px_rgba(239,68,68,0.15)]' : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-red-300',
-  }
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border-[1.5px] text-center transition-all ${colors[color]}`}
-    >
-      <div>{icon}</div>
-      <span className="text-[11px] font-medium leading-tight">{label}</span>
-    </button>
-  )
-}
-
-// ============================================================
 
 // Chiave della bozza del modulo in sessionStorage (vive finché la scheda è aperta)
 const BOZZA_KEY = 'noidemoliamo-bozza-inizia'
@@ -945,7 +926,9 @@ export default function IniziaPage() {
     }
   }
 
-  const inputClass = (err?: boolean) => `w-full border rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400 ${err ? 'border-red-300 bg-red-50' : 'border-gray-200'}`
+  // ⭐ 24/08: ogni casella da scrivere è una pillola bianca (classeCampo,
+  // veste in globals.css). Prima erano riquadri grigi con l'etichetta dentro.
+  const inputClass = (err?: boolean) => classeCampo(err)
 
   return (
     // ⭐ 28/07 sera (mockup approvato): sul TELEFONO /inizia è A TUTTO SCHERMO
@@ -1048,35 +1031,20 @@ export default function IniziaPage() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2">
-                      <SpazioPill
-                        label="Accesso libero" color="green"
-                        selected={dati.spazioCarroAttrezzi === 'libero'}
-                        onClick={() => setSpazio('libero')}
-                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                      />
-                      <SpazioPill
-                        label="Spazio stretto" color="amber"
-                        selected={dati.spazioCarroAttrezzi === 'stretto'}
-                        onClick={() => setSpazio('stretto')}
-                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>}
-                      />
-                      <SpazioPill
-                        label="Non passa" color="red"
-                        selected={dati.spazioCarroAttrezzi === 'no'}
-                        onClick={() => setSpazio('no')}
-                        icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>}
-                      />
+                    <div className="scelte-fila">
+                      <SceltaPillola label="Accesso libero" larga presa={dati.spazioCarroAttrezzi === 'libero'} onClick={() => setSpazio('libero')} />
+                      <SceltaPillola label="Spazio stretto" larga presa={dati.spazioCarroAttrezzi === 'stretto'} onClick={() => setSpazio('stretto')} />
+                      <SceltaPillola label="Non passa" larga presa={dati.spazioCarroAttrezzi === 'no'} onClick={() => setSpazio('no')} />
                     </div>
 
                     <div className="mt-3">
-                      <label className="block text-xs font-medium text-gray-600 mb-1">Note aggiuntive (opzionale)</label>
+                      <label className="campo-etichetta campo-etichetta--dentro">Note aggiuntive (opzionale)</label>
                       <textarea
                         value={dati.spazioCarroAttrezziNote}
                         onChange={e => update({ spazioCarroAttrezziNote: e.target.value })}
                         placeholder="Es. Cancello largo 2,5 metri; cortile interno; salita ripida..."
                         rows={2}
-                        className="w-full border border-gray-200 rounded-xl px-3 py-2 text-base text-gray-900 bg-white outline-none transition-all focus:border-blue-500 resize-none placeholder:text-gray-400"
+                        className={classeCampo(false, 'campo-lungo')}
                       />
                     </div>
                   </div>
@@ -1097,9 +1065,9 @@ export default function IniziaPage() {
                     valoreIniziale={dati.indirizzo}
                     onSelezione={onSelezioneIndirizzo}
                   />
-                  <p className="text-[11px] text-gray-400 -mt-2 px-1">
-                    Inizia a digitare e seleziona un suggerimento per confermare.
-                  </p>
+                  {/* ⭐ 24/08: la riga di istruzioni sta DENTRO il campo
+                      indirizzo, perché cambia da sola quando i suggerimenti
+                      di Google non arrivano e si va avanti a mano. */}
                 </>
               )}
             </div>
@@ -1114,8 +1082,8 @@ export default function IniziaPage() {
                 type="text"
                 defaultValue={dati.targa}
                 onChange={e => { update({ targa: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), targaSkipped: false }); setErroreTarga(false) }}
-                placeholder="Es. AB 123 CD"
-                className={`${inputClass(erroreTarga)} uppercase`}
+                placeholder="AB 123 CD"
+                className={classeCampo(erroreTarga, 'campo-pillola--grande uppercase')}
               />
 
               {dati.intestazione !== 'targhe_straniere' && (
@@ -1128,18 +1096,18 @@ export default function IniziaPage() {
                 )}
                 <div className="text-sm font-semibold text-gray-900 mb-0.5">Le targhe sono fisicamente sul mezzo?</div>
                 <div className="text-xs text-gray-600 mb-3">Controlla che siano montate sul veicolo.</div>
-                <div className="grid grid-cols-2 gap-2">
-                  <SpazioPill
-                    label="Sì, presenti" color="green"
-                    selected={dati.targhePresenti === 'si'}
+                <div className="scelte-fila">
+                  <SceltaPillola
+                    label="Sì, presenti" larga
+                    presa={dati.targhePresenti === 'si'}
+                    errore={erroreTarghePresenti}
                     onClick={() => { update({ targhePresenti: 'si' }); setErroreTarghePresenti(false) }}
-                    icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                   />
-                  <SpazioPill
-                    label="No, smarrite o rubate" color="red"
-                    selected={dati.targhePresenti === 'no'}
+                  <SceltaPillola
+                    label="No, smarrite o rubate" larga
+                    presa={dati.targhePresenti === 'no'}
+                    errore={erroreTarghePresenti}
                     onClick={() => { update({ targhePresenti: 'no' }); setErroreTarghePresenti(false) }}
-                    icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>}
                   />
                 </div>
                 {dati.targhePresenti === 'no' && (
@@ -1180,11 +1148,11 @@ export default function IniziaPage() {
                   type="text"
                   value={dati.cf}
                   onChange={e => { update({ cf: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), cfSkipped: false }); setErroreCf(false) }}
-                  placeholder={cfAccetta11 ? 'Es. 12345678901' : 'Es. RSSMRA80A01H501Z'}
-                  className={`${inputClass(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16 && !(cfAccetta11 && dati.cf.length === 11)))} uppercase tracking-wider`}
+                  placeholder={cfAccetta11 ? '12345678901' : 'RSSMRA80A01H501Z'}
+                  className={classeCampo(erroreCf || (dati.cf.length > 0 && dati.cf.length !== 16 && !(cfAccetta11 && dati.cf.length === 11)), 'campo-pillola--grande uppercase')}
                   maxLength={16}
                 />
-                <div className="flex items-center justify-between mt-1.5 px-1">
+                <div className="flex items-center justify-between mt-2 px-4">
                   <span className={`text-xs ${
                     dati.cf.length === 16 || (cfAccetta11 && dati.cf.length === 11)
                       ? 'text-green-600 font-medium'
@@ -1579,8 +1547,7 @@ export default function IniziaPage() {
             {dati.consegna === 'delegato' && (
               <div className="mt-3 flex flex-col gap-3">
                 <InfoBadge>Nella tua area personale troverai la delega già compilata: basterà scaricarla, firmarla e consegnarla al ritiro insieme ai documenti del delegato.</InfoBadge>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Nome e cognome del delegato</label>
+                <CampoModulo label="Nome e cognome del delegato">
                   <input
                     type="text"
                     defaultValue={dati.delegatoNome}
@@ -1588,9 +1555,11 @@ export default function IniziaPage() {
                     placeholder="Mario Rossi"
                     className={inputClass(erroreDelegato.nome)}
                   />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Telefono del delegato</label>
+                </CampoModulo>
+                <CampoModulo
+                  label="Telefono del delegato"
+                  aiuto="Lo useremo solo per avvisare il delegato e accordarci sul giorno del ritiro. Nessun altro utilizzo."
+                >
                   <input
                     type="tel"
                     inputMode="tel"
@@ -1599,13 +1568,7 @@ export default function IniziaPage() {
                     placeholder="+39 333 1234567"
                     className={inputClass(erroreDelegato.telefono)}
                   />
-                  <p className="flex items-start gap-1.5 text-[11px] text-gray-500 mt-1.5 px-1 leading-relaxed">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5 text-blue-500">
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                    </svg>
-                    <span>Lo useremo solo per avvisare il delegato e accordarci sul giorno del ritiro. Nessun altro utilizzo.</span>
-                  </p>
-                </div>
+                </CampoModulo>
               </div>
             )}
 
@@ -1760,40 +1723,27 @@ export default function IniziaPage() {
             )}
 
             <div className="flex flex-col gap-3">
-              <div>
-                <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" /><circle cx="12" cy="7" r="4" /></svg>
-                  Il tuo nome e cognome
-                </label>
+              {/* ⭐ 24/08: etichette nude, senza iconcine blu: con le pillole
+                  bianche facevano rumore e non aggiungevano niente. */}
+              <CampoModulo label="Il tuo nome e cognome">
                 <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAccount(prev => ({ ...prev, nome: false })) }} placeholder="Mario Rossi" className={inputClass(erroreAccount.nome)} />
-              </div>
-              <div>
-                <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" /></svg>
-                  Il tuo numero di telefono
-                </label>
+              </CampoModulo>
+              <CampoModulo
+                label="Il tuo numero di telefono"
+                aiuto="Lo usiamo solo per coordinare il ritiro e aggiornarti sulla tua pratica. Nessuna chiamata commerciale."
+              >
                 <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAccount(prev => ({ ...prev, telefono: false })) }} placeholder="+39 333 1234567" className={inputClass(erroreAccount.telefono)} />
-                <p className="flex items-start gap-1.5 text-[11px] text-gray-500 mt-1.5 px-1 leading-relaxed">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5 text-blue-500">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-                  </svg>
-                  <span>Lo usiamo solo per coordinare il ritiro e aggiornarti sulla tua pratica. Nessuna chiamata commerciale.</span>
-                </p>
-              </div>
+              </CampoModulo>
               {!utenteLoggato && (
                 <>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><rect x="2" y="4" width="20" height="16" rx="3" /><path d="m2 7 10 6 10-6" /></svg>
-                      La tua email
-                    </label>
+                  <CampoModulo label="La tua email">
                     <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
-                  </div>
-                  <div>
-                    <label className="flex items-center gap-1.5 text-[13px] font-semibold text-gray-800 mb-1.5">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
-                      Scegli una password
-                    </label>
+                  </CampoModulo>
+                  <CampoModulo
+                    label="Scegli una password"
+                    aiuto="Almeno 6 caratteri."
+                    aiutoTipo={erroreAccount.password ? 'errore' : undefined}
+                  >
                     <div className="relative">
                       <input
                         type={mostraPasswordAccount ? 'text' : 'password'}
@@ -1801,13 +1751,13 @@ export default function IniziaPage() {
                         defaultValue={dati.password}
                         onChange={e => { update({ password: e.target.value }); setErroreAccount(prev => ({ ...prev, password: false })) }}
                         placeholder="••••••••"
-                        className={`${inputClass(erroreAccount.password)} pr-11`}
+                        className={classeCampo(erroreAccount.password, 'pr-12')}
                       />
                       <button
                         type="button"
                         onClick={() => setMostraPasswordAccount(v => !v)}
                         aria-label={mostraPasswordAccount ? 'Nascondi password' : 'Mostra password'}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                        className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
                       >
                         {mostraPasswordAccount ? (
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 10 8 10 8a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.5 13.5 0 0 0 2 12s3 8 10 8a9.12 9.12 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /><path d="M9.88 9.88a3 3 0 0 0 4.24 4.24" /></svg>
@@ -1816,8 +1766,7 @@ export default function IniziaPage() {
                         )}
                       </button>
                     </div>
-                    <p className={`text-[11px] mt-1.5 px-1 ${erroreAccount.password ? 'text-red-600 font-semibold' : 'text-gray-500'}`}>Almeno 6 caratteri.</p>
-                  </div>
+                  </CampoModulo>
                 </>
               )}
               <button onClick={handleContinuaAccount} disabled={loading} className={`btn-pagina ${loading ? 'btn-pagina--spento cursor-not-allowed' : ''}`}>

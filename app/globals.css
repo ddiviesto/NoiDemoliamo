@@ -191,3 +191,103 @@ body {
   .flusso-scena .text-\[13\.5px\] { font-size: 14.5px; }
   .flusso-scena .text-xs { font-size: 13.5px; }
 }
+
+/* ============================================================
+   CAMPI E SCELTE DEI FLUSSI — "tutto a pillola"
+   ⭐ 24/08 (mockup B approvato da Davide, due passaggi):
+   1. ogni casella in cui si SCRIVE è una pillola bianca con l'etichetta
+      fuori, in piccolo (prima erano riquadri grigi con l'etichetta dentro);
+   2. ogni SCELTA (Sì/No, accesso libero, tipo di cambio...) è una pillola
+      bianca che si accende di BLU con la spunta quando è presa: niente più
+      verde/ambra/rosso, quel giudizio serve a noi in ufficio, non al
+      cliente che sta compilando.
+   Valgono su tutti e due i flussi e anche sul telefono: si cambiano qui.
+   ⚠️ Il testo dei campi resta 16px sul telefono, altrimenti iOS zooma.
+   ============================================================ */
+.campo-pillola {
+  width: 100%;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 999px;
+  padding: 13px 20px;
+  font-size: 16px;
+  font-family: inherit;
+  color: #0F172A;
+  outline: none;
+  box-shadow: 0 2px 6px rgba(15, 27, 51, .04);
+  transition: border-color .16s, box-shadow .16s;
+}
+.campo-pillola::placeholder { color: #9AA7BC; }
+.campo-pillola:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37, 99, 235, .15); }
+.campo-pillola:disabled { opacity: .6; }
+.campo-pillola--errore { border-color: #FCA5A5; background: #FEF6F6; }
+.campo-pillola--errore:focus { border-color: #EF4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, .15); }
+/* targa e codice fiscale: si scrivono grandi e centrati, come su una targa */
+.campo-pillola--grande { font-size: 19px; font-weight: 700; letter-spacing: 2px; text-align: center; }
+
+/* testo lungo (note, annotazioni): stessa veste, ma non può essere tonda */
+.campo-lungo {
+  border-radius: 18px;
+  padding: 13px 18px;
+  resize: none;
+  line-height: 1.5;
+}
+
+/* l'etichetta sopra il campo, fuori dalla pillola */
+.campo-etichetta {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #4A5A75;
+  margin-bottom: 6px;
+  padding-left: 16px;
+}
+/* dentro un riquadro (es. le note nel box del carro attrezzi) l'etichetta
+   non ha la pillola sotto, quindi non serve rientrarla */
+.campo-etichetta--dentro { padding-left: 4px; }
+/* la riga di aiuto sotto il campo */
+.campo-aiuto { display: block; font-size: 11.5px; color: #7C8AA5; margin-top: 6px; padding-left: 16px; line-height: 1.5; }
+.campo-aiuto--ok { color: #16A34A; font-weight: 600; }
+.campo-aiuto--errore { color: #DC2626; font-weight: 600; }
+
+/* LA SCELTA A PILLOLA */
+.scelta-pillola {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #fff;
+  border: 1.5px solid #E2E8F0;
+  border-radius: 999px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #55637A;
+  cursor: pointer;
+  transition: border-color .16s, box-shadow .16s, background .16s, color .16s;
+}
+.scelta-pillola:hover { border-color: #BFD3F5; }
+.scelta-pillola--presa {
+  border-color: #2563EB;
+  background: #EFF6FF;
+  color: #1D4ED8;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .15);
+}
+.scelta-pillola--errore { border-color: #FCA5A5; }
+.scelta-pillola:active { transform: scale(.99); }
+
+@media (min-width: 640px) {
+  .flusso-scena .campo-pillola { font-size: 15.5px; }
+  .flusso-scena .campo-pillola--grande { font-size: 19px; }
+}
+
+/* Le scelte in fila: sul TELEFONO quelle con l'etichetta lunga si
+   incolonnano (in riga diventerebbero ovali alti e strizzati), su PC
+   tornano affiancate. Quelle corte (Sì/No, Manuale/Automatico) restano
+   sempre in riga: .scelte-fila--sempre */
+.scelte-fila { display: flex; flex-direction: column; gap: 8px; }
+.scelte-fila--sempre { flex-direction: row; }
+@media (min-width: 640px) {
+  .scelte-fila { flex-direction: row; }
+}
+

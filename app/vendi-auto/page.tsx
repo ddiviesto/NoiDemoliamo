@@ -24,7 +24,7 @@ import { StepCondizioniVeicolo } from '../inizia/steps/StepCondizioniVeicolo'
 import AutocompleteIndirizzo, { DatiIndirizzo } from '../inizia/steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
-import { InfoBadge } from '../inizia/steps/PezziFlusso'
+import { SceltaPillola, classeCampo } from '../inizia/steps/PezziFlusso'
 import { GuscioFlusso } from '../inizia/steps/GuscioFlusso'
 import { articolo, articoloDel, nomeVeicolo, isFemminile } from '@/lib/nomiVeicolo'
 import { StepIntestazione } from '../inizia/steps/StepIntestazione'
@@ -127,23 +127,13 @@ function Pillole({ voci, scelte, onTocca, unica }: { voci: string[]; scelte: str
   )
 }
 
+// ⭐ 24/08: Sì e No sono due pillole che si accendono di blu, come tutte le
+// altre scelte dei flussi (prima il No era verde).
 function SiNo({ valore, onScegli }: { valore: boolean | null; onScegli: (v: boolean) => void }) {
   return (
-    <div className="flex gap-2">
-      <button
-        onClick={() => onScegli(true)}
-        className="flex-1 text-center transition-all"
-        style={{ fontSize: 13.5, fontWeight: 600, padding: '10px 0', borderRadius: 10, border: valore === true ? '1.5px solid #1D4ED8' : '1.5px solid #E5E7EB', background: valore === true ? '#EFF6FF' : '#fff', color: valore === true ? '#1D4ED8' : '#6B7280' }}
-      >
-        Sì
-      </button>
-      <button
-        onClick={() => onScegli(false)}
-        className="flex-1 text-center transition-all"
-        style={{ fontSize: 13.5, fontWeight: 600, padding: '10px 0', borderRadius: 10, border: valore === false ? '1.5px solid #16A34A' : '1.5px solid #E5E7EB', background: valore === false ? '#F0FDF4' : '#fff', color: valore === false ? '#15803D' : '#6B7280' }}
-      >
-        No
-      </button>
+    <div className="scelte-fila scelte-fila--sempre">
+      <SceltaPillola label="Sì" larga presa={valore === true} onClick={() => onScegli(true)} />
+      <SceltaPillola label="No" larga presa={valore === false} onClick={() => onScegli(false)} />
     </div>
   )
 }
@@ -151,13 +141,13 @@ function SiNo({ valore, onScegli }: { valore: boolean | null; onScegli: (v: bool
 function Campo({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mb-3">
-      <label className="block text-[12px] font-bold mb-1.5" style={{ color: '#4B5563' }}>{label}</label>
+      <label className="campo-etichetta">{label}</label>
       {children}
     </div>
   )
 }
 
-const classeInput = 'w-full border rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400 border-gray-200'
+const classeInput = classeCampo()
 
 function Avviso({ children }: { children: React.ReactNode }) {
   return (
@@ -440,7 +430,7 @@ export default function VendiAuto() {
             }} />
             <div className="mt-4">
               <Campo label="Vuoi aggiungere qualcosa?">
-                <textarea value={noteDifetti} onChange={e => setNoteDifetti(e.target.value)} rows={3} placeholder="Anche in due parole (facoltativo)" className={classeInput + ' resize-none'} />
+                <textarea value={noteDifetti} onChange={e => setNoteDifetti(e.target.value)} rows={3} placeholder="Anche in due parole (facoltativo)" className={classeCampo(false, 'campo-lungo')} />
               </Campo>
             </div>
           </>
@@ -504,7 +494,7 @@ export default function VendiAuto() {
                 value={targa}
                 onChange={e => { setTarga(e.target.value.toUpperCase()); setErrore('') }}
                 placeholder="Es. CK456ZY"
-                className={classeInput + ' font-bold tracking-widest'}
+                className={classeCampo(false, 'campo-pillola--grande uppercase')}
                 autoCapitalize="characters"
               />
             </Campo>

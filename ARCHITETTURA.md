@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato all'**8 agosto 2026**.
+> Documento di riferimento del progetto. Aggiornato al **24 agosto 2026**.
 > Questo è l'unico file da leggere per capire com'è fatto il sito, come deve funzionare e come si lavora.
 > **Contiene solo cose STABILI e ATTUALI**: regole, flussi, dati, come deve essere il sito.
 > La cronaca delle sessioni non sta qui: se serve sapere *quando* è stata fatta una cosa, c'è la storia di GitHub.
@@ -523,7 +523,7 @@ C:\Progetto_NoiDemoliamo\
 
 ## 5.2 I DUE FLUSSI (demolizione `/inizia` e valutazione `/vendi-auto`)
 
-⭐ **REGOLA (19/08): i due flussi sono GEMELLI e i pezzi comuni stanno in un posto solo.** In `app/inizia/steps/`: `GuscioFlusso` (l'impaginazione), `PezziFlusso` (riquadri-scelta, avvisi, titolo del passo), `StepIntestazione` (la schermata "A chi è intestato", identica nei due), più `StepTipoVeicolo` · `StepIdentificaVeicolo` · `StepCondizioniVeicolo` · `AutocompleteIndirizzo`. Le formule dei nomi dei mezzi ("l'autovettura", "del furgone") stanno in `lib/nomiVeicolo.ts`. **Se si cambia una di queste cose, cambia in tutti e due i flussi: non si duplica mai.**
+⭐ **REGOLA (19/08): i due flussi sono GEMELLI e i pezzi comuni stanno in un posto solo.** In `app/inizia/steps/`: `GuscioFlusso` (l'impaginazione), `PezziFlusso` (riquadri-scelta, avvisi, titolo del passo, **campi e scelte a pillola**: `CampoModulo` · `SceltaPillola` · `classeCampo`, vedi 6.6b), `StepIntestazione` (la schermata "A chi è intestato", identica nei due), più `StepTipoVeicolo` · `StepIdentificaVeicolo` · `StepCondizioniVeicolo` · `AutocompleteIndirizzo`. Le formule dei nomi dei mezzi ("l'autovettura", "del furgone") stanno in `lib/nomiVeicolo.ts`. **Se si cambia una di queste cose, cambia in tutti e due i flussi: non si duplica mai.**
 
 ### Com'è impaginato un passo (`GuscioFlusso`)
 - **TELEFONO** (quasi tutto il traffico): card bianca a tutto schermo, **testata blu** con la freccia tonda e "Passo N di M", **fascetta azzurra** col servizio e il mezzo, barra di avanzamento sottile, titolo 21px.
@@ -569,6 +569,7 @@ Riusa i passi 1, 3, 6, 11, 12, 13 del flusso demolizione. **Non** chiede lo spaz
 - **Personalizzazione per tipo veicolo ovunque**: banner, titoli, articoli, generi (isFemminile: autovettura/minicar/imbarcazione), `tipoAltro`, ICONE_VEICOLO, `getStepMeta`.
 - **Titoli con la parola chiave in BLU**: nei `titoloPagina` la keyword sta tra `*asterischi*` e l'helper `evidenzia()` la colora.
 - **Mobile**: anti-zoom iOS (input 16px), inputMode corretti, NIENTE scrollIntoView automatico, bottoni "Continua" mai disabilitati (validazione al click), normalizzazione targa/CF, formattazione km.
+- ⭐ **INDIRIZZO: ripiego a mano (24/08)**. Se i suggerimenti di Google non arrivano (script che non parte o richieste rifiutate), il campo indirizzo mostra da solo l'avviso "I suggerimenti non sono disponibili in questo momento" e il bottone **"Conferma indirizzo"**: il cliente scrive l'indirizzo per intero e prosegue. Serve a non perdere il cliente, **non è un modo di lavorare**: quella pratica nasce senza comune, provincia e coordinate, quindi l'assegnazione automatica non parte (resta quella a mano) e nel CRM l'indirizzo non è correggibile finché Google è spento (lì si salva solo se scelto dal menu di Google). Quando Google torna, il ripiego sparisce da solo.
 
 ## 5.3 Stato delle pagine
 
@@ -796,6 +797,18 @@ Una sola famiglia di card ovunque:
 - **Form input**: `border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 focus:border-blue-500 focus:bg-white`
 - **Tab bar a pillole**: container `#EFF3F9` rounded-2xl p-1; attiva `#2563eb` bianca, inattive trasparenti `#5F6C7E`; badge rosso contatore attaccato all'icona
 
+## 6.6b CAMPI E SCELTE DEI FLUSSI — "tutto a pillola"
+
+⭐ **REGOLA (24/08, mockup B approvato):** nei due flussi (`/inizia` e `/vendi-auto`), su PC e su telefono:
+
+- **Ogni casella in cui si scrive è una pillola bianca** (`.campo-pillola`), con l'**etichetta piccola fuori e sopra** (`.campo-etichetta`) ed eventuale riga di aiuto sotto (`.campo-aiuto`). Niente riquadri grigi con l'etichetta dentro, niente iconcine dentro le etichette
+- **Targa e codice fiscale**: stessa pillola in versione `--grande` (19px, centrata, spaziata), si leggono come su una targa vera
+- **Testo lungo** (note, annotazioni): stessa veste bianca ma rettangolo ad angoli tondi (`.campo-lungo`), perché una pillola alta tre righe viene storta
+- **Ogni scelta è una pillola bianca che si accende di BLU con la spunta** (`SceltaPillola`): Sì/No, tipo di cambio, accesso carro attrezzi, targhe presenti. ⚠️ **Niente semaforo verde/ambra/rosso**: il "va bene / non va bene" serve a noi in ufficio, non al cliente che sta compilando
+- **Sul telefono le scelte con l'etichetta lunga si incolonnano** (`.scelte-fila`), quelle corte restano affiancate (`--sempre`): in riga diventavano ovali alti e strizzati
+- I pezzi stanno in **un posto solo**: `CampoModulo`, `SceltaPillola` e `classeCampo` in `app/inizia/steps/PezziFlusso.tsx`, la veste in `globals.css`. Si cambiano lì e cambiano in tutti e due i flussi
+- ⚠️ **L'admin non usa queste classi**: lì i campi restano compatti da gestionale
+
 ## 6.7 MOVIMENTO — "niente scatti, niente sobbalzi"
 
 I sobbalzi sono bug, non dettagli.
@@ -860,6 +873,7 @@ I sobbalzi sono bug, non dettagli.
 - **"Consegna a mano" dei documenti** (l'opzione "non carico, consegno la fotocopia al ritiro"): costruita end-to-end e rimossa, creava confusione e si discostava dalla logica casistiche. Non riproporla senza ripensarla da zero con Davide
 - **Autocompilazione dei moduli PDF**: escono tutti in bianco (vedi 8.1)
 - Font Inter · sfondo lilla nell'admin · verde nei bottoni · giallo ambra negli avvisi informativi · grassetti 800 · chevron "‹" al posto di "← Pratiche" · riquadri-guida con etichette per le foto · console di debug nascosta sul telefono · assegnazione manuale su mappa (si usa la lista)
+- ⭐ 24/08: **campi dentro riquadri grigi** con l'etichetta al loro interno (ora sono pillole, vedi 6.6b) · **lente d'ingrandimento dentro il campo indirizzo** del flusso (brutta, pestava il testo grigio: resta solo nei campi compatti dell'admin) · **semaforo verde/ambra/rosso nelle scelte dei flussi**
 
 ---
 
@@ -982,6 +996,8 @@ Il flusso `/vendi-auto` c'è e salva; **manca tutto il lato admin e la risposta 
 
 ## 8.4 ⏰ PROMEMORIA SCADENZE
 
+- 🔴 **GOOGLE CLOUD — periodo di prova FINITO (24/08/2026)**. Google ha spento le API del progetto: i suggerimenti indirizzo rispondono *"the caller does not have permission"* (Places API (New) risulta accesa, è la fatturazione che manca). Per riaccendere serve **"Attiva account completo"** nella console, entro il **16 settembre 2026** per ripristinare l'accesso ai progetti; il credito bonus di iscrizione resta lì.
+  ⭐ **DECISIONE di Davide (24/08): si attiva quando sito e app sono COMPLETI, non prima.** Fino ad allora si convive con l'indirizzo scritto a mano (vedi 5.2b) e con l'assegnazione manuale.
 - 🗓️ **Supabase free tier**: aprire la dashboard ogni 5-6 giorni o il progetto va in pausa. Al lancio: Supabase Pro (~25$/mese)
 - 🗓️ **30 OTTOBRE 2026 — Supabase Data API change**: le tabelle create DOPO questa data non saranno esposte automaticamente alla Data API. Servirà un GRANT esplicito dopo ogni CREATE TABLE:
   `GRANT SELECT, INSERT, UPDATE, DELETE ON nome_tabella TO authenticated, anon;` (adattare i permessi) + RLS come sempre.

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DatiVeicolo, TipoMezzo } from '../../../types/pratica'
+import { classeCampo } from './PezziFlusso'
 
 // ============================================================
 // ICONE VEICOLI SVG
@@ -285,15 +286,15 @@ export function StepTipoVeicolo({ dati, onUpdate, onNext }: Props) {
       <div className={`overflow-hidden transition-all duration-300 ease-out ${dati.tipo === 'altro' ? 'max-h-40 opacity-100' : 'max-h-0 opacity-0'}`}>
         <div>
           <div style={{ paddingTop: 2, paddingBottom: 2 }}>
-            <label className="block text-[10px] font-bold uppercase mb-1.5" style={{ color: '#9AA7B5', letterSpacing: '0.08em' }}>Specifica il tipo di mezzo</label>
+            <label className="campo-etichetta">Specifica il tipo di mezzo</label>
             <input
               type="text"
               value={dati.tipoAltro}
               onChange={e => { onUpdate({ tipoAltro: e.target.value }); setErroreAltro(false) }}
               placeholder="Trattore, quad, elicottero, rimorchio…"
-              className={`w-full border-[1.5px] rounded-full px-4 py-3 text-base text-gray-900 bg-white outline-none transition-all focus:border-blue-500 placeholder:text-gray-400 ${erroreAltro ? 'border-red-300 bg-red-50' : 'border-gray-200'}`}
+              className={classeCampo(erroreAltro)}
             />
-            {erroreAltro && <p className="text-xs text-red-600 mt-1 px-2">Specifica il tipo di mezzo</p>}
+            {erroreAltro && <span className="campo-aiuto campo-aiuto--errore">Specifica il tipo di mezzo</span>}
           </div>
         </div>
       </div>

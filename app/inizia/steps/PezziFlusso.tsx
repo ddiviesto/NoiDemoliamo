@@ -40,6 +40,69 @@ export function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorde
   )
 }
 
+// ============================================================
+// IL CAMPO DA COMPILARE (⭐ 24/08, mockup B approvato)
+// Etichetta piccola FUORI, pillola bianca sotto. Prima era un riquadro
+// grigio con l'etichetta dentro: pesava e faceva a pugni col resto.
+// La veste sta in globals.css (.campo-pillola), qui c'è solo l'impaginazione.
+// ============================================================
+export function CampoModulo({ id, label, aiuto, aiutoTipo, errore, dentroRiquadro, classe, children }: {
+  id?: string
+  label?: string
+  aiuto?: React.ReactNode
+  aiutoTipo?: 'ok' | 'errore'
+  errore?: string
+  dentroRiquadro?: boolean       // etichetta senza rientro (quando la pillola sta dentro un box)
+  classe?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div id={id} className={classe}>
+      {label && <label className={`campo-etichetta${dentroRiquadro ? ' campo-etichetta--dentro' : ''}`}>{label}</label>}
+      {children}
+      {errore
+        ? <span className="campo-aiuto campo-aiuto--errore">{errore}</span>
+        : aiuto && <span className={`campo-aiuto${aiutoTipo ? ' campo-aiuto--' + aiutoTipo : ''}`}>{aiuto}</span>}
+    </div>
+  )
+}
+
+/** Le classi della pillola da scrivere: `classeCampo(errore)` sull'input. */
+export function classeCampo(errore?: boolean, extra?: string) {
+  return `campo-pillola${errore ? ' campo-pillola--errore' : ''}${extra ? ' ' + extra : ''}`
+}
+
+// ============================================================
+// LA SCELTA A PILLOLA (⭐ 24/08, mockup B approvato)
+// Tutte le scelte del flusso (Sì/No, accesso libero, tipo di cambio…)
+// sono pillole bianche che si accendono di BLU con la spunta.
+// ⚠️ Niente verde/ambra/rosso: il "va bene / non va bene" serve a noi in
+// ufficio, non al cliente mentre compila.
+// ============================================================
+export function SceltaPillola({ label, presa, errore, larga, onClick }: {
+  label: string
+  presa: boolean
+  errore?: boolean
+  larga?: boolean               // occupa tutto lo spazio disponibile in fila
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={presa}
+      className={`scelta-pillola${presa ? ' scelta-pillola--presa' : ''}${errore && !presa ? ' scelta-pillola--errore' : ''}${larga ? ' flex-1' : ''}`}
+    >
+      {presa && (
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
+      )}
+      {label}
+    </button>
+  )
+}
+
 export function InfoBadge({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2.5 rounded-xl p-3 text-[13.5px] leading-relaxed" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE', color: '#1E3A8A' }}>

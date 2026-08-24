@@ -98,6 +98,11 @@ export default function AutocompleteIndirizzo({
   const [erroreCaricamento, setErroreCaricamento] = useState(false)
   const [ready, setReady] = useState(false)
   const [loading, setLoading] = useState(false)
+  // ⭐ 24/08: RIPIEGO A MANO. Se Google non risponde (script che non parte,
+  // chiave bloccata, fatturazione scaduta) il cliente restava piantato:
+  // scriveva e non poteva confermare niente. Ora appare il bottone
+  // "Conferma indirizzo" e va avanti scrivendolo per intero.
+  const [aMano, setAMano] = useState(false)
 
   const placesLibRef = useRef<PlacesLibrary | null>(null)
   const sessionTokenRef = useRef<unknown>(null)
@@ -121,7 +126,7 @@ export default function AutocompleteIndirizzo({
         setReady(true)
       } catch (err) {
         console.error('Errore Google Maps:', err)
-        if (attivo) setErroreCaricamento(true)
+        if (attivo) { setErroreCaricamento(true); setAMano(true) }
       }
     }
 
@@ -159,6 +164,7 @@ export default function AutocompleteIndirizzo({
     } catch (err) {
       console.error('Errore fetch suggerimenti:', err)
       setSuggestions([])
+      setAMano(true)          // Google ha detto picche: si va avanti a mano
     } finally {
       setLoading(false)
     }
@@ -257,9 +263,18 @@ export default function AutocompleteIndirizzo({
   }
 
   // Classi input: versione normale (mobile /inizia, 16px anti-zoom) o compatta (form admin)
+  // ⭐ 24/08: nel flusso l'indirizzo è una pillola come tutti gli altri campi
+  // (.campo-pillola in globals.css). Nell'admin resta il campo compatto.
   const classiInput = compatto
     ? 'w-full border-[1.5px] border-gray-200 rounded-[10px] pl-9 pr-3 py-2 text-[13.5px] font-medium text-gray-900 bg-white outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all disabled:opacity-60 placeholder:text-gray-400'
-    : 'w-full border border-gray-200 rounded-xl pl-11 pr-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white focus:shadow-[0_0_0_3px_rgba(59,130,246,0.1)] transition-all disabled:opacity-60 placeholder:text-gray-400'
+    : 'campo-pillola'
+
+  // Il ripiego a mano: si conferma quello che è scritto nel campo
+  function confermaAMano() {
+    const scritto = query.trim()
+    if (scritto.length < 5) return
+    onSelezione({ indirizzo: scritto })
+  }
 
   if (erroreCaricamento) {
     return (
@@ -268,12 +283,11 @@ export default function AutocompleteIndirizzo({
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); confermaAMano() } }}
           placeholder={placeholder}
-          className={compatto ? classiInput.replace('pl-9', 'px-3') : 'w-full border border-gray-200 rounded-xl px-4 py-3 text-base text-gray-900 bg-gray-50 outline-none focus:border-blue-500 focus:bg-white transition-all placeholder:text-gray-400'}
+          className={compatto ? classiInput.replace('pl-9', 'px-3') : 'campo-pillola'}
         />
-        <p className="text-xs text-amber-700 mt-1.5">
-          Suggerimenti non disponibili. Digita l&apos;indirizzo manualmente.
-        </p>
+        <RipiegoAMano query={query} onConferma={confermaAMano} compatto={compatto} />
       </div>
     )
   }
@@ -281,12 +295,16 @@ export default function AutocompleteIndirizzo({
   return (
     <div ref={containerRef} className="w-full relative">
       <div className="relative">
-        <span className={`absolute ${compatto ? 'left-3' : 'left-4'} top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none`}>
-          <svg width={compatto ? 15 : 18} height={compatto ? 15 : 18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-        </span>
+        {/* ⚠️ 24/08 (Davide): nel flusso NIENTE lente dentro il campo, era
+            brutta e pestava il testo grigio. Resta solo nei form dell'admin. */}
+        {compatto && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.3-4.3" />
+            </svg>
+          </span>
+        )}
         <input
           type="text"
           value={query}
@@ -298,7 +316,7 @@ export default function AutocompleteIndirizzo({
           className={classiInput}
         />
         {loading && (
-          <span className={`absolute ${compatto ? 'right-3' : 'right-4'} top-1/2 -translate-y-1/2 text-gray-400`}>
+          <span className={`absolute ${compatto ? 'right-3' : 'right-5'} top-1/2 -translate-y-1/2 text-gray-400`}>
             <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" opacity="0.25" />
               <path d="M12 2a10 10 0 0 1 10 10" />
@@ -348,13 +366,47 @@ export default function AutocompleteIndirizzo({
         </div>
       )}
 
-      {open && !loading && suggestions.length === 0 && query.trim().length >= 2 && (
+      {open && !loading && !aMano && suggestions.length === 0 && query.trim().length >= 2 && (
         <div className={compatto
           ? 'absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-center text-[12.5px] text-gray-400'
           : 'mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg p-4 text-center text-sm text-gray-400'}>
           Nessun risultato
         </div>
       )}
+
+      {aMano
+        ? <RipiegoAMano query={query} onConferma={confermaAMano} compatto={compatto} />
+        : !compatto && (
+          <p className="text-[11.5px] text-gray-500 mt-2 px-4">
+            Inizia a digitare e seleziona un suggerimento per confermare.
+          </p>
+        )}
+    </div>
+  )
+}
+
+// ============================================================
+// RIPIEGO A MANO (⭐ 24/08)
+// Compare quando i suggerimenti non arrivano: si scrive l'indirizzo per
+// intero e si conferma col bottone. Senza questo il cliente resta piantato
+// sul passo, perché il flusso aspetta un indirizzo confermato.
+// ============================================================
+function RipiegoAMano({ query, onConferma, compatto }: { query: string; onConferma: () => void; compatto?: boolean }) {
+  const pronto = query.trim().length >= 5
+  return (
+    <div className={compatto ? 'mt-2' : 'mt-3'}>
+      <p className={`${compatto ? 'text-[11.5px]' : 'text-[12.5px]'} text-amber-800 leading-relaxed ${compatto ? '' : 'px-4'}`}>
+        I suggerimenti non sono disponibili in questo momento. Scrivi l&apos;indirizzo completo (via, numero civico, città e provincia) e conferma.
+      </p>
+      <button
+        type="button"
+        onClick={onConferma}
+        disabled={!pronto}
+        className={`mt-2 ${compatto ? '' : 'ml-1'} scelta-pillola ${pronto ? 'scelta-pillola--presa' : ''}`}
+        style={{ opacity: pronto ? 1 : 0.55, cursor: pronto ? 'pointer' : 'default' }}
+      >
+        Conferma indirizzo
+      </button>
     </div>
   )
 }

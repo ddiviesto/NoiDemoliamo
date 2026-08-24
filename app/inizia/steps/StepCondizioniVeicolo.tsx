@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { DatiVeicolo, TipoMezzo } from '../../../types/pratica'
+import { CampoModulo, classeCampo } from './PezziFlusso'
 
 interface Props {
   dati: DatiVeicolo
@@ -84,7 +85,6 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
           </svg>
         }
         value={dati.incidentato}
-        siGood={false}
         error={errors.incidentato}
         onChange={v => togUpdate('incidentato', v)}
       />
@@ -100,7 +100,6 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
           </svg>
         }
         value={dati.vaInMoto}
-        siGood={true}
         error={errors.vaInMoto}
         onChange={v => togUpdate('vaInMoto', v)}
       />
@@ -115,7 +114,6 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
           </svg>
         }
         value={dati.marciante}
-        siGood={true}
         error={errors.marciante}
         onChange={v => togUpdate('marciante', v)}
       />
@@ -130,21 +128,19 @@ export function StepCondizioniVeicolo({ dati, onUpdate, onNext }: Props) {
           </svg>
         }
         value={dati.partiMancanti}
-        siGood={false}
         error={errors.partiMancanti}
         onChange={v => togUpdate('partiMancanti', v)}
       />
 
-      <div>
-        <label className="block text-xs font-medium text-gray-600 mb-1">Annotazioni (opzionale)</label>
+      <CampoModulo label="Annotazioni (opzionale)">
         <textarea
           value={dati.note}
           onChange={e => onUpdate({ note: e.target.value })}
           placeholder="Descrivi eventuali annotazioni..."
           rows={3}
-          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-base text-gray-900 bg-gray-50 outline-none transition-all focus:border-blue-500 focus:bg-white resize-none placeholder:text-gray-400"
+          className={classeCampo(false, 'campo-lungo')}
         />
-      </div>
+      </CampoModulo>
 
       <button
         onClick={handleContinua}
@@ -166,29 +162,27 @@ interface ToggleRowProps {
   sub: string
   icon: React.ReactNode
   value: string | null
-  siGood: boolean
   error?: string
   onChange: (v: ToggleValue) => void
 }
 
-function ToggleRow({ id, label, sub, icon, value, siGood, error, onChange }: ToggleRowProps) {
-  const siSelectedClasses = siGood
-    ? 'bg-green-100 border-green-300 text-green-800'
-    : 'bg-red-100 border-red-300 text-red-800'
-  const noSelectedClasses = siGood
-    ? 'bg-red-100 border-red-300 text-red-800'
-    : 'bg-green-100 border-green-300 text-green-800'
-
-  const offClasses = 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+function ToggleRow({ id, label, sub, icon, value, error, onChange }: ToggleRowProps) {
+  // ⭐ 24/08: la risposta presa si accende di BLU, come tutte le altre scelte
+  // dei flussi. Prima il Sì e il No erano verdi o rossi a seconda che la
+  // risposta fosse "buona": quel giudizio serve a noi, non al cliente.
+  const selectedClasses = 'bg-blue-50 border-blue-600 text-blue-700 shadow-[0_0_0_3px_rgba(37,99,235,0.15)]'
+  const offClasses = 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
 
   const pillBase = 'flex items-center justify-center gap-1 px-3 py-2 rounded-full text-sm font-semibold border-[1.5px] transition-all min-w-[52px]'
 
+  // ⭐ 24/08 (Davide): la striscia della domanda è BIANCA come le pillole,
+  // non più grigia: sulla scena lilla le due famiglie si assomigliano.
   const cardClasses = error
-    ? 'border-red-300 bg-red-50/30'
-    : 'border-gray-200 bg-gray-50'
+    ? 'border-red-300 bg-red-50/40'
+    : 'border-[#E2E8F0] bg-white shadow-[0_2px_6px_rgba(15,27,51,0.04)]'
 
   return (
-    <div id={id} className={`flex items-center justify-between gap-3 p-3 rounded-xl border-[1.5px] transition-all ${cardClasses}`}>
+    <div id={id} className={`flex items-center justify-between gap-3 p-3 rounded-2xl border-[1.5px] transition-all ${cardClasses}`}>
       <div className="flex items-center gap-2.5 min-w-0 flex-1">
         <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
           {icon}
@@ -202,7 +196,7 @@ function ToggleRow({ id, label, sub, icon, value, siGood, error, onChange }: Tog
         <button
           type="button"
           onClick={() => onChange('si')}
-          className={`${pillBase} ${value === 'si' ? siSelectedClasses : offClasses}`}
+          className={`${pillBase} ${value === 'si' ? selectedClasses : offClasses}`}
         >
           {value === 'si' && (
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
@@ -214,7 +208,7 @@ function ToggleRow({ id, label, sub, icon, value, siGood, error, onChange }: Tog
         <button
           type="button"
           onClick={() => onChange('no')}
-          className={`${pillBase} ${value === 'no' ? noSelectedClasses : offClasses}`}
+          className={`${pillBase} ${value === 'no' ? selectedClasses : offClasses}`}
         >
           {value === 'no' && (
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
