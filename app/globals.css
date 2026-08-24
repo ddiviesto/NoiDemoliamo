@@ -417,7 +417,7 @@ body {
    ============================================================ */
 .marchio {
   font-family: var(--font-marchio), -apple-system, BlinkMacSystemFont, sans-serif;
-  letter-spacing: -0.6px;
+  letter-spacing: -0.035em;   /* in em: la stretta resta giusta a ogni misura */
   line-height: 1;
   white-space: nowrap;
 }

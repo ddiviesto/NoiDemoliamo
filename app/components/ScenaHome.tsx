@@ -73,8 +73,15 @@ export default function ScenaHome() {
       return { x: Math.round(p.left - 10 - R.right), y: 0, giro: 0 }
     }
 
+    // ⚠️ 25/08 (errore visto sul sito): la manovra va avanti a tappe, quindi
+    // può essere ancora in corso quando il cliente CAMBIA PAGINA. Da lì in poi
+    // la 500 non esiste più e il codice andava in errore: `vivo` ferma tutto
+    // appena la scena viene smontata.
+    let vivo = true
+
     const scrivi = (p: Posa, specchiata: boolean, durata: number) => {
-      const el = auto.current!
+      const el = auto.current
+      if (!el) return
       el.style.transitionDuration = (fermo ? 0 : durata) + 'ms'
       el.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.giro}deg) scaleX(${specchiata ? -1 : 1})`
     }
@@ -83,17 +90,19 @@ export default function ScenaHome() {
     async function manovra() {
       if (inMoto.current) return
       inMoto.current = true
-      while (voluta.current !== dove.current) {
+      while (vivo && voluta.current !== dove.current) {
         const meta = voluta.current
         const partenza = dove.current
 
         // 1. se sono fermo altrove, torno al centro come si deve
         if (partenza === 'carro') { scrivi(CENTRO, true, 1100); await aspetta(1150) }        // giù in retromarcia
         else if (partenza === 'acquirente') { scrivi(CENTRO, false, 900); await aspetta(950) }
+        if (!vivo) break
 
         // 2. al centro mi giro, se devo
         const specchiata = meta === 'carro'
         if (specchiata || partenza !== 'centro') { scrivi(CENTRO, specchiata, 340); await aspetta(380) }
+        if (!vivo) break
 
         // 3. parto verso la meta
         if (meta === 'carro') { scrivi(postoSulCarro(), true, 1200); await aspetta(1240) }
@@ -130,7 +139,7 @@ export default function ScenaHome() {
         porta.removeEventListener('focusout', esce)
       })
     }
-    return () => { clearTimeout(ritorno); pulisci.forEach(f => f()) }
+    return () => { vivo = false; clearTimeout(ritorno); pulisci.forEach(f => f()) }
   }, [])
 
   return (

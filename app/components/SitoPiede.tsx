@@ -48,8 +48,8 @@ export default function SitoPiede() {
       <div className="relative mx-auto px-[22px]" style={{ maxWidth: 1160 }}>
         <div className="flex flex-wrap justify-between gap-9" style={{ paddingBottom: 30, borderBottom: '1px solid rgba(255,255,255,0.16)' }}>
           <div>
-            <Link href="/" style={{ display: 'block', fontSize: 34, fontWeight: 700, color: '#fff', letterSpacing: '-1.4px', lineHeight: 1.05, marginBottom: 12 }}>
-              NoiDemoliamo
+            <Link href="/" style={{ display: 'block', marginBottom: 12 }}>
+              <Marchio misura={34} chiaro />
             </Link>
             <p style={{ fontSize: 13.5, lineHeight: 1.68, maxWidth: 340 }}>
               Ti togliamo il peso di un veicolo da demolire: ritiro a domicilio, burocrazia e certificati.
