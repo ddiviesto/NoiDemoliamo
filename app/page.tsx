@@ -17,6 +17,7 @@ import AiutoWhatsApp from './components/AiutoWhatsApp'
 import SitoBarra from './components/SitoBarra'
 import SitoPiede from './components/SitoPiede'
 import { Spunta } from './components/SitoPezzi'
+import ScenaHome from './components/ScenaHome'
 
 export const metadata: Metadata = {
   title: 'NoiDemoliamo — Demolizione auto gratuita in tutta Italia',
@@ -28,15 +29,18 @@ export const metadata: Metadata = {
 // ⚠️ 18/08: le pagine /demolizione e /valutazione sono state cancellate
 // (si finisce prima la home): la porta blu porta dritta al modulo e
 // quella chiara apre WhatsApp. Bastano due indirizzi da cambiare.
-function Porta({ href, esterno, forte, icona, titolo, pillola, testo, punti, bottone }: {
+// ⭐ 25/08: `meta` dice alla scena qui sopra dove deve andare la 500 quando
+// il mouse passa su questa porta (ScenaHome le riconosce da data-meta).
+function Porta({ href, esterno, forte, icona, titolo, pillola, testo, punti, bottone, meta }: {
   href: string; esterno?: boolean; forte?: boolean; icona: React.ReactNode; titolo: string
-  pillola: string; testo: string; punti: string[]; bottone: string
+  pillola: string; testo: string; punti: string[]; bottone: string; meta?: string
 }) {
   const Contenitore = esterno ? 'a' : Link
   const attributi = esterno ? { href, target: '_blank', rel: 'noopener' } : { href }
   return (
     <Contenitore
       {...attributi}
+      data-meta={meta}
       className="sito-finestra flex-1 flex flex-col transition-all"
       style={forte
         ? {
@@ -157,10 +161,14 @@ export default function Home() {
           </p>
         </div>
 
+        {/* ---------- la scena: la 500 va dove scegli (solo da PC) ---------- */}
+        <ScenaHome />
+
         {/* ---------- le due porte ---------- */}
         <div className="flex flex-col lg:flex-row gap-5 text-left">
           <Porta
             href="/inizia"
+            meta="demolizione"
             forte
             titolo="Voglio rottamarla"
             pillola="Gratis, anche il ritiro"
@@ -178,6 +186,7 @@ export default function Home() {
           />
           <Porta
             href="/vendi-auto"
+            meta="valutazione"
             titolo="Voglio sapere quanto vale"
             pillola="Valutazione gratuita"
             testo="Prima di rottamarla senti la cifra: se conviene venderla, l'acquirente lo troviamo Noi."

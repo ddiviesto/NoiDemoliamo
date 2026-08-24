@@ -352,3 +352,53 @@ body {
   .whatsapp-alzato { bottom: 16px !important; }
 }
 
+
+/* ============================================================
+   LA SCENA DELLA HOME — "la 500 va dove scegli"
+   ⭐ 25/08 (mockup approvato): la 500 al centro, il carro attrezzi a
+   sinistra col pianale rivolto verso di lei, l'acquirente a destra. Le
+   due mete restano smorte finché il mouse non passa su una delle due
+   porte. Il movimento lo comanda ScenaHome.tsx, qui c'è solo la veste.
+   ⚠️ Sotto i 640px la scena non esiste: le porte si incolonnano.
+   ============================================================ */
+.scena-home {
+  position: relative;
+  height: 260px;
+  max-width: 1040px;
+  margin: 26px auto 6px;
+}
+.scena-posto { position: absolute; bottom: 0; }
+/* scala vera: il carro è lungo il doppio della 500 */
+.scena-sx { left: -44px; width: 560px; }
+.scena-sx img { transform: scaleX(-1); }        /* rampa rivolta verso la 500 */
+.scena-centro { left: 50%; transform: translateX(-50%); width: 280px; z-index: 3; }
+.scena-dx { right: 10px; }
+.scena-posto img { display: block; width: 100%; height: auto; }
+.scena-dx img { width: auto; height: 172px; }   /* la persona è alta 1,70 m */
+
+.scena-terra {
+  position: absolute; left: 0; right: 0; bottom: 14px; height: 1px;
+  background: linear-gradient(90deg, rgba(15,27,51,0), rgba(15,27,51,.14) 20%, rgba(15,27,51,.14) 80%, rgba(15,27,51,0));
+}
+.scena-ombra {
+  position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%);
+  width: 76%; height: 14px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(15,27,51,.22), rgba(15,27,51,0));
+  transition: opacity .5s ease;
+}
+.scena-home[data-scelta="carro"] .scena-ombra,
+.scena-home[data-scelta="acquirente"] .scena-ombra { opacity: 0; }
+
+/* le mete: in disparte finché non si sceglie */
+.scena-meta { display: block; position: relative; opacity: .34; filter: grayscale(.55); transition: opacity .45s ease, filter .45s ease; }
+.scena-home[data-scelta="carro"] .scena-sx .scena-meta,
+.scena-home[data-scelta="acquirente"] .scena-dx .scena-meta { opacity: 1; filter: none; }
+
+/* ⚠️ il punto d'arrivo della 500 lo calcola il codice al momento, misurando
+   dove sono davvero pianale e acquirente: così resta preciso a ogni larghezza */
+.scena-auto { transition: transform 1.2s cubic-bezier(.34,.68,.24,1); will-change: transform; }
+
+@media (prefers-reduced-motion: reduce) {
+  .scena-auto, .scena-meta, .scena-ombra { transition: none; }
+}
+
