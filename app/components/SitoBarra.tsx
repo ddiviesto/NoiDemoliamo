@@ -11,7 +11,6 @@
 // ============================================================
 
 import Link from 'next/link'
-import Image from 'next/image'
 import Marchio from './Marchio'
 
 export default function SitoBarra() {
@@ -25,16 +24,10 @@ export default function SitoBarra() {
       boxShadow: '0 10px 34px rgba(15,27,51,0.10), inset 0 1px 0 rgba(255,255,255,0.9)',
       borderRadius: 999, padding: '9px 9px 9px 16px',
     }}>
-      <Link href="/" className="flex items-center gap-2.5">
-        <Image
-          src="/NoiDemoliamoLogo.png"
-          alt="NoiDemoliamo"
-          width={32}
-          height={32}
-          priority
-          style={{ borderRadius: 10 }}
-        />
-        <Marchio misura={17} />
+      {/* ⭐ 27/08: niente tondino accanto al nome — il marchio è la scritta,
+          e il suo segno è la fogliolina sulla "i" */}
+      <Link href="/" className="flex items-center">
+        <Marchio misura={21} />
       </Link>
 
       <div className="flex items-center gap-0.5">

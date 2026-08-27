@@ -11,7 +11,6 @@
  */
 
 import { useEffect, useState } from 'react'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 
 export type VoceSidebar = 'pratiche' | 'ritiri' | 'azienda'
@@ -54,7 +53,7 @@ function Contenuto({ attiva, nome, onPratiche, onRitiri, onAzienda, onEsci }: {
     <>
       {/* Testata come l'admin: logo vero, nome, ruolo in maiuscoletto */}
       <div className="px-4 py-4 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
-        <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={36} height={36} className="rounded-xl flex-shrink-0" />
+        
         <div className="min-w-0">
           <div className="text-[13px] font-bold leading-tight">{nome || '…'}</div>
           <div className="text-[10px] font-semibold uppercase tracking-wide mt-0.5" style={{ color: '#BFDBFE' }}>Demolitore</div>

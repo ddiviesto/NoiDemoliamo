@@ -435,3 +435,16 @@ body {
   text-transform: uppercase;
   letter-spacing: 1.6px;
 }
+
+/* ⭐ 27/08: LA FOGLIOLINA AL POSTO DEL PUNTINO della "i" di "Noi".
+   La foglia è PIENA (bianca dentro, contorno verde) e si appoggia sopra il
+   puntino coprendolo: nessuna macchia di fondo, che spostandosi finirebbe
+   sulle lettere vicine.
+   ⚠️ Grandezza e posizione NON stanno qui ma nel componente Marchio.tsx
+   (costante FOGLIA), scritte direttamente sul pezzo: se il foglio di stile
+   arrivasse in ritardo, una foglia senza misure prenderebbe la sua grandezza
+   naturale, enorme, e spaccherebbe la scritta in due righe. */
+.marchio-i { position: relative; }
+.marchio-foglia svg { display: block; }
+
+

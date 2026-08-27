@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — La 500 va dove clicchi</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 11px 16px; text-align: center; font-size: 12px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 15px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1100px; margin: 0 auto; padding: 20px 20px 0; font-size: 14.5px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .prova { max-width: 1100px; margin: 10px auto 0; padding: 0 20px; font-size: 12.5px; font-weight: 700; color: #1D4ED8; display: flex; align-items: center; gap: 10px; }
+  .prova button { font-family: inherit; font-size: 12px; font-weight: 700; border: 1.5px solid #C7D2E4; background: #fff; color: #46536B; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+
+  /* ---------- la scena della home ---------- */
+  .schermo { max-width: 1180px; margin: 14px auto 50px; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 44px rgba(15,27,51,.2); border: 1px solid #D8DEE9; }
+  .barra-url { background: #E8EDF5; padding: 8px 14px; display: flex; align-items: center; gap: 9px; }
+  .barra-url i { width: 9px; height: 9px; border-radius: 999px; background: #C6CFDC; display: block; }
+  .barra-url .url { flex: 1; background: #fff; border: 1px solid #D8E0EC; border-radius: 999px; padding: 4px 12px; font-size: 11.5px; color: #5B6779; }
+  .scena { padding: 30px 26px 46px;
+    background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%),
+                radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%),
+                radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222,214,251,0) 66%), #F5F3FE; }
+
+  .titolone { text-align: center; font-size: clamp(26px, 4vw, 44px); line-height: 1.05; letter-spacing: -1.6px; font-weight: 700; color: #0F1B33; }
+  .titolone .grad { background: linear-gradient(100deg,#2563eb,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .occhiello { text-align: center; font-size: 15.5px; color: #5B6779; line-height: 1.6; max-width: 560px; margin: 14px auto 0; }
+
+  /* ---------- IL PALCO ---------- */
+  .palco { position: relative; height: 260px; margin: 24px auto 4px; max-width: 1040px; }
+  .posto { position: absolute; bottom: 0; }
+  /* ⚠️ scala vera: il carro attrezzi e' lungo circa il doppio della 500,
+     quindi la 500 si mostra larga poco piu' della meta' del carro */
+  /* il carro sta il piu' a sinistra possibile, fin sul bordo della scena */
+  .posto.sx { left: -44px; width: 560px; }
+  /* la persona in scala: alta circa 1,70 m contro i 3 m della 500 */
+  .posto.dx { right: 10px; text-align: center; }
+  .posto.dx img { width: auto; height: 172px; margin: 0 auto; }
+  .posto.centro { left: 50%; transform: translateX(-50%); width: 280px; z-index: 3; }
+  .posto img, .posto svg { width: 100%; display: block; }
+  .terra { position: absolute; left: 0; right: 0; bottom: 14px; height: 1px; background: linear-gradient(90deg, rgba(15,27,51,0), rgba(15,27,51,.14) 20%, rgba(15,27,51,.14) 80%, rgba(15,27,51,0)); }
+  .ombra { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); width: 76%; height: 14px; border-radius: 50%; background: radial-gradient(closest-side, rgba(15,27,51,.22), rgba(15,27,51,0)); transition: opacity .5s ease; }
+
+  /* il carro attrezzi ribaltato: la rampa scende verso la 500 */
+  .carro-girato { transform: scaleX(-1); }
+
+  /* le due mete: da spente sono smorte e in disparte */
+  .meta { position: relative; display: block; opacity: .34; filter: grayscale(.55); transition: opacity .45s ease, filter .45s ease; }
+  .scena[data-scelta="demolizione"] .posto.sx .meta,
+  .scena[data-scelta="valutazione"] .posto.dx .meta { opacity: 1; filter: none; }
+
+  /* ⭐ la 500 che si sposta. ⚠️ Il punto d'arrivo NON e' scritto qui: lo
+     calcola il codice al momento del clic misurando dove sono davvero il
+     pianale e l'acquirente, cosi' l'atterraggio resta preciso a qualsiasi
+     larghezza di finestra. */
+  .auto-500 { transition: transform 1.2s cubic-bezier(.34,.68,.24,1); }
+  .scena[data-scelta] .posto.centro .ombra { opacity: 0; }
+
+  /* i contanti */
+  .soldo { position: absolute; opacity: 0; }
+  .scena[data-scelta="valutazione"] .soldo { animation: sale-soldo 1.6s ease-out forwards; }
+  @keyframes sale-soldo {
+    0%   { opacity: 0; transform: translate(0,6px) rotate(-6deg) scale(.8); }
+    18%  { opacity: 1; }
+    78%  { opacity: 1; }
+    100% { opacity: 0; transform: translate(var(--dx,10px), var(--dy,-92px)) rotate(var(--giro,16deg)) scale(1); }
+  }
+  /* la scritta sotto la meta scelta */
+  .didietro { position: absolute; bottom: -24px; left: 0; right: 0; text-align: center; font-size: 12px; font-weight: 700; color: #7C8AA5; opacity: 0; transition: opacity .4s ease; }
+  .scena[data-scelta="demolizione"] .posto.sx .didietro,
+  .scena[data-scelta="valutazione"] .posto.dx .didietro { opacity: 1; }
+
+  /* ---------- le due porte ---------- */
+  .porte { display: flex; gap: 20px; margin-top: 34px; text-align: left; }
+  .porta { flex: 1; border-radius: 22px; padding: 22px 24px 20px; transition: transform .18s; }
+  .porta.forte { background: linear-gradient(155deg,#1E3A8A,#1D4ED8); color: #fff; box-shadow: 0 22px 46px rgba(29,78,216,.28); }
+  .porta.tenue { background: rgba(255,255,255,.86); border: 1px solid #E7EAF3; box-shadow: 0 18px 40px rgba(15,27,51,.10); }
+  .porta:hover { transform: translateY(-5px); }
+  .porta h2 { font-size: 20px; letter-spacing: -.5px; }
+  .porta .pill { display: inline-block; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 5px 11px; margin: 8px 0 10px; }
+  .porta.forte .pill { background: rgba(255,255,255,.16); color: #DBEAFE; }
+  .porta.tenue .pill { background: #DCFCE7; color: #15803D; }
+  .porta p { font-size: 13.5px; line-height: 1.6; }
+  .porta.forte p { color: #C7D8FF; }
+  .porta.tenue p { color: #46536B; }
+  .porta .cta { display: block; text-align: center; border-radius: 999px; padding: 13px 0; font-size: 14px; font-weight: 700; cursor: pointer; border: none; width: 100%; font-family: inherit; margin-top: 16px; }
+  .porta.forte .cta { background: #fff; color: #1B2E6B; }
+  .porta.tenue .cta { background: linear-gradient(100deg,#2563eb,#6d28d9); color: #fff; box-shadow: 0 10px 22px rgba(79,70,229,.3); }
+
+  /* ---------- riquadri ---------- */
+  .foglio { max-width: 1000px; margin: 18px auto 60px; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+  .riquadro { background: #fff; border: 1px solid #E4E9F2; border-radius: 20px; padding: 22px 26px 26px; box-shadow: 0 10px 28px rgba(15,27,51,.07); }
+  .riquadro .capo { font-size: 11px; font-weight: 800; letter-spacing: 1.1px; text-transform: uppercase; color: #8A94A3; margin-bottom: 14px; }
+  .riquadro .v { display: flex; gap: 10px; font-size: 14px; color: #46536B; padding: 8px 0; border-top: 1px solid #F1F4FA; line-height: 1.6; }
+  .riquadro .v:first-of-type { border-top: none; }
+  .riquadro .v b { color: #0F172A; }
+  .riquadro .v i { flex-shrink: 0; width: 20px; height: 20px; border-radius: 999px; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; font-weight: 800; margin-top: 1px; background: #EFF6FF; color: #1D4ED8; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>LA 500 VA DOVE CLICCHI</b> &middot; con le illustrazioni vere: clicca la demolizione e la 500 sale sul carro attrezzi, clicca la valutazione e va da chi la compra.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('b',this)">La scena</span>
+  <span onclick="vista('c',this)">Cosa manca</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  const auto500 = `<img class="auto-500" src="/auto-500.png" alt="Fiat 500 rossa">`
+  const carro = girato => `<img class="${girato ? 'carro-girato' : ''}" src="/carro-attrezzi.png" alt="Carro attrezzi col pianale abbassato">`
+
+  // ACQUIRENTE: illustrazione di Davide, ripulita dal bianco
+  const acquirente = `<img src="/acquirente.png" alt="Chi compra il mezzo, coi contanti in mano">`
+
+  const banconota = `<svg width="38" height="22" viewBox="0 0 46 26">
+      <rect x="1" y="1" width="44" height="24" rx="4" fill="#DFF3E3" stroke="#3FA45B" stroke-width="1.6"/>
+      <circle cx="23" cy="13" r="7" fill="#BDE6C7" stroke="#3FA45B" stroke-width="1.2"/>
+      <text x="23" y="17.5" text-anchor="middle" font-family="Arial" font-size="10" font-weight="700" fill="#1F7A3D">&euro;</text>
+    </svg>`
+
+  function contanti(n) {
+    let out = ''
+    for (let i = 0; i < n; i++) {
+      out += `<span class="soldo" style="left:${-4 + (i * 27) % 80}px; bottom:${118 + (i % 3) * 15}px;
+        --dx:${(i % 2 ? 1 : -1) * (10 + (i * 17) % 38)}px; --dy:${-(66 + (i * 23) % 58)}px; --giro:${-20 + (i * 13) % 44}deg;
+        animation-delay:${(0.55 + i * .13).toFixed(2)}s">${banconota}</span>`
+    }
+    return out
+  }
+
+  function scena(id, girato) {
+    const idScena = id
+    return `<div class="schermo">
+      <div class="barra-url"><i></i><i></i><i></i><span class="url">noidemoliamo.it</span></div>
+      <div class="scena" id="${id}" ${girato ? 'data-girato="1"' : ''}>
+        <div class="titolone">La tua auto da rottamare,<br><span class="grad">ritirata e demolita gratis</span></div>
+        <div class="occhiello">Pensiamo a tutto Noi: documenti, carro attrezzi e certificati. Oppure, se preferisci, prima ti diciamo quanto vale.</div>
+
+        <div class="palco">
+          <span class="terra"></span>
+
+          <span class="posto sx">
+            <span class="meta">
+              ${carro(girato)}
+              <span class="didietro">Il carro attrezzi viene a prenderla</span>
+            </span>
+          </span>
+
+          <span class="posto centro">
+            <span class="ombra"></span>
+            ${auto500}
+          </span>
+
+          <span class="posto dx">
+            <span class="meta">
+              ${acquirente}
+              ${contanti(5)}
+              <span class="didietro">L&rsquo;acquirente lo troviamo Noi</span>
+            </span>
+          </span>
+        </div>
+
+        <div class="porte">
+          <div class="porta forte">
+            <h2>Voglio rottamarla</h2>
+            <span class="pill">Gratis, anche il ritiro</span>
+            <p>La rottami e non ci pensi pi&ugrave;: veniamo a prenderla a casa tua e ti mandiamo tutti i certificati.</p>
+            <button class="cta" data-scelta="demolizione">Vai alla demolizione gratuita</button>
+          </div>
+          <div class="porta tenue">
+            <h2>Voglio sapere quanto vale</h2>
+            <span class="pill">Valutazione gratuita</span>
+            <p>Prima di rottamarla senti la cifra: se conviene venderla, l&rsquo;acquirente lo troviamo Noi.</p>
+            <button class="cta" data-scelta="valutazione">Chiedi la valutazione gratuita</button>
+          </div>
+        </div>
+      </div>
+    </div>`
+  }
+
+  const viste = {
+
+    b: `<div class="spiega"><b>La scena, con la manovra vera.</b> Il carro sta tutto a sinistra, ribaltato, con la rampa che scende verso la 500. Clicchi la demolizione: la 500 <b>si gira</b>, imbocca la rampa e ci sale. Clicchi la valutazione mentre &egrave; l&agrave; sopra: <b>scende in retromarcia</b> fino al centro, <b>si gira</b> e va dall&rsquo;acquirente.</div>
+        <div class="prova">Clicca uno dei due bottoni in fondo. <button onclick="riavvolgi('scena-b')">Rimetti la 500 al centro</button></div>
+        ${scena('scena-b', true)}`,
+
+    c: `<div class="spiega"><b>Cosa manca.</b> La 500 e il carro attrezzi sono i tuoi disegni, gi&agrave; ripuliti dal bianco e messi in scala (il carro &egrave; lungo il doppio della 500, come nella realt&agrave;).</div>
+      <div class="foglio">
+        <div class="riquadro">
+          <div class="capo">L&rsquo;unica cosa che manca</div>
+          <div class="v"><i>&#10003;</i><span><b>Niente: ci sono tutte e tre.</b> 500, carro attrezzi e acquirente sono i tuoi disegni, ripuliti dal bianco, ritagliati stretti e messi in scala fra loro.</span></div>
+        </div>
+        <div class="riquadro">
+          <div class="capo">Da decidere insieme, prima di metterlo sul sito</div>
+          <div class="v"><i>&#9888;</i><span><b>Quanto dura.</b> Il clic porta a un&rsquo;altra pagina: o teniamo l&rsquo;animazione cortissima (mezzo secondo), oppure la facciamo partire al passaggio del mouse e il clic va subito.</span></div>
+          <div class="v"><i>&#9888;</i><span><b>Sul telefono</b> le due porte vanno una sotto l&rsquo;altra e questa scena larga non ci sta: l&igrave; o sparisce, o resta la sola 500 ferma.</span></div>
+          <div class="v"><i>&#9888;</i><span><b>Niente cifre finte</b> accanto ai contanti: prometteremmo un prezzo senza aver visto la macchina.</span></div>
+        </div>
+      </div>`,
+  }
+
+  const chiavi = ['b','c']
+  document.getElementById('viste').innerHTML = chiavi.map(k => `<div class="vista ${k === 'b' ? 'viva' : ''}" id="vista-${k}">${viste[k]}</div>`).join('')
+
+  // ============================================================
+  // DOVE ATTERRA LA 500
+  // Il pianale del carro attrezzi e' una riga inclinata dentro il disegno:
+  // misurata sul file, va da (190, 375) a (900, 152) su un'immagine larga
+  // 1332. Qui la si riporta alle misure vere dello schermo e ci si appoggia
+  // sopra la 500, ruotata dello stesso angolo.
+  // ============================================================
+  const PIANALE = { m: -0.3139, q: 434.4, daX: 190, aX: 900, larghezzaDisegno: 1332 }
+  const GRADI = Math.atan(PIANALE.m) * 180 / Math.PI      // -17,4 gradi
+
+  // ⚠️ La posizione FERMA della 500 non si legge dalla 500 stessa: se sta
+  // ancora viaggiando (o e' gia' arrivata dall'altra parte) si leggerebbe
+  // dove si trova ADESSO e il conto verrebbe sbagliato, mandandola oltre.
+  // Si legge dal suo posto sul palco, che non si muove mai.
+  const posoFermo = scena => scena.querySelector('.posto.centro').getBoundingClientRect()
+
+  // Dove si ferma la 500 sul pianale: {x, y, giro} rispetto al posto fermo
+  function postoSulCarro(scena) {
+    const carro = scena.querySelector('.posto.sx img')
+    const girato = scena.dataset.girato === '1'
+    const R = posoFermo(scena), c = carro.getBoundingClientRect()
+    const k = c.width / PIANALE.larghezzaDisegno
+    // col carro ribaltato il disegno si legge da destra a sinistra, e il
+    // pianale sale verso sinistra invece che verso destra
+    const xSchermo = ix => girato ? c.right - ix * k : c.left + ix * k
+    const ySchermo = ix => c.top + (PIANALE.m * ix + PIANALE.q) * k
+    const gradi = girato ? -GRADI : GRADI
+    const th = gradi * Math.PI / 180, cos = Math.cos(th), sin = Math.sin(th)
+    const cx = R.left + R.width / 2, cy = R.top + R.height / 2
+    // ⭐ la 500 SI GIRA verso dove sta andando: va a sinistra, quindi si
+    // specchia (scaleX -1). Essendo simmetrica rispetto al centro, il punto
+    // in cui le ruote toccano resta lo stesso.
+    const px = R.left + R.width / 2, py = R.top + R.height - 4
+    const rx = cx + (px - cx) * cos - (py - cy) * sin
+    const ry = cy + (px - cx) * sin + (py - cy) * cos
+    const mezzeria = (PIANALE.daX + PIANALE.aX) / 2
+    return { x: Math.round(xSchermo(mezzeria) - rx), y: Math.round(ySchermo(mezzeria) - ry), giro: +gradi.toFixed(1) }
+  }
+
+  // Dove si ferma davanti all'acquirente: col muso poco prima dei contanti
+  function postoDallAcquirente(scena) {
+    const persona = scena.querySelector('.posto.dx img')
+    const R = posoFermo(scena), p = persona.getBoundingClientRect()
+    return { x: Math.round(p.left - 26 - R.right), y: 0, giro: 0 }
+  }
+
+  // ============================================================
+  // LA MANOVRA (⭐ 24/08, come l'ha chiesta Davide)
+  // La 500 non salta da una parte all'altra: fa le mosse per davvero.
+  //   verso il carro:      si gira · sale sulla rampa
+  //   dal carro al soldi:  scende in RETROMARCIA fino al centro · si gira ·
+  //                        va dall'acquirente
+  // Ogni mossa e' un pezzo di strada con la sua durata: si incatenano.
+  // ============================================================
+  const CENTRO = { x: 0, y: 0, giro: 0 }
+  const scrivi = (auto, p, specchiata, durata) => {
+    auto.style.transitionDuration = durata + 'ms'
+    auto.style.transform = `translate(${p.x}px, ${p.y}px) rotate(${p.giro}deg) scaleX(${specchiata ? -1 : 1})`
+  }
+  const aspetta = ms => new Promise(r => setTimeout(r, ms))
+
+  async function manovra(scena, meta) {
+    if (scena.dataset.inMoto === '1') return
+    scena.dataset.inMoto = '1'
+    const auto = scena.querySelector('.auto-500')
+    const dove = scena.dataset.dove || 'centro'
+
+    // 1. se sono fermo altrove, torno al centro come si deve
+    if (dove === 'carro' && meta !== 'carro') {
+      scrivi(auto, CENTRO, true, 1100)          // giu' dalla rampa in retromarcia
+      await aspetta(1150)
+    } else if (dove === 'acquirente' && meta !== 'acquirente') {
+      scrivi(auto, CENTRO, false, 900)          // indietro fino al centro
+      await aspetta(950)
+    }
+
+    // 2. al centro mi giro, se devo
+    const specchiata = meta === 'carro'
+    if ((dove !== meta) && (dove !== 'centro' || specchiata)) {
+      scrivi(auto, CENTRO, specchiata, 340)     // la giravolta
+      await aspetta(380)
+    }
+
+    // 3. parto verso la meta
+    if (meta === 'carro') scrivi(auto, postoSulCarro(scena), true, 1200)
+    else if (meta === 'acquirente') scrivi(auto, postoDallAcquirente(scena), false, 1000)
+    else scrivi(auto, CENTRO, false, 700)
+
+    scena.dataset.dove = meta
+    await aspetta(meta === 'centro' ? 720 : 1220)
+    scena.dataset.inMoto = '0'
+  }
+
+  document.querySelectorAll('.cta[data-scelta]').forEach(b => {
+    b.addEventListener('click', () => {
+      const scena = b.closest('.scena')
+      scena.dataset.scelta = b.dataset.scelta
+      manovra(scena, b.dataset.scelta === 'demolizione' ? 'carro' : 'acquirente')
+    })
+  })
+
+  function riavvolgi(id) {
+    const s = document.getElementById(id)
+    delete s.dataset.scelta
+    manovra(s, 'centro')          // torna al centro facendo la manovra giusta
+  }
+
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(v => v.classList.remove('viva'))
+    document.getElementById('vista-' + k).classList.add('viva')
+    document.querySelectorAll('.schede span').forEach(s => s.classList.remove('qui'))
+    el.classList.add('qui')
+    window.scrollTo({ top: 0 })
+  }
+</script>
+</body>
+</html>

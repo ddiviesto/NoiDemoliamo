@@ -70,7 +70,7 @@ export default function Login() {
           <h1 className="text-[22px] font-bold mt-4 leading-tight">Bentornato</h1>
           <p className="text-[13px] mt-1" style={{ color: '#DBEAFE' }}>Entra nella tua area personale</p>
           <div className="absolute left-6 -bottom-[37px] w-[74px] h-[74px] bg-white rounded-[20px] flex items-center justify-center" style={{ boxShadow: '0 8px 20px rgba(16,24,40,0.18)' }}>
-            <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={58} height={58} className="rounded-2xl" priority />
+            <Image src="/icona-app.png" alt="NoiDemoliamo" width={58} height={58} className="rounded-2xl" priority />
           </div>
         </div>
 

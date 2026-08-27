@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L'icona dell'app, col carattere vero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 11px 16px; text-align: center; font-size: 12px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .spiega { max-width: 980px; margin: 0 auto; padding: 22px 20px 0; font-size: 14.5px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .foglio { max-width: 980px; margin: 16px auto 60px; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+  .riquadro { background: #fff; border: 1px solid #E4E9F2; border-radius: 20px; padding: 22px 26px 26px; box-shadow: 0 10px 28px rgba(15,27,51,.07); }
+  .capo { font-size: 15.5px; font-weight: 800; color: #0F1B33; margin-bottom: 4px; }
+  .sotto { font-size: 13px; color: #7C8AA5; margin-bottom: 18px; line-height: 1.6; }
+
+  .riga { display: flex; align-items: flex-end; gap: 26px; flex-wrap: wrap; }
+  .p { text-align: center; }
+  .p .eti { font-size: 10.5px; color: #9AA7B5; margin-top: 8px; font-weight: 700; }
+  canvas { display: block; }
+  .bottoni { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  .bottoni button { font-family: inherit; font-size: 13px; font-weight: 700; border: none; border-radius: 999px;
+    padding: 11px 20px; background: #1D4ED8; color: #fff; cursor: pointer; }
+  .bottoni button.chiaro { background: #EEF2FF; color: #1D4ED8; }
+
+  .telefono { background: linear-gradient(160deg,#2A3F8F,#6D5BD0 55%,#B48BD6); border-radius: 26px; padding: 22px 18px; display: inline-block; }
+  .griglia { display: grid; grid-template-columns: repeat(4, 60px); gap: 18px 16px; }
+  .app { text-align: center; }
+  .app .quadro { width: 60px; height: 60px; border-radius: 14px; background: rgba(255,255,255,.24); overflow: hidden; }
+  .app .nome { font-size: 9.5px; color: #fff; margin-top: 5px; text-shadow: 0 1px 3px rgba(0,0,0,.4); }
+
+  .comandi { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; font-size: 13px; color: #46536B; }
+  .comandi label { display: flex; align-items: center; gap: 7px; font-weight: 600; }
+
+  .scelte { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .scelte button { font-family: inherit; cursor: pointer; background: #F6F8FC; border: 2px solid #E4E9F2; border-radius: 14px;
+    padding: 10px 12px 8px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .scelte button.presa { border-color: #1D4ED8; background: #EFF6FF; }
+  .scelte button span { font-size: 10.5px; font-weight: 700; color: #55637A; }
+  .scelte button.presa span { color: #1D4ED8; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>L&rsquo;ICONA COSTRUITA COL CARATTERE VERO</b> &middot; stesso disegno che ti piace, ma le lettere sono Outfit, identiche a quelle del sito. Da qui la scarichi gi&agrave; pronta.</div>
+
+<div class="spiega">Il disegno &egrave; il tuo: quadrato blu, <b>Noi</b> grande, fogliolina al posto del puntino, <b>DEMOLIAMO</b> piccolo sotto. Cambia una cosa sola: le lettere non sono imitate, sono <b>il carattere vero del sito</b>. Con i comandi qui sotto puoi provare due o tre regolazioni prima di scaricarla.</div>
+
+<div class="foglio">
+  <div class="riquadro">
+    <div class="capo">L&rsquo;icona</div>
+    <div class="sotto">A sinistra come la vedi grande, poi alle misure vere: 180 pixel &egrave; l&rsquo;icona su iPhone, 60 &egrave; come la vedi davvero sulla schermata, 32 &egrave; la linguetta del browser.</div>
+
+    <div class="scelte" id="scelte"></div>
+
+    <div class="comandi">
+      <label>Grandezza foglia <input type="range" id="foglia" min="0.16" max="0.34" step="0.01" value="0.24"></label>
+      <label>Sposta &darr;&uarr; <input type="range" id="altezza" min="-0.4" max="0.4" step="0.02" value="0.1"></label>
+      <label>Sposta &larr;&rarr; <input type="range" id="lato" min="-0.5" max="0.5" step="0.02" value="0.16"></label>
+      <label>Parola sotto <input type="range" id="sotto" min="0" max="0.14" step="0.005" value="0.085"></label>
+      <label>Blu <select id="blu"><option value="#1D4ED8">Blu del sito</option><option value="#1E40AF">Blu più scuro</option><option value="#2563EB">Blu più chiaro</option></select></label>
+    </div>
+
+    <div class="riga" id="anteprime"></div>
+
+    <div class="bottoni">
+      <button onclick="scarica(1024,'icona-app-1024.png')">Scarica 1024 (per l&rsquo;app)</button>
+      <button class="chiaro" onclick="scarica(512,'icona-app-512.png')">512</button>
+      <button class="chiaro" onclick="scarica(192,'icona-app-192.png')">192</button>
+      <button class="chiaro" onclick="scarica(180,'icona-app-180.png')">180</button>
+      <button class="chiaro" onclick="scarica(32,'icona-32.png')">32 (linguetta)</button>
+    </div>
+  </div>
+
+  <div class="riquadro">
+    <div class="capo">Sulla schermata del telefono</div>
+    <div class="sotto">Com&rsquo;&egrave; davvero, tra le altre app: qui sotto il nome lo scrive il telefono da solo.</div>
+    <div class="telefono">
+      <div class="griglia" id="schermata"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // LA FOGLIOLINA (come quella scelta da Davide): corpo pieno con la punta in
+  // alto a destra, base tonda in basso a sinistra, e la venatura bianca dentro.
+  // Disegnata su una griglia di 24, si riscala senza sgranare a ogni misura.
+  // Sei foglioline diverse, tutte disegnate su una griglia di 24: si cambia
+  // con un clic e si ridisegna tutto, nitido a qualsiasi misura.
+  // ⭐ Le prime due sono "Eco" delle Material Symbols di Google (licenza
+  // Apache 2.0, si possono usare): sono i disegni ORIGINALI, presi dal
+  // deposito ufficiale, non imitazioni. Vivono su una griglia di 960 e con
+  // l'asse Y spostato, per questo hanno griglia e spostaY.
+  const FOGLIE = [
+    { id: 'eco-piena', nome: 'Eco di Google, venatura bianca', griglia: 960, spostaY: 960,
+      // ⚠️ nel disegno di Google la venatura è un TAGLIO nella foglia, non una
+      // linea: da sola lascerebbe vedere il fondo blu. Sotto si mette la
+      // sagoma piena della foglia in bianco, e dal taglio esce il bianco.
+      sotto: 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Z',
+      corpo: 'M450-80q-33 0-66.5-7.5T315-109q12-121 70-226t149-185q-110 56-190.5 148T231-162q-4-3-7.5-6.5L216-176q-47-47-71.5-105T120-402q0-68 27-130t75-110q70-70 173.5-98T675-760q26 1 48 11.5t39 27.5q17 17 27 39.5t12 48.5q6 180-21 281t-96 170q-49 49-109.5 75.5T450-80Z',
+      vena: null },
+    { id: 'eco-linea', nome: 'Eco di Google, a contorno', griglia: 960, spostaY: 960,
+      corpo: 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Zm112-16q29 17 59.5 24.5T450-160q46 0 91-18.5t86-59.5q18-18 36.5-50.5t32-85Q709-426 716-500.5t2-177.5q-49-2-110.5-1.5T485-670q-61 9-116 29t-90 55q-45 45-62 89t-17 85q0 59 22.5 103.5T262-246q42-80 111-153.5T534-520q-72 63-125.5 142.5T328-192Z',
+      vena: null },
+    { id: 'eco-linea-bianca', nome: 'Eco a contorno, dentro bianco', griglia: 960, spostaY: 960,
+      // il contorno resta verde, ma sotto si riempie di bianco: la foglia
+      // diventa piena e chiara, con il bordo e la venatura verdi
+      sotto: 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Z',
+      sottoColore: '#FFFFFF',
+      corpo: 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Zm112-16q29 17 59.5 24.5T450-160q46 0 91-18.5t86-59.5q18-18 36.5-50.5t32-85Q709-426 716-500.5t2-177.5q-49-2-110.5-1.5T485-670q-61 9-116 29t-90 55q-45 45-62 89t-17 85q0 59 22.5 103.5T262-246q42-80 111-153.5T534-520q-72 63-125.5 142.5T328-192Z',
+      vena: null },
+    { id: 'classica', nome: 'Classica con venatura',
+      corpo: 'M2.6 21.4C1.2 11.6 8.4 2.6 21.4 2.6 22.8 12.4 15.6 21.4 2.6 21.4Z',
+      vena: 'M4.6 19.4C9.2 13.6 13.8 9 19.4 5.6' },
+    { id: 'piena', nome: 'Piena, senza venatura',
+      corpo: 'M2.6 21.4C1.2 11.6 8.4 2.6 21.4 2.6 22.8 12.4 15.6 21.4 2.6 21.4Z', vena: null },
+    { id: 'alloro', nome: 'Stretta e appuntita',
+      corpo: 'M3.4 20.6C3.4 12 9.6 3.4 20.6 3.4 20.6 12 14.4 20.6 3.4 20.6Z',
+      vena: 'M5.6 18.4C9.6 13.2 13.6 9.2 18.4 5.8' },
+    { id: 'gambo', nome: 'Con il picciolo',
+      corpo: 'M6 18C5 10.5 10.5 4 20.5 4 21.5 11.5 16 18 6 18Z',
+      vena: 'M2.5 21.5C4.5 19.5 6.5 17.5 9 15.5' },
+    { id: 'goccia', nome: 'Tonda, moderna',
+      corpo: 'M4 20C1.5 11 8 3.5 20 4 20.5 16 12.5 22 4 20Z', vena: null },
+    { id: 'virgola', nome: 'Minima, a virgola',
+      corpo: 'M4 20C4 11 10 4.5 20.5 3.5 18.5 13.5 12.5 19.5 4 20Z', vena: null },
+  ]
+  let sceltaFoglia = 2   // parte dalla foglia col contorno verde e il dentro bianco
+  const tracciaCorpo = () => new Path2D(FOGLIE[sceltaFoglia].corpo)
+  const tracciaVena = () => FOGLIE[sceltaFoglia].vena ? new Path2D(FOGLIE[sceltaFoglia].vena) : null
+
+  function disegna(cv, lato) {
+    const c = cv.getContext('2d')
+    const S = lato
+    cv.width = S; cv.height = S
+    c.clearRect(0, 0, S, S)
+
+    // il quadrato blu con gli angoli arrotondati (come li fa iOS)
+    c.fillStyle = document.getElementById('blu').value
+    c.beginPath(); c.roundRect(0, 0, S, S, S * 0.225); c.fill()
+
+    const misuraFoglia = +document.getElementById('foglia').value
+    const misuraSotto = +document.getElementById('sotto').value
+
+    // "Noi" grande, centrato
+    const corpo = S * 0.30
+    c.font = `800 ${corpo}px Outfit, sans-serif`
+    c.textAlign = 'center'; c.textBaseline = 'alphabetic'
+    c.fillStyle = '#FFFFFF'
+    const yNoi = S * (misuraSotto > 0.01 ? 0.575 : 0.62)
+    c.fillText('Noi', S / 2, yNoi)
+
+    // ⭐ LA FOGLIOLINA PRENDE IL POSTO DEL PUNTINO della "i" (non ci si appoggia
+    // sopra): prima si CANCELLA il puntino ridipingendo il fondo blu sopra di
+    // lui, poi si disegna la foglia al suo posto. Le misure si leggono dal
+    // carattere vero, così la cosa funziona a qualsiasi grandezza.
+    const largaNoi = c.measureText('Noi').width
+    const largaNo = c.measureText('No').width
+    const largaI = c.measureText('i').width
+    const centroI = S / 2 - largaNoi / 2 + largaNo + largaI / 2
+
+    const cimaX = yNoi - c.measureText('n').actualBoundingBoxAscent   // altezza delle lettere basse
+    const cimaI = yNoi - c.measureText('i').actualBoundingBoxAscent   // cima del puntino
+
+    // ⚠️ si cancella SOLO la fascia del puntino, mai sotto: più in basso
+    // comincia l'asta della "i" e verrebbe mozzata
+    // ⚠️ l'altezza va calcolata dal PUNTO IN CUI COMINCIA la macchia fino alla
+    // cima delle lettere basse: se si dimentica il margine iniziale, la macchia
+    // finisce troppo in alto e sotto resta la metà del puntino
+    c.fillStyle = document.getElementById('blu').value
+    const daY = cimaI - corpo * 0.14
+    c.fillRect(centroI - largaI * 1.4, daY, largaI * 2.8, (cimaX - daY) - corpo * 0.012)
+
+    const alta = S * misuraFoglia
+    const f = FOGLIE[sceltaFoglia]
+    const griglia = f.griglia || 24
+    // spostamenti fini, in frazioni della foglia: servono perché ogni disegno
+    // ha il suo peso visivo e "centrato per calcolo" non è sempre "centrato per l'occhio"
+    const spostaLato = +document.getElementById('lato').value * alta
+    const spostaAlto = +document.getElementById('altezza').value * alta
+    c.save()
+    c.translate(centroI - alta / 2 + spostaLato, cimaX - alta * 1.04 + spostaAlto)
+    c.scale(alta / griglia, alta / griglia)
+    if (f.spostaY) c.translate(0, f.spostaY)
+    if (f.sotto) {                       // la sagoma bianca dietro: fa uscire bianca la venatura
+      c.fillStyle = f.sottoColore || '#FFFFFF'
+      c.fill(new Path2D(f.sotto))
+    }
+    c.fillStyle = '#16A34A'
+    c.fill(tracciaCorpo())
+    const vena = tracciaVena()
+    if (vena) {
+      c.strokeStyle = '#FFFFFF'
+      c.lineWidth = 1.9
+      c.lineCap = 'round'
+      c.stroke(vena)
+    }
+    c.restore()
+
+    // "DEMOLIAMO" piccolo sotto
+    if (misuraSotto > 0.01) {
+      const piccolo = S * misuraSotto
+      c.font = `500 ${piccolo}px Outfit, sans-serif`
+      c.letterSpacing = `${piccolo * 0.14}px`
+      c.fillStyle = 'rgba(255,255,255,0.94)'
+      c.fillText('DEMOLIAMO', S / 2, yNoi + S * 0.135)
+      c.letterSpacing = '0px'
+    }
+  }
+
+  const MISURE = [220, 180, 120, 60, 32]
+  function ridisegna() {
+    document.getElementById('anteprime').innerHTML = MISURE.map(px =>
+      `<span class="p"><canvas class="cv" data-lato="${px}" style="width:${px}px;height:${px}px;border-radius:${px * 0.225}px"></canvas><span class="eti">${px}px</span></span>`).join('')
+    document.querySelectorAll('.cv').forEach(cv => disegna(cv, +cv.dataset.lato * 2))
+
+    // la schermata del telefono
+    const altre = ['Messaggi', 'Foto', 'Mail', 'Note', 'Meteo', 'Mappe', 'Calendario']
+    document.getElementById('schermata').innerHTML =
+      altre.slice(0, 5).map(n => `<span class="app"><span class="quadro"></span><span class="nome">${n}</span></span>`).join('') +
+      `<span class="app"><span class="quadro"><canvas id="cvTel" style="width:60px;height:60px"></canvas></span><span class="nome">NoiDemoliamo</span></span>` +
+      altre.slice(5).map(n => `<span class="app"><span class="quadro"></span><span class="nome">${n}</span></span>`).join('')
+    disegna(document.getElementById('cvTel'), 120)
+  }
+
+  function scarica(lato, nome) {
+    const cv = document.createElement('canvas')
+    disegna(cv, lato)
+    const a = document.createElement('a')
+    a.download = nome
+    a.href = cv.toDataURL('image/png')
+    a.click()
+  }
+
+  // la fila delle foglioline: ognuna disegnata davvero, non descritta a parole
+  function fileFoglie() {
+    document.getElementById('scelte').innerHTML = FOGLIE.map((f, i) => `
+      <button data-i="${i}" class="${i === sceltaFoglia ? 'presa' : ''}">
+        <svg viewBox="${f.griglia === 960 ? '0 -960 960 960' : '0 0 24 24'}" width="34" height="34">
+          <path d="${f.corpo}" fill="#16A34A"/>
+          ${f.vena ? `<path d="${f.vena}" stroke="#fff" stroke-width="1.9" stroke-linecap="round" fill="none"/>` : ''}
+        </svg>
+        <span>${f.nome}</span>
+      </button>`).join('')
+    document.querySelectorAll('#scelte button').forEach(b => b.addEventListener('click', () => {
+      sceltaFoglia = +b.dataset.i
+      fileFoglie(); ridisegna()
+    }))
+  }
+
+  document.querySelectorAll('#foglia, #sotto, #blu, #lato, #altezza').forEach(e => e.addEventListener('input', ridisegna))
+  document.fonts.load('800 100px Outfit').then(() => document.fonts.load('500 40px Outfit')).then(() => { fileFoglie(); ridisegna() })
+</script>
+</body>
+</html>

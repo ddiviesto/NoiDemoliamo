@@ -103,7 +103,7 @@ export default function ImpostaPassword() {
 
         <div className="p-6">
           <div className="flex justify-center mb-4">
-            <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={88} height={88} className="rounded-2xl" priority />
+            <Image src="/icona-app.png" alt="NoiDemoliamo" width={88} height={88} className="rounded-2xl" priority />
           </div>
 
           {fase === 'verifica' && (

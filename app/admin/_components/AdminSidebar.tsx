@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import Marchio from '../../components/Marchio'
 import { supabase } from '@/lib/supabase'
 
@@ -114,9 +113,9 @@ export default function AdminSidebar({ attivo, extra }: { attivo: Sezione; extra
     <aside className="flex flex-col flex-shrink-0 text-white" style={{ width: 210, background: 'linear-gradient(180deg, #2563eb 0%, #2563eb 65%, #7CA4F2 100%)' }}>
       <div className="px-4 py-4 flex items-center gap-2.5" style={{ borderBottom: '1px solid rgba(255,255,255,0.3)' }}>
         {/* Il logo VERO in alto a sinistra (23/07, come nell'area cliente) */}
-        <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={36} height={36} className="rounded-xl flex-shrink-0" />
+        
         <div>
-          <div className="leading-none"><Marchio misura={15} chiaro /></div>
+          <div className="leading-none"><Marchio misura={17} chiaro /></div>
           <div className="text-[10px] font-semibold uppercase tracking-wide mt-1" style={{ color: '#BFDBFE' }}>Admin</div>
         </div>
       </div>

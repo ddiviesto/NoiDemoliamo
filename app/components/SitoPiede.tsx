@@ -76,7 +76,7 @@ export default function SitoPiede() {
         </div>
 
         <div className="flex flex-wrap justify-between gap-3" style={{ paddingTop: 20, fontSize: 12.5, color: '#A9C4FF' }}>
-          <div><Marchio misura={13} chiaro /></div>
+          <div><Marchio misura={15} chiaro /></div>
           <div>Demolizione auto gratuita in tutta Italia</div>
         </div>
       </div>

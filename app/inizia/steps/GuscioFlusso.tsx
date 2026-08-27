@@ -15,7 +15,6 @@
 // parola in sfumatura lo mette TitoloPasso.
 // ============================================================
 
-import Image from 'next/image'
 import { TitoloPasso } from './PezziFlusso'
 import Marchio from '../../components/Marchio'
 
@@ -56,8 +55,8 @@ export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, tit
           }}
         >
           <span className="flex items-center gap-2.5">
-            <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={30} height={30} style={{ borderRadius: 9 }} />
-            <Marchio misura={16} />
+            
+            <Marchio misura={20} />
           </span>
           <span className="flex items-center gap-2.5">
             <span style={{ fontSize: 12, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '7px 14px' }}>

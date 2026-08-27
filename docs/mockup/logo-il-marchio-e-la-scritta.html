@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup — Il marchio è la scritta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 11px 16px; text-align: center; font-size: 12px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .spiega { max-width: 1000px; margin: 0 auto; padding: 22px 20px 0; font-size: 14.5px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+
+  .foglio { max-width: 1000px; margin: 16px auto 60px; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+  .riquadro { background: #fff; border: 1px solid #E4E9F2; border-radius: 20px; padding: 22px 26px 26px; box-shadow: 0 10px 28px rgba(15,27,51,.07); }
+  .riquadro .capo { font-size: 15.5px; font-weight: 800; color: #0F1B33; }
+  .riquadro .sotto { font-size: 13px; color: #7C8AA5; margin: 5px 0 20px; line-height: 1.6; max-width: 640px; }
+
+  /* la scritta */
+  .m { font-family: 'Outfit', sans-serif; letter-spacing: -.035em; line-height: 1; white-space: nowrap; position: relative; display: inline-block; }
+  .m .noi { font-weight: 500; color: #46536B; }
+  .m .dem { font-weight: 800; color: #0F1B33; }
+  .chiaro .noi { color: #BFD3F5; } .chiaro .dem { color: #fff; }
+  .punto { color: #16A34A; font-weight: 800; }
+
+  /* la fogliolina al posto del puntino della i */
+  .foglina { position: absolute; pointer-events: none; }
+
+  .fila { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; padding: 16px 0; border-top: 1px solid #F1F4FA; }
+  .fila:first-of-type { border-top: none; }
+  .eti { font-size: 11px; font-weight: 800; color: #9AA7B5; text-transform: uppercase; letter-spacing: .8px; width: 130px; flex-shrink: 0; }
+
+  .barra { flex: 1; min-width: 460px; display: flex; align-items: center; justify-content: space-between; gap: 20px;
+    background: rgba(255,255,255,.96); border: 1px solid #EBEFF7; box-shadow: 0 10px 30px rgba(15,27,51,.08);
+    border-radius: 999px; padding: 10px 12px 10px 20px; }
+  .barra .voci { display: flex; gap: 18px; font-size: 13px; font-weight: 600; color: #46536B; }
+  .barra .cta { background: #2563eb; color: #fff; font-size: 12.5px; font-weight: 700; padding: 9px 18px; border-radius: 999px; }
+  .su-blu { background: linear-gradient(120deg,#1B2E6B,#2563eb); border-radius: 14px; padding: 16px 22px; }
+  .linguetta { display: inline-flex; align-items: center; gap: 8px; background: #E8EDF5; border-radius: 10px 10px 0 0; padding: 8px 14px; font-size: 12px; color: #46536B; }
+
+  /* l'iconcina quadrata (linguetta del browser, app sul telefono) */
+  .icona { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(150deg,#1D4ED8,#4F46E5); color: #fff;
+    font-family: 'Outfit', sans-serif; font-weight: 800; letter-spacing: -.04em; flex-shrink: 0; position: relative; }
+  .icona.tonda { border-radius: 22%; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>IL MARCHIO &Egrave; LA SCRITTA</b> &middot; niente disegnino accanto: il nome scritto bene &egrave; il marchio. Per la linguetta del browser e l&rsquo;icona dell&rsquo;app si ricava un quadratino dalle stesse lettere.</div>
+
+<div class="spiega">Ti faccio vedere tre modi, tutti con la <b>scritta che ti piace gi&agrave;</b>. Cambia solo se e come ci mettiamo un accento verde. Guarda soprattutto la riga dell&rsquo;iconcina: &egrave; l&rsquo;unico posto dove serve per forza qualcosa di quadrato.</div>
+
+<div class="foglio" id="foglio"></div>
+
+<script>
+  // fogliolina minuscola, da mettere sopra la "i"
+  const FOGLINA = (h) => `<svg viewBox="0 0 24 24" style="width:${h}px;height:${h}px;display:block">
+    <path d="M4.5 19.5C3 12 8 4.5 19.5 4.5 21 12 16 19.5 4.5 19.5Z" fill="#16A34A"/>
+  </svg>`
+
+  function scritta(modo, misura, chiaro) {
+    const dem = `<span class="dem">Demoliamo</span>`
+    if (modo === 'punto') {
+      return `<span class="m ${chiaro ? 'chiaro' : ''}" style="font-size:${misura}px"><span class="noi">Noi</span>${dem}<span class="punto">.</span></span>`
+    }
+    if (modo === 'foglina') {
+      // la "i" di Noi porta la fogliolina come accento: la posizione esatta la
+      // calcola sistemaFogline() misurando la lettera vera, non a occhio
+      return `<span class="m ${chiaro ? 'chiaro' : ''}" style="font-size:${misura}px">
+        <span class="noi">No<span class="conFoglina" style="position:relative">i<span class="foglina">${FOGLINA(misura * 0.30)}</span></span></span>${dem}</span>`
+    }
+    return `<span class="m ${chiaro ? 'chiaro' : ''}" style="font-size:${misura}px"><span class="noi">Noi</span>${dem}</span>`
+  }
+
+  function icona(modo, lato) {
+    const dentro = modo === 'foglina'
+      ? `<span style="position:relative;display:inline-block">N<span style="position:absolute;left:${lato * 0.30}px;top:${-lato * 0.10}px">${FOGLINA(lato * 0.26)}</span></span>D`
+      : modo === 'punto'
+        ? `N<span style="color:#4ADE80">D</span>`
+        : 'ND'
+    return `<span class="icona tonda" style="width:${lato}px;height:${lato}px;font-size:${lato * 0.42}px">${dentro}</span>`
+  }
+
+  const MODI = [
+    { id: 'nuda', nome: 'A · Solo la scritta',
+      dice: 'Nessun accento, nessun disegno: il nome e basta. &Egrave; la scelta pi&ugrave; sobria e quella che invecchia meglio. L&rsquo;iconcina quadrata &egrave; il monogramma <b>ND</b> con le stesse lettere.' },
+    { id: 'punto', nome: 'B · Con il punto verde',
+      dice: 'Un <b>punto verde</b> dopo il nome: un solo segno, piccolissimo, che porta il verde nel marchio senza disegnare niente. Nell&rsquo;iconcina la <b>D</b> diventa verde.' },
+    { id: 'foglina', nome: 'C · Con la fogliolina sulla i',
+      dice: 'Il puntino della <b>i</b> di Noi diventa una <b>fogliolina verde</b>. Il simbolo sta dentro la parola invece che accanto: &egrave; la strada pi&ugrave; nostra delle tre, e non aggiunge nessun ingombro.' },
+  ]
+
+  // Mette ogni fogliolina esattamente sopra la sua "i", centrata: si misura
+  // la lettera con un Range, così vale a qualsiasi misura del testo.
+  function sistemaFogline() {
+    document.querySelectorAll('.conFoglina').forEach(sp => {
+      const f = sp.querySelector('.foglina')
+      const testo = sp.firstChild                       // il carattere "i"
+      const r = document.createRange()
+      r.setStart(testo, 0); r.setEnd(testo, 1)
+      const box = r.getBoundingClientRect(), base = sp.getBoundingClientRect()
+      const largh = f.firstElementChild.getBoundingClientRect().width
+      // la fogliolina COPRE il puntino della i, non ci si appoggia sopra:
+      // scende dentro la lettera di un dodicesimo della misura del testo
+      const misura = parseFloat(getComputedStyle(sp).fontSize)
+      f.style.left = Math.round(box.left - base.left + box.width / 2 - largh / 2) + 'px'
+      f.style.top = Math.round(box.top - base.top - largh * 0.92 + misura * 0.13) + 'px'
+    })
+  }
+
+  document.getElementById('foglio').innerHTML = MODI.map(m => `
+    <div class="riquadro">
+      <div class="capo">${m.nome}</div>
+      <div class="sotto">${m.dice}</div>
+
+      <div class="fila"><span class="eti">Grande</span>${scritta(m.id, 44)}</div>
+
+      <div class="fila"><span class="eti">Barra del sito</span>
+        <span class="barra">
+          ${scritta(m.id, 18)}
+          <span class="voci"><span>Come funziona</span><span>Chi siamo</span><span>Domande</span></span>
+          <span class="cta">Richiedi ora</span>
+        </span>
+      </div>
+
+      <div class="fila"><span class="eti">Su fondo blu</span>
+        <span class="su-blu">${scritta(m.id, 26, true)}</span>
+        <span class="su-blu">${scritta(m.id, 15, true)}</span>
+      </div>
+
+      <div class="fila"><span class="eti">Iconcina</span>
+        ${icona(m.id, 96)} ${icona(m.id, 48)} ${icona(m.id, 32)} ${icona(m.id, 16)}
+        <span class="linguetta">${icona(m.id, 16)} NoiDemoliamo — Demolizione…</span>
+      </div>
+    </div>`).join('')
+
+  // le foglioline si posizionano quando il carattere è davvero caricato
+  document.fonts.ready.then(sistemaFogline)
+  window.addEventListener('resize', sistemaFogline)
+</script>
+</body>
+</html>

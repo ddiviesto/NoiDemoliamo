@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { pillolaStato } from '@/lib/statiCliente'
@@ -163,7 +162,7 @@ export default function DashboardCliente() {
         {/* HEADER BLU (stile banner /inizia) */}
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
           {/* Logo vero (variante A su mockup 22/07): lo stesso di /inizia e login */}
-          <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={38} height={38} className="rounded-xl flex-shrink-0" />
+          
           <div className="flex-1 min-w-0">
             <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
             <div className="text-sm font-semibold leading-tight truncate">

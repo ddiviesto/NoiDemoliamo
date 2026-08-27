@@ -11,7 +11,7 @@ import { Pratica } from './page'
 function LogoNoiDemoliamo({ size }: { size: number }) {
   return (
     <span style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', background: '#fff', border: '1px solid #E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <Image src="/NoiDemoliamoLogo.png" alt="NoiDemoliamo" width={size} height={size} style={{ objectFit: 'contain' }} />
+      <Image src="/icona-app.png" alt="NoiDemoliamo" width={size} height={size} style={{ objectFit: "cover" }} />
     </span>
   )
 }

@@ -722,6 +722,19 @@ La vecchia cardina bianca centrata **non esiste più**: `/` è il sito vetrina. 
 
 - **Font dei TESTI: quello di sistema** (Tailwind sans), su TUTTE le pagine. **NESSUN font custom nei testi.** Inter è stato provato e bocciato: pagine con font diversi tra loro non piacciono.
 - ⭐ **UNICA ECCEZIONE, IL MARCHIO (25/08, scelto da Davide sul mockup)**: la scritta **NoiDemoliamo** ha un carattere suo, **Outfit**, con **"Noi" leggero (500)** e **"Demoliamo" pieno (800)**. Prima era scritta col carattere di sistema e non sembrava un marchio, sembrava una parola qualsiasi. Sta in **un componente solo**, `app/components/Marchio.tsx` (`<Marchio misura chiaro occhiello />`), veste in `globals.css` (`.marchio`), carattere caricato in `layout.tsx`. Si usa **solo dove il nome è marchio**: barra del sito, piede, isola del flusso, testate blu, sidebar. ⚠️ Quando "NoiDemoliamo" compare **dentro una frase** o come **firma di un messaggio** in chat resta testo normale.
+
+## 6.1b IL MARCHIO — la scritta e la fogliolina
+
+⭐ **REGOLA (27/08, decisa da Davide dopo un giro lungo su simboli e loghi): IL MARCHIO È LA SCRITTA.** Non c'è nessun disegnino accanto al nome. **Il vecchio tondino con la 500 arrugginita è stato cancellato da tutto il sito e dal disco**: non va rimesso.
+
+- **L'unico segno è la FOGLIOLINA VERDE al posto del puntino della "i" di *Noi***. È il disegno **"Eco" delle Material Symbols di Google** (licenza Apache 2.0, si può usare): contorno verde `#16A34A`, **dentro pieno** (bianco sul chiaro, azzurro `#BFD3F5` sul blu, lo stesso colore della parola "Noi", altrimenti stona).
+- ⚠️ **Niente macchia di fondo per cancellare il puntino**: la foglia è piena e lo copre da sola. La macchia si spostava insieme alla foglia e finiva sulle lettere vicine.
+- ⚠️ **Grandezza e posizione stanno nel componente** (costanti `FOGLIA` e `SPAZIO_TRA_LE_PAROLE` in `Marchio.tsx`), scritte in linea sul pezzo, **non nel foglio di stile**: se il foglio arriva in ritardo, una foglia senza misure prende la sua grandezza naturale, enorme, e spacca la scritta in due righe (successo davvero).
+- Tutte le misure sono in **em**, cioè frazioni della grandezza del testo: valgono uguali a 13px come a 34px. Valori scelti da Davide: **larga 0.60 · alto -0.09 · lato 0.07 · spazio tra le parole 0.15**. Si rimettono a punto con `docs/mockup/scritta-fogliolina.html`.
+- **L'ICONA** (linguetta del browser, iPhone, futura app) è un **quadrato blu con "Noi" grande, la fogliolina sulla i e "DEMOLIAMO" piccolo sotto**, costruita **col carattere vero**, non con un'immagine generata. File: `app/icon.png` (512) e `app/apple-icon.png` (180), che Next serve da solo; la copia grande da 1024 sta in `public/icona-app.png` e si usa dove il marchio compare da solo e in grande (login, inviti, faccina in chat). Si rifà con `docs/mockup/icona-app.html`, che la scarica già pronta in tutte le misure.
+- ⚠️ Sul sito il nome è **testo vero**, mai un'immagine: resta nitido a ogni misura e pesa nulla. Le immagini generate dall'AI *imitano* Outfit ma le lettere non sono le stesse.
+- **Misure in uso** (27/08, alzate da Davide perché il nome si leggeva poco): barra del sito **21**, isola del flusso **20**, sidebar admin **17**, piede **34** e riga finale **15**.
+- 📁 **I mockup per rimetterci mano stanno in `docs/mockup/`** (con il loro LEGGIMI): quello della scritta stampa i quattro numeri della fogliolina, quello dell'icona la ridisegna e la scarica in tutte le misure. In `public/` gli stessi file sono in .gitignore e possono sparire con una pulizia: le copie buone sono quelle in `docs/`.
 - **Titoli pagina**: `text-xl font-semibold text-gray-900` / `text-lg font-bold` (dashboard)
 - **Body** `text-sm text-gray-700` · **Caption** `text-xs text-gray-500` · **Micro** `text-[10px]`/`text-[11px]`
 - ⭐ **Grassetti: massimo 700.** I pesi 800 "urlano" e sono bocciati. I titoli delle card sono 14/700, i sottotitoli 11 grigi, i testi secondari 600.
