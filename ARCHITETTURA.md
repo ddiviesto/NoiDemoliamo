@@ -1,6 +1,6 @@
 # NoiDemoliamo — Architettura completa
 
-> Documento di riferimento del progetto. Aggiornato al **24 agosto 2026**.
+> Documento di riferimento del progetto. Aggiornato al **3 settembre 2026**.
 > Questo è l'unico file da leggere per capire com'è fatto il sito, come deve funzionare e come si lavora.
 > **Contiene solo cose STABILI e ATTUALI**: regole, flussi, dati, come deve essere il sito.
 > La cronaca delle sessioni non sta qui: se serve sapere *quando* è stata fatta una cosa, c'è la storia di GitHub.
@@ -286,7 +286,8 @@ Il **ritiro effettivo** (`data_ritiro_effettuato`) fa entrare la pratica in fatt
 - `utenti`: profilo utente (collegato a Supabase Auth via id), `tipo` ('cliente'|'admin'|'demolitore'|...), `demolitore_id`, `email`
 - `messaggi_preimpostati`: frasi rapide. `categoria` 'chat' | 'rifiuto' (dell'admin, `demolitore_id` NULL) | **'chat_demolitore'** (le frasi PERSONALI di ogni demolitore, `demolitore_id` valorizzato; le semina l'endpoint alla prima apertura della chat e le gestisce lui col "Gestisci")
 - `demolitori_impegni`: **impegni PERSONALI del demolitore** (id, demolitore_id, quando, titolo, luogo) per la pagina Ritiri. PRIVATI: RLS accesa senza policy browser, ci si arriva solo da `/api/demolitore-impegni` (service role); nemmeno l'admin li vede
-- `veicoli_vendita` + `veicoli_vendita_foto`: flusso D (vendita), separate da `pratiche`
+- `veicoli_vendita` + `foto_veicoli_vendita`: flusso D (valutazione), separate da `pratiche`. Dal 03/09 hanno le colonne **omonime** di `pratiche` (`targhe_presenti`, `codice_fiscale`, `eredi_rinuncia`, `societa_fallita`, `casistica`, `fermo_amministrativo`, `note_veicolo`, `alimentazione`) per la copia campo per campo quando la richiesta diventa pratica
+- `pratiche.alimentazione` (03/09): benzina · diesel · gpl · metano · ibrida · elettrica, chiesta nel passo "Informazioni sul veicolo", modificabile dall'admin nella scheda Veicolo
 
 ## 3.12 Tabelle ANCORA DA CREARE
 
@@ -360,17 +361,19 @@ Admin "Proponi ai Commercianti" (prezzo richiesto, somma cliente opzionale, dura
 ## 4.4 Flusso D — Valutazione su richiesta cliente 🟡 IL FLUSSO C'È, MANCA L'ADMIN
 
 ```
-Cliente "Voglio sapere quanto vale" → /vendi-auto (13 passi) → richiesta in `veicoli_vendita`
-→ admin la vede in VALUTAZIONI e decide:
-┌─ NON CONVIENE: propone la DEMOLIZIONE GRATUITA → il cliente accetta o rifiuta dalla sua area
-├─ BUONA: offerta / asta tra COMMERCIANTI (flusso C)
-└─ MOLTO BUONA: acquisto diretto NoiDemoliamo
+Cliente "Voglio sapere quanto vale" → /vendi-auto (10 passi, stesso ordine della demolizione) → richiesta in `veicoli_vendita`
+→ admin la vede in VALUTAZIONI e risponde:
+┌─ "NON LA PAGHIAMO" (con motivo): propone la DEMOLIZIONE GRATUITA
+└─ "RICONOSCIAMO X €": una cifra per il mezzo
+→ il cliente accetta o rifiuta dalla sua area personale
+→ se accetta, la richiesta DIVENTA UNA PRATICA DI DEMOLIZIONE: il cliente completa solo
+  le domande che mancano e l'admin sceglie la destinazione (demolitore · commerciante · NoiDemoliamo)
 ```
-DB: `veicoli_vendita` + `foto_veicoli_vendita`, **non** `pratiche`. SQL: `docs/sql/2026-08-19-veicoli-vendita.sql`.
+DB: `veicoli_vendita` + `foto_veicoli_vendita`, **non** `pratiche`. SQL: `docs/sql/2026-08-19-veicoli-vendita.sql` + `docs/sql/2026-09-03-valutazione-undici-passi.sql`.
 
-⭐ **La domanda che regge tutto**: nel flusso della valutazione si chiede SOLO l'**intestazione** (serve già a valutare e decide la casistica dopo). Codice fiscale, libretto, certificato di proprietà, fermo e chi consegna **non si chiedono**: verrebbero chiesti a chi voleva solo sapere un prezzo. Si chiedono al cliente **dopo** che ha accettato la demolizione, e solo allora nasce la pratica.
+⭐ **La valutazione è la PORTA D'INGRESSO delle auto da demolire** (Davide, 03/09): quasi tutte finiscono in demolizione gratuita o pagate poco dal demolitore. Quindi il flusso chiede **solo l'essenziale, ma nello stesso ordine e con le stesse parole della demolizione**, e salva nelle colonne **con gli stessi nomi** di `pratiche` (`intestazione`, `casistica`, `targhe_presenti`, `codice_fiscale`, `fermo_amministrativo`…): così il passaggio a pratica è una copia campo per campo. Non si chiedono ancora (arrivano **dopo l'accettazione**, come "completa la pratica"): spazio per il carro attrezzi, chi consegna (con la delega), libretto, certificato di proprietà.
 
-**Migrazione tra flussi**: vendita → demolizione (pratica copiata in `pratiche` con stato `da_assegnare`); demolizione → commercianti (flusso C); demolizione → acquisto NoiDemoliamo (con OK del cliente).
+**Migrazione tra flussi**: valutazione → demolizione (pratica copiata in `pratiche`, la richiesta passa in `passata_demolizione` con `pratica_id`); demolizione → commercianti (flusso C); demolizione → acquisto NoiDemoliamo (con OK del cliente).
 
 ## 4.5 Stati pratica (`pratiche.stato`)
 
@@ -485,7 +488,7 @@ C:\Progetto_NoiDemoliamo\
 │   ├── recupera-password/          # Password dimenticata: richiesta del link
 │   ├── nuova-password/             # Atterraggio del link email di recupero
 │   ├── privacy/ · termini/         # Pagine legali (con segnaposto [DA COMPLETARE])
-│   ├── vendi-auto/                 # FLUSSO VALUTAZIONE (13 passi, vedi 5.2)
+│   ├── vendi-auto/                 # FLUSSO VALUTAZIONE (10 passi, vedi 5.2)
 │   ├── inizia/                     # Flusso cliente mini-step (demolizione)
 │   │   ├── page.tsx                # Orchestratore: getSteps dinamico + traduciErrore()
 │   │   └── steps/                  # CONDIVISI COI DUE FLUSSI: GuscioFlusso,
@@ -532,14 +535,21 @@ C:\Progetto_NoiDemoliamo\
 - Su PC **nessun testo scende sotto i 13px** (le etichette delle tessere erano 10px) e i bottoni di pagina diventano **pillole** larghe quanto basta, non barre a tutta colonna.
 - La **fascetta** (telefono) e la **pillolina nell'isola** (PC) dicono sempre al cliente in che richiesta si trova e con che mezzo. Niente puntino di separazione, e il nome del mezzo **non** si ripete nella testata.
 
-### `/vendi-auto` — i 13 passi della valutazione
+### `/vendi-auto` — i 10 passi della valutazione (⭐ 03/09, mockup "undici passi" + confronto approvati)
 ```
-1 Tipo di veicolo · 2 Intestazione · 3 Identifica il mezzo · 4 Motore e alimentazione
-5 Dotazioni · 6 Condizioni · 7 Revisione e bollo · 8 Manutenzione · 9 Cosa non va
-10 Foto (6 riquadri guidati: davanti, dietro, i due lati, interni, cruscotto coi km)
-11 Dove si trova · 12 Targa · 13 Crea il tuo account → salva in `veicoli_vendita`
+1  TIPO VEICOLO
+2  INTESTAZIONE (stesse 6 opzioni e stesso sottotitolo della demolizione)
+2b RAMO EREDI · 2c RAMO SOCIETÀ FALLITA                [come in demolizione]
+3  INFORMAZIONI SUL VEICOLO (anno, km, marca, modello, cambio, ALIMENTAZIONE)
+4  CONDIZIONI
+5  DOVE SI TROVA (senza spazio carro attrezzi: serve al ritiro, non alla valutazione)
+6  TARGA (+ targhe presenti sì/no, come in demolizione)
+7  CF DINAMICO                                         [saltato per targhe straniere]
+8  FOTO: 6 riquadri guidati (davanti, dietro, i due lati, interni, cruscotto), ALMENO 4 OBBLIGATORIE
+9  FERMO AMMINISTRATIVO (stesso sottotitolo della demolizione)  [saltato per targhe straniere]
+10 ACCOUNT ("Ultimo passo!") → salva in `veicoli_vendita`
 ```
-Riusa i passi 1, 3, 6, 11, 12, 13 del flusso demolizione. **Non** chiede lo spazio per il carro attrezzi (serve al ritiro, non alla valutazione).
+Usa gli **stessi componenti** della demolizione (`StepTipoVeicolo`, `StepIntestazione`, `StepIdentificaVeicolo`, `StepCondizioniVeicolo`, `AutocompleteIndirizzo`, i pezzi di `PezziFlusso`) e gli stessi titoli (`lib/nomiVeicolo.ts`). Le uniche differenze volute: niente carro attrezzi, foto obbligatorie, sottotitolo di "Dove si trova". Le vecchie domande (dotazioni, revisione e bollo, manutenzione, difetti, cilindrata) **sono state tolte**: erano da compravendita, non da auto da demolire.
 
 ## 5.2b Flusso `/inizia` (demolizione)
 
@@ -549,13 +559,15 @@ Riusa i passi 1, 3, 6, 11, 12, 13 del flusso demolizione. **Non** chiede lo spaz
 2  INTESTAZIONE (6 opzioni → deriva la casistica)
 2b RAMO EREDI (solo rinuncia sì/no)                    [solo deceduto]
 2c RAMO SOCIETÀ FALLITA                                [solo società]
-3  IDENTIFICA VEICOLO (anno, km, marca, modello + tipo di cambio per i mezzi che ce l'hanno)
+3  INFORMAZIONI SUL VEICOLO (anno, km, marca, modello, tipo di cambio per i mezzi che ce l'hanno, ALIMENTAZIONE)
 4  CONDIZIONI (Va in moto? · Cammina? · incidentata · parti mancanti + note)
 5  INDIRIZZO + SPAZIO CARRO ATTREZZI
-6  TARGA (+ box targhe presenti; adattato per targhe straniere)
+6  TARGA ("La trovi sul libretto di circolazione." + box targhe presenti; adattato per targhe straniere)
 7  CF DINAMICO                                         [saltato per targhe straniere]
-8  FOTO (gamification 4 foto)
+8  FOTO (libere e facoltative, con l'incoraggiamento ad arrivare a 4)
 9  FERMO AMMINISTRATIVO                                [saltato per targhe straniere]
+   sottotitolo fisso (03/09): "Il fermo amministrativo non blocca la demolizione: possiamo aiutarti a
+   svincolare il mezzo dal fermo solo per demolizione. Troverai i moduli da compilare nella tua area personale."
 10 CONSEGNA (io/delegato)                              [saltato per non_intestatario e targhe straniere]
 11 LIBRETTO
 12 CDC (regola ottobre 2015)                           [saltato per targhe straniere]
@@ -568,6 +580,7 @@ Riusa i passi 1, 3, 6, 11, 12, 13 del flusso demolizione. **Non** chiede lo spaz
 - **`traduciErrore()`**: gli errori Supabase escono in italiano semplice ("Failed to fetch" → "Errore di connessione…"); l'originale va in console.
 - **Personalizzazione per tipo veicolo ovunque**: banner, titoli, articoli, generi (isFemminile: autovettura/minicar/imbarcazione), `tipoAltro`, ICONE_VEICOLO, `getStepMeta`.
 - **Titoli con la parola chiave in BLU**: nei `titoloPagina` la keyword sta tra `*asterischi*` e l'helper `evidenzia()` la colora.
+- ⭐ **Parole fisse (03/09)**: nei testi rivolti al cliente si dice **"area personale"**, mai "app". La delega è **"da compilare e firmare"** (non "già compilata": il cliente la compila lui).
 - **Mobile**: anti-zoom iOS (input 16px), inputMode corretti, NIENTE scrollIntoView automatico, bottoni "Continua" mai disabilitati (validazione al click), normalizzazione targa/CF, formattazione km.
 - ⭐ **INDIRIZZO: ripiego a mano (24/08)**. Se i suggerimenti di Google non arrivano (script che non parte o richieste rifiutate), il campo indirizzo mostra da solo l'avviso "I suggerimenti non sono disponibili in questo momento" e il bottone **"Conferma indirizzo"**: il cliente scrive l'indirizzo per intero e prosegue. Serve a non perdere il cliente, **non è un modo di lavorare**: quella pratica nasce senza comune, provincia e coordinate, quindi l'assegnazione automatica non parte (resta quella a mano) e nel CRM l'indirizzo non è correggibile finché Google è spento (lì si salva solo se scelto dal menu di Google). Quando Google torna, il ripiego sparisce da solo.
 
@@ -826,6 +839,7 @@ Una sola famiglia di card ovunque:
 - **Testo lungo** (note, annotazioni): stessa veste bianca ma rettangolo ad angoli tondi (`.campo-lungo`), perché una pillola alta tre righe viene storta
 - **Ogni scelta è una pillola bianca che si accende di BLU con la spunta** (`SceltaPillola`): Sì/No, tipo di cambio, accesso carro attrezzi, targhe presenti. ⚠️ **Niente semaforo verde/ambra/rosso**: il "va bene / non va bene" serve a noi in ufficio, non al cliente che sta compilando
 - **Sul telefono le scelte con l'etichetta lunga si incolonnano** (`.scelte-fila`), quelle corte restano affiancate (`--sempre`): in riga diventavano ovali alti e strizzati
+- ⭐ **Scelte in GRIGLIA** (`.scelte-griglia`, 03/09, mockup A): quando le scelte sono tante (cambio e alimentazione nel passo "Informazioni sul veicolo") le pillole stanno in una **griglia a tre colonne, tutte della stessa misura**: il cambio ne occupa due, le sei alimentazioni due righe da tre. Davide non vuole pillole che si allargano da sole quando restano ultime
 - I pezzi stanno in **un posto solo**: `CampoModulo`, `SceltaPillola` e `classeCampo` in `app/inizia/steps/PezziFlusso.tsx`, la veste in `globals.css`. Si cambiano lì e cambiano in tutti e due i flussi
 - ⚠️ **L'admin non usa queste classi**: lì i campi restano compatti da gestionale
 
@@ -985,12 +999,12 @@ Oggi le comunicazioni al cliente vivono SOLO nel banner della sua area. Servono 
 Tecnica: Resend per le email, Twilio per gli SMS. Tabelle già progettate in 3.12.
 
 ### ▶️ VALUTAZIONI IN ADMIN (il pezzo che manca al flusso D)
-Il flusso `/vendi-auto` c'è e salva; **manca tutto il lato admin e la risposta del cliente**:
-1. ⚠️ **La SQL `docs/sql/2026-08-19-veicoli-vendita.sql` va ESEGUITA su Supabase**, altrimenti l'invio della richiesta fallisce
-2. **Voce "Valutazioni" nella sidebar admin** (strada A scelta da Davide il 19/08, lista separata dalle Pratiche) con le caselle: Da valutare › Offerta inviata › In vendita › Passate a demolizione › Chiuse
-3. Sulla riga: bottoni **"Offri demolizione"** e **"Fai un'offerta"**
-4. **Lato cliente**: email + notifica con la proposta, card nella sua area con **Accetto / No, grazie**
-5. Se accetta: le 4 domande che mancano (codice fiscale, libretto, certificato di proprietà, chi consegna) e **nascita della pratica** in `pratiche` con la casistica derivata dall'intestazione già raccolta
+Il flusso `/vendi-auto` (10 passi, vedi 5.2) c'è e salva; **manca tutto il lato admin e la risposta del cliente**. Ordine concordato con Davide (03/09):
+1. ⚠️ **SQL da eseguire su Supabase**: `2026-08-19-veicoli-vendita.sql`, `2026-09-03-alimentazione-pratiche.sql` (colonna `alimentazione` in `pratiche`) e `2026-09-03-valutazione-undici-passi.sql` (le colonne nuove di `veicoli_vendita`). Senza, l'invio fallisce
+2. **Voce "Valutazioni" nella sidebar admin** (strada A scelta da Davide il 19/08, lista separata dalle Pratiche) con le caselle: Da valutare › Risposta inviata › Passate a demolizione › Chiuse. Sulla riga due risposte: **"Non la paghiamo"** (con motivo, propone la demolizione gratuita) e **"Riconosciamo X €"**. Utile lì un bottone **"Cerca targa"** a pagamento (visura ~6 €, vedi 5.5): l'admin lo usa solo quando serve
+3. **Lato cliente**: card della proposta in cima all'area personale con **Accetto / No, grazie**
+4. Se accetta: **"Completa la pratica"** con le domande che mancano (spazio carro attrezzi, chi consegna con la delega, libretto, certificato di proprietà), poi **nascita della pratica** in `pratiche` copiando i campi omonimi (casistica già derivata) e la richiesta passa in `passata_demolizione` con `pratica_id`. L'admin sceglie la **destinazione**: demolitore, commerciante o NoiDemoliamo
+5. **Le email della valutazione** (da fare tutte insieme col lavoro Resend, ma vanno ricordate): richiesta ricevuta · risposta pronta ("non la paghiamo" / "riconosciamo X €") · accettata: completa la pratica · da lì in poi le email della demolizione
 
 ### 🔥 ALTRO IN CODA
 - **Sistema recensioni** (vedi 4.9): tabella + stato + pagina cliente bloccante + integrazione nell'algoritmo + push su Google Maps

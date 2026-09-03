@@ -23,7 +23,7 @@ const CAMPI_TESTO = new Set([
   'targa', 'marca', 'modello',
   'indirizzo_ritiro', 'comune_ritiro', 'provincia_ritiro', 'cap_ritiro',
   'spazio_carro_attrezzi', 'spazio_carro_attrezzi_note',
-  'fermo_amministrativo', 'tipo_cambio',
+  'fermo_amministrativo', 'tipo_cambio', 'alimentazione',
   // Dichiarazioni modificabili dall'admin (17/07): sincronizzano la checklist
   'libretto', 'delegato_nome', 'delegato_telefono',
   // Attesa (pausa della pratica, 17/07)
@@ -110,6 +110,9 @@ export async function POST(req: NextRequest) {
     }
     if ('tipo_cambio' in update && update.tipo_cambio != null && !['manuale', 'automatico', 'non_so'].includes(update.tipo_cambio as string)) {
       return NextResponse.json({ error: 'Valore cambio non valido' }, { status: 400 })
+    }
+    if ('alimentazione' in update && update.alimentazione != null && !['benzina', 'diesel', 'gpl', 'metano', 'ibrida', 'elettrica'].includes(update.alimentazione as string)) {
+      return NextResponse.json({ error: 'Valore alimentazione non valido' }, { status: 400 })
     }
     if ('delegato_nome' in update && update.delegato_nome != null && CASISTICHE_SENZA_DELEGA.includes(pratica.casistica || '')) {
       return NextResponse.json({ error: 'La delega non è ammessa per questa casistica' }, { status: 400 })

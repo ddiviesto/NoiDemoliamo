@@ -31,6 +31,18 @@ export function articoloDel(tipo: TipoMezzo | null, tipoAltro?: string): string 
   return map[tipo]
 }
 
+/** "sull'autovettura", "sul motoveicolo"… per "Informazioni *sull'autovettura*" (03/09) */
+export function articoloSul(tipo: TipoMezzo | null, tipoAltro?: string): string {
+  if (!tipo) return 'sul veicolo'
+  if (tipo === 'altro' && tipoAltro?.trim()) return `sul ${tipoAltro.trim().toLowerCase()}`
+  const map: Record<TipoMezzo, string> = {
+    autovettura: "sull'autovettura", motoveicolo: 'sul motoveicolo', ciclomotore: 'sul ciclomotore',
+    minicar: 'sulla minicar', furgone: 'sul furgone', imbarcazione: "sull'imbarcazione", pullman: 'sul pullman',
+    camion: 'sul camion', velivolo: 'sul velivolo', altro: 'sul mezzo',
+  }
+  return map[tipo]
+}
+
 /** "tua autovettura", "tuo motoveicolo"… */
 export function pronomeTuo(tipo: TipoMezzo | null, tipoAltro?: string): string {
   if (!tipo) return 'tuo veicolo'

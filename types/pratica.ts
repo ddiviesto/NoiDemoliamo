@@ -13,6 +13,21 @@ export type TipoMezzo =
 export type LibrettoStato = 'si' | 'denuncia' | 'no'
 export type CdcStato = 'digitale' | 'cartaceo' | 'smarrito' | 'nessuno'
 export type TipoCambio = 'manuale' | 'automatico' | 'non_so'
+// ⭐ 03/09: l'alimentazione si chiede nel passo "Informazioni sul veicolo",
+// in demolizione e in valutazione (stessa lista, stesso salvataggio).
+export type Alimentazione = 'benzina' | 'diesel' | 'gpl' | 'metano' | 'ibrida' | 'elettrica'
+export const ALIMENTAZIONI: { valore: Alimentazione; nome: string }[] = [
+  { valore: 'benzina', nome: 'Benzina' },
+  { valore: 'diesel', nome: 'Diesel' },
+  { valore: 'gpl', nome: 'GPL' },
+  { valore: 'metano', nome: 'Metano' },
+  { valore: 'ibrida', nome: 'Ibrida' },
+  { valore: 'elettrica', nome: 'Elettrica' },
+]
+/** "Diesel", "GPL"… dal valore salvato; "—" se manca. */
+export function nomeAlimentazione(valore: string | null | undefined): string {
+  return ALIMENTAZIONI.find(a => a.valore === valore)?.nome ?? '—'
+}
 export type SpazioCarroAttrezzi = 'libero' | 'stretto' | 'no'
 
 // ============================================================
@@ -83,6 +98,7 @@ export interface DatiVeicolo {
   marca: string
   modello: string
   tipoCambio: TipoCambio | null
+  alimentazione: Alimentazione | null
   incidentato: 'si' | 'no' | null
   marciante: 'si' | 'no' | null
   vaInMoto: 'si' | 'no' | null
@@ -135,6 +151,7 @@ export const datiPraticaIniziali: DatiPratica = {
     marca: '',
     modello: '',
     tipoCambio: null,
+    alimentazione: null,
     incidentato: null,
     marciante: null,
     vaInMoto: null,

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { DatiVeicolo, TipoCambio, TipoMezzo } from '../../../types/pratica'
+import { ALIMENTAZIONI, Alimentazione, DatiVeicolo, TipoCambio, TipoMezzo } from '../../../types/pratica'
 import { CampoModulo, SceltaPillola, classeCampo } from './PezziFlusso'
 
 interface Props {
@@ -16,6 +16,7 @@ interface Errors {
   marca?: string
   modello?: string
   cambio?: string
+  alimentazione?: string
 }
 
 // Mezzi per cui ha senso chiedere il tipo di cambio (per gli altri —
@@ -38,6 +39,11 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
     setErrors(prev => ({ ...prev, cambio: undefined }))
   }
 
+  function setAlimentazione(v: Alimentazione) {
+    onUpdate({ alimentazione: v })
+    setErrors(prev => ({ ...prev, alimentazione: undefined }))
+  }
+
   // Formatta numero con separatore migliaia: 180000 → "180.000"
   function formatKm(value: string): string {
     const onlyDigits = value.replace(/\D/g, '')
@@ -57,6 +63,7 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
     if (!dati.marca.trim()) e.marca = 'Inserisci la marca'
     if (!dati.modello.trim()) e.modello = 'Inserisci il modello'
     if (haCambio && !dati.tipoCambio) e.cambio = 'Scegli il tipo di cambio'
+    if (!dati.alimentazione) e.alimentazione = "Scegli l'alimentazione"
     return e
   }
 
@@ -115,23 +122,38 @@ export function StepIdentificaVeicolo({ dati, onUpdate, onNext }: Props) {
           />
         </CampoModulo>
 
-        {/* Tipo di cambio: due pilloline di scelta (solo mezzi che ce l'hanno) */}
+        {/* Cambio e alimentazione (⭐ 03/09, mockup A scelto da Davide):
+            pillole TUTTE della stessa misura in una griglia a tre colonne.
+            Il cambio ne occupa due (solo mezzi che ce l'hanno), le sei
+            alimentazioni fanno due righe da tre. */}
         {haCambio && (
           <CampoModulo id="field-cambio" label="Tipo di cambio" errore={errors.cambio} classe="col-span-2">
-            <div className="scelte-fila scelte-fila--sempre">
+            <div className="scelte-griglia">
               {(['manuale', 'automatico'] as const).map(v => (
                 <SceltaPillola
                   key={v}
                   label={v === 'manuale' ? 'Manuale' : 'Automatico'}
                   presa={dati.tipoCambio === v}
                   errore={!!errors.cambio}
-                  larga
                   onClick={() => setCambio(v)}
                 />
               ))}
             </div>
           </CampoModulo>
         )}
+        <CampoModulo id="field-alimentazione" label="Alimentazione" errore={errors.alimentazione} classe="col-span-2">
+          <div className="scelte-griglia">
+            {ALIMENTAZIONI.map(a => (
+              <SceltaPillola
+                key={a.valore}
+                label={a.nome}
+                presa={dati.alimentazione === a.valore}
+                errore={!!errors.alimentazione}
+                onClick={() => setAlimentazione(a.valore)}
+              />
+            ))}
+          </div>
+        </CampoModulo>
       </div>
 
       <button

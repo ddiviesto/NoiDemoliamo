@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { metaStato } from '@/lib/statiCrm'
+import { ALIMENTAZIONI, nomeAlimentazione } from '@/types/pratica'
 import AdminSidebar from './_components/AdminSidebar'
 // Card vere del dettaglio, aperte IN LINEA dentro la tendina (26/07)
 import DocumentiApprovazione, { nomeAdmin } from './pratiche/[id]/DocumentiApprovazione'
@@ -51,6 +52,7 @@ interface Pratica {
   anno: string | number | null
   km: string | number | null
   tipo_cambio: string | null
+  alimentazione: string | null
   incidentato: boolean | null
   marciante: boolean | null
   va_in_moto: boolean | null
@@ -104,7 +106,7 @@ type SezioneTendina = 'cliente' | 'casistiche' | 'veicolo' | 'ritiro'
 const CAMPO_TENDINA = 'w-full h-[22px] bg-transparent border-0 border-b-2 border-blue-300 focus:border-blue-600 rounded-none outline-none text-[11.5px] text-right text-gray-900 px-0.5 transition-colors placeholder:text-gray-400'
 
 // Un'unica lista di campi per il caricamento e le ricariche (stessa forma)
-const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, note_veicolo, spazio_carro_attrezzi_note, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione, data_ritiro_prevista, data_ritiro_effettuato, motivo_annullamento'
+const CAMPI_LISTA = 'id, targa, tipo_mezzo, marca, modello, casistica, nome_richiedente, telefono, comune_ritiro, provincia_ritiro, libretto, certificato_proprieta, demolitore_id, stato, creato_il, aggiornato_il, in_attesa, attesa_motivo, scadenza_proposta_ritiro, user_id, codice_fiscale, anno, km, tipo_cambio, alimentazione, incidentato, marciante, va_in_moto, parti_mancanti, fermo_amministrativo, targhe_presenti, indirizzo_ritiro, cap_ritiro, spazio_carro_attrezzi, note_veicolo, spazio_carro_attrezzi_note, delegato_nome, delegato_telefono, fee_concordata, data_assegnazione, data_ritiro_prevista, data_ritiro_effettuato, motivo_annullamento'
 
 // ============================================================
 // METADATI STATO — ⭐ 28/07 sera: spostati in lib/statiCrm.ts
@@ -485,6 +487,7 @@ export default function AdminDashboard() {
       targa: p.targa || '', marca: p.marca || '', modello: p.modello || '',
       anno: p.anno != null ? String(p.anno) : '', km: p.km != null ? String(p.km) : '',
       tipo_cambio: p.tipo_cambio === 'manuale' || p.tipo_cambio === 'automatico' ? p.tipo_cambio : '',
+      alimentazione: p.alimentazione || '',
       incidentato: p.incidentato, marciante: p.marciante, va_in_moto: p.va_in_moto, parti_mancanti: p.parti_mancanti,
       indirizzo_ritiro: p.indirizzo_ritiro || '', spazio_carro_attrezzi: p.spazio_carro_attrezzi || '',
       delegato_nome: p.delegato_nome || '', delegato_telefono: p.delegato_telefono || '',
@@ -526,6 +529,7 @@ export default function AdminDashboard() {
         dati.anno = sb('anno')
         dati.km = sb('km')
         if (sb('tipo_cambio')) dati.tipo_cambio = sb('tipo_cambio')
+        if (sb('alimentazione')) dati.alimentazione = sb('alimentazione')
         for (const c of ['incidentato', 'marciante', 'va_in_moto', 'parti_mancanti']) {
           if (typeof bozza[c] === 'boolean') dati[c] = bozza[c]
         }
@@ -1283,6 +1287,12 @@ export default function AdminDashboard() {
                                 <option value="" disabled>Scegli…</option>
                                 <option value="manuale">Manuale</option>
                                 <option value="automatico">Automatico</option>
+                              </select>
+                            ) },
+                            { k: 'Alimentazione', vista: nomeAlimentazione(p.alimentazione), campo: (
+                              <select className={`${CAMPO_TENDINA} cursor-pointer`} value={sb('alimentazione')} onChange={e => setB('alimentazione', e.target.value)}>
+                                <option value="" disabled>Scegli…</option>
+                                {ALIMENTAZIONI.map(a => <option key={a.valore} value={a.valore}>{a.nome}</option>)}
                               </select>
                             ) },
                           ]}

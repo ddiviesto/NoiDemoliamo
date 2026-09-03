@@ -17,3 +17,6 @@ Per guardarne uno: copialo in `public/` e aprilo su `localhost:3000/nome.html`.
 | `icona-app.html` | L'**icona dell'app**, costruita col carattere vero (Outfit) e non con un'immagine generata: nove foglioline tra cui scegliere, cursori per grandezza e posizione, anteprime a 220/180/120/60/32 px, la schermata del telefono, e i bottoni che **scaricano il PNG** in tutte le misure |
 | `logo-il-marchio-e-la-scritta.html` | Le tre strade valutate quando si è deciso che **il marchio è la scritta**: solo nome, nome col punto verde, nome con la fogliolina |
 | `home-la-500-va-dove-clicchi.html` | La **scena della home** (la 500 che va sul carro attrezzi o dall'acquirente), con la manovra completa |
+| `valutazione-undici-passi.html` | Il **nuovo flusso di valutazione** in undici passi, nello stesso ordine della demolizione, con in fondo "Cosa succede dopo" e la lista delle email Resend da fare (03/09/2026) |
+| `confronto-demolizione-valutazione.html` | I **due flussi affiancati** riga per riga (16 righe) con le sette note sulle contraddizioni trovate: da qui sono uscite le decisioni di Davide del 03/09 |
+| `passo-veicolo-con-alimentazione.html` | Il **passo 3 con l'alimentazione dentro** (PC a due colonne e telefono) e tre nomi tra cui scegliere: A "Informazioni sul veicolo", B "Il tuo veicolo", C "Dati del veicolo" |

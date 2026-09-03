@@ -291,6 +291,17 @@ body {
   .scelte-fila { flex-direction: row; }
 }
 
+/* Le scelte in GRIGLIA (⭐ 03/09, passo "Informazioni sul veicolo"):
+   pillole tutte della stessa misura, tre per riga. Il cambio ne occupa
+   due, le sei alimentazioni due righe da tre: niente pillola che si
+   allarga da sola quando resta ultima. */
+.scelte-griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.scelte-griglia .scelta-pillola { padding-left: 6px; padding-right: 6px; gap: 5px; font-size: 13.5px; white-space: nowrap; min-width: 0; }
+@media (min-width: 640px) {
+  .scelte-griglia { gap: 10px; }
+  .scelte-griglia .scelta-pillola { font-size: 14px; }
+}
+
 
 /* ============================================================
    LINGUETTE DELLA PRATICA (area cliente)
@@ -446,5 +457,6 @@ body {
    naturale, enorme, e spaccherebbe la scritta in due righe. */
 .marchio-i { position: relative; }
 .marchio-foglia svg { display: block; }
+
 
 

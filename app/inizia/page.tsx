@@ -12,7 +12,7 @@ import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import { RuoloButton, InfoBadge, ErrorBadge, CampoModulo, SceltaPillola, classeCampo } from './steps/PezziFlusso'
 import { GuscioFlusso } from './steps/GuscioFlusso'
 import { StepIntestazione } from './steps/StepIntestazione'
-import { articolo, articoloDel, pronomeTuo, nomeVeicolo, veicoloHaCambio, isFemminile } from '@/lib/nomiVeicolo'
+import { articolo, articoloDel, articoloSul, pronomeTuo, nomeVeicolo, veicoloHaCambio, isFemminile } from '@/lib/nomiVeicolo'
 
 // ============================================================
 // ICONE SVG GENERALI
@@ -292,9 +292,11 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     const Icona = tipo ? ICONE_VEICOLO[tipo] : IconaVAutovettura
     return {
       icona: Icona,
-      titoloBanner: 'Identifica il mezzo',
-      titoloPagina: `Identifica *${articolo(tipo, tipoAltro)}*`,
-      sottoPagina: veicoloHaCambio(tipo) ? 'Anno, km, marca, modello e cambio.' : 'Anno, km, marca e modello.',
+      // ⭐ 03/09 (mockup A scelto da Davide): "Informazioni sul veicolo",
+      // con l'alimentazione dentro lo stesso passo.
+      titoloBanner: 'Informazioni sul veicolo',
+      titoloPagina: `Informazioni *${articoloSul(tipo, tipoAltro)}*`,
+      sottoPagina: veicoloHaCambio(tipo) ? 'Anno, km, marca, modello, cambio e alimentazione.' : 'Anno, km, marca, modello e alimentazione.',
     }
   }
   if (stepKey === 'condizioni-veicolo') {
@@ -323,7 +325,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         titoloPagina: `Qual è la *targa* ${articoloDel(tipo, tipoAltro)}?`,
         sottoPagina: intestazione === 'targhe_straniere'
           ? 'Inserisci la targa estera così come appare sul mezzo.'
-          : 'Ci serve per verificare eventuali fermi amministrativi.',
+          : 'La trovi sul libretto di circolazione.',
       }
     case 'cf': {
       if (intestazione === 'societa') {
@@ -398,7 +400,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         icona: IconaFermo,
         titoloBanner: 'Fermo amministrativo',
         titoloPagina: 'Ci sono *fermi amministrativi* sul mezzo?',
-        sottoPagina: 'Il fermo non blocca la demolizione: serve solo una dichiarazione in più che prepariamo noi.',
+        sottoPagina: 'Il fermo amministrativo non blocca la demolizione: possiamo aiutarti a svincolare il mezzo dal fermo solo per demolizione. Troverai i moduli da compilare nella tua area personale.',
       }
     case 'consegna':
       return {
@@ -426,7 +428,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
         icona: IconaAccount,
         titoloBanner: 'Crea il tuo account',
         titoloPagina: 'Crea il tuo account',
-        sottoPagina: `Potrai seguire la pratica, caricare i documenti e scaricare il certificato di rottamazione direttamente dall'app.`,
+        sottoPagina: `Potrai seguire la pratica, caricare i documenti e scaricare il certificato di rottamazione direttamente dalla tua area personale.`,
       }
     default:
       return { icona: IconaPin, titoloBanner: '', titoloPagina: '' }
@@ -442,7 +444,7 @@ const NOME_PASSO: Record<string, string> = {
   intestazione: 'Intestazione',
   eredi: 'Eredi',
   'societa-fallita': 'Società',
-  'identifica-veicolo': 'Identifica il mezzo',
+  'identifica-veicolo': 'Informazioni sul veicolo',
   'condizioni-veicolo': 'Condizioni',
   indirizzo: 'Indirizzo',
   targa: 'Targa',
@@ -858,6 +860,7 @@ export default function IniziaPage() {
           marca: dati.veicolo.marca,
           modello: dati.veicolo.modello,
           tipo_cambio: dati.veicolo.tipoCambio,
+          alimentazione: dati.veicolo.alimentazione,
           incidentato: dati.veicolo.incidentato === 'si',
           marciante: dati.veicolo.marciante === 'si',
           va_in_moto: dati.veicolo.vaInMoto === 'si',
@@ -1546,7 +1549,7 @@ export default function IniziaPage() {
 
             {dati.consegna === 'delegato' && (
               <div className="mt-3 flex flex-col gap-3">
-                <InfoBadge>Nella tua area personale troverai la delega già compilata: basterà scaricarla, firmarla e consegnarla al ritiro insieme ai documenti del delegato.</InfoBadge>
+                <InfoBadge>Nella tua area personale troverai la delega da compilare e firmare: la consegnerai al ritiro insieme ai documenti del delegato.</InfoBadge>
                 <CampoModulo label="Nome e cognome del delegato">
                   <input
                     type="text"

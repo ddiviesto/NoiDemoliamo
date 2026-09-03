@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demolizione e valutazione, passo per passo a confronto</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #EEF1F7; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1240px; margin: 0 auto; padding: 20px 20px 0; font-size: 14.5px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+
+  .tavola { max-width: 1240px; margin: 16px auto 70px; padding: 0 20px; display: flex; flex-direction: column; gap: 12px; }
+  .testa { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; position: sticky; top: 50px; z-index: 50; }
+  .testa div { border-radius: 14px; padding: 12px 18px; font-size: 13px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: #fff; }
+  .testa .d { background: linear-gradient(120deg,#1B2E6B,#2563eb); }
+  .testa .v { background: linear-gradient(120deg,#4C1D95,#7C3AED); }
+
+  .riga { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .cella { background: #fff; border: 1px solid #E4E9F2; border-radius: 18px; padding: 18px 20px 20px; box-shadow: 0 6px 18px rgba(15,27,51,.05); }
+  .cella.vuota { background: transparent; border: 1.5px dashed #C9D1DF; box-shadow: none; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 13px; color: #7C8AA5; padding: 24px; line-height: 1.6; }
+  .cella.vuota b { color: #46536B; }
+  .capo { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+  .num { min-width: 28px; height: 28px; padding: 0 8px; border-radius: 999px; color: #fff; font-size: 12.5px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .d .num { background: #1D4ED8; } .v .num { background: #7C3AED; }
+  .banner { font-size: 10.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: #8A94A3; }
+  .solo { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 9px; background: #FEF3C7; color: #92400E; }
+  .titolo { font-size: 19px; font-weight: 700; letter-spacing: -.4px; line-height: 1.2; }
+  .titolo em { font-style: normal; color: #1D4ED8; } .v .titolo em { color: #7C3AED; }
+  .sotto { font-size: 13px; color: #5B6779; margin: 5px 0 12px; line-height: 1.55; }
+
+  .campo { margin-bottom: 9px; }
+  .eti { display: block; font-size: 11.5px; font-weight: 700; color: #4A5A75; margin-bottom: 5px; }
+  .pillole { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pillole span { font-size: 12px; font-weight: 600; border: 1.5px solid #E2E8F0; background: #fff; border-radius: 999px; padding: 6px 11px; color: #46536B; }
+  .box { border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 8px 14px; font-size: 12.5px; color: #9AA7BC; background: #fff; display: inline-block; min-width: 170px; }
+  .scelte { display: flex; flex-direction: column; gap: 6px; }
+  .scelta { border: 1.5px solid #E2E8F0; border-radius: 12px; padding: 8px 12px; font-size: 12.5px; font-weight: 700; color: #0F172A; }
+  .scelta small { display: block; font-weight: 400; font-size: 11.5px; color: #6B7280; margin-top: 1px; }
+  .riquadrino { background: #F5F8FF; border: 1px solid #DBEAFE; border-radius: 12px; padding: 9px 12px; font-size: 12px; color: #1E3A8A; margin-top: 8px; line-height: 1.5; }
+  .via { color: #B0B8C6; text-decoration: line-through; }
+
+  .dubbio { margin-top: 12px; border-left: 3px solid #F59E0B; background: #FFFBEB; border-radius: 0 12px 12px 0; padding: 10px 13px; font-size: 12.5px; color: #78350F; line-height: 1.6; }
+  .dubbio b { color: #92400E; }
+  .uguale { margin-top: 12px; font-size: 12px; font-weight: 700; color: #15803D; background: #DCFCE7; border-radius: 999px; padding: 5px 11px; display: inline-block; }
+
+  .foglio { max-width: 1000px; margin: 18px auto 60px; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+  .riquadro { background: #fff; border: 1px solid #E4E9F2; border-radius: 20px; padding: 22px 26px 26px; box-shadow: 0 10px 28px rgba(15,27,51,.07); }
+  .riquadro h3 { font-size: 16px; margin-bottom: 4px; }
+  .riquadro .sub { font-size: 13px; color: #7C8AA5; margin-bottom: 14px; }
+  .riquadro .x { display: flex; gap: 11px; padding: 10px 0; border-top: 1px solid #F1F4FA; font-size: 14px; color: #46536B; line-height: 1.6; }
+  .riquadro .x:first-of-type { border-top: none; }
+  .riquadro .x b { color: #0F172A; }
+  .riquadro .x i { flex-shrink: 0; width: 22px; height: 22px; border-radius: 999px; background: #FEF3C7; color: #92400E; font-style: normal; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>DEMOLIZIONE E VALUTAZIONE A CONFRONTO</b> &middot; a sinistra la demolizione com&rsquo;&egrave; oggi sul sito, a destra la valutazione come l&rsquo;abbiamo disegnata. Riga per riga, stessa domanda accanto a stessa domanda.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">Passo per passo</span>
+  <span onclick="vista('b',this)">Cosa sistemerei nella demolizione</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  const pil = (v) => `<div class="pillole">${v.map(x => `<span>${x}</span>`).join('')}</div>`
+  const scelte = (v) => `<div class="scelte">${v.map(([t, s]) => `<div class="scelta">${t}${s ? `<small>${s}</small>` : ''}</div>`).join('')}</div>`
+  const campo = (e, dentro) => `<div class="campo"><span class="eti">${e}</span>${dentro}</div>`
+  const box = (t, largo) => `<span class="box" ${largo ? 'style="min-width:280px"' : ''}>${t}</span>`
+
+  // ogni riga: la stessa domanda nei due flussi (null = in quel flusso non c'è)
+  const RIGHE = [
+    { d: { n: '1', banner: 'Tipo di veicolo', titolo: 'Che tipo di <em>veicolo</em> è?', sotto: 'Seleziona il tipo di mezzo per iniziare.',
+           corpo: pil(['Autovettura','Motoveicolo','Ciclomotore','Minicar','Furgone','Pullman','Camion','Altro']) + '<div class="riquadrino">&ldquo;Altro&rdquo; apre Imbarcazione, Velivolo, Altro mezzo (con un campo per scriverlo).</div>' },
+      v: { n: '1', banner: 'Tipo di veicolo', titolo: 'Che tipo di <em>veicolo</em> è?', sotto: 'Seleziona il tipo di mezzo per iniziare.',
+           corpo: pil(['Autovettura','Motoveicolo','Ciclomotore','Minicar','Furgone','Pullman','Camion','Altro']) },
+      uguale: true },
+
+    { d: { n: '2', banner: 'Intestazione', titolo: 'A chi è <em>intestata</em> l&rsquo;autovettura?', sotto: 'Scegli in base a chi risulta proprietario sui documenti.',
+           corpo: scelte([['A un privato cittadino','Il proprietario è una persona, non un&rsquo;azienda'],['A una società o azienda','Mezzo intestato a una ditta con partita IVA'],['A una persona deceduta','Il proprietario è venuto a mancare'],['A un&rsquo;associazione','Mezzo intestato a un ente o associazione'],['Passaggio di proprietà non completato','Non risulto proprietario sui documenti'],['Il mezzo ha targhe straniere','Veicolo immatricolato all&rsquo;estero']]) },
+      v: { n: '2', banner: 'Intestazione', titolo: 'A chi è <em>intestata</em> l&rsquo;autovettura?', sotto: 'Serve per capire le tempistiche della vendita.',
+           corpo: '<div class="riquadrino">Le stesse sei scelte.</div>' },
+      dubbio: 'Il <b>sottotitolo</b> è diverso: in demolizione dice &ldquo;scegli in base a chi risulta proprietario sui documenti&rdquo; (preciso e utile), in valutazione &ldquo;serve per capire le tempistiche della vendita&rdquo; (vago). Userei quello della demolizione in tutti e due.' },
+
+    { d: { n: '2b', banner: 'Ramo eredi', solo: 'solo se deceduto', titolo: 'Qualcuno degli eredi ha <em>rinunciato all&rsquo;eredità</em>?', sotto: 'Parliamo di rinuncia formale, fatta da un Notaio o in Tribunale.',
+           corpo: scelte([['No, tutti hanno accettato','Nessuna rinuncia formale'],['Sì, qualcuno ha rinunciato','Almeno un erede deve aver accettato']]) },
+      v: { n: '2b', banner: 'Ramo eredi', solo: 'solo se deceduto', titolo: 'Uguale', sotto: '', corpo: '<div class="riquadrino">Stessa domanda, stesse due risposte: serve a far nascere la casistica giusta quando poi accetta.</div>' },
+      uguale: true },
+
+    { d: { n: '2c', banner: 'Ramo società', solo: 'solo se società', titolo: 'La società è <em>fallita o in liquidazione giudiziale</em>?', sotto: 'Ci serve per preparare i documenti corretti.',
+           corpo: scelte([['No, è attiva','La società è regolarmente operativa'],['Sì, c&rsquo;è un curatore fallimentare','Servirà l&rsquo;autorizzazione del Giudice Delegato']]) },
+      v: { n: '2c', banner: 'Ramo società', solo: 'solo se società', titolo: 'Uguale', sotto: '', corpo: '<div class="riquadrino">Stessa domanda, stesse due risposte.</div>' },
+      uguale: true },
+
+    { d: { n: '3', banner: 'Identifica il mezzo', titolo: 'Identifica <em>l&rsquo;autovettura</em>', sotto: 'Anno, km, marca, modello e cambio.',
+           corpo: campo('Anno di immatricolazione', box('Es. 2008')) + campo('Chilometri percorsi', box('Es. 85.000')) + campo('Marca e modello', box('Es. Fiat') + ' ' + box('Es. Panda')) + campo('Tipo di cambio', pil(['Manuale','Automatico'])) },
+      v: { n: '3', banner: 'Identifica il mezzo', titolo: 'Identifica <em>l&rsquo;autovettura</em>', sotto: 'Anno, km, marca, modello e cambio.', corpo: '<div class="riquadrino">Identico: anno, km, marca, modello, cambio.</div>' },
+      uguale: true },
+
+    { d: null,
+      v: { n: '4', banner: 'Alimentazione', titolo: 'Com&rsquo;è <em>motorizzata</em>?', sotto: 'Ci basta l&rsquo;alimentazione: al resto pensiamo Noi.',
+           corpo: pil(['Benzina','Diesel','GPL','Metano','Ibrida','Elettrica']) },
+      dVuota: 'In demolizione <b>non si chiede</b>.',
+      dubbio: 'La metterei <b>anche in demolizione</b>: a un demolitore serve saperlo prima di partire. GPL e metano hanno le bombole, ibride ed elettriche hanno le batterie: si trattano e si trasportano in modo diverso. È una domanda da tre secondi.' },
+
+    { d: { n: '4', banner: 'Condizioni', titolo: 'In che <em>condizioni</em> è l&rsquo;autovettura?', sotto: 'Rispondi alle 4 domande, ti bastano pochi secondi.',
+           corpo: scelte([['È incidentata?','Ha subito un incidente'],['Va in moto?','Il motore si avvia'],['Cammina?','Il mezzo è marciante e si sposta'],['Mancano delle parti?','Es. motore, ruote, portiere, catalizzatore, batteria']]) + campo('Annotazioni (opzionale)', box('Descrivi eventuali annotazioni...', true)) },
+      v: { n: '5', banner: 'Condizioni', titolo: 'In che <em>condizioni</em> è l&rsquo;autovettura?', sotto: 'Rispondi alle 4 domande, ti bastano pochi secondi.', corpo: '<div class="riquadrino">Identico: le stesse quattro domande e le annotazioni.</div>' },
+      uguale: true },
+
+    { d: { n: '5', banner: 'Dove si trova', titolo: '<em>Dove si trova</em> l&rsquo;autovettura?', sotto: 'Inserisci l&rsquo;indirizzo esatto dove si trova fisicamente l&rsquo;autovettura: il demolitore verrà lì a ritirarlo.',
+           corpo: campo('Indirizzo', box('Es. Via Garibaldi 8, Roma', true)) + '<div class="riquadrino"><b>Spazio per carro attrezzi</b> &middot; Il demolitore può accedere col carro attrezzi?<br>' + pil(['Accesso libero','Spazio stretto','Non passa']) + 'Note aggiuntive (opzionale)</div>' },
+      v: { n: '6', banner: 'Dove si trova', titolo: '<em>Dove si trova</em> l&rsquo;autovettura?', sotto: 'Ci serve per capire chi può venire a vederla e a ritirarla.',
+           corpo: campo('Indirizzo', box('Es. Via Garibaldi 8, Roma', true)) + '<div class="riquadrino">Senza lo spazio per il carro attrezzi: lo chiediamo dopo, solo se accetta la demolizione.</div>' } },
+
+    { d: { n: '6', banner: 'Targa', titolo: 'Qual è la <em>targa</em> dell&rsquo;autovettura?', sotto: 'Ci serve per verificare eventuali fermi amministrativi.',
+           corpo: campo('Targa', box('AB 123 CD')) + '<div class="riquadrino"><b>Le targhe sono fisicamente sul mezzo?</b><br>' + pil(['Sì, presenti','No, smarrite o rubate']) + 'Se &ldquo;no&rdquo;: <i>Servirà la denuncia di smarrimento, in originale, da consegnare al ritiro.</i></div><div class="riquadrino">Con targhe straniere il sottotitolo diventa: &ldquo;Inserisci la targa estera così come appare sul mezzo.&rdquo;</div>' },
+      v: { n: '7', banner: 'Targa', titolo: 'Qual è la <em>targa</em> dell&rsquo;autovettura?', sotto: 'La trovi sul libretto di circolazione.',
+           corpo: campo('Targa', box('AB 123 CD')) + '<div class="riquadrino">Senza la domanda sulle targhe presenti: la facciamo dopo, solo se accetta la demolizione.</div>' },
+      dubbio: 'In demolizione il sottotitolo della targa dice &ldquo;ci serve per verificare i fermi&rdquo;, e <b>il passo dopo (codice fiscale) dice la stessa identica cosa</b>. Metterei sulla targa &ldquo;la trovi sul libretto di circolazione&rdquo; come in valutazione, e lascerei la frase sui fermi solo al codice fiscale.' },
+
+    { d: { n: '7', banner: 'Codice fiscale', solo: 'saltato con targhe straniere', titolo: 'Il tuo <em>codice fiscale</em>', sotto: 'Ci serve per verificare eventuali fermi amministrativi al PRA.',
+           corpo: campo('Codice fiscale', box('RSSMRA80A01H501Z')) + '<div class="riquadrino">Cambia da solo con l&rsquo;intestazione: <b>Partita IVA della società</b> (11 cifre) &middot; <b>Codice fiscale dell&rsquo;associazione</b> &middot; <b>dell&rsquo;intestatario deceduto</b> &middot; <b>di chi risulta intestatario al PRA</b> (passaggio non completato).</div>' },
+      v: { n: '8', banner: 'Codice fiscale', solo: 'saltato con targhe straniere', titolo: 'Il tuo <em>codice fiscale</em>', sotto: 'Ci serve per verificare eventuali fermi amministrativi al PRA.', corpo: '<div class="riquadrino">Identico, con le stesse varianti per intestazione.</div>' },
+      uguale: true },
+
+    { d: { n: '8', banner: 'Foto', titolo: '<em>Foto</em> dell&rsquo;autovettura', sotto: 'Le foto ci aiutano a capire le condizioni dell&rsquo;autovettura e a scegliere il mezzo di trasporto più adatto per il ritiro.',
+           corpo: scelte([['Scatta una foto','Apre la fotocamera'],['Carica dalla galleria','Da telefono o PC']]) + '<div class="riquadrino">Foto libere, senza riquadri guidati. Incentivo a caricarne quattro (&ldquo;Ottimo inizio!&rdquo;). <b>Si può andare avanti anche senza foto.</b></div>' },
+      v: { n: '9', banner: 'Foto', titolo: '<em>Foto</em> dell&rsquo;autovettura', sotto: 'Ne servono almeno quattro: più sono chiare, più la risposta sarà precisa.',
+           corpo: pil(['Davanti','Dietro','Lato destro','Lato sinistro','Interni','Cruscotto coi km']) + '<div class="riquadrino">Sei riquadri guidati, <b>almeno quattro obbligatorie</b>.</div>' },
+      dubbio: 'Qui i due flussi sono <b>davvero diversi</b>, e va deciso: in demolizione le foto sono libere e <b>facoltative</b>, in valutazione guidate e <b>obbligatorie</b>. Per la valutazione senza foto non si può rispondere, quindi lì l&rsquo;obbligo ha senso. Per la demolizione la regola tua era &ldquo;non bloccare mai&rdquo;: la lascerei così. Ma i <b>riquadri guidati</b> (davanti, dietro, lati, interni, cruscotto) aiuterebbero anche il demolitore: in demolizione furono bocciati, quindi lo chiedo e basta.' },
+
+    { d: { n: '9', banner: 'Fermo amministrativo', solo: 'saltato con targhe straniere', titolo: 'Ci sono <em>fermi amministrativi</em> sul mezzo?', sotto: 'Il fermo non blocca la demolizione: serve solo una dichiarazione in più che prepariamo noi.',
+           corpo: scelte([['Sì','Prepareremo noi la dichiarazione da firmare'],['No','Nessun fermo presente sul mezzo'],['Non lo so','Verifichiamo noi gratuitamente al PRA']]) },
+      v: { n: '10', banner: 'Fermo amministrativo', solo: 'saltato con targhe straniere', titolo: 'Ci sono <em>fermi amministrativi</em> sul mezzo?', sotto: 'Con un fermo la macchina non si può ritirare finché non viene svincolato: meglio saperlo subito.',
+           corpo: '<div class="riquadrino">Stesse tre risposte.</div>' },
+      dubbio: '⚠️ <b>I due sottotitoli si contraddicono, e uno dei due è sbagliato.</b> La demolizione dice &ldquo;il fermo non blocca la demolizione&rdquo;: è la regola scritta in ARCHITETTURA (legge 14 del gennaio 2026: il fermo non ferma più la radiazione per demolizione, serve l&rsquo;attestazione del Comune). Tu però mi hai detto &ldquo;con un fermo non posso prenderla, devo prima svincolarla&rdquo;, e così ho scritto la valutazione. <b>Dimmi qual è quella vera</b>: la frase deve essere una sola in tutti e due i flussi.' },
+
+    { d: { n: '10', banner: 'Chi consegna', solo: 'saltato per non intestatario e targhe straniere', titolo: 'Chi <em>consegnerà</em> l&rsquo;autovettura al demolitore?', sotto: 'La persona presente al ritiro che firma la consegna.',
+           corpo: scelte([['Io stesso','Sarò presente al ritiro'],['Una persona delegata','Ti prepariamo noi la delega da firmare']]) + '<div class="riquadrino">Se delegato: nome e cognome, telefono. <i>Nella tua area personale troverai la delega già compilata: basterà scaricarla, firmarla e consegnarla al ritiro insieme ai documenti del delegato.</i></div>' },
+      v: null, vVuota: 'In valutazione <b>non serve</b>: si chiede dopo, solo se accetta la demolizione.',
+      dubbio: 'Il testo promette la delega <b>&ldquo;già compilata&rdquo;</b>, ma per regola i moduli escono tutti <b>in bianco</b> (ARCHITETTURA 8.1). Da correggere: &ldquo;troverai la delega da compilare, firmare e consegnare al ritiro&rdquo;.' },
+
+    { d: { n: '11', banner: 'Libretto', titolo: 'Hai il <em>libretto di circolazione</em> dell&rsquo;autovettura?', sotto: 'Il libretto originale va consegnato al demolitore al momento del ritiro. Così riceverai il primo documento per bloccare o spostare l&rsquo;assicurazione.',
+           corpo: scelte([['Sì, ho il libretto originale','Documento disponibile ed integro'],['Ho la denuncia di smarrimento in originale','Emessa da Carabinieri o Polizia'],['Non ho nessuno dei due al momento','Ti spieghiamo come procedere']]) + '<div class="riquadrino">Terza scelta: <i>Nessun problema: ti chiamiamo noi per capire la situazione. Intanto puoi completare la richiesta e caricare gli altri documenti.</i></div>' },
+      v: null, vVuota: 'In valutazione <b>non serve</b>: si chiede dopo, solo se accetta la demolizione.' },
+
+    { d: { n: '12', banner: 'Certificato di proprietà', solo: 'saltato con targhe straniere', titolo: 'Hai il <em>Certificato di Proprietà</em>?', sotto: 'Il certificato è necessario per la radiazione al PRA.',
+           corpo: '<div class="riquadrino">Passaggio <b>prima di ottobre 2015</b>: foglio cartaceo con stemma ACI. <b>Dopo ottobre 2015</b>: è digitale, non esiste un foglio.</div>' + scelte([['Sì, ho quello cartaceo','Il foglio con lo stemma ACI in alto: va consegnato al momento del ritiro'],['Il mio è digitale','Passaggio dopo ottobre 2015: il certificato è negli archivi digitali del PRA e non va consegnato al ritiro'],['L&rsquo;ho smarrito, ho la denuncia','La denuncia in originale va consegnata al momento del ritiro'],['Non lo trovo o non so cosa sia','Nessun problema: lo verifichiamo noi gratuitamente e ti spieghiamo come procedere']]) },
+      v: null, vVuota: 'In valutazione <b>non serve</b>: si chiede dopo, solo se accetta la demolizione.' },
+
+    { d: { n: '13', banner: 'Crea il tuo account', titolo: '<em>Ultimo passo!</em>', sotto: 'Potrai seguire la pratica, caricare i documenti e scaricare il certificato di rottamazione direttamente dall&rsquo;app.',
+           corpo: campo('Il tuo nome e cognome', box('Mario Rossi')) + campo('Il tuo numero di telefono', box('+39 333 1234567')) + campo('La tua email', box('mario@email.it')) + campo('Scegli una password', box('&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;')) + '<div class="riquadrino">Se è già registrato diventa &ldquo;Conferma e invia&rdquo;: niente email e password, nome e telefono già scritti. Sotto: <i>Col tuo account gratuito hai&hellip;</i></div>' },
+      v: { n: '11', banner: 'Crea il tuo account', titolo: '<em>Ultimo passo!</em>', sotto: 'Crea il tuo account gratuito: lì troverai la nostra risposta e potrai accettarla.',
+           corpo: '<div class="riquadrino">Stessi quattro campi. Vale anche qui la regola del cliente già registrato.</div>' },
+      dubbio: 'La frase del sottotitolo &ldquo;scaricare il certificato di rottamazione direttamente <b>dall&rsquo;app</b>&rdquo;: per regola non si usano parole da tecnico coi clienti. Direi &ldquo;dalla tua area personale&rdquo;.' },
+  ]
+
+  function cella(c, lato, vuota) {
+    if (!c) return `<div class="cella vuota">${vuota}</div>`
+    return `<div class="cella ${lato}">
+      <div class="capo"><span class="num">${c.n}</span><span class="banner">${c.banner}</span>${c.solo ? `<span class="solo">${c.solo}</span>` : ''}</div>
+      <div class="titolo">${c.titolo}</div>
+      ${c.sotto ? `<div class="sotto">${c.sotto}</div>` : '<div style="height:8px"></div>'}
+      ${c.corpo}
+    </div>`
+  }
+
+  const viste = {
+    a: `<div class="spiega">A sinistra la <b>demolizione</b> com&rsquo;&egrave; oggi sul sito, a destra la <b>valutazione</b> come l&rsquo;abbiamo disegnata. Dove la domanda &egrave; la stessa lo dico; dove qualcosa non torna c&rsquo;&egrave; la nota gialla. In fondo alla riga il numero &egrave; quello che vede il cliente in quel flusso.</div>
+      <div class="tavola">
+        <div class="testa"><div class="d">Demolizione &middot; oggi sul sito &middot; 13 passi + 2 rami</div><div class="v">Valutazione &middot; come la faremo &middot; 11 passi + 2 rami</div></div>
+        ${RIGHE.map(r => `
+          <div class="riga">
+            ${cella(r.d, 'd', r.dVuota)}
+            ${cella(r.v, 'v', r.vVuota)}
+          </div>
+          ${r.uguale ? `<div style="margin:-4px 0 2px 4px"><span class="uguale">&#10003; stessa domanda, stesse risposte</span></div>` : ''}
+          ${r.dubbio ? `<div class="dubbio">${r.dubbio}</div>` : ''}`).join('')}
+      </div>`,
+
+    b: `<div class="spiega">Le cose che, guardando i due flussi uno accanto all&rsquo;altro, sistemerei <b>nella demolizione</b>. Sono correzioni di testo e una domanda in pi&ugrave;: niente che cambi il giro.</div>
+      <div class="foglio">
+        <div class="riquadro">
+          <h3>Da decidere tu</h3>
+          <div class="sub">Sono due frasi che si contraddicono: una sola può essere vera</div>
+          <div class="x"><i>1</i><span><b>Il fermo amministrativo.</b> Il sito dice &ldquo;il fermo non blocca la demolizione&rdquo; (legge 14/2026, serve l&rsquo;attestazione del Comune). Tu mi hai detto &ldquo;con un fermo non posso prenderla, devo prima svincolarla&rdquo;. Qual &egrave; la regola operativa vera? La frase sar&agrave; una sola, in tutti e due i flussi.</span></div>
+          <div class="x"><i>2</i><span><b>Le foto in demolizione.</b> Oggi libere e facoltative. Vuoi i sei riquadri guidati come in valutazione (aiutano anche il demolitore), oppure li lasciamo liberi come furono decisi?</span></div>
+        </div>
+        <div class="riquadro">
+          <h3>Correzioni di testo, le farei subito</h3>
+          <div class="sub">Piccole, ma il cliente le legge</div>
+          <div class="x"><i>a</i><span><b>Targa</b>: il sottotitolo &ldquo;ci serve per verificare i fermi&rdquo; &egrave; ripetuto pari pari nel passo dopo. Sulla targa: &ldquo;La trovi sul libretto di circolazione.&rdquo;</span></div>
+          <div class="x"><i>b</i><span><b>Chi consegna</b>: promette la delega &ldquo;gi&agrave; compilata&rdquo;, ma i moduli escono in bianco per regola. Va scritto &ldquo;da compilare e firmare&rdquo;.</span></div>
+          <div class="x"><i>c</i><span><b>Ultimo passo</b>: &ldquo;scaricare il certificato dall&rsquo;app&rdquo; &rarr; &ldquo;dalla tua area personale&rdquo;. Niente parole da tecnico.</span></div>
+          <div class="x"><i>d</i><span><b>Intestazione</b>: in valutazione uso lo stesso sottotitolo della demolizione, &ldquo;scegli in base a chi risulta proprietario sui documenti&rdquo;, che &egrave; pi&ugrave; chiaro.</span></div>
+        </div>
+        <div class="riquadro">
+          <h3>Una domanda in pi&ugrave;</h3>
+          <div class="sub">Da tre secondi, e serve a chi ritira</div>
+          <div class="x"><i>+</i><span><b>Alimentazione anche in demolizione</b>, subito dopo &ldquo;Identifica il mezzo&rdquo;. GPL e metano hanno le bombole, ibride ed elettriche le batterie: il demolitore deve saperlo prima di partire col carro attrezzi. E cos&igrave; i due flussi diventano identici fino al fermo.</span></div>
+        </div>
+      </div>`,
+  }
+
+  document.getElementById('viste').innerHTML = ['a','b'].map(k => `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}">${viste[k]}</div>`).join('')
+
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(v => v.classList.remove('viva'))
+    document.getElementById('vista-' + k).classList.add('viva')
+    document.querySelectorAll('.schede span').forEach(s => s.classList.remove('qui'))
+    el.classList.add('qui')
+    window.scrollTo({ top: 0 })
+  }
+</script>
+</body>
+</html>

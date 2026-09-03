@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La valutazione in 11 passi — come la vede il cliente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1120px; margin: 0 auto; padding: 20px 20px 0; font-size: 14.5px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+
+  .schermo { max-width: 1180px; margin: 14px auto 36px; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 44px rgba(15,27,51,.18); border: 1px solid #D8DEE9; }
+  .barra-url { background: #E8EDF5; padding: 8px 14px; display: flex; align-items: center; gap: 9px; }
+  .barra-url i { width: 9px; height: 9px; border-radius: 999px; background: #C6CFDC; display: block; }
+  .barra-url .url { flex: 1; background: #fff; border: 1px solid #D8E0EC; border-radius: 999px; padding: 4px 12px; font-size: 11.5px; color: #5B6779; }
+  .scena { min-height: 520px; padding: 22px 28px 40px;
+    background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%),
+                radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%), #F5F3FE; }
+
+  .isola { margin: 0 auto 18px; display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,.72); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.9);
+    box-shadow: 0 10px 30px rgba(15,27,51,.10); border-radius: 999px; padding: 8px 8px 8px 20px; }
+  .marchio { font-family: 'Outfit', sans-serif; font-size: 20px; letter-spacing: -.035em; }
+  .marchio .noi { font-weight: 500; color: #46536B; } .marchio .dem { font-weight: 800; color: #0F1B33; margin-left: .15em; }
+  .isola .pill { font-size: 12px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 7px 14px; }
+  .isola .mezzo { font-size: 12px; font-weight: 600; color: #3E4C63; margin-left: 10px; margin-right: 8px; }
+
+  .riga-alta { display: flex; align-items: center; gap: 14px; margin: 0 auto 26px; }
+  .riga-alta .indietro { width: 42px; height: 42px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid rgba(226,232,245,.9); display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(15,27,51,.07); }
+  .riga-alta .barra { flex: 1; height: 5px; background: rgba(15,27,51,.07); border-radius: 999px; overflow: hidden; }
+  .riga-alta .barra i { display: block; height: 100%; background: linear-gradient(90deg,#2563eb,#7c3aed); border-radius: 999px; }
+  .riga-alta .conta { font-size: 12px; font-weight: 700; color: #7C8AA5; letter-spacing: .4px; white-space: nowrap; }
+
+  .due { display: flex; gap: 40px; align-items: flex-start; }
+  .sx { flex: .95; } .dx { flex: 1.05; min-width: 0; }
+  .titolone { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+  .titolone span { background: linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sotto { font-size: 15px; color: #4B5A72; margin-top: 12px; max-width: 420px; line-height: 1.6; }
+  .punto { margin-top: 26px; padding-top: 20px; border-top: 1px solid rgba(15,27,51,.08); }
+  .punto .eti { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #8A94A3; margin-bottom: 10px; }
+  .punto .r { display: flex; align-items: center; gap: 10px; padding: 5px 0; font-size: 14px; color: #7C8AA5; }
+  .punto .r b { display: flex; align-items: center; justify-content: center; width: 21px; height: 21px; border-radius: 999px; font-size: 11px; background: rgba(15,27,51,.07); color: #8A94A3; }
+  .punto .r.qui { color: #1B2E6B; font-weight: 700; }
+  .punto .r.qui b { background: linear-gradient(135deg,#2563eb,#4f46e5); color: #fff; }
+
+  .continua { margin-top: 22px; background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border: none; border-radius: 999px; padding: 15px 40px; font-size: 15px; font-weight: 600; box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+  .campo { margin-bottom: 14px; }
+  .campo .eti { display: block; font-size: 12.5px; font-weight: 700; color: #4A5A75; margin-bottom: 6px; padding-left: 16px; }
+  .campo .aiuto { display: block; font-size: 11.5px; color: #16A34A; font-weight: 600; margin: 6px 0 0 16px; }
+  .pil { width: 100%; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 13px 20px; font-size: 15.5px; color: #9AA7BC; box-shadow: 0 2px 6px rgba(15,27,51,.04); }
+  .pil.grande { font-size: 19px; font-weight: 700; letter-spacing: 2px; text-align: center; color: #0F172A; }
+  .coppia { display: flex; gap: 14px; } .coppia .campo { flex: 1; }
+  .scelte { display: flex; gap: 10px; flex-wrap: wrap; }
+  .scelte span { flex: 1; text-align: center; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 11px 16px; font-size: 14px; font-weight: 700; color: #55637A; white-space: nowrap; }
+  .scelte span.presa { border-color: #2563EB; background: #EFF6FF; color: #1D4ED8; box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
+  .avviso { display: flex; gap: 10px; background: #EFF6FF; border: 1.5px solid #BFDBFE; color: #1E3A8A; font-size: 13.5px; border-radius: 12px; padding: 12px 14px; line-height: 1.5; margin-top: 4px; }
+  .griglia { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .tessera { background: #fff; border: 1.5px solid #E2E8F0; border-radius: 14px; min-height: 84px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 13px; font-weight: 600; color: #46536B; }
+  .tessera i { width: 26px; height: 26px; border-radius: 8px; background: #DBEAFE; display: block; }
+  .tessera.presa { border: 2px solid #1D4ED8; background: #EFF6FF; color: #1D4ED8; }
+  .ruolo { display: flex; align-items: center; gap: 12px; background: #fff; border: 2px solid #D7DCE5; border-radius: 13px; padding: 13px 14px; margin-bottom: 8px; }
+  .ruolo i { width: 42px; height: 42px; border-radius: 12px; background: #DBEAFE; display: block; flex-shrink: 0; }
+  .ruolo b { display: block; font-size: 15px; color: #0F172A; } .ruolo small { font-size: 12.5px; color: #4B5563; }
+  .ruolo .tondo { width: 24px; height: 24px; border-radius: 999px; border: 2px solid #D1D5DB; flex-shrink: 0; margin-left: auto; }
+  .ruolo.presa { border-color: #1D4ED8; background: #EFF6FF; } .ruolo.presa .tondo { background: #2563eb; border-color: #2563eb; }
+  .toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 16px; padding: 12px; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(15,27,51,.04); }
+  .toggle .t { display: flex; align-items: center; gap: 10px; } .toggle .t i { width: 36px; height: 36px; border-radius: 12px; background: #DBEAFE; display: block; }
+  .toggle b { display: block; font-size: 14px; } .toggle small { font-size: 12px; color: #6B7280; }
+  .toggle .sn { display: flex; gap: 6px; } .toggle .sn span { border: 1.5px solid #E5E7EB; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600; color: #4B5563; background: #fff; }
+  .toggle .sn span.presa { background: #EFF6FF; border-color: #2563eb; color: #1D4ED8; }
+  .foto { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 420px; }
+  .foto span { aspect-ratio: 1; border: 1.5px dashed #C7D0DE; border-radius: 14px; background: #F8FAFC; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: #8A94A3; text-align: center; padding: 6px; }
+  .foto span.fatta { border: 1.5px solid #1D4ED8; background: #EFF6FF; color: #1D4ED8; font-weight: 700; }
+
+  .foglio { max-width: 1000px; margin: 18px auto 60px; padding: 0 20px; display: flex; flex-direction: column; gap: 16px; }
+  .riquadro { background: #fff; border: 1px solid #E4E9F2; border-radius: 20px; padding: 22px 26px 26px; box-shadow: 0 10px 28px rgba(15,27,51,.07); }
+  .riquadro h3 { font-size: 16px; margin-bottom: 4px; }
+  .riquadro .sub { font-size: 13px; color: #7C8AA5; margin-bottom: 14px; }
+  .riquadro .v { display: flex; gap: 11px; padding: 10px 0; border-top: 1px solid #F1F4FA; font-size: 14px; color: #46536B; line-height: 1.6; }
+  .riquadro .v:first-of-type { border-top: none; }
+  .riquadro .v b { color: #0F172A; }
+  .riquadro .v i { flex-shrink: 0; width: 22px; height: 22px; border-radius: 999px; background: #EFF6FF; color: #1D4ED8; font-style: normal; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>LA VALUTAZIONE IN 11 PASSI</b> &middot; da 13 a 11, <b>nello stesso ordine della demolizione</b>, con dentro codice fiscale e fermo amministrativo. Ogni passo &egrave; identico al gemello della demolizione: chi poi accetta non risponde due volte a niente.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">Gli 11 passi, schermata per schermata</span>
+  <span onclick="vista('b',this)">Cosa succede dopo</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  // ⭐ Stesso ordine della demolizione (ARCHITETTURA 5.2b), tolti i passi che
+  // servono solo a demolire (consegna, libretto, certificato di proprietà) e
+  // aggiunta l'alimentazione, che alla valutazione serve.
+  const ETICHETTE = ['Tipo di veicolo','Intestazione','Identifica il mezzo','Alimentazione','Condizioni','Dove si trova','Targa','Codice fiscale','Foto','Fermo amministrativo','Crea il tuo account']
+  const TOT = ETICHETTE.length
+
+  function schermo(n, titolo, sotto, dentro, mezzo) {
+    const lista = ETICHETTE.slice(n - 1, n + 3).map((e, i) => `<div class="r ${i === 0 ? 'qui' : ''}"><b>${n + i}</b>${e}</div>`).join('')
+    const restanti = TOT - (n - 1) - Math.min(4, TOT - n + 1)
+    return `<div class="schermo">
+      <div class="barra-url"><i></i><i></i><i></i><span class="url">noidemoliamo.it/vendi-auto</span></div>
+      <div class="scena">
+        <div class="isola">
+          <span class="marchio"><span class="noi">Noi</span><span class="dem">Demoliamo</span></span>
+          <span><span class="pill">Richiesta valutazione gratuita</span><span class="mezzo">${mezzo || ''}</span></span>
+        </div>
+        <div class="riga-alta">
+          <span class="indietro"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg></span>
+          <span class="barra"><i style="width:${Math.round(n / TOT * 100)}%"></i></span>
+          <span class="conta">PASSO ${n} DI ${TOT}</span>
+        </div>
+        <div class="due">
+          <div class="sx">
+            <div class="titolone">${titolo}</div>
+            <div class="sotto">${sotto}</div>
+            <div class="punto"><div class="eti">A che punto sei</div>${lista}${restanti > 0 ? `<div class="r"><b>&hellip;</b>altri ${restanti} pass${restanti === 1 ? 'o' : 'i'}</div>` : ''}</div>
+          </div>
+          <div class="dx">${dentro}</div>
+        </div>
+      </div>
+    </div>`
+  }
+
+  const P = []
+
+  P.push(schermo(1, 'Che tipo di <span>veicolo</span> &egrave;?', 'Seleziona il tipo di mezzo per iniziare.', `
+    <div class="griglia">
+      ${['Autovettura','Motoveicolo','Ciclomotore','Minicar','Furgone','Pullman','Camion','Altro'].map((v, i) => `<span class="tessera ${i === 0 ? 'presa' : ''}"><i></i>${v}</span>`).join('')}
+    </div>
+    <button class="continua">Continua</button>`, ''))
+
+  P.push(schermo(2, 'A chi &egrave; <span>intestata</span> l&rsquo;autovettura?', 'Serve per capire le tempistiche della vendita.', `
+    <div class="ruolo presa"><i></i><span><b>A un privato cittadino</b><small>Il proprietario &egrave; una persona, non un&rsquo;azienda</small></span><span class="tondo"></span></div>
+    <div class="ruolo"><i></i><span><b>A una societ&agrave; o azienda</b><small>Mezzo intestato a una ditta con partita IVA</small></span><span class="tondo"></span></div>
+    <div class="ruolo"><i></i><span><b>A una persona deceduta</b><small>Il proprietario &egrave; venuto a mancare</small></span><span class="tondo"></span></div>
+    <div class="ruolo"><i></i><span><b>A un&rsquo;associazione</b><small>Mezzo intestato a un ente o associazione</small></span><span class="tondo"></span></div>
+    <div class="ruolo"><i></i><span><b>Passaggio di propriet&agrave; non completato</b><small>Non risulto proprietario sui documenti</small></span><span class="tondo"></span></div>
+    <div class="ruolo"><i></i><span><b>Il mezzo ha targhe straniere</b><small>Veicolo immatricolato all&rsquo;estero</small></span><span class="tondo"></span></div>
+    <div class="avviso">Come nella demolizione: con &ldquo;persona deceduta&rdquo; e &ldquo;societ&agrave;&rdquo; si aprono le stesse domande in pi&ugrave; (rinuncia all&rsquo;eredit&agrave;, societ&agrave; fallita), cos&igrave; la casistica nasce gi&agrave; giusta.</div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(3, 'Identifica <span>l&rsquo;autovettura</span>', 'Anno, km, marca, modello e cambio.', `
+    <div class="campo"><span class="eti">Anno di immatricolazione</span><div class="pil">Es. 2008</div></div>
+    <div class="campo"><span class="eti">Chilometri percorsi</span><div class="pil">Es. 85.000</div></div>
+    <div class="coppia"><div class="campo"><span class="eti">Marca</span><div class="pil">Es. Fiat</div></div><div class="campo"><span class="eti">Modello</span><div class="pil">Es. Panda</div></div></div>
+    <div class="campo"><span class="eti">Tipo di cambio</span><div class="scelte"><span class="presa">Manuale</span><span>Automatico</span></div></div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(4, 'Com&rsquo;&egrave; <span>motorizzata</span>?', 'Ci basta l&rsquo;alimentazione: al resto pensiamo Noi.', `
+    <div class="campo"><span class="eti">Alimentazione</span>
+      <div class="scelte">${['Benzina','Diesel','GPL','Metano','Ibrida','Elettrica'].map((v, i) => `<span class="${i === 1 ? 'presa' : ''}">${v}</span>`).join('')}</div>
+    </div>
+    <div class="avviso">&Egrave; l&rsquo;unico passo che nella demolizione non c&rsquo;&egrave;. Via cilindrata, cavalli e allestimento: quasi nessuno li sa a memoria.</div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(5, 'In che <span>condizioni</span> &egrave; l&rsquo;autovettura?', 'Rispondi alle 4 domande, ti bastano pochi secondi.', `
+    <div class="toggle"><span class="t"><i></i><span><b>&Egrave; incidentata?</b><small>Ha subito un incidente</small></span></span><span class="sn"><span>S&igrave;</span><span class="presa">No</span></span></div>
+    <div class="toggle"><span class="t"><i></i><span><b>Va in moto?</b><small>Il motore si avvia</small></span></span><span class="sn"><span class="presa">S&igrave;</span><span>No</span></span></div>
+    <div class="toggle"><span class="t"><i></i><span><b>Cammina?</b><small>Il mezzo &egrave; marciante e si sposta</small></span></span><span class="sn"><span class="presa">S&igrave;</span><span>No</span></span></div>
+    <div class="toggle"><span class="t"><i></i><span><b>Mancano delle parti?</b><small>Es. motore, ruote, portiere, catalizzatore, batteria</small></span></span><span class="sn"><span>S&igrave;</span><span class="presa">No</span></span></div>
+    <div class="campo" style="margin-top:12px"><span class="eti" style="padding-left:4px">Annotazioni (opzionale)</span><div class="pil" style="border-radius:18px;min-height:70px">Descrivi eventuali annotazioni...</div></div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(6, '<span>Dove si trova</span> l&rsquo;autovettura?', 'Ci serve per capire chi pu&ograve; venire a vederla e a ritirarla.', `
+    <div class="campo"><span class="eti">Indirizzo dove si trova il mezzo</span><div class="pil">Es. Via Garibaldi 8, Roma</div></div>
+    <div class="avviso">Scegli l&rsquo;indirizzo dal menu che compare mentre scrivi: cos&igrave; siamo sicuri del comune. Lo spazio per il carro attrezzi lo chiediamo dopo, solo se si va a demolizione.</div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(7, 'Qual &egrave; la <span>targa</span> dell&rsquo;autovettura?', 'La trovi sul libretto di circolazione.', `
+    <div class="campo"><span class="eti">Targa del veicolo</span><div class="pil grande">AB 123 CD</div></div>
+    <div class="avviso">La targa resta tra Noi e te: non finisce in nessun annuncio pubblico.</div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(8, 'Il tuo <span>codice fiscale</span>', 'Ci serve per verificare eventuali fermi amministrativi al PRA.', `
+    <div class="campo"><span class="eti">Codice fiscale dell&rsquo;intestatario</span><div class="pil grande">RSSMRA80A01H501Z</div><span class="aiuto">Codice fiscale valido &middot; 16 di 16</span></div>
+    <div class="avviso">Come nella demolizione la domanda cambia da sola con l&rsquo;intestazione: partita IVA per la societ&agrave;, codice fiscale dell&rsquo;ente per l&rsquo;associazione, del defunto per la persona deceduta, di chi risulta al PRA per il passaggio non completato. Con le targhe straniere si salta.</div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(9, '<span>Foto</span> dell&rsquo;autovettura', 'Ne servono almeno quattro: pi&ugrave; sono chiare, pi&ugrave; la risposta sar&agrave; precisa.', `
+    <div class="foto">
+      <span class="fatta">&#10003; Davanti</span><span class="fatta">&#10003; Dietro</span><span class="fatta">&#10003; Lato destro</span>
+      <span class="fatta">&#10003; Lato sinistro</span><span>Interni</span><span>Cruscotto coi km</span>
+    </div>
+    <div class="avviso" style="margin-top:14px">Hai un danno da mostrare? Rifai una delle foto inquadrandolo: aiuta a non sbagliare la cifra.</div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(10, 'Ci sono <span>fermi amministrativi</span> sul mezzo?', 'Con un fermo la macchina non si pu&ograve; ritirare finch&eacute; non viene svincolato: meglio saperlo subito.', `
+    <div class="ruolo"><i></i><span><b>S&igrave;</b><small>Prepareremo noi la dichiarazione da firmare</small></span><span class="tondo"></span></div>
+    <div class="ruolo presa"><i></i><span><b>No</b><small>Nessun fermo presente sul mezzo</small></span><span class="tondo"></span></div>
+    <div class="ruolo"><i></i><span><b>Non lo so</b><small>Verifichiamo noi gratuitamente al PRA</small></span><span class="tondo"></span></div>
+    <button class="continua">Continua</button>`, 'Autovettura'))
+
+  P.push(schermo(11, '<span>Ultimo passo!</span>', 'Crea il tuo account gratuito: l&igrave; troverai la nostra risposta e potrai accettarla.', `
+    <div class="campo"><span class="eti">Il tuo nome e cognome</span><div class="pil">Mario Rossi</div></div>
+    <div class="campo"><span class="eti">Il tuo numero di telefono</span><div class="pil">+39 333 1234567</div></div>
+    <div class="campo"><span class="eti">La tua email</span><div class="pil">mario@email.it</div></div>
+    <div class="campo"><span class="eti">Scegli una password</span><div class="pil">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div>
+    <div class="avviso">Ti diciamo Noi se la tua auto vale qualcosa. La risposta la trovi nella tua area personale: da l&igrave; decidi tu.</div>
+    <button class="continua">Invia la richiesta</button>`, 'Autovettura'))
+
+  const viste = {
+    a: `<div class="spiega">Gli undici passi come li vedrebbe il cliente su PC (sul telefono &egrave; la stessa cosa incolonnata). L&rsquo;<b>ordine &egrave; quello della demolizione</b>: la targa resta dove sta l&igrave; e subito dopo c&rsquo;&egrave; il <b>codice fiscale</b>, che serve per il fermo al PRA. Rispetto a oggi: <b>via Dotazioni, Revisione e bollo, Manutenzione e Difetti</b>; del motore resta <b>solo l&rsquo;alimentazione</b>; entrano <b>codice fiscale</b> e <b>fermo amministrativo</b>, uguali alla demolizione; le <b>foto obbligatorie diventano quattro</b>.</div>
+      ${P.join('')}`,
+
+    b: `<div class="spiega">Cosa succede quando il cliente preme &ldquo;Invia la richiesta&rdquo;. Questa parte &egrave; ancora da costruire: qui c&rsquo;&egrave; solo il disegno, per essere d&rsquo;accordo prima.</div>
+      <div class="foglio">
+        <div class="riquadro">
+          <h3>1 &middot; In admin arriva in &ldquo;Valutazioni&rdquo;, non tra le pratiche</h3>
+          <div class="sub">Un elenco a parte, con le caselle: Da valutare &rsaquo; Risposta inviata &rsaquo; Accettata &rsaquo; Rifiutata</div>
+          <div class="v"><i>a</i><span>Sulla riga vedi <b>a colpo d&rsquo;occhio</b>: mezzo, anno, km, alimentazione, va in moto / cammina / incidentata, fermo, le 4 foto, dov&rsquo;&egrave;, targa e codice fiscale.</span></div>
+          <div class="v"><i>b</i><span>Due bottoni: <b>&ldquo;Non la paghiamo&rdquo;</b> (scrivi due righe sul perch&eacute;, e la proposta diventa la demolizione gratuita) oppure <b>&ldquo;Riconosciamo&hellip; &euro;&rdquo;</b> con la cifra.</span></div>
+          <div class="v"><i>c</i><span>Su richieste che sembrano valere, un terzo bottone <b>&ldquo;Cerca targa&rdquo;</b> compra la visura (6 &euro;) solo quando lo decidi tu.</span></div>
+        </div>
+        <div class="riquadro">
+          <h3>2 &middot; Il cliente trova la risposta nella sua area</h3>
+          <div class="sub">Una card in cima alle sue pratiche, pi&ugrave; l&rsquo;avviso (l&rsquo;email arriva quando faremo Resend)</div>
+          <div class="v"><i>a</i><span><b>&ldquo;La tua Fiat Panda: te la demoliamo gratis.&rdquo;</b> Sotto, le tue due righe sul perch&eacute; non la paghiamo. Bottoni: <b>Accetto la demolizione gratuita</b> / <b>No, grazie</b>.</span></div>
+          <div class="v"><i>b</i><span><b>&ldquo;NoiDemoliamo riconosce per la tua Fiat Panda 300 &euro;.&rdquo;</b> Bottoni: <b>Accetto</b> / <b>No, grazie</b>.</span></div>
+        </div>
+        <div class="riquadro">
+          <h3>3 &middot; Se accetta, la richiesta diventa una pratica di DEMOLIZIONE</h3>
+          <div class="sub">Si sposta in &ldquo;Pratiche&rdquo; con la casistica gi&agrave; giusta (dall&rsquo;intestazione), e il cliente completa quello che manca</div>
+          <div class="v"><i>a</i><span>Il cliente risponde alle <b>domande della demolizione che non ha ancora fatto</b>: spazio per il carro attrezzi, targhe presenti sul mezzo, chi consegna, libretto, certificato di propriet&agrave;. Tutto il resto (tipo, intestazione, mezzo, condizioni, indirizzo, targa, codice fiscale, foto, fermo) ce l&rsquo;ha gi&agrave; dato: <b>non lo richiediamo</b>.</span></div>
+          <div class="v"><i>b</i><span>Da l&igrave; in poi &egrave; una pratica normale: <b>nasce la lista dei documenti</b> dalla casistica, il cliente li carica, tu li approvi, e va avanti nel giro di sempre.</span></div>
+          <div class="v"><i>c</i><span>Il <b>destino</b> lo scegli tu come oggi: demolitore, commerciante, oppure NoiDemoliamo se te la prendi tu.</span></div>
+        </div>
+        <div class="riquadro">
+          <h3>4 &middot; Le email da ricordare per quando faremo Resend</h3>
+          <div class="sub">Le segno in ARCHITETTURA insieme alle altre, cos&igrave; non ne perdiamo nessuna</div>
+          <div class="v"><i>1</i><span>Richiesta di valutazione ricevuta (&ldquo;ti rispondiamo a breve&rdquo;)</span></div>
+          <div class="v"><i>2</i><span>La nostra risposta &egrave; pronta (demolizione gratuita o offerta in euro): &ldquo;entra e decidi&rdquo;</span></div>
+          <div class="v"><i>3</i><span>Hai accettato: &ldquo;completa la pratica&rdquo; con le domande che mancano</span></div>
+          <div class="v"><i>4</i><span>Da qui in poi le stesse della demolizione: documenti, demolitore, ritiro, certificati</span></div>
+        </div>
+      </div>`,
+  }
+
+  document.getElementById('viste').innerHTML = ['a','b'].map(k => `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}">${viste[k]}</div>`).join('')
+
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(v => v.classList.remove('viva'))
+    document.getElementById('vista-' + k).classList.add('viva')
+    document.querySelectorAll('.schede span').forEach(s => s.classList.remove('qui'))
+    el.classList.add('qui')
+    window.scrollTo({ top: 0 })
+  }
+</script>
+</body>
+</html>

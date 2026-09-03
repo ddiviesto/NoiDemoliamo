@@ -19,6 +19,7 @@ import NoteDemolitore, { prefetchNote } from './NoteDemolitore'
 // ⭐ 07/08: LO STESSO visore dell'admin (palco scuro, zoom, PDF sfogliabili,
 // Scarica col PDF unico) in variante SOLA LETTURA, senza Approva/Rifiuta
 import VisoreDocumenti, { nomeAdmin } from '@/app/components/VisoreDocumenti'
+import { nomeAlimentazione } from '@/types/pratica'
 
 interface FileDoc { url: string; nome?: string; lato?: string }
 
@@ -35,6 +36,7 @@ interface Dettaglio {
     targhe_presenti: boolean | null
     fee_concordata: number | null
     tipo_cambio: string | null
+    alimentazione: string | null
     cap_ritiro: string | null
     spazio_carro_attrezzi: string | null
     spazio_carro_attrezzi_note: string | null
@@ -579,6 +581,7 @@ export default function TendinaPratica({ p, agenda = [], onCambiata }: {
             { k: 'Anno', vista: p.anno != null ? String(p.anno) : '—' },
             { k: 'Km', vista: (d?.km ?? p.km) != null ? (d?.km ?? p.km)!.toLocaleString('it-IT') : '—' },
             { k: 'Cambio', vista: d?.tipo_cambio === 'manuale' ? 'Manuale' : d?.tipo_cambio === 'automatico' ? 'Automatico' : '—' },
+            { k: 'Alimentazione', vista: nomeAlimentazione(d?.alimentazione) },
           ]}
           extra={(condizioni.length > 0 || d?.note_veicolo) ? (
             <div style={{ paddingTop: 8 }}>
