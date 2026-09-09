@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi, Intestazione, derivaCasistica, delegaAmmessa, fermoApplicabile } from '../../types/pratica'
 import { StepTipoVeicolo } from './steps/StepTipoVeicolo'
 import { StepIdentificaVeicolo } from './steps/StepIdentificaVeicolo'
@@ -531,6 +531,9 @@ export default function IniziaPage() {
 
   // Stati di errore per ogni step (mostrati al click su Continua)
   const [erroreIndirizzo, setErroreIndirizzo] = useState(false)
+  // cosa c'è scritto nel campo indirizzo e se Google è spento (ripiego a mano)
+  const [testoIndirizzo, setTestoIndirizzo] = useState({ testo: '', aMano: false })
+  const onTestoIndirizzo = useCallback((testo: string, aMano: boolean) => setTestoIndirizzo({ testo, aMano }), [])
   const [erroreSpazio, setErroreSpazio] = useState(false)
   const [erroreTarga, setErroreTarga] = useState(false)
   const [erroreTarghePresenti, setErroreTarghePresenti] = useState(false)
@@ -652,6 +655,14 @@ export default function IniziaPage() {
   // Handler "Continua" con validazione
   function handleContinuaIndirizzo() {
     if (!indirizzoConfermato) {
+      // Google spento: l'indirizzo scritto per intero va bene così (⭐ 09/09,
+      // niente secondo bottone "Conferma indirizzo"). Si conferma e compare
+      // la domanda sul carro attrezzi, come dopo un suggerimento scelto.
+      const scritto = testoIndirizzo.testo.trim()
+      if (testoIndirizzo.aMano && scritto.length >= 5) {
+        onSelezioneIndirizzo({ indirizzo: scritto })
+        return
+      }
       setErroreIndirizzo(true)
       return
     }
@@ -1062,15 +1073,20 @@ export default function IniziaPage() {
               ) : (
                 <>
                   {erroreIndirizzo && (
-                    <ErrorBadge>Inserisci un indirizzo per continuare.</ErrorBadge>
+                    <ErrorBadge>{testoIndirizzo.testo.trim().length > 0 && !testoIndirizzo.aMano ? "Scegli l'indirizzo tra i suggerimenti." : 'Scrivi dove si trova il mezzo per continuare.'}</ErrorBadge>
                   )}
                   <AutocompleteIndirizzo
                     valoreIniziale={dati.indirizzo}
                     onSelezione={onSelezioneIndirizzo}
+                    onTesto={onTestoIndirizzo}
                   />
                   {/* ⭐ 24/08: la riga di istruzioni sta DENTRO il campo
                       indirizzo, perché cambia da sola quando i suggerimenti
-                      di Google non arrivano e si va avanti a mano. */}
+                      di Google non arrivano e si va avanti a mano.
+                      ⭐ 09/09: il "Continua" c'è anche qui: con Google spento
+                      conferma l'indirizzo scritto (poi compare il carro
+                      attrezzi), con Google acceso ricorda di scegliere. */}
+                  <button onClick={handleContinuaIndirizzo} className="btn-pagina">Continua</button>
                 </>
               )}
             </div>

@@ -20,7 +20,7 @@
 // cambiano anche qui.
 // ============================================================
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { DatiVeicolo, Intestazione, TipoMezzo, FermoAmministrativo, derivaCasistica, fermoApplicabile } from '../../types/pratica'
 import { StepTipoVeicolo } from '../inizia/steps/StepTipoVeicolo'
@@ -139,6 +139,9 @@ export default function VendiAuto() {
   // ---- dove si trova, targa, codice fiscale, foto, fermo ----
   const [indirizzo, setIndirizzo] = useState('')
   const [datiIndirizzo, setDatiIndirizzo] = useState<DatiIndirizzo | null>(null)
+  // cosa c'è scritto nel campo indirizzo e se Google è spento (ripiego a mano)
+  const [testoIndirizzo, setTestoIndirizzo] = useState({ testo: '', aMano: false })
+  const onTestoIndirizzo = useCallback((testo: string, aMano: boolean) => setTestoIndirizzo({ testo, aMano }), [])
   const [targa, setTarga] = useState('')
   const [targhePresenti, setTarghePresenti] = useState<'si' | 'no' | null>(null)
   const [cf, setCf] = useState('')
@@ -188,7 +191,17 @@ export default function VendiAuto() {
     if (passo === 'intestazione' && !intestazione) return setErrore('Scegli a chi è intestato il mezzo')
     if (passo === 'eredi' && !erediRinuncia) return setErrore("Seleziona un'opzione per continuare")
     if (passo === 'societa-fallita' && !societaFallita) return setErrore("Seleziona un'opzione per continuare")
-    if (passo === 'indirizzo' && !datiIndirizzo) return setErrore("Scrivi l'indirizzo e confermalo")
+    if (passo === 'indirizzo' && !datiIndirizzo) {
+      // Google spento: l'indirizzo scritto per intero va bene così (⭐ 09/09,
+      // niente secondo bottone "Conferma indirizzo")
+      const scritto = testoIndirizzo.testo.trim()
+      if (testoIndirizzo.aMano && scritto.length >= 5) {
+        setIndirizzo(scritto)
+        setDatiIndirizzo({ indirizzo: scritto })
+        return avanti()
+      }
+      return setErrore(scritto.length > 0 && !testoIndirizzo.aMano ? "Scegli l'indirizzo tra i suggerimenti" : 'Scrivi dove si trova il mezzo')
+    }
     if (passo === 'targa') {
       if (targa.trim().length < 5) return setErrore('Scrivi la targa del mezzo')
       if (intestazione !== 'targhe_straniere' && !targhePresenti) return setErrore('Indica se le targhe sono presenti sul mezzo')
@@ -387,6 +400,7 @@ export default function VendiAuto() {
           <AutocompleteIndirizzo
             valoreIniziale={indirizzo}
             onSelezione={(d: DatiIndirizzo) => { setIndirizzo(d.indirizzo); setDatiIndirizzo(d); setErrore('') }}
+            onTesto={onTestoIndirizzo}
           />
         )}
 

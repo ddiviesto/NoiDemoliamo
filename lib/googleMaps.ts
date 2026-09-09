@@ -33,7 +33,9 @@ export function loadGoogleMaps(): Promise<void> {
     if (!KEY) { reject(new Error('Chiave Google Maps mancante')); return }
 
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${KEY}&libraries=places&language=it&region=IT&v=weekly`
+    // `loading=async`: senza, Google scrive un avviso in console e Next lo
+    // mostra come "issue" nell'angolo della pagina (visto da Davide, 09/09)
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${KEY}&libraries=places&language=it&region=IT&v=weekly&loading=async`
     script.async = true
     script.defer = true
     script.setAttribute('data-google-maps', '1')

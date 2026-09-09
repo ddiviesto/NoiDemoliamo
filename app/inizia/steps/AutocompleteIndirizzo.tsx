@@ -77,6 +77,10 @@ interface Props {
   valoreIniziale?: string
   placeholder?: string
   onSelezione: (dati: DatiIndirizzo) => void
+  // ⭐ 09/09: dice al flusso cosa c'è scritto nel campo e se siamo nel
+  // ripiego a mano, così il bottone "Continua" del passo può accettare
+  // l'indirizzo scritto senza un secondo bottone "Conferma indirizzo".
+  onTesto?: (testo: string, aMano: boolean) => void
   // Versione compatta per i form admin (stessa altezza/font degli altri campi)
   compatto?: boolean
 }
@@ -89,6 +93,7 @@ export default function AutocompleteIndirizzo({
   valoreIniziale = '',
   placeholder = 'Es. Via Garibaldi 8, Roma',
   onSelezione,
+  onTesto,
   compatto = false,
 }: Props) {
   const [query, setQuery] = useState(valoreIniziale)
@@ -104,6 +109,9 @@ export default function AutocompleteIndirizzo({
   // "Conferma indirizzo" e va avanti scrivendolo per intero.
   const [aMano, setAMano] = useState(false)
 
+  // Il flusso sa sempre cosa c'è scritto e se siamo nel ripiego a mano
+  useEffect(() => { onTesto?.(query, aMano || erroreCaricamento) }, [query, aMano, erroreCaricamento, onTesto])
+
   const placesLibRef = useRef<PlacesLibrary | null>(null)
   const sessionTokenRef = useRef<unknown>(null)
   const debounceRef = useRef<NodeJS.Timeout | null>(null)
@@ -113,6 +121,17 @@ export default function AutocompleteIndirizzo({
   useEffect(() => {
     let attivo = true
 
+    // ⭐ 09/09: se Google non risponde entro pochi secondi (chiave bloccata,
+    // fatturazione scaduta: la libreria "places" resta appesa senza dare
+    // errore) si passa al ripiego a mano. Prima il campo restava disabilitato
+    // con "Caricamento autocomplete..." per sempre.
+    const attesa = setTimeout(() => {
+      if (attivo && !placesLibRef.current) {
+        console.warn('Google Maps non risponde, indirizzo a mano')
+        setErroreCaricamento(true); setAMano(true)
+      }
+    }, 5000)
+
     async function init() {
       try {
         await loadGoogleMaps()
@@ -121,17 +140,20 @@ export default function AutocompleteIndirizzo({
         const lib = (await window.google.maps.importLibrary('places')) as unknown as PlacesLibrary
         if (!attivo) return
 
+        clearTimeout(attesa)
         placesLibRef.current = lib
         sessionTokenRef.current = new lib.AutocompleteSessionToken()
         setReady(true)
       } catch (err) {
-        console.error('Errore Google Maps:', err)
+        // warn e non error: è una situazione gestita (si va avanti a mano),
+        // e un console.error diventa una "issue" rossa nell'angolo con Next
+        console.warn('Google Maps non disponibile, indirizzo a mano:', err)
         if (attivo) { setErroreCaricamento(true); setAMano(true) }
       }
     }
 
     init()
-    return () => { attivo = false }
+    return () => { attivo = false; clearTimeout(attesa) }
   }, [])
 
   // Chiusura quando si clicca fuori
@@ -162,7 +184,7 @@ export default function AutocompleteIndirizzo({
       setSuggestions(results || [])
       setActiveIdx(-1)
     } catch (err) {
-      console.error('Errore fetch suggerimenti:', err)
+      console.warn('Suggerimenti Google non disponibili, indirizzo a mano:', err)
       setSuggestions([])
       setAMano(true)          // Google ha detto picche: si va avanti a mano
     } finally {
@@ -311,8 +333,7 @@ export default function AutocompleteIndirizzo({
           onChange={onInputChange}
           onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
           onKeyDown={onKeyDown}
-          placeholder={ready ? placeholder : 'Caricamento autocomplete...'}
-          disabled={!ready}
+          placeholder={placeholder}
           className={classiInput}
         />
         {loading && (
@@ -366,7 +387,7 @@ export default function AutocompleteIndirizzo({
         </div>
       )}
 
-      {open && !loading && !aMano && suggestions.length === 0 && query.trim().length >= 2 && (
+      {ready && open && !loading && !aMano && suggestions.length === 0 && query.trim().length >= 2 && (
         <div className={compatto
           ? 'absolute left-0 right-0 top-full mt-1.5 z-50 bg-white border border-gray-200 rounded-xl shadow-xl p-3 text-center text-[12.5px] text-gray-400'
           : 'mt-2 bg-white border border-gray-200 rounded-2xl shadow-lg p-4 text-center text-sm text-gray-400'}>
@@ -386,23 +407,32 @@ export default function AutocompleteIndirizzo({
 }
 
 // ============================================================
-// RIPIEGO A MANO (⭐ 24/08)
+// RIPIEGO A MANO (⭐ 24/08, ⭐ 09/09 senza secondo bottone)
 // Compare quando i suggerimenti non arrivano: si scrive l'indirizzo per
-// intero e si conferma col bottone. Senza questo il cliente resta piantato
-// sul passo, perché il flusso aspetta un indirizzo confermato.
+// intero e si va avanti col normale "Continua" del passo (il flusso lo
+// accetta grazie a `onTesto`). Riga di aiuto grigia come le altre, non un
+// avviso colorato: non è un errore del cliente. Solo nei form compatti
+// dell'admin (che non hanno un "Continua") resta il bottoncino.
 // ============================================================
 function RipiegoAMano({ query, onConferma, compatto }: { query: string; onConferma: () => void; compatto?: boolean }) {
   const pronto = query.trim().length >= 5
+  if (!compatto) {
+    return (
+      <p className="text-[11.5px] text-gray-500 mt-2 px-4 leading-relaxed">
+        I suggerimenti non sono disponibili in questo momento: scrivi l&apos;indirizzo completo (via, numero civico, città e provincia) e premi Continua.
+      </p>
+    )
+  }
   return (
-    <div className={compatto ? 'mt-2' : 'mt-3'}>
-      <p className={`${compatto ? 'text-[11.5px]' : 'text-[12.5px]'} text-amber-800 leading-relaxed ${compatto ? '' : 'px-4'}`}>
-        I suggerimenti non sono disponibili in questo momento. Scrivi l&apos;indirizzo completo (via, numero civico, città e provincia) e conferma.
+    <div className="mt-2">
+      <p className="text-[11.5px] text-gray-500 leading-relaxed">
+        I suggerimenti non sono disponibili in questo momento. Scrivi l&apos;indirizzo completo e conferma.
       </p>
       <button
         type="button"
         onClick={onConferma}
         disabled={!pronto}
-        className={`mt-2 ${compatto ? '' : 'ml-1'} scelta-pillola ${pronto ? 'scelta-pillola--presa' : ''}`}
+        className={`mt-2 scelta-pillola ${pronto ? 'scelta-pillola--presa' : ''}`}
         style={{ opacity: pronto ? 1 : 0.55, cursor: pronto ? 'pointer' : 'default' }}
       >
         Conferma indirizzo
