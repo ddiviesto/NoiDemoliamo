@@ -405,30 +405,32 @@ export default function VendiAuto() {
         )}
 
         {passo === 'targa' && (
-          <div className="flex flex-col gap-3">
-            <input
-              type="text"
-              value={targa}
-              onChange={e => { setTarga(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')); setErrore('') }}
-              placeholder="AB 123 CD"
-              className={classeCampo(false, 'campo-pillola--grande uppercase')}
-              autoCapitalize="characters"
-            />
+          <div className="flex flex-col gap-4">
+            {/* ⭐ 09/09 (mockup A): stessa veste della demolizione, niente
+                riquadro, targa corta. Qui il testo delle targhe smarrite NON
+                nomina la demolizione: il cliente aspetta una risposta, non
+                deve pensare che vogliamo già demolirla. */}
+            <CampoModulo label="Targa">
+              <input
+                type="text"
+                value={targa}
+                onChange={e => { setTarga(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '')); setErrore('') }}
+                placeholder="AB 123 CD"
+                className={classeCampo(false, 'campo-pillola--grande campo-pillola--targa uppercase')}
+                autoCapitalize="characters"
+              />
+            </CampoModulo>
 
-            {/* Le targhe sono sul mezzo? Stessa domanda della demolizione:
-                se mancano servirà la denuncia di smarrimento al ritiro. */}
             {intestazione !== 'targhe_straniere' && (
-              <div className="border rounded-xl p-4 bg-blue-50/50 border-blue-100">
-                <div className="text-sm font-semibold text-gray-900 mb-0.5">Le targhe sono fisicamente sul mezzo?</div>
-                <div className="text-xs text-gray-600 mb-3">Controlla che siano montate sul veicolo.</div>
-                <div className="scelte-fila">
-                  <SceltaPillola label="Sì, presenti" larga presa={targhePresenti === 'si'} onClick={() => { setTarghePresenti('si'); setErrore('') }} />
-                  <SceltaPillola label="No, smarrite o rubate" larga presa={targhePresenti === 'no'} onClick={() => { setTarghePresenti('no'); setErrore('') }} />
+              <CampoModulo label="Le targhe sono sul mezzo?">
+                <div className="scelte-griglia scelte-griglia--due">
+                  <SceltaPillola label="Sì, presenti" presa={targhePresenti === 'si'} onClick={() => { setTarghePresenti('si'); setErrore('') }} />
+                  <SceltaPillola label="No, smarrite o rubate" presa={targhePresenti === 'no'} onClick={() => { setTarghePresenti('no'); setErrore('') }} />
                 </div>
                 {targhePresenti === 'no' && (
-                  <div className="mt-3"><InfoBadge>Se il mezzo andrà in demolizione servirà la <strong>denuncia di smarrimento in originale</strong>, da consegnare al ritiro. Te lo ricorderemo nella tua area personale.</InfoBadge></div>
+                  <div className="mt-3"><InfoBadge>Nessun problema: servirà solo una <strong>denuncia di smarrimento</strong>. Con la burocrazia ti aiutiamo noi.</InfoBadge></div>
                 )}
-              </div>
+              </CampoModulo>
             )}
           </div>
         )}

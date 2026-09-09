@@ -1095,57 +1095,40 @@ export default function IniziaPage() {
 
         {curStep === 'targa' && (
           <>
-            <div className="flex flex-col gap-3">
-              {erroreTarga && <ErrorBadge>Inserisci la targa per continuare.</ErrorBadge>}
-              <input
-                type="text"
-                defaultValue={dati.targa}
-                onChange={e => { update({ targa: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), targaSkipped: false }); setErroreTarga(false) }}
-                placeholder="AB 123 CD"
-                className={classeCampo(erroreTarga, 'campo-pillola--grande uppercase')}
-              />
+            {/* ⭐ 09/09 (mockup A scelto da Davide): niente riquadro azzurro.
+                La domanda sulle targhe è un campo come gli altri (etichetta
+                sopra, due pillole uguali) e la targa è una pillola corta. */}
+            <div className="flex flex-col gap-4">
+              <CampoModulo id="box-targa" label="Targa" errore={erroreTarga ? 'Inserisci la targa per continuare.' : undefined}>
+                <input
+                  type="text"
+                  defaultValue={dati.targa}
+                  onChange={e => { update({ targa: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ''), targaSkipped: false }); setErroreTarga(false) }}
+                  placeholder="AB 123 CD"
+                  className={classeCampo(erroreTarga, 'campo-pillola--grande campo-pillola--targa uppercase')}
+                />
+              </CampoModulo>
 
               {dati.intestazione !== 'targhe_straniere' && (
-              <div id="box-targhe" className={`border rounded-xl p-4 transition-all ${erroreTarghePresenti ? 'border-red-300 bg-red-50/40 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'bg-blue-50/50 border-blue-100'}`}>
-                {erroreTarghePresenti && (
-                  <div className="flex items-start gap-2 bg-red-100 border border-red-200 rounded-lg p-2 mb-3 text-xs text-red-800">
-                    <span className="flex-shrink-0">⚠️</span>
-                    <span>Indica se le targhe sono presenti sul mezzo.</span>
+                <CampoModulo id="box-targhe" label="Le targhe sono sul mezzo?" errore={erroreTarghePresenti ? 'Indica se le targhe sono sul mezzo.' : undefined}>
+                  <div className="scelte-griglia scelte-griglia--due">
+                    <SceltaPillola
+                      label="Sì, presenti"
+                      presa={dati.targhePresenti === 'si'}
+                      errore={erroreTarghePresenti}
+                      onClick={() => { update({ targhePresenti: 'si' }); setErroreTarghePresenti(false) }}
+                    />
+                    <SceltaPillola
+                      label="No, smarrite o rubate"
+                      presa={dati.targhePresenti === 'no'}
+                      errore={erroreTarghePresenti}
+                      onClick={() => { update({ targhePresenti: 'no' }); setErroreTarghePresenti(false) }}
+                    />
                   </div>
-                )}
-                <div className="text-sm font-semibold text-gray-900 mb-0.5">Le targhe sono fisicamente sul mezzo?</div>
-                <div className="text-xs text-gray-600 mb-3">Controlla che siano montate sul veicolo.</div>
-                <div className="scelte-fila">
-                  <SceltaPillola
-                    label="Sì, presenti" larga
-                    presa={dati.targhePresenti === 'si'}
-                    errore={erroreTarghePresenti}
-                    onClick={() => { update({ targhePresenti: 'si' }); setErroreTarghePresenti(false) }}
-                  />
-                  <SceltaPillola
-                    label="No, smarrite o rubate" larga
-                    presa={dati.targhePresenti === 'no'}
-                    errore={erroreTarghePresenti}
-                    onClick={() => { update({ targhePresenti: 'no' }); setErroreTarghePresenti(false) }}
-                  />
-                </div>
-                {dati.targhePresenti === 'no' && (
-                  <div className="mt-3 flex items-start gap-2.5 bg-blue-50 border-[1.5px] border-blue-200 rounded-xl p-3">
-                    <span className="w-[30px] h-[30px] rounded-[9px] bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="9" y1="13" x2="15" y2="13"/>
-                        <line x1="9" y1="17" x2="13" y2="17"/>
-                      </svg>
-                    </span>
-                    <span>
-                      <span className="block text-[12.5px] font-bold text-blue-900">Servirà la denuncia di smarrimento</span>
-                      <span className="block text-xs text-[#37507E] leading-snug mt-0.5">In <strong className="text-blue-900">originale</strong>, da consegnare al ritiro. Te lo ricorderemo nella tua area personale.</span>
-                    </span>
-                  </div>
-                )}
-              </div>
+                  {dati.targhePresenti === 'no' && (
+                    <div className="mt-3"><InfoBadge>Servirà la <strong>denuncia di smarrimento in originale</strong>, da consegnare al ritiro. Te lo ricorderemo nella tua area personale.</InfoBadge></div>
+                  )}
+                </CampoModulo>
               )}
 
               <button

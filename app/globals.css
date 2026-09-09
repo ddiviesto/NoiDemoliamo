@@ -296,10 +296,14 @@ body {
    due, le sei alimentazioni due righe da tre: niente pillola che si
    allarga da sola quando resta ultima. */
 .scelte-griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.scelte-griglia--due { grid-template-columns: repeat(2, 1fr); }
+/* ⭐ 09/09 (mockup A): la targa è una pillola CORTA, larga quanto una targa */
+.campo-pillola--targa { max-width: 230px; }
 .scelte-griglia .scelta-pillola { padding-left: 6px; padding-right: 6px; gap: 5px; font-size: 13.5px; white-space: nowrap; min-width: 0; }
 @media (min-width: 640px) {
   .scelte-griglia { gap: 10px; }
   .scelte-griglia .scelta-pillola { font-size: 14px; }
+  .campo-pillola--targa { max-width: 250px; }
 }
 
 
@@ -457,6 +461,7 @@ body {
    naturale, enorme, e spaccherebbe la scritta in due righe. */
 .marchio-i { position: relative; }
 .marchio-foglia svg { display: block; }
+
 
 
 
