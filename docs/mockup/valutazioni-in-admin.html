@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Valutazioni in admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1180px; margin: 0 auto; padding: 18px 20px 0; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+
+  .schermo { max-width: 1240px; margin: 14px auto 40px; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 44px rgba(15,27,51,.18); border: 1px solid #D8DEE9; background: #ECEEF2; display: flex; min-height: 720px; }
+  /* sidebar */
+  .side { width: 196px; flex-shrink: 0; background: linear-gradient(180deg,#2563eb 0%,#2563eb 65%,#7CA4F2 100%); color: #fff; padding: 16px 10px; display: flex; flex-direction: column; }
+  .side .marchio { font-family: 'Outfit', sans-serif; font-size: 17px; letter-spacing: -.035em; padding: 0 10px 16px; }
+  .side .marchio .noi { font-weight: 500; color: #BFD3F5; } .side .marchio .dem { font-weight: 800; color: #fff; margin-left: .15em; }
+  .side .voce { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500; color: #F0F5FF; }
+  .side .voce.qui { background: rgba(255,255,255,.22); font-weight: 600; color: #fff; }
+  .side .voce svg { width: 17px; height: 17px; }
+  .side .conta { margin-left: auto; font-size: 11px; font-weight: 700; background: #fff; color: #1D4ED8; border-radius: 999px; padding: 1px 7px; }
+  /* main */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .barra { background: #EFF6FF; border-bottom: 1px solid #DBEAFE; padding: 12px 24px; display: flex; align-items: center; gap: 16px; }
+  .barra h1 { font-size: 18px; font-weight: 700; color: #111827; line-height: 1; }
+  .barra .tot { font-size: 12px; color: #6B7280; margin-top: 4px; }
+  .barra .cerca { margin-left: auto; width: 210px; background: #fff; border: 1px solid #DBEAFE; border-radius: 999px; padding: 8px 14px; font-size: 13px; color: #9CA3AF; display: flex; align-items: center; gap: 8px; }
+  .corpo { padding: 22px 24px; }
+  .eti { font-size: 11px; font-weight: 700; color: #6B7280; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+  .fasi { display: flex; align-items: center; margin-bottom: 18px; }
+  .fase { display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 999px; padding: 8px 14px 8px 9px; font-size: 13px; font-weight: 700; color: #1F2937; white-space: nowrap; box-shadow: 0 1px 3px rgba(16,24,40,.07); }
+  .fase b { min-width: 26px; height: 26px; padding: 0 6px; border-radius: 999px; background: #EFF4FF; color: #1D4ED8; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; }
+  .fase.qui { background: #EFF6FF; border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  .freccia { width: 22px; display: flex; justify-content: center; color: #C0C7D1; }
+  .stacco { width: 14px; }
+  .fase.grigia b { background: #EDF0F5; color: #64748B; }
+
+  /* righe */
+  .righe { display: flex; flex-direction: column; gap: 10px; }
+  .blocco { border: 2px solid transparent; border-radius: 16px; }
+  .blocco.aperto { border-color: #2563EB; background: #F7F8FB; box-shadow: 0 4px 16px rgba(37,99,235,.16); }
+  .riga { background: #fff; border: 1.5px solid #E5E7EB; border-radius: 14px; padding: 13px 16px; display: flex; align-items: center; gap: 14px; box-shadow: 0 1px 3px rgba(16,24,40,.07); }
+  .aperto .riga { background: #EFF6FF; border-color: transparent; border-radius: 13px 13px 0 0; box-shadow: none; }
+  .quad { width: 46px; height: 46px; border-radius: 12px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #1D4ED8; }
+  .col { min-width: 0; }
+  .col + .col { border-left: 1px solid #EEF1F5; padding-left: 14px; }
+  .c1 { flex: 1.6; } .c2 { flex: 1.3; } .c3 { flex: 1.4; } .c4 { flex: 1; }
+  .t { font-size: 15px; font-weight: 700; color: #111827; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .s { font-size: 12.5px; color: #4B5563; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .n { font-size: 13.5px; font-weight: 600; color: #111827; }
+  .pill { display: inline-block; font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 3px 11px; background: #EFF6FF; color: #1D4ED8; }
+  .aperto .pill, .pill.bianca { background: #fff; border: 1px solid #1D4ED855; }
+  .pill.verde { background: #DCF3E4; color: #1F7A43; }
+  .pill.grigia { background: #E8ECF3; color: #5B6779; }
+  .pill.rossa { background: #F3D9D9; color: #A94444; }
+  .quando { font-size: 11px; color: #6B7280; margin-top: 5px; }
+  .risp { font-size: 12.5px; color: #3E4C63; font-weight: 600; }
+  .risp small { display: block; font-weight: 500; color: #6B7280; font-size: 11px; margin-top: 2px; }
+
+  /* tendina */
+  .tendina { padding: 14px 14px 16px; }
+  .schedine { display: flex; gap: 10px; align-items: stretch; }
+  .sk { flex: 1; min-width: 190px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 11px 13px; }
+  .sk .tit { display: flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: #0F1B33; margin-bottom: 7px; }
+  .sk .tit::before { content: ''; width: 3px; height: 13px; background: #2563eb; border-radius: 2px; }
+  .sk .tit .matita { margin-left: auto; width: 22px; height: 22px; border-radius: 7px; border: 1.5px solid #E5E7EB; display: flex; align-items: center; justify-content: center; color: #1D4ED8; }
+  .sk .r { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px solid #F5F7FA; font-size: 11.5px; }
+  .sk .r:last-child { border-bottom: none; }
+  .sk .r span:first-child { font-weight: 600; color: #1E293B; white-space: nowrap; }
+  .sk .r span:last-child { color: #6B7280; text-align: right; }
+  .sk .r .pc { background: #EFF6FF; color: #1D4ED8; font-weight: 700; border-radius: 999px; padding: 1px 8px; }
+  .sk.foto .griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .sk.foto .f { aspect-ratio: 4/3; border-radius: 8px; background: linear-gradient(135deg,#D8DEE9,#C4CBD8); display: flex; align-items: flex-end; padding: 4px 6px; font-size: 9.5px; font-weight: 700; color: #3E4C63; }
+  .sk.foto .f.piu { background: #EFF6FF; color: #1D4ED8; align-items: center; justify-content: center; font-size: 12px; }
+  /* la scheda RISPOSTA */
+  .sk.risposta { flex: 1.5; border-color: #93C5FD; }
+  .sk.risposta .due { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .opz { border: 1.5px solid #E5E7EB; border-radius: 10px; padding: 9px 10px; font-size: 12px; font-weight: 700; color: #1F2937; }
+  .opz.presa { border-color: #2563EB; background: #EFF6FF; color: #1D4ED8; }
+  .opz small { display: block; font-weight: 500; color: #6B7280; font-size: 11px; margin-top: 2px; }
+  .campo { margin-top: 8px; }
+  .campo label { display: block; font-size: 10.5px; font-weight: 700; color: #5B6779; text-transform: uppercase; margin-bottom: 4px; }
+  .campo .in { border: 1.5px solid #E5E7EB; border-radius: 9px; padding: 7px 10px; font-size: 12.5px; color: #111827; background: #fff; }
+  .campo .in.vuoto { color: #9CA3AF; }
+  .campo .in.euro { width: 130px; font-weight: 700; }
+  .azioni { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+  .btn { border-radius: 999px; font-size: 11.5px; font-weight: 700; padding: 7px 14px; border: 1.5px solid #E5E7EB; background: #fff; color: #1F2937; }
+  .btn.blu { background: #2563EB; border-color: #2563EB; color: #fff; }
+  .btn.cerca { margin-left: auto; color: #1D4ED8; border-color: #BFDBFE; }
+  .btn.cerca small { font-weight: 600; color: #6B7280; margin-left: 4px; }
+  .avviso { font-size: 11.5px; color: #1E3A8A; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 9px; padding: 8px 10px; margin-top: 8px; line-height: 1.5; }
+  .inviata { font-size: 12px; color: #1E3A8A; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 9px; padding: 9px 11px; line-height: 1.55; }
+  .inviata b { color: #1D4ED8; }
+  /* la barra azioni (variante B) sulla coda della testata */
+  .coda { background: #EFF6FF; border-top: 1px solid #DBEAFE; padding: 8px 14px; display: flex; gap: 8px; align-items: center; }
+  .coda .eti2 { font-size: 11px; font-weight: 700; color: #5B6779; text-transform: uppercase; letter-spacing: .5px; margin-right: 4px; }
+  .finestra { position: relative; background: #fff; border: 1.5px solid #93C5FD; border-radius: 12px; padding: 12px 14px; margin: 10px 14px 0; box-shadow: 0 8px 24px rgba(37,99,235,.14); max-width: 520px; }
+  .finestra .tit { font-size: 12.5px; font-weight: 700; color: #0F1B33; margin-bottom: 4px; }
+  .didascalia { max-width: 1180px; margin: -28px auto 40px; padding: 0 20px; font-size: 12.5px; color: #55637A; font-weight: 600; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>VALUTAZIONI IN ADMIN</b> &middot; voce nuova nella sidebar, lista separata dalle pratiche, stesse righe e stessa tendina del CRM. La domanda &egrave; solo <b>dove mettere la risposta</b> (&ldquo;Non la paghiamo&rdquo; / &ldquo;Riconosciamo X &euro;&rdquo;): clicca le linguette.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">A &middot; scheda &ldquo;Risposta&rdquo; nella tendina</span>
+  <span onclick="vista('b',this)">B &middot; bottoni sulla coda della testata</span>
+  <span onclick="vista('c',this)">C &middot; com&rsquo;&egrave; dopo la risposta</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  const ICO_AUTO = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>'
+  const CERCA = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>'
+  const MATITA = '<span class="matita"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span>'
+
+  function sidebar() {
+    return `<div class="side">
+      <div class="marchio"><span class="noi">Noi</span><span class="dem">Demoliamo</span></div>
+      <div class="voce"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2m-6 9h6m-6 4h4"/></svg>Pratiche</div>
+      <div class="voce qui"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/></svg>Valutazioni<span class="conta">3</span></div>
+      <div class="voce"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M6 21V7l6-4 6 4v14"/><path d="M10 21v-6h4v6"/></svg>Demolitori</div>
+    </div>`
+  }
+
+  function fasi(qui) {
+    const f = (n, v, k, grigia) => `<div class="fase ${qui === k ? 'qui' : ''} ${grigia ? 'grigia' : ''}"><b>${v}</b>${n}</div>`
+    const fr = '<span class="freccia"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg></span>'
+    return `<div class="eti">Flusso valutazioni</div>
+      <div class="fasi">${f('Da valutare', 3, 'da')}${fr}${f('Risposta inviata', 2, 'inviata')}${fr}${f('Passate a demolizione', 5, 'dem')}<span class="stacco"></span>${f('Rifiutate', 1, 'rif', true)}<span class="stacco"></span>${f('Chiuse', 4, 'chiuse', true)}</div>`
+  }
+
+  function riga(o) {
+    return `<div class="riga">
+      <div class="quad">${ICO_AUTO}</div>
+      <div class="col c1"><div class="t">${o.targa} &middot; ${o.auto}</div><div class="s">${o.dove}</div></div>
+      <div class="col c2"><div class="n">${o.nome}</div><div class="s">${o.sotto}</div></div>
+      <div class="col c3"><span class="pill ${o.pillClasse || ''}">${o.stato}</span><div class="quando">${o.quando}</div></div>
+      <div class="col c4"><div class="risp">${o.risposta}</div></div>
+    </div>`
+  }
+
+  const RIGHE = [
+    { targa: 'CK456ZY', auto: 'Fiat Panda &middot; 2008 &middot; 185.000 km', dove: 'Milano (MI) &middot; diesel, manuale', nome: 'Mario Rossi', sotto: 'Privato &middot; targhe presenti &middot; nessun fermo', stato: 'Da valutare', quando: 'arrivata 2 ore fa', risposta: '&mdash;' },
+    { targa: 'FA221BB', auto: 'Opel Corsa &middot; 2004 &middot; 240.000 km', dove: 'Sesto San Giovanni (MI) &middot; benzina', nome: 'Luca Bianchi', sotto: 'Erede &middot; targhe smarrite', stato: 'Da valutare', quando: 'arrivata ieri', risposta: '&mdash;' },
+    { targa: 'DN908PL', auto: 'Ford Focus &middot; 2011 &middot; 160.000 km', dove: 'Monza (MB) &middot; diesel, manuale', nome: 'Anna Verdi', sotto: 'Privato &middot; targhe presenti', stato: 'Risposta inviata', quando: 'inviata 3 giorni fa &middot; il cliente non ha ancora risposto', risposta: 'Riconosciamo 250 &euro;<small>proposta del 15/09</small>' },
+    { targa: 'EW555TR', auto: 'Renault Clio &middot; 2006 &middot; 210.000 km', dove: 'Cinisello Balsamo (MI)', nome: 'Paolo Neri', sotto: 'Privato &middot; fermo: non lo sa', stato: 'Passata a demolizione', pillClasse: 'verde', quando: 'accettata il 12/09', risposta: 'Demolizione gratuita<small>pratica aperta: In attesa documenti &rarr;</small>' },
+  ]
+
+  const SCHEDA_CRONO = `<div class="sk"><div class="tit">Cronologia e Note ${MATITA}</div>
+    <div class="r"><span>Oggi 10:12</span><span>Richiesta arrivata</span></div>
+    <div class="r"><span>Note</span><span>&mdash;</span></div></div>`
+  const SCHEDA_CLIENTE = `<div class="sk"><div class="tit">Cliente ${MATITA}</div>
+    <div class="r"><span>Nome</span><span>Mario Rossi</span></div>
+    <div class="r"><span>Telefono</span><span>333 1234567</span></div>
+    <div class="r"><span>Intestazione</span><span>Privato (lui stesso)</span></div>
+    <div class="r"><span>Codice fiscale</span><span>RSSMRA80A01H501Z</span></div>
+    <div class="r"><span>Casistica</span><span class="pc">Standard</span></div></div>`
+  const SCHEDA_VEICOLO = `<div class="sk"><div class="tit">Veicolo ${MATITA}</div>
+    <div class="r"><span>Targa</span><span>CK456ZY</span></div>
+    <div class="r"><span>Anno &middot; km</span><span>2008 &middot; 185.000</span></div>
+    <div class="r"><span>Cambio &middot; alim.</span><span>Manuale &middot; Diesel</span></div>
+    <div class="r"><span>Condizioni</span><span>Va in moto, cammina, non incidentata</span></div>
+    <div class="r"><span>Targhe</span><span class="pc">Presenti</span></div>
+    <div class="r"><span>Fermo</span><span class="pc">No</span></div>
+    <div class="r"><span>Dove si trova</span><span>Via Roma 10, Milano</span></div></div>`
+  const SCHEDA_FOTO = `<div class="sk foto"><div class="tit">Foto</div>
+    <div class="griglia"><div class="f">Davanti</div><div class="f">Dietro</div><div class="f">Lato dx</div><div class="f">Lato sx</div><div class="f">Interni</div><div class="f piu">+1</div></div></div>`
+
+  // La scheda RISPOSTA (variante A): sta in fila con le altre, un po' più larga
+  const SCHEDA_RISPOSTA = `<div class="sk risposta"><div class="tit">Risposta al cliente</div>
+    <div class="due">
+      <div class="opz presa">Non la paghiamo<small>proponiamo la demolizione gratuita</small></div>
+      <div class="opz">Riconosciamo una cifra<small>NoiDemoliamo la compra</small></div>
+    </div>
+    <div class="campo"><label>Motivo (lo legge il cliente)</label><div class="in">Anno e chilometri: il valore di mercato non copre i costi di ritiro e pratica.</div></div>
+    <div class="azioni"><button class="btn blu">Invia la risposta</button><button class="btn cerca">Cerca targa <small>~6 &euro;</small></button></div>
+    <div class="avviso">Il cliente la trova nella sua area personale (e via email quando faremo Resend). Se accetta, la richiesta diventa una pratica di demolizione e lui completa le domande che mancano.</div>
+  </div>`
+  const SCHEDA_RISPOSTA_CIFRA = `<div class="sk risposta"><div class="tit">Risposta al cliente</div>
+    <div class="due">
+      <div class="opz">Non la paghiamo<small>proponiamo la demolizione gratuita</small></div>
+      <div class="opz presa">Riconosciamo una cifra<small>NoiDemoliamo la compra</small></div>
+    </div>
+    <div class="campo"><label>Importo</label><div class="in euro">250 &euro;</div></div>
+    <div class="campo"><label>Due righe per il cliente (facoltativo)</label><div class="in vuoto">Es. Ritiro a domicilio gratuito, pagamento al ritiro.</div></div>
+    <div class="azioni"><button class="btn blu">Invia la risposta</button><button class="btn cerca">Cerca targa <small>~6 &euro;</small></button></div>
+  </div>`
+
+  function schermo(fase, corpoRighe) {
+    return `<div class="schermo">${sidebar()}<div class="main">
+      <div class="barra"><div><h1>Valutazioni</h1><div class="tot">15 totali &middot; 3 da valutare</div></div><div class="cerca">${CERCA} Cerca&hellip;</div></div>
+      <div class="corpo">${fasi(fase)}<div class="righe">${corpoRighe}</div></div>
+    </div></div>`
+  }
+
+  // A: la riga aperta con le cinque schede, la quinta è la risposta
+  const A = schermo('da', `
+    <div class="blocco aperto">${riga(RIGHE[0])}
+      <div class="tendina"><div class="schedine">${SCHEDA_CRONO}${SCHEDA_CLIENTE}${SCHEDA_VEICOLO}${SCHEDA_FOTO}${SCHEDA_RISPOSTA}</div></div>
+    </div>
+    <div class="blocco">${riga(RIGHE[1])}</div>
+    <div class="blocco">${riga(RIGHE[2])}</div>
+    <div class="blocco">${riga(RIGHE[3])}</div>`)
+
+  // B: due bottoni sulla coda azzurra della testata, che aprono una finestrella
+  const B = schermo('da', `
+    <div class="blocco aperto">${riga(RIGHE[0])}
+      <div class="coda"><span class="eti2">Rispondi</span><button class="btn blu">Non la paghiamo</button><button class="btn">Riconosciamo una cifra</button><button class="btn cerca">Cerca targa <small>~6 &euro;</small></button></div>
+      <div class="finestra"><div class="tit">Non la paghiamo: proponiamo la demolizione gratuita</div>
+        <div class="campo"><label>Motivo (lo legge il cliente)</label><div class="in">Anno e chilometri: il valore di mercato non copre i costi di ritiro e pratica.</div></div>
+        <div class="azioni"><button class="btn blu">Invia la risposta</button><button class="btn">Annulla</button></div>
+      </div>
+      <div class="tendina"><div class="schedine">${SCHEDA_CRONO}${SCHEDA_CLIENTE}${SCHEDA_VEICOLO}${SCHEDA_FOTO}</div></div>
+    </div>
+    <div class="blocco">${riga(RIGHE[1])}</div>
+    <div class="blocco">${riga(RIGHE[2])}</div>
+    <div class="blocco">${riga(RIGHE[3])}</div>`)
+
+  // C: la stessa riga dopo che la risposta è partita (con la A)
+  const SCHEDA_INVIATA = `<div class="sk risposta"><div class="tit">Risposta al cliente</div>
+    <div class="inviata"><b>Riconosciamo 250 &euro;</b> &middot; inviata il 15/09 alle 16:40<br>Il cliente non ha ancora risposto.</div>
+    <div class="azioni"><button class="btn">Cambia la risposta</button><button class="btn">Chiudi senza seguito</button></div>
+  </div>`
+  const C = schermo('inviata', `
+    <div class="blocco">${riga(RIGHE[0])}</div>
+    <div class="blocco">${riga(RIGHE[1])}</div>
+    <div class="blocco aperto">${riga(RIGHE[2])}
+      <div class="tendina"><div class="schedine">${SCHEDA_CRONO}${SCHEDA_CLIENTE}${SCHEDA_VEICOLO}${SCHEDA_FOTO}${SCHEDA_INVIATA}</div></div>
+    </div>
+    <div class="blocco">${riga(RIGHE[3])}</div>`)
+
+  const V = {
+    a: { html: A, spiega: 'La riga aperta mostra le schede del CRM (<b>Cronologia e Note &middot; Cliente &middot; Veicolo &middot; Foto</b>) pi&ugrave; una quinta, <b>&ldquo;Risposta al cliente&rdquo;</b>, un po&rsquo; pi&ugrave; larga e col bordo celeste: due scelte a tessera (&ldquo;Non la paghiamo&rdquo; / &ldquo;Riconosciamo una cifra&rdquo;), il campo che cambia in base alla scelta (motivo oppure importo) e il bottone &ldquo;Invia la risposta&rdquo;. &ldquo;Cerca targa&rdquo; sta l&igrave; accanto, con il costo scritto. Tutto sotto gli occhi, senza finestre.' },
+    b: { html: B, spiega: 'Come l&rsquo;area demolitore: le azioni stanno in una <b>fila sulla coda azzurra della testata</b> e la tendina sotto ha solo le quattro schede di lettura. Cliccando &ldquo;Non la paghiamo&rdquo; si apre una <b>finestrella</b> col motivo e il bottone di invio. Pi&ugrave; compatta, ma un clic in pi&ugrave;.' },
+    c: { html: C, spiega: 'Com&rsquo;&egrave; la stessa riga <b>dopo l&rsquo;invio</b> (con la A): la pillola dice &ldquo;Risposta inviata&rdquo;, in lista si legge la risposta data e da quanto aspettiamo, nella scheda si pu&ograve; cambiare la risposta o chiudere. Quando il cliente accetta, la riga passa in <b>&ldquo;Passata a demolizione&rdquo;</b> (pillola verde) con il rimando alla pratica appena nata, come l&rsquo;ultima riga.' },
+  }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}"><div class="spiega">${V[k].spiega}</div>${V[k].html}</div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>

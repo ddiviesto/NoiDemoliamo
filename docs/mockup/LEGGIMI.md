@@ -21,3 +21,4 @@ Per guardarne uno: copialo in `public/` e aprilo su `localhost:3000/nome.html`.
 | `confronto-demolizione-valutazione.html` | I **due flussi affiancati** riga per riga (16 righe) con le sette note sulle contraddizioni trovate: da qui sono uscite le decisioni di Davide del 03/09 |
 | `passo-veicolo-con-alimentazione.html` | Il **passo 3 con l'alimentazione dentro** (PC a due colonne e telefono) e tre nomi tra cui scegliere: A "Informazioni sul veicolo", B "Il tuo veicolo", C "Dati del veicolo" |
 | `passo-targa-senza-riquadro.html` | Il **passo della targa** senza riquadro: targa corta, "Le targhe sono sul mezzo?" come campo, nota per le targhe smarrite (valutazione senza nominare la demolizione). Scelta la **A** il 09/09 |
+| `valutazioni-in-admin.html` | La **lista Valutazioni nel CRM**: sidebar, flusso a pillole, righe e tendina con la scheda "Risposta al cliente" (A, scelta il 18/09), la variante coi bottoni sulla coda (B) e com'è dopo la risposta (C) |
