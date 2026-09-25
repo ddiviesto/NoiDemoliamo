@@ -189,10 +189,10 @@ export default function Home() {
             meta="valutazione"
             titolo="Voglio sapere quanto vale"
             pillola="Valutazione gratuita"
-            testo="Prima di rottamarla senti la cifra: se conviene venderla, l'acquirente lo troviamo Noi."
+            testo="Prima di rottamarla, scopri se vale qualcosa: la risposta la trovi nella tua area personale."
             punti={[
-              'Ti chiamiamo Noi con una cifra vera',
-              'Nessun impegno: decidi dopo aver sentito',
+              'Ricevi la nostra proposta con la cifra',
+              'Nessun impegno: accetti o rifiuti quando vuoi',
               'Se non conviene, la demoliamo gratis',
             ]}
             bottone="Chiedi la valutazione gratuita"
