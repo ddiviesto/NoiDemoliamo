@@ -254,7 +254,7 @@ export default function Valutazioni() {
                           <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ background: evidenzia && m.chiave !== 'rifiutata' ? '#fff' : m.bg, color: m.text, border: `1px solid ${evidenzia && m.chiave !== 'rifiutata' ? `${m.text}55` : 'transparent'}`, padding: '3px 11px' }}>{m.label}</span>
                           <div className="text-[11px] mt-1 truncate" style={{ color: '#6B7280' }}>
                             {r.stato === 'da_valutare' && `arrivata ${daQuanto(r.creato_il)}`}
-                            {r.stato === 'risposta_inviata' && `inviata ${daQuanto(r.offerta_inviata_il)} · il cliente non ha ancora risposto`}
+                            {r.stato === 'risposta_inviata' && (r.risposta_cliente === 'accettata' ? `accettata ${daQuanto(r.risposta_il)} · sta completando la pratica` : `inviata ${daQuanto(r.offerta_inviata_il)} · il cliente non ha ancora risposto`)}
                             {r.stato === 'passata_demolizione' && `accettata ${daQuanto(r.risposta_il)}`}
                             {r.stato === 'rifiutata' && `rifiutata ${daQuanto(r.risposta_il)}`}
                             {r.stato === 'chiusa' && 'chiusa senza seguito'}
@@ -484,7 +484,7 @@ function SchedaRisposta({ r, chiama, ricarica, pieno }: { r: Richiesta; chiama: 
           <div style={{ fontSize: 12, color: '#1E3A8A', background: '#EFF6FF', border: '1.5px solid #BFDBFE', borderRadius: 9, padding: '9px 11px', lineHeight: 1.55 }}>
             <b style={{ color: '#1D4ED8' }}>{testoRisposta(r)}</b> · inviata {dataOra(r.offerta_inviata_il)}<br />
             {r.offerta_messaggio && <span style={{ color: '#3E4C63' }}>“{r.offerta_messaggio}”<br /></span>}
-            Il cliente non ha ancora risposto.
+            {r.risposta_cliente === 'accettata' ? <b style={{ color: '#1F7A43' }}>Il cliente ha accettato {daQuanto(r.risposta_il)}: sta completando la pratica.</b> : 'Il cliente non ha ancora risposto.'}
           </div>
           {conferma === null ? (
             <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>

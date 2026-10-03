@@ -8,6 +8,9 @@ import { pillolaStato } from '@/lib/statiCliente'
 import IconaVeicolo from '../components/IconaVeicolo'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
+import CardValutazione, { RichiestaValutazione } from './CardValutazione'
+
+const CAMPI_VALUTAZIONE = 'id, stato, targa, tipo_mezzo, marca, modello, anno, offerta_tipo, offerta_importo, offerta_messaggio, offerta_inviata_il, risposta_cliente, risposta_il, creato_il'
 
 interface Pratica {
   id: string
@@ -56,6 +59,9 @@ function IconaScatolaVuota() {
 export default function DashboardCliente() {
   const router = useRouter()
   const [pratiche, setPratiche] = useState<Pratica[]>([])
+  // ⭐ 03/10: le richieste di valutazione (flusso D) stanno in cima alle
+  // pratiche; quelle chiuse o già diventate pratica non si mostrano
+  const [valutazioni, setValutazioni] = useState<RichiestaValutazione[]>([])
   const [loading, setLoading] = useState(true)
   const [nomeUtente, setNomeUtente] = useState<string>('')
   // Pannello impostazioni (ingranaggio nell'header)
@@ -98,10 +104,30 @@ export default function DashboardCliente() {
         .order('creato_il', { ascending: false })
 
       if (!error && data) setPratiche(data)
+
+      const { data: val } = await supabase
+        .from('veicoli_vendita')
+        .select(CAMPI_VALUTAZIONE)
+        .eq('user_id', session.user.id)
+        .in('stato', ['da_valutare', 'risposta_inviata', 'rifiutata'])
+        .order('creato_il', { ascending: false })
+      if (val) setValutazioni(val)
       setLoading(false)
     }
     carica()
   }, [router])
+
+  const ricaricaValutazioni = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const { data: val } = await supabase
+      .from('veicoli_vendita')
+      .select(CAMPI_VALUTAZIONE)
+      .eq('user_id', session.user.id)
+      .in('stato', ['da_valutare', 'risposta_inviata', 'rifiutata'])
+      .order('creato_il', { ascending: false })
+    if (val) setValutazioni(val)
+  }
 
   // Aggiornamento automatico (22/07): gli stati delle pratiche in lista si
   // aggiornano da soli (il tempo reale manda solo le righe visibili all'utente)
@@ -117,8 +143,8 @@ export default function DashboardCliente() {
   }
   useAggiornaLive({
     canale: 'cliente-lista-pratiche',
-    tabelle: [{ tabella: 'pratiche' }],
-    onCambio: ricaricaPratiche,
+    tabelle: [{ tabella: 'pratiche' }, { tabella: 'veicoli_vendita' }],
+    onCambio: () => { ricaricaPratiche(); ricaricaValutazioni() },
   })
 
   // ⭐ Tira giù sul pannello Impostazioni: ricarica il profilo dal server
@@ -187,11 +213,29 @@ export default function DashboardCliente() {
           {/* TITOLO */}
           <div>
             <h1 className="font-bold text-gray-900" style={{ fontSize: 15 }}>Le tue pratiche</h1>
-            <p className="text-gray-500 mt-0.5" style={{ fontSize: 13 }}>{pratiche.length} {pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}</p>
+            <p className="text-gray-500 mt-0.5" style={{ fontSize: 13 }}>
+              {(() => {
+                const proposte = valutazioni.filter(v => v.stato === 'risposta_inviata' && !v.risposta_cliente).length
+                const daCompletare = valutazioni.filter(v => v.stato === 'risposta_inviata' && v.risposta_cliente === 'accettata').length
+                if (proposte) return `${proposte} ${proposte === 1 ? 'proposta da leggere' : 'proposte da leggere'}`
+                if (daCompletare) return `${daCompletare} ${daCompletare === 1 ? 'pratica da completare' : 'pratiche da completare'}`
+                const inVal = valutazioni.filter(v => v.stato === 'da_valutare').length
+                const parti = []
+                if (inVal) parti.push(`${inVal} ${inVal === 1 ? 'richiesta' : 'richieste'}`)
+                parti.push(`${pratiche.length} ${pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}`)
+                return parti.join(', ')
+              })()}
+            </p>
           </div>
 
+          {/* LE RICHIESTE DI VALUTAZIONE (⭐ 03/10): in cima, le rifiutate
+              vanno in fondo alla lista */}
+          {valutazioni.filter(v => v.stato !== 'rifiutata').map(v => (
+            <CardValutazione key={v.id} r={v} onCambiata={ricaricaValutazioni} />
+          ))}
+
           {/* LISTA PRATICHE */}
-          {pratiche.length === 0 ? (
+          {pratiche.length === 0 && valutazioni.length === 0 ? (
             <div style={{ background: '#F9FAFB', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '32px 20px', textAlign: 'center' }}>
               <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
                 <IconaScatolaVuota />
@@ -267,6 +311,10 @@ export default function DashboardCliente() {
                   </button>
                 )
               })}
+
+              {valutazioni.filter(v => v.stato === 'rifiutata').map(v => (
+                <CardValutazione key={v.id} r={v} onCambiata={ricaricaValutazioni} />
+              ))}
 
               {/* Nuova richiesta: card in fila con le pratiche (variante B su
                   mockup 22/07 — via il riquadro tratteggiato col +) */}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La proposta nell'area personale</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1120px; margin: 0 auto; padding: 18px 20px 0; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+
+  .telefoni { display: flex; gap: 26px; justify-content: center; flex-wrap: wrap; padding: 18px 20px 50px; align-items: flex-start; }
+  .tel { width: 300px; border-radius: 34px; overflow: hidden; border: 9px solid #0F172A; box-shadow: 0 18px 44px rgba(15,27,51,.28); background: #fff; }
+  .testata { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; padding: 11px 14px; display: flex; align-items: center; gap: 10px; }
+  .testata .m { font-family: 'Outfit', sans-serif; font-size: 10px; letter-spacing: -.03em; color: #BFD3F5; }
+  .testata .m b { font-weight: 800; color: #fff; }
+  .testata .ciao { font-size: 13.5px; font-weight: 600; }
+  .testata .ing { margin-left: auto; width: 30px; height: 30px; border-radius: 8px; background: rgba(255,255,255,.85); }
+  .corpo { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .h1 { font-size: 15px; font-weight: 700; color: #111827; }
+  .h1 small { display: block; font-size: 12.5px; font-weight: 400; color: #6B7280; margin-top: 2px; }
+  .card { position: relative; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 5px 14px rgba(16,24,40,.07); }
+  .card .barra { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #2563eb; }
+  .card .riga { display: flex; align-items: center; gap: 11px; padding: 13px 13px 13px 16px; }
+  .card .riga > div { flex: 1; }
+  .quad { width: 44px; height: 44px; border-radius: 13px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #2563eb; }
+  .t { font-weight: 700; font-size: 16px; letter-spacing: .03em; color: #111827; }
+  .s { font-size: 13px; color: #6B7280; margin-top: 1px; }
+  .pill { margin-left: auto; flex-shrink: 0; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: #EFF6FF; color: #1D4ED8; white-space: nowrap; }
+  .pill.verde { background: #DCF3E4; color: #1F7A43; }
+  .pill.grigia { background: #E8ECF3; color: #5B6779; }
+  .pie { display: flex; justify-content: space-between; background: #F8FAFC; border-top: 1px solid #F1F3F6; padding: 7px 13px 7px 16px; font-size: 12px; color: #6B7280; }
+
+  /* LA CARD DELLA PROPOSTA */
+  .proposta { border-color: #BFDBFE; box-shadow: 0 4px 16px rgba(37,99,235,.14); }
+  .proposta .barra { background: #2563eb; }
+  .proposta .dentro { padding: 0 14px 14px 16px; }
+  .proposta .eti { font-size: 10.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #1D4ED8; }
+  .proposta .cifra { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: #0F172A; margin-top: 2px; line-height: 1.1; }
+  .proposta .cifra.testo { font-size: 20px; letter-spacing: -.4px; }
+  .proposta .msg { margin-top: 8px; font-size: 13px; color: #374151; line-height: 1.55; background: #F8FAFC; border: 1px solid #EEF1F5; border-radius: 10px; padding: 9px 11px; }
+  .proposta .msg b { color: #111827; }
+  .proposta .cosa { margin-top: 8px; font-size: 12px; color: #6B7280; line-height: 1.5; }
+  .bottoni { display: flex; gap: 8px; margin-top: 12px; }
+  .btn { flex: 1; text-align: center; border-radius: 999px; padding: 12px 0; font-size: 14px; font-weight: 600; }
+  .btn.blu { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+  .btn.bianco { background: #fff; border: 1.5px solid #E5E7EB; color: #374151; }
+  .btn.largo { flex: none; width: 100%; }
+  .badge { display: flex; gap: 8px; align-items: flex-start; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; padding: 9px 10px; font-size: 12px; color: #1E3A8A; line-height: 1.5; margin-top: 8px; }
+  .badge.verde { background: #DCF3E4; border-color: #B7E4C7; color: #1F7A43; }
+  .aggiungi { display: flex; align-items: center; gap: 11px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 11px 13px; }
+  .aggiungi .piu { width: 38px; height: 38px; border-radius: 12px; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 700; }
+  .aggiungi .t2 { font-size: 13.5px; font-weight: 600; color: #111827; } .aggiungi .s2 { font-size: 11px; color: #6B7280; }
+  .did { text-align: center; font-size: 12.5px; color: #55637A; margin-top: 10px; font-weight: 600; max-width: 300px; line-height: 1.5; }
+  /* pagina dedicata (variante B) */
+  .pagina .testata { padding: 12px 14px; }
+  .pagina .indietro { width: 30px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.85); }
+  .pagina .tit { font-size: 14px; font-weight: 700; }
+  .ricap { background: #F8FAFC; border: 1px solid #EEF1F5; border-radius: 12px; padding: 10px 12px; font-size: 12.5px; color: #374151; }
+  .ricap b { color: #111827; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>LA PROPOSTA NELL&rsquo;AREA PERSONALE</b> &middot; la richiesta di valutazione sta in cima alle pratiche del cliente. Quando l&rsquo;admin risponde, la card si accende e mostra la proposta con <b>Accetto</b> e <b>No, grazie</b>. Le schermate sono i momenti della stessa card, da sinistra a destra.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">A &middot; tutto nella card</span>
+  <span onclick="vista('b',this)">B &middot; card corta + pagina della proposta</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  const AUTO = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>'
+  const TAG = '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/></svg>'
+  const INFO = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+  const OK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px"><polyline points="20 6 9 17 4 12"/></svg>'
+
+  const testata = () => `<div class="testata"><div><div class="m">Noi<b>Demoliamo</b></div><div class="ciao">Ciao, Mario!</div></div><span class="ing"></span></div>`
+  const titolo = (n) => `<div class="h1">Le tue pratiche<small>${n}</small></div>`
+  const aggiungi = () => `<div class="aggiungi"><span class="piu">+</span><div><div class="t2">Aggiungi un altro veicolo</div><div class="s2">Sempre gratis, come la prima</div></div></div>`
+  const riga = (pill, pillClasse) => `<div class="riga"><span class="quad">${TAG}</span><div style="min-width:0"><div class="t">CK456ZY</div><div class="s">Fiat Panda &middot; 2008</div><div class="s">Richiesta di valutazione</div></div><span class="pill ${pillClasse || ''}">${pill}</span></div>`
+  const pratica = () => `<div class="card"><div class="barra"></div><div class="riga"><span class="quad">${AUTO}</span><div style="min-width:0"><div class="t">FA221BB</div><div class="s">Autovettura</div><div class="s">Opel Corsa</div></div><span class="pill">In attesa dei tuoi documenti</span></div><div class="pie"><span>Via Roma 10, Milano</span><span>02 set 2026</span></div></div>`
+  const tel = (dentro, did) => `<div><div class="tel">${testata()}<div class="corpo">${dentro}</div></div><div class="did">${did}</div></div>`
+
+  // 1 · in attesa della risposta
+  const S1 = tel(`${titolo('1 richiesta, 1 pratica')}
+    <div class="card"><div class="barra"></div>${riga('In valutazione')}<div class="pie"><span>Ti rispondiamo entro un giorno lavorativo</span></div></div>
+    ${pratica()}${aggiungi()}`, '1 &middot; Appena inviata: la card sta in cima, pillola &ldquo;In valutazione&rdquo;.')
+
+  // 2 · proposta "non la paghiamo" → demolizione gratuita
+  const S2 = tel(`${titolo('1 proposta da leggere')}
+    <div class="card proposta"><div class="barra"></div>${riga('Proposta arrivata')}
+      <div class="dentro">
+        <div class="eti">La nostra proposta</div>
+        <div class="cifra testo">Demolizione gratuita</div>
+        <div class="msg"><b>Anno e chilometri:</b> il valore di mercato non copre i costi di ritiro e pratica. Te la ritiriamo a casa gratis e pensiamo noi alla radiazione.</div>
+        <div class="cosa">Se accetti, ti chiediamo quattro cose in pi&ugrave; e la richiesta diventa una pratica di demolizione.</div>
+        <div class="bottoni"><span class="btn bianco">No, grazie</span><span class="btn blu">Accetto</span></div>
+      </div></div>
+    ${pratica()}${aggiungi()}`, '2 &middot; Risposta &ldquo;Non la paghiamo&rdquo;: la card si accende (bordo celeste), il motivo scritto dall&rsquo;admin, i due bottoni.')
+
+  // 3 · proposta con la cifra
+  const S3 = tel(`${titolo('1 proposta da leggere')}
+    <div class="card proposta"><div class="barra"></div>${riga('Proposta arrivata')}
+      <div class="dentro">
+        <div class="eti">La nostra proposta</div>
+        <div class="cifra">250 &euro;</div>
+        <div class="msg">Ritiro a domicilio gratuito, pagamento al ritiro.</div>
+        <div class="cosa">Se accetti, ti chiediamo quattro cose in pi&ugrave; e fissiamo il ritiro.</div>
+        <div class="bottoni"><span class="btn bianco">No, grazie</span><span class="btn blu">Accetto</span></div>
+      </div></div>
+    ${pratica()}${aggiungi()}`, '3 &middot; Risposta &ldquo;Riconosciamo 250 &euro;&rdquo;: la cifra grande, le due righe dell&rsquo;admin (se le ha scritte).')
+
+  // 4 · accettata → completa la pratica
+  const S4 = tel(`${titolo('1 pratica da completare')}
+    <div class="card proposta"><div class="barra"></div>${riga('Accettata', 'verde')}
+      <div class="dentro">
+        <div class="badge verde">${OK}<span>Hai accettato: <b>250 &euro;</b>. Ora mancano quattro risposte veloci (spazio per il carro attrezzi, chi consegna, libretto, certificato di propriet&agrave;).</span></div>
+        <div class="bottoni"><span class="btn blu largo">Completa la pratica</span></div>
+      </div></div>
+    ${pratica()}${aggiungi()}`, '4 &middot; Dopo &ldquo;Accetto&rdquo;: la card chiede di completare. Finite le quattro domande, nasce la pratica vera e questa card sparisce.')
+
+  // 5 · rifiutata
+  const S5 = tel(`${titolo('2 pratiche')}
+    ${pratica()}
+    <div class="card" style="opacity:.8"><div class="barra" style="background:#C0C7D1"></div>${riga('Rifiutata', 'grigia')}<div class="pie"><span>Hai rifiutato la proposta il 15/09</span><span>Cambia idea &rarr;</span></div></div>
+    ${aggiungi()}`, '5 &middot; Dopo &ldquo;No, grazie&rdquo;: la card si spegne e scende in fondo, con &ldquo;Cambia idea&rdquo; per riaprirla.')
+
+  const A = `<div class="telefoni">${S1}${S2}${S3}${S4}${S5}</div>`
+
+  // B: card corta che apre una pagina dedicata
+  const B1 = tel(`${titolo('1 proposta da leggere')}
+    <div class="card proposta"><div class="barra"></div>${riga('Proposta arrivata')}<div class="pie" style="background:#EFF6FF;color:#1D4ED8;font-weight:600"><span>250 &euro; &middot; leggi la proposta</span><span>&rarr;</span></div></div>
+    ${pratica()}${aggiungi()}`, 'B1 &middot; In home la card resta corta: cifra e &ldquo;leggi la proposta&rdquo;.')
+  const B2 = `<div><div class="tel pagina"><div class="testata"><span class="indietro"></span><div><div class="m">Noi<b>Demoliamo</b></div><div class="tit">La nostra proposta</div></div></div>
+    <div class="corpo">
+      <div class="ricap"><b>CK456ZY</b> &middot; Fiat Panda 2008 &middot; 185.000 km<br>Diesel, manuale &middot; Via Roma 10, Milano</div>
+      <div class="card proposta" style="border-radius:16px"><div class="dentro" style="padding-top:14px">
+        <div class="eti">Riconosciamo per la tua auto</div>
+        <div class="cifra">250 &euro;</div>
+        <div class="msg">Ritiro a domicilio gratuito, pagamento al ritiro.</div>
+        <div class="badge">${INFO}<span>Nessun impegno: se accetti ti chiediamo quattro cose in pi&ugrave; e fissiamo il ritiro. Se rifiuti, la richiesta si chiude e puoi ripensarci quando vuoi.</span></div>
+        <div class="bottoni"><span class="btn bianco">No, grazie</span><span class="btn blu">Accetto</span></div>
+      </div></div>
+    </div></div><div class="did">B2 &middot; La pagina della proposta: riepilogo del mezzo, cifra, messaggio, i due bottoni.</div></div>`
+  const B = `<div class="telefoni">${B1}${B2}${S4}</div>`
+
+  const V = {
+    a: { html: A, spiega: 'La richiesta di valutazione &egrave; <b>una card come le pratiche</b>, con la stessa barretta blu, il quadratino col cartellino del prezzo e la pillola dello stato. Quando arriva la risposta la card <b>si accende</b> (bordo celeste, ombra) e si allunga: la proposta, il messaggio dell&rsquo;admin e i due bottoni <b>stanno tutti nella card</b>, senza aprire niente. Cinque momenti: in valutazione &rarr; proposta (demolizione gratuita oppure cifra) &rarr; accettata &rarr; completa la pratica; oppure rifiutata.' },
+    b: { html: B, spiega: 'In home la card resta <b>corta</b> (una riga con la cifra e &ldquo;leggi la proposta&rdquo;) e toccandola si apre <b>una pagina dedicata</b> con il riepilogo del mezzo, la cifra grande, il messaggio e i due bottoni. Pi&ugrave; ordinata se le pratiche sono tante, ma un tocco in pi&ugrave; per vedere la proposta.' },
+  }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}"><div class="spiega">${V[k].spiega}</div>${V[k].html}</div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>
