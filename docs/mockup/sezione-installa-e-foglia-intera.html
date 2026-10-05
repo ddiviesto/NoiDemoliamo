@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La sezione Installa l'app e la foglia intera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1100px; margin: 0 auto; padding: 18px 20px 6px; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  h3 { font-size: 14px; font-weight: 700; margin: 18px 0 4px; color: #0F1B33; }
+  .sotto { font-size: 13px; color: #4C4A70; margin-bottom: 10px; }
+  .blocco { max-width: 1100px; margin: 10px auto 26px; padding: 0 20px; }
+
+  /* il marchio */
+  .marchio { font-family: 'Outfit', sans-serif; letter-spacing: -.035em; color: #0F1B33; white-space: nowrap; line-height: 1; display: inline-block; }
+  .marchio .noi { font-weight: 500; color: #46536B; } .marchio .dem { font-weight: 800; margin-left: .15em; }
+  .marchio.chiaro { color: #fff; } .marchio.chiaro .noi { color: #BFD3F5; }
+  .mi { position: relative; }
+  .foglia { position: absolute; left: 50%; top: -.09em; width: .6em; height: .6em; transform: translateX(calc(-50% + .07em)); pointer-events: none; }
+  .foglia svg { display: block; width: 100%; height: 100%; }
+
+  /* la scena della home, per vedere la sezione al suo posto */
+  .scena { border-radius: 16px; overflow: hidden; border: 1px solid #D8DEE9; box-shadow: 0 16px 44px rgba(15,27,51,.14);
+    background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%), radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%), radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222,214,251,0) 66%), #F5F3FE; }
+  .scena .dentro { padding: 30px 40px 40px; }
+  .piede { background: linear-gradient(135deg,#1d3fb8,#2563eb); color: #fff; border-radius: 40px 40px 0 0; padding: 34px 40px 22px; margin-top: 40px; display: flex; justify-content: space-between; gap: 30px; }
+  .piede .col { font-size: 12.5px; color: #C7D8FF; line-height: 1.7; }
+  .piede .col b { display: block; font-size: 10.5px; letter-spacing: 1px; color: #93B4F7; margin-bottom: 6px; }
+  .tabella { background: rgba(255,255,255,.82); border: 1px solid rgba(231,235,243,.9); border-radius: 22px; padding: 8px 22px; width: 420px; margin-left: auto; font-size: 14px; }
+  .tabella div { display: flex; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid #EEF1F5; color: #374151; font-weight: 600; }
+  .tabella div:last-child { border-bottom: none; }
+  .tabella span { background: #DCF3E4; color: #1F7A43; border-radius: 999px; padding: 4px 12px; font-size: 12.5px; font-weight: 700; }
+
+  /* A · striscia blu come oggi, col marchio */
+  .striscia { margin-top: 26px; background: linear-gradient(135deg,#1d4ed8,#2563eb); color: #fff; border-radius: 22px; padding: 24px 28px; display: flex; align-items: center; gap: 24px; box-shadow: 0 10px 30px rgba(37,99,235,.25); }
+  .ic { width: 72px; height: 72px; border-radius: 18px; background: #fff; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .striscia h4 { font-size: 22px; font-weight: 800; letter-spacing: -.5px; display: flex; align-items: baseline; gap: .3em; flex-wrap: wrap; }
+  .striscia p { font-size: 14px; opacity: .92; margin-top: 4px; line-height: 1.5; }
+  .btn-bianco { background: #fff; color: #1D4ED8; border-radius: 999px; padding: 13px 24px; font-size: 14px; font-weight: 700; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.15); display: inline-flex; align-items: center; gap: 8px; }
+  .btn-blu { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border-radius: 999px; padding: 13px 26px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 18px rgba(37,99,235,.35); white-space: nowrap; }
+
+  /* B · card di vetro come le altre sezioni, col telefono */
+  .vetro { margin-top: 26px; background: rgba(255,255,255,.82); backdrop-filter: blur(10px); border: 1px solid rgba(231,235,243,.9); border-radius: 26px; padding: 30px 34px; display: flex; align-items: center; gap: 34px; }
+  .vetro .occ { font-size: 11.5px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #2563eb; }
+  .vetro h4 { font-size: clamp(22px, 2.6vw, 30px); font-weight: 700; letter-spacing: -.8px; line-height: 1.15; margin-top: 8px; color: #0F1B33; display: flex; align-items: baseline; gap: .28em; flex-wrap: wrap; }
+  .vetro p { font-size: 15px; color: #5B6779; line-height: 1.65; margin-top: 10px; max-width: 520px; }
+  .punti { display: flex; gap: 18px; margin-top: 14px; flex-wrap: wrap; }
+  .punti span { font-size: 13px; color: #374151; display: flex; align-items: center; gap: 6px; }
+  .punti i { width: 16px; height: 16px; border-radius: 999px; background: #DCF3E4; color: #1F7A43; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-style: normal; font-weight: 800; }
+  .telefonino { width: 150px; height: 300px; border-radius: 26px; border: 7px solid #0F172A; background: linear-gradient(160deg,#1e293b,#0f172a); flex-shrink: 0; padding: 26px 12px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 8px; align-content: start; }
+  .telefonino i { display: block; width: 32px; height: 32px; border-radius: 9px; background: #94A3B8; opacity: .45; margin: 0 auto; }
+  .telefonino .nd { opacity: 1; background: #F5F3FE; display: flex; align-items: center; justify-content: center; }
+  .telefonino small { display: block; text-align: center; font-size: 7px; color: #E2E8F0; margin-top: 3px; }
+
+  /* C · nel piede, una riga in più */
+  .piede-riga { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+  .piede-riga .t { font-size: 15px; font-weight: 700; display: flex; align-items: baseline; gap: .3em; }
+  .piede-riga .s { font-size: 12.5px; color: #C7D8FF; margin-top: 2px; }
+
+  /* la striscia delle linguette */
+  .chrome { background: #DEE1E6; border-radius: 10px 10px 0 0; padding: 8px 10px 0; display: flex; gap: 2px; align-items: flex-end; }
+  .tab { display: flex; align-items: center; gap: 8px; background: #F2F3F5; border-radius: 8px 8px 0 0; padding: 8px 12px; font-size: 12px; color: #3C4043; width: 210px; white-space: nowrap; overflow: hidden; }
+  .tab.attiva { background: #fff; }
+  .tab .x { margin-left: auto; color: #5F6368; }
+  .tab i { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .barraurl { background: #fff; padding: 8px 12px; border-radius: 0 0 10px 10px; font-size: 12px; color: #5F6368; display: flex; gap: 10px; align-items: center; }
+  .barraurl span { flex: 1; background: #F1F3F4; border-radius: 999px; padding: 6px 12px; }
+  .gm { font-weight: 900; font-size: 15px; color: #EA4335; font-family: Arial, sans-serif; line-height: 1; }
+  .zoom { display: flex; gap: 26px; align-items: flex-end; margin-top: 12px; }
+  .zoom .p { text-align: center; } .zoom .p small { display: block; font-size: 11px; color: #7C8AA5; margin-top: 6px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>LA SEZIONE &ldquo;INSTALLA L&rsquo;APP&rdquo; E LA FOGLIA INTERA</b> &middot; 1: nel titolo &ldquo;Porta NoiDemoliamo nella tua home&rdquo; il nome &egrave; il marchio vero, e la sezione sotto la tabella dei costi &egrave; rifatta in tre modi. 2: la linguetta con la sola foglia, senza quadratino.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">1 &middot; La sezione, tre modi</span>
+  <span onclick="vista('b',this)">2 &middot; La foglia intera nella linguetta</span>
+</div>
+<div id="viste"></div>
+
+<script>
+  const C = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Zm112-16q29 17 59.5 24.5T450-160q46 0 91-18.5t86-59.5q18-18 36.5-50.5t32-85Q709-426 716-500.5t2-177.5q-49-2-110.5-1.5T485-670q-61 9-116 29t-90 55q-45 45-62 89t-17 85q0 59 22.5 103.5T262-246q42-80 111-153.5T534-520q-72 63-125.5 142.5T328-192Z'
+  const P = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Z'
+  const foglia = (chiaro) => `<span class="foglia"><svg viewBox="0 -960 960 960"><path d="${P}" fill="${chiaro ? '#BFD3F5' : '#fff'}"/><path d="${C}" fill="#16A34A"/></svg></span>`
+  const marchio = (px, chiaro) => `<span class="marchio ${chiaro ? 'chiaro' : ''}" style="font-size:${px}px"><span class="noi">No<span class="mi">i${foglia(chiaro)}</span></span><span class="dem">Demoliamo</span></span>`
+  const ICONA = (S) => `<svg width="${S}" height="${S}" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#F5F3FE"/><text x="50" y="47" text-anchor="middle" font-family="Outfit" font-weight="500" font-size="19" fill="#46536B" letter-spacing="-0.6">Noi</text><text x="50" y="68" text-anchor="middle" font-family="Outfit" font-weight="800" font-size="19" fill="#0F1B33" letter-spacing="-0.6">Demoliamo</text><g transform="translate(55 25) scale(0.012)"><g transform="translate(0 960)"><path d="${P}" fill="#fff"/><path d="${C}" fill="#16A34A"/></g></g></svg>`
+  const SCARICA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+  const tabella = `<div class="tabella"><div>Radiazione al PRA<span>0 €</span></div><div>Assistenza fino alla Chiusura<span>0 €</span></div></div>`
+  const piede = (extra) => `<div class="piede"><div><div>${marchio(30, true)}</div><div class="col" style="margin-top:10px;max-width:300px">Ti togliamo il peso di un veicolo da demolire: ritiro a domicilio, burocrazia e certificati. Attivi in tutta Italia.</div>${extra || ''}</div><div style="display:flex;gap:50px"><div class="col"><b>SERVIZIO</b>Richiedi la demolizione<br>Come funziona</div><div class="col"><b>CONTATTI</b>WhatsApp 351 828 0493<br>Accedi alla tua area</div><div class="col"><b>LEGALE</b>Privacy<br>Termini</div></div></div>`
+  const scena = (sezione, piedeExtra) => `<div class="scena"><div class="dentro">${tabella}${sezione}</div>${piede(piedeExtra)}</div>`
+
+  const A = scena(`<div class="striscia"><span class="ic">${ICONA(62)}</span><div style="flex:1"><h4>Porta ${marchio(22, true)} nella tua home</h4><p>Installa l&rsquo;app sul telefono o sul computer: segui la pratica, carica i documenti e ricevi gli aggiornamenti senza aprire il browser. Gratis, senza store.</p></div><span class="btn-bianco">${SCARICA} Installa l&rsquo;app</span></div>`)
+  const B = scena(`<div class="vetro"><div class="telefonino"><i></i><i></i><i class="nd">${ICONA(26)}</i><i></i><i></i><i></i></div><div style="flex:1"><div class="occ">L&rsquo;app</div><h4>Porta ${marchio(28, false)} nella tua home</h4><p>Si installa dal sito, senza store: icona sul telefono o sul computer, si apre a tutto schermo e ti tiene aggiornato sulla pratica.</p><div class="punti"><span><i>✓</i>Gratis</span><span><i>✓</i>iPhone, Android e PC</span><span><i>✓</i>Stessi accessi del sito</span></div><div style="margin-top:20px"><span class="btn-blu">${SCARICA} Installa l&rsquo;app</span></div></div></div>`)
+  const Cv = scena('', `<div class="piede-riga" style="margin-top:18px;margin-bottom:0;max-width:420px"><span class="ic" style="width:44px;height:44px;border-radius:12px">${ICONA(38)}</span><div style="flex:1"><div class="t">Porta ${marchio(15, true)} nella tua home</div><div class="s">Installa l&rsquo;app: gratis, senza store</div></div><span class="btn-bianco" style="padding:9px 16px;font-size:13px">${SCARICA} Installa</span></div>`)
+
+  const vistaA = `<div class="spiega">Il titolo dice <b>&ldquo;Porta NoiDemoliamo nella tua home&rdquo;</b> col marchio vero (chiaro sul blu, scuro sul bianco). Tre modi di impaginare la sezione tra la tabella dei costi e il piede.</div>
+    <div class="blocco"><h3>A &middot; La striscia blu di oggi, col marchio</h3><div class="sotto">Stessa striscia, cambia solo il nome scritto come marchio. Qui per confronto.</div>${A}</div>
+    <div class="blocco"><h3>B &middot; Una sezione come le altre del sito</h3><div class="sotto">Card di vetro come le sezioni sopra, titolo grande, tre spunte e il telefono con l&rsquo;icona gi&agrave; nella home: non &egrave; un banner, &egrave; una sezione del sito.</div>${B}</div>
+    <div class="blocco"><h3>C &middot; Dentro il piede</h3><div class="sotto">Niente sezione in pi&ugrave;: il tasto vive nel piede blu, sotto il marchio e la frase, in una riga leggera. Il pi&ugrave; discreto.</div>${Cv}</div>`
+
+  const fog = (S, piena) => `<svg width="${S}" height="${S}" viewBox="0 0 100 100"><g transform="scale(0.10417)"><g transform="translate(0 960)"><path d="${P}" fill="${piena ? '#16A34A' : '#fff'}"/><path d="${C}" fill="#16A34A"/></g></g></svg>`
+  const striscia = (piena) => `<div class="chrome"><div class="tab"><i><span class="gm">M</span></i>Lettera di intenti Piazza Argentina<span class="x">✕</span></div><div class="tab attiva"><i>${fog(16, piena)}</i>NoiDemoliamo — Demolizione auto<span class="x">✕</span></div><div class="tab"><i><span class="gm">M</span></i>Posta in arrivo (3) - Gmail<span class="x">✕</span></div><div class="tab" style="width:34px;justify-content:center">+</div></div><div class="barraurl">← → ⟳<span>noidemoliamo.it</span></div>`
+  const vistaB = `<div class="spiega">Via il quadratino: la foglia usa <b>tutti i 16 pixel</b>, come la M di Gmail. Due versioni: col dentro bianco (la foglia del marchio) e piena.</div>
+    <div class="blocco"><h3>D1 &middot; Foglia intera, contorno verde e dentro bianco</h3>${striscia(false)}<div class="zoom"><div class="p"><span class="gm" style="font-size:16px">M</span><small>Gmail 16</small></div><div class="p">${fog(16, false)}<small>16 (vera)</small></div><div class="p">${fog(48, false)}<small>48</small></div></div></div>
+    <div class="blocco"><h3>D2 &middot; Foglia intera, verde piena</h3><div class="sotto">a 16px il contorno sottile si perde un po&rsquo;: piena resta un segno netto</div>${striscia(true)}<div class="zoom"><div class="p"><span class="gm" style="font-size:16px">M</span><small>Gmail 16</small></div><div class="p">${fog(16, true)}<small>16 (vera)</small></div><div class="p">${fog(48, true)}<small>48</small></div></div></div>`
+
+  const V = { a: vistaA, b: vistaB }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}">${V[k]}</div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>
