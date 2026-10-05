@@ -9,6 +9,26 @@ import IconaVeicolo from '../components/IconaVeicolo'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
 import CardValutazione, { RichiestaValutazione } from './CardValutazione'
+import Marchio from '../components/Marchio'
+
+// ⭐ 05/10 (mockup A "righe larghe" approvato): su PC ogni pratica dice
+// anche LA COSA DA FARE ADESSO, in base allo stato
+function cosaFare(stato: string, inAttesa: boolean | null): { testo: string; link?: boolean } {
+  if (inAttesa && stato !== 'completata' && stato !== 'annullata') return { testo: 'Pratica in pausa: ti abbiamo scritto il perché' }
+  switch (stato) {
+    case 'in_attesa_documenti': return { testo: 'Carica i documenti', link: true }
+    case 'documenti_parzialmente_approvati': return { testo: 'Rifai i documenti segnalati', link: true }
+    case 'in_attesa_approvazione_admin': return { testo: 'Stiamo verificando i tuoi documenti' }
+    case 'da_assegnare': case 'in_attesa_assegnazione': case 'in_assegnazione_manuale': return { testo: 'Documenti ok: stiamo scegliendo il demolitore' }
+    case 'assegnata': case 'in_attesa_conferma_cliente': return { testo: 'Il demolitore ti fissa il ritiro a breve' }
+    case 'ritiro_confermato': return { testo: 'Guarda giorno e ora del ritiro', link: true }
+    case 'ritirata': case 'in_attesa_recensione_cliente': case 'in_attesa_cert_rottamazione': return { testo: 'Ritirata: aspettiamo il certificato di rottamazione' }
+    case 'in_attesa_cert_radiazione_pra': return { testo: 'Aspettiamo la radiazione al PRA' }
+    case 'completata': return { testo: 'Scarica i certificati', link: true }
+    case 'annullata': return { testo: 'Pratica annullata' }
+    default: return { testo: 'Apri la pratica', link: true }
+  }
+}
 
 const CAMPI_VALUTAZIONE = 'id, stato, targa, tipo_mezzo, marca, modello, anno, offerta_tipo, offerta_importo, offerta_messaggio, offerta_inviata_il, risposta_cliente, risposta_il, creato_il'
 
@@ -182,11 +202,34 @@ export default function DashboardCliente() {
     // ⭐ 28/07 (mockup approvato, proposta 2): sul TELEFONO l'app è a TUTTO
     // SCHERMO (bianco fino ai bordi, header blu in cima, via la cornice
     // lavanda); su PC resta la card centrata di sempre
-    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
-      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
+    // ⭐ 05/10 (mockup A approvato): su PC l'area entra nel mondo del sito
+    // come i flussi (fondo lilla con gli aloni, isola galleggiante, titolo
+    // grande, niente scatola bianca); la classe flusso-scena fa lo sfondo
+    <main className="flusso-scena min-h-screen flex justify-center sm:p-7 sm:pt-8 bg-white">
+      <div className="w-full sm:max-w-[1000px] bg-white sm:bg-transparent overflow-hidden sm:overflow-visible min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
 
-        {/* HEADER BLU (stile banner /inizia) */}
-        <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
+        {/* ISOLA GALLEGGIANTE — solo PC: marchio, saluto, ingranaggio, Esci */}
+        <div
+          className="hidden sm:flex items-center justify-between gap-4 mb-8"
+          style={{ background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 10px 30px rgba(15,27,51,0.10)', borderRadius: 999, padding: '8px 8px 8px 20px' }}
+        >
+          <Marchio misura={20} />
+          <span className="flex items-center gap-2.5">
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#3E4C63' }}>{nomeUtente ? `Ciao, ${nomeUtente}` : 'La tua area personale'}</span>
+            <button
+              onClick={() => setImpostazioniAperte(true)}
+              aria-label="Impostazioni"
+              className="flex items-center justify-center transition-all hover:bg-blue-50"
+              style={{ width: 36, height: 36, borderRadius: 999, background: '#fff', border: '1px solid #E2E8F5', color: '#1D4ED8', cursor: 'pointer' }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+            </button>
+            <button onClick={logout} className="transition-colors hover:bg-blue-100" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '8px 14px', cursor: 'pointer' }}>Esci</button>
+          </span>
+        </div>
+
+        {/* HEADER BLU (stile banner /inizia) — solo telefono */}
+        <div className="sm:hidden px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
           {/* Logo vero (variante A su mockup 22/07): lo stesso di /inizia e login */}
           
           <div className="flex-1 min-w-0">
@@ -208,12 +251,13 @@ export default function DashboardCliente() {
           </button>
         </div>
 
-        <div className="p-4 flex flex-col gap-3">
+        <div className="p-4 sm:p-0 flex flex-col gap-3 sm:gap-3.5">
 
-          {/* TITOLO */}
-          <div>
-            <h1 className="font-bold text-gray-900" style={{ fontSize: 15 }}>Le tue pratiche</h1>
-            <p className="text-gray-500 mt-0.5" style={{ fontSize: 13 }}>
+          {/* TITOLO: piccolo sul telefono, grande con la parola in sfumatura su PC */}
+          <div className="sm:mb-3">
+            <h1 className="font-bold text-gray-900 sm:hidden" style={{ fontSize: 15 }}>Le tue pratiche</h1>
+            <h1 className="flusso-titolo hidden sm:block text-[36px] font-extrabold text-[#0F172A] tracking-[-1.2px] leading-tight">Le tue <span className="parola" style={{ color: '#1D4ED8' }}>pratiche</span></h1>
+            <p className="text-gray-500 mt-0.5 sm:mt-2 sm:text-[15px] sm:text-gray-700" style={{ fontSize: 13 }}>
               {(() => {
                 const proposte = valutazioni.filter(v => v.stato === 'risposta_inviata' && !v.risposta_cliente).length
                 const daCompletare = valutazioni.filter(v => v.stato === 'risposta_inviata' && v.risposta_cliente === 'accettata').length
@@ -266,9 +310,40 @@ export default function DashboardCliente() {
                     style={{ position: 'relative', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: 0, textAlign: 'left', transition: 'border-color 0.15s', overflow: 'hidden', boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)' }}
                     className="hover:!border-[#BFDBFE] active:scale-[0.995]"
                   >
-                    {/* Barretta blu di stato sul fianco sinistro */}
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: '#2563eb' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 13px 14px 16px' }}>
+                    {/* Barretta blu di stato sul fianco sinistro (verde se completata) */}
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: p.stato === 'completata' ? '#1F7A43' : '#2563eb' }} />
+
+                    {/* ⭐ 05/10 (mockup A): su PC la card è UNA RIGA LARGA con
+                        quattro zone: targa e mezzo · dove e quando · stato e
+                        cosa fare adesso · freccia */}
+                    {(() => {
+                      const fai = cosaFare(p.stato, p.in_attesa)
+                      return (
+                        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 16, padding: '16px 18px 16px 22px' }}>
+                          <div style={{ width: 50, height: 50, borderRadius: 14, background: p.stato === 'completata' ? '#DCF3E4' : '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <IconaVeicolo tipo={p.tipo_mezzo} colore={p.stato === 'completata' ? '#1F7A43' : undefined} />
+                          </div>
+                          <div style={{ flex: 1.4, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 17, letterSpacing: '0.03em', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.targa || 'Targa mancante'}</div>
+                            <div style={{ fontSize: 13.5, color: '#6B7280', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {[[p.marca, p.modello].filter(Boolean).join(' '), p.tipo_mezzo ? p.tipo_mezzo.charAt(0).toUpperCase() + p.tipo_mezzo.slice(1) : ''].filter(Boolean).join(' · ') || '—'}
+                            </div>
+                          </div>
+                          <div style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
+                            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#8A94A3' }}>Dove si trova</div>
+                            <div style={{ fontSize: 13.5, color: '#374151', fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.indirizzo_ritiro || '—'}</div>
+                            <div style={{ fontSize: 12.5, color: '#6B7280', marginTop: 2 }}>Richiesta del {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+                          </div>
+                          <div style={{ flex: 1.2, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
+                            <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 999, background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>{s.label}</span>
+                            <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 5, color: fai.link ? '#1D4ED8' : '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fai.testo}{fai.link ? ' →' : ''}</div>
+                          </div>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6" /></svg>
+                        </div>
+                      )
+                    })()}
+
+                    <div className="flex sm:hidden" style={{ alignItems: 'center', gap: 11, padding: '14px 13px 14px 16px' }}>
                       {/* Quadratino con icona veicolo */}
                       <div style={{ width: 46, height: 46, borderRadius: 13, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <IconaVeicolo tipo={p.tipo_mezzo} />
@@ -296,7 +371,7 @@ export default function DashboardCliente() {
                     </div>
 
                     {(p.indirizzo_ritiro || p.creato_il) && (
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, background: '#F8FAFC', borderTop: '1px solid #F1F3F6', padding: '7px 13px 7px 16px' }}>
+                      <div className="flex sm:hidden" style={{ alignItems: 'center', justifyContent: 'space-between', gap: 10, background: '#F8FAFC', borderTop: '1px solid #F1F3F6', padding: '7px 13px 7px 16px' }}>
                         {p.indirizzo_ritiro ? (
                           <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, color: '#6B7280', minWidth: 0 }}>
                             <IconaPinPiccola />
@@ -320,7 +395,7 @@ export default function DashboardCliente() {
                   mockup 22/07 — via il riquadro tratteggiato col +) */}
               <button
                 onClick={() => router.push('/inizia')}
-                className="w-full text-left hover:!border-[#BFDBFE] active:scale-[0.995]"
+                className="w-full text-left hover:!border-[#BFDBFE] active:scale-[0.995] sm:!border-dashed sm:!border-[#C7D0DE] sm:!bg-white/70 sm:!py-3.5 sm:!px-[18px]"
                 style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '12px 13px', transition: 'border-color 0.15s' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>

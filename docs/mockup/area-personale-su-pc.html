@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>L'area personale su PC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1120px; margin: 0 auto; padding: 18px 20px 0; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+
+  .schermo { max-width: 1240px; margin: 14px auto 40px; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 44px rgba(15,27,51,.18); border: 1px solid #D8DEE9; }
+  .barra-url { background: #E8EDF5; padding: 8px 14px; display: flex; align-items: center; gap: 9px; }
+  .barra-url i { width: 9px; height: 9px; border-radius: 999px; background: #C6CFDC; display: block; }
+  .barra-url .url { flex: 1; background: #fff; border: 1px solid #D8E0EC; border-radius: 999px; padding: 4px 12px; font-size: 11.5px; color: #5B6779; }
+  .scena { min-height: 620px; padding: 22px 28px 50px;
+    background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%),
+                radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%),
+                radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222,214,251,0) 66%), #F5F3FE; }
+  .isola { max-width: 1000px; margin: 0 auto 30px; display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,.72); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.9);
+    box-shadow: 0 10px 30px rgba(15,27,51,.10); border-radius: 999px; padding: 8px 8px 8px 20px; }
+  .marchio { font-family: 'Outfit', sans-serif; font-size: 20px; letter-spacing: -.035em; }
+  .marchio .noi { font-weight: 500; color: #46536B; } .marchio .dem { font-weight: 800; color: #0F1B33; margin-left: .15em; }
+  .isola .dx { display: flex; align-items: center; gap: 10px; }
+  .isola .ciao { font-size: 13px; font-weight: 600; color: #3E4C63; }
+  .isola .ing { width: 36px; height: 36px; border-radius: 999px; background: #fff; border: 1px solid #E2E8F5; display: flex; align-items: center; justify-content: center; color: #1D4ED8; }
+  .isola .esci { font-size: 12.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 8px 14px; }
+  .contenuto { max-width: 1000px; margin: 0 auto; }
+  .titolone { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+  .titolone span { background: linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sotto { font-size: 15px; color: #4B5A72; margin-top: 8px; }
+
+  /* le card delle pratiche, versione PC: una riga larga */
+  .lista { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
+  .card { position: relative; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; overflow: hidden; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 5px 14px rgba(16,24,40,.07); display: flex; align-items: center; gap: 16px; padding: 16px 18px 16px 22px; }
+  .card .barra { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: #2563eb; }
+  .quad { width: 50px; height: 50px; border-radius: 14px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #2563eb; }
+  .c { min-width: 0; }
+  .c + .c { border-left: 1px solid #EEF1F5; padding-left: 16px; }
+  .c1 { flex: 1.4; } .c2 { flex: 1.3; } .c3 { flex: 1.2; }
+  .t { font-weight: 700; font-size: 17px; letter-spacing: .03em; color: #111827; }
+  .s { font-size: 13.5px; color: #6B7280; margin-top: 2px; }
+  .eti { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: #8A94A3; }
+  .v { font-size: 13.5px; color: #374151; font-weight: 600; margin-top: 2px; }
+  .pill { font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #EFF6FF; color: #1D4ED8; white-space: nowrap; }
+  .pill.verde { background: #DCF3E4; color: #1F7A43; }
+  .fai { font-size: 12.5px; color: #1D4ED8; font-weight: 600; margin-top: 4px; }
+  .freccia { color: #2563eb; flex-shrink: 0; }
+  .aggiungi { display: flex; align-items: center; gap: 14px; background: rgba(255,255,255,.7); border: 1.5px dashed #C7D0DE; border-radius: 16px; padding: 14px 18px; }
+  .aggiungi .piu { width: 42px; height: 42px; border-radius: 12px; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: 700; box-shadow: 0 3px 9px rgba(37,99,235,.25); }
+  .aggiungi .t2 { font-size: 14px; font-weight: 600; color: #111827; } .aggiungi .s2 { font-size: 12px; color: #6B7280; }
+
+  /* variante B: due colonne */
+  .due { display: flex; gap: 32px; align-items: flex-start; }
+  .sx { width: 300px; flex-shrink: 0; } .dx2 { flex: 1; min-width: 0; }
+  .pannello { background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 5px 14px rgba(16,24,40,.07); margin-top: 24px; }
+  .pannello h3 { font-size: 13px; font-weight: 700; color: #0F1B33; display: flex; align-items: center; gap: 7px; margin-bottom: 10px; }
+  .pannello h3::before { content: ''; width: 3px; height: 13px; background: #2563eb; border-radius: 2px; }
+  .pannello .r { display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA; color: #6B7280; }
+  .pannello .r b { color: #111827; font-weight: 600; }
+  .pannello .r:last-child { border-bottom: none; }
+  .passo { display: flex; gap: 10px; align-items: flex-start; font-size: 13px; color: #374151; line-height: 1.5; padding: 6px 0; }
+  .passo b { display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 999px; background: #EFF6FF; border: 1.5px solid #93C5FD; color: #1D4ED8; font-size: 11px; flex-shrink: 0; }
+  .passo.fatto b { background: #DCF3E4; border-color: #B7E4C7; color: #1F7A43; }
+  .btn { display: inline-block; margin-top: 10px; background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border-radius: 999px; padding: 11px 22px; font-size: 13.5px; font-weight: 600; box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+
+  /* variante C: tessere */
+  .griglia { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 24px; }
+  .tessera { position: relative; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 18px; padding: 18px 18px 14px; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 5px 14px rgba(16,24,40,.07); overflow: hidden; }
+  .tessera .barra { position: absolute; left: 0; right: 0; top: 0; height: 4px; background: #2563eb; }
+  .tessera .testa { display: flex; align-items: center; gap: 12px; }
+  .tessera .pie { display: flex; justify-content: space-between; align-items: center; margin-top: 14px; padding-top: 12px; border-top: 1px solid #F1F3F6; font-size: 12.5px; color: #6B7280; }
+  .tessera.nuova { border-style: dashed; border-color: #C7D0DE; background: rgba(255,255,255,.7); display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 120px; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>L&rsquo;AREA PERSONALE SU PC</b> &middot; sul telefono resta com&rsquo;&egrave;. Su PC entra nel mondo del sito, come i flussi: fondo lilla con gli aloni, isola galleggiante col marchio, titolo grande, niente scatola bianca da telefono in mezzo al vuoto. Tre modi di impaginare le pratiche.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">A &middot; righe larghe</span>
+  <span onclick="vista('b',this)">B &middot; due colonne con &ldquo;cosa fare ora&rdquo;</span>
+  <span onclick="vista('c',this)">C &middot; tessere</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  const AUTO = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14v-5l-2-5H7l-2 5z"/><circle cx="7.5" cy="17" r="1.5"/><circle cx="16.5" cy="17" r="1.5"/></svg>'
+  const MOTO = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="17" r="3"/><circle cx="19" cy="17" r="3"/><path d="M8 17h6l3-6h-5l-2 3H6"/><path d="M15 6h3l2 5"/></svg>'
+  const ING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+  const FR = '<svg class="freccia" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'
+
+  const isola = () => `<div class="isola"><span class="marchio"><span class="noi">Noi</span><span class="dem">Demoliamo</span></span><span class="dx"><span class="ciao">Ciao, Mario</span><span class="ing">${ING}</span><span class="esci">Esci</span></span></div>`
+  const schermo = (dentro) => `<div class="schermo"><div class="barra-url"><i></i><i></i><i></i><span class="url">noidemoliamo.it/dashboard</span></div><div class="scena">${isola()}<div class="contenuto">${dentro}</div></div></div>`
+  const titolo = (sotto) => `<div class="titolone">Le tue <span>pratiche</span></div><div class="sotto">${sotto}</div>`
+
+  const P = [
+    { ico: AUTO, targa: 'CK456ZY', auto: 'Fiat Panda &middot; Autovettura', dove: 'Via Roma 10, Milano', data: '05 ott 2026', stato: 'In attesa dei tuoi documenti', fai: 'Carica 3 documenti &rarr;', cl: '' },
+    { ico: MOTO, targa: 'FA221BB', auto: 'Piaggio Beverly &middot; Motoveicolo', dove: 'Via Verdi 3, Monza', data: '22 set 2026', stato: 'Demolitore assegnato', fai: 'Ritiro: gioved&igrave; 9 ottobre, ore 10', cl: '' },
+    { ico: AUTO, targa: 'DN908PL', auto: 'Opel Corsa &middot; Autovettura', dove: 'Via Dante 7, Sesto S.G.', data: '02 ago 2026', stato: 'Completata', fai: 'Scarica il certificato &rarr;', cl: 'verde' },
+  ]
+
+  // A · righe larghe: targa e auto · dove e quando · stato e cosa fare · freccia
+  const rigaA = (p) => `<div class="card"><div class="barra" ${p.cl ? 'style="background:#1F7A43"' : ''}></div><span class="quad">${p.ico}</span>
+    <div class="c c1"><div class="t">${p.targa}</div><div class="s">${p.auto}</div></div>
+    <div class="c c2"><div class="eti">Dove si trova</div><div class="v">${p.dove}</div><div class="s">Richiesta del ${p.data}</div></div>
+    <div class="c c3"><span class="pill ${p.cl}">${p.stato}</span><div class="fai">${p.fai}</div></div>${FR}</div>`
+  const A = schermo(`${titolo('3 pratiche: una aspetta i tuoi documenti.')}<div class="lista">${P.map(rigaA).join('')}
+    <div class="aggiungi"><span class="piu">+</span><div><div class="t2">Aggiungi un altro veicolo</div><div class="s2">Sempre gratis, come la prima</div></div></div></div>`)
+
+  // B · due colonne: a sinistra "cosa fare ora" e il profilo, a destra le pratiche
+  const B = schermo(`<div class="due"><div class="sx">${titolo('Ciao Mario, ecco a che punto sei.')}
+      <div class="pannello"><h3>Cosa fare ora</h3>
+        <div class="passo fatto"><b>&#10003;</b>Richiesta inviata per CK456ZY</div>
+        <div class="passo"><b>2</b><span>Carica i 3 documenti che mancano: <strong>basta una foto col telefono</strong></span></div>
+        <div class="passo"><b>3</b>Li controlliamo e fissiamo il ritiro gratuito</div>
+        <span class="btn">Carica i documenti</span></div>
+      <div class="pannello"><h3>Il tuo profilo</h3><div class="r">Nome <b>Mario Rossi</b></div><div class="r">Telefono <b>333 1234567</b></div><div class="r">Email <b>mario@email.it</b></div></div>
+    </div><div class="dx2"><div class="lista" style="margin-top:0">${P.map(rigaA).join('')}
+    <div class="aggiungi"><span class="piu">+</span><div><div class="t2">Aggiungi un altro veicolo</div><div class="s2">Sempre gratis, come la prima</div></div></div></div></div></div>`)
+
+  // C · tessere, due per riga
+  const tessera = (p) => `<div class="tessera"><div class="barra" ${p.cl ? 'style="background:#1F7A43"' : ''}></div>
+    <div class="testa"><span class="quad">${p.ico}</span><div style="flex:1;min-width:0"><div class="t">${p.targa}</div><div class="s">${p.auto}</div></div><span class="pill ${p.cl}">${p.stato}</span></div>
+    <div class="fai" style="margin-top:12px">${p.fai}</div>
+    <div class="pie"><span>${p.dove}</span><span>${p.data}</span></div></div>`
+  const C = schermo(`${titolo('3 pratiche: una aspetta i tuoi documenti.')}<div class="griglia">${P.map(tessera).join('')}
+    <div class="tessera nuova"><span class="piu" style="width:42px;height:42px;border-radius:12px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700">+</span><div><div class="t2" style="font-size:14px;font-weight:600;color:#111827">Aggiungi un altro veicolo</div><div class="s2" style="font-size:12px;color:#6B7280">Sempre gratis, come la prima</div></div></div></div>`)
+
+  const V = {
+    a: { html: A, spiega: 'Ogni pratica &egrave; <b>una riga larga</b> con quattro zone: targa e mezzo &middot; dove si trova e quando l&rsquo;hai chiesta &middot; stato e <b>la cosa da fare adesso</b> (&ldquo;Carica 3 documenti&rdquo;, la data del ritiro, &ldquo;Scarica il certificato&rdquo;) &middot; la freccia. &Egrave; la stessa card del telefono distesa in orizzontale, con lo spazio del PC usato per dire di pi&ugrave;. Saluto, ingranaggio ed Esci stanno nell&rsquo;isola in alto.' },
+    b: { html: B, spiega: 'A sinistra una colonna fissa: il titolo, il riquadro <b>&ldquo;Cosa fare ora&rdquo;</b> (il prossimo passo della pratica pi&ugrave; urgente, col bottone) e il profilo in sintesi. A destra la lista delle pratiche come nella A. Il cliente vede subito cosa deve fare senza aprire niente; &egrave; la versione pi&ugrave; &ldquo;da scrivania&rdquo;.' },
+    c: { html: C, spiega: 'Le pratiche a <b>tessere, due per riga</b>: targa, mezzo, stato, la cosa da fare, indirizzo e data. Riempie bene lo schermo anche con una sola pratica (la tessera &ldquo;Aggiungi&rdquo; fa da compagna). Pi&ugrave; compatta, ma con tante pratiche si allunga meno ordinata della A.' },
+  }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}"><div class="spiega">${V[k].spiega}</div>${V[k].html}</div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>
