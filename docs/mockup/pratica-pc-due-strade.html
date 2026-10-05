@@ -1,0 +1,261 @@
+<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>La pagina della pratica su PC, due strade</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1120px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.schermo{width:1280px;margin:14px auto 40px;border-radius:16px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.18);border:1px solid #D8DEE9}
+a{color:#1D4ED8}</style></head><body>
+<div class="nota"><b>LA PAGINA DELLA PRATICA SU PC, DUE STRADE</b> · le stesse due tavole del canvas, qui a grandezza vera. Nessuna stravolge: isola, riga alta, riepilogo a sinistra, linguette e documenti a destra restano.</div>
+<div class="schede"><span class="qui" onclick="vista('a',this)">A · Pulita</span><span onclick="vista('b',this)">B · Guidata</span></div>
+<div class="vista viva" id="vista-a"><div class="spiega"><b>A · Pulita.</b> Il banner blu pieno diventa un riquadro bianco snello "Cosa fare adesso" con le barrette del progresso; le quattro linguette sono un segmento a pillole col contatore; la card del documento ha due tessere piene (niente tratteggi), "Fronte" col bottone blu <b>"Scegli dal dispositivo"</b> e "Retro" in attesa; sotto, i quattro documenti come tessere numerate. A sinistra torna "Da portare al ritiro".</div><div class="schermo">
+<div style="width: 1280px; height: 900px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%), radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%), radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222,214,251,0) 66%), #F5F3FE; padding: 28px 140px; display: flex; flex-direction: column; gap: 22px">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 10px 30px rgba(15,27,51,0.10); border-radius: 999px; padding: 8px 8px 8px 20px">
+    <span style="font-family: Outfit, sans-serif; font-size: 20px; letter-spacing: -0.035em"><span style="font-weight: 500; color: #46536B">Noi</span><span style="font-weight: 800; color: #0F1B33; margin-left: 0.15em">Demoliamo</span></span>
+    <span style="display: flex; align-items: center; gap: 10px">
+      <a href="#pratiche" style="font-size: 12.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 8px 14px; text-decoration: none">Le tue pratiche</a>
+      <a href="#esci" style="font-size: 12.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 8px 14px; text-decoration: none">Esci</a>
+    </span>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 16px">
+    <button aria-label="Torna alle pratiche" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(255,255,255,0.8); border: 1px solid rgba(226,232,245,0.9); box-shadow: 0 6px 16px rgba(15,27,51,0.07); display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div style="flex: 1; min-width: 0">
+      <h1 style="margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.9px; line-height: 1.1">CK456ZY <span style="color: #1D4ED8">Fiat Panda</span></h1>
+      <div style="font-size: 14px; color: #4B5A72; margin-top: 4px">Autovettura · Via Roma 10, Milano · richiesta del 05 ott 2026</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 10px">
+      <span style="font-size: 11px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border-radius: 999px; padding: 6px 12px">In attesa documenti</span>
+    </div>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 14px; background: #FFFFFF; border: 1.5px solid #DBEAFE; border-radius: 16px; padding: 12px 16px; box-shadow: 0 2px 8px rgba(37,99,235,0.08)">
+    <span style="width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg,#1d4ed8,#2563eb); display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="13" y2="17"></line></svg>
+    </span>
+    <div style="flex: 1; min-width: 0">
+      <div style="font-size: 10.5px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #1D4ED8">Cosa fare adesso</div>
+      <div style="font-size: 15px; font-weight: 700; color: #0F172A; margin-top: 2px">Carica i 4 documenti richiesti: basta una foto fatta col telefono</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 6px">
+      <span style="width: 34px; height: 6px; border-radius: 999px; background: #2563EB"></span>
+      <span style="width: 34px; height: 6px; border-radius: 999px; background: #DBEAFE"></span>
+      <span style="width: 34px; height: 6px; border-radius: 999px; background: #DBEAFE"></span>
+      <span style="width: 34px; height: 6px; border-radius: 999px; background: #DBEAFE"></span>
+      <span style="font-size: 12px; font-weight: 700; color: #4B5A72; margin-left: 6px">1 di 4</span>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 24px; align-items: flex-start">
+
+    <div style="width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px">
+      <div style="background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; color: #0F1B33; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px"><span style="width: 3px; height: 13px; background: #2563eb; border-radius: 2px"></span>La pratica</div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Casistica</span><span style="color: #111827; font-weight: 600">Persona fisica</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Consegna</span><span style="color: #111827; font-weight: 600">Io stesso</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Libretto</span><span style="color: #111827; font-weight: 600">Sì, originale</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Certificato di proprietà</span><span style="color: #111827; font-weight: 600">Cartaceo</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0"><span style="color: #6B7280">Carro attrezzi</span><span style="color: #111827; font-weight: 600">Accesso libero</span></div>
+      </div>
+      <div style="background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; color: #0F1B33; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px"><span style="width: 3px; height: 13px; background: #2563eb; border-radius: 2px"></span>Il ritiro</div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Dove</span><span style="color: #111827; font-weight: 600">Via Roma 10, Milano</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0"><span style="color: #6B7280">Quando</span><span style="color: #111827; font-weight: 600">Da fissare</span></div>
+      </div>
+      <div style="background: #0D2144; color: #fff; border-radius: 16px; padding: 14px 16px">
+        <div style="font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #BFD3F5; margin-bottom: 8px">Da portare al ritiro</div>
+        <div style="font-size: 13px; padding: 5px 0; display: flex; gap: 8px; align-items: center"><span style="width: 6px; height: 6px; border-radius: 999px; background: #60A5FA"></span>Libretto originale</div>
+        <div style="font-size: 13px; padding: 5px 0; display: flex; gap: 8px; align-items: center"><span style="width: 6px; height: 6px; border-radius: 999px; background: #60A5FA"></span>Certificato di proprietà cartaceo</div>
+        <div style="font-size: 13px; padding: 5px 0; display: flex; gap: 8px; align-items: center"><span style="width: 6px; height: 6px; border-radius: 999px; background: #60A5FA"></span>Documento d'identità</div>
+      </div>
+    </div>
+
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; gap: 8px; background: rgba(255,255,255,0.7); border: 1px solid rgba(226,232,245,0.9); border-radius: 999px; padding: 6px">
+        <button style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 999px; padding: 10px 14px; font-size: 13.5px; font-weight: 700; background: #2563EB; color: #fff; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>Documenti
+          <span style="background: #fff; color: #1D4ED8; font-size: 10.5px; border-radius: 999px; padding: 1px 7px">1/4</span>
+        </button>
+        <button style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 999px; padding: 10px 14px; font-size: 13.5px; font-weight: 600; background: transparent; color: #4B5563; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>Ritiro
+        </button>
+        <button style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 999px; padding: 10px 14px; font-size: 13.5px; font-weight: 600; background: transparent; color: #4B5563; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>Stato
+        </button>
+        <button style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border: none; border-radius: 999px; padding: 10px 14px; font-size: 13.5px; font-weight: 600; background: transparent; color: #4B5563; cursor: pointer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>Chat
+        </button>
+      </div>
+
+      <div style="background: #fff; border: 1.5px solid #E5E7EB; border-radius: 18px; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07); overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-bottom: 1px solid #EEF1F5">
+          <span style="width: 42px; height: 42px; border-radius: 12px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          </span>
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 16px; font-weight: 700; color: #111827">Libretto di circolazione</div>
+            <div style="font-size: 12.5px; color: #6B7280; margin-top: 2px">Due immagini: il fronte e il retro. Va bene anche una foto fatta col telefono.</div>
+          </div>
+          <span style="font-size: 11.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border-radius: 999px; padding: 5px 11px; white-space: nowrap">Documento 1 di 4</span>
+        </div>
+
+        <div style="padding: 16px 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <div style="background: #F5F7FB; border: 1.5px solid #E5E9F0; border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 196px; justify-content: center">
+            <span style="width: 48px; height: 48px; border-radius: 999px; background: #fff; border: 1.5px solid #DBEAFE; display: flex; align-items: center; justify-content: center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </span>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #4B5A72">Fronte</div>
+            <button style="background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border: none; border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 600; box-shadow: 0 6px 18px rgba(37,99,235,0.3); cursor: pointer">Scegli dal dispositivo</button>
+            <div style="font-size: 11.5px; color: #8A94A3">oppure trascina qui l'immagine</div>
+          </div>
+          <div style="background: #F5F7FB; border: 1.5px solid #E5E9F0; border-radius: 14px; padding: 22px 16px; display: flex; flex-direction: column; align-items: center; gap: 10px; min-height: 196px; justify-content: center; opacity: 0.6">
+            <span style="width: 48px; height: 48px; border-radius: 999px; background: #fff; border: 1.5px solid #E5E9F0; display: flex; align-items: center; justify-content: center">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </span>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #4B5A72">Retro</div>
+            <div style="font-size: 12.5px; color: #6B7280">Dopo il fronte</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; border-top: 1px solid #EEF1F5; background: #FAFBFD">
+          <span style="font-size: 12.5px; color: #6B7280; display: flex; align-items: center; gap: 6px">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6B7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+            Hai una scansione o un PDF? <a href="#allega" style="font-weight: 600">Allega il file</a>
+          </span>
+          <button style="background: #E5E7EB; color: #9CA3AF; border: none; border-radius: 999px; padding: 10px 22px; font-size: 13.5px; font-weight: 600; cursor: default">Vai al prossimo documento</button>
+        </div>
+      </div>
+
+      <div style="background: rgba(255,255,255,0.7); border: 1px solid rgba(226,232,245,0.9); border-radius: 16px; padding: 12px 16px">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.6px; text-transform: uppercase; color: #8A94A3; margin-bottom: 8px">I quattro documenti</div>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+          <div style="display: flex; align-items: center; gap: 8px; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 9px 10px"><span style="width: 22px; height: 22px; border-radius: 999px; background: #2563EB; color: #fff; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">1</span><span style="font-size: 12px; font-weight: 700; color: #1D4ED8; line-height: 1.2">Libretto di circolazione</span></div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 9px 10px"><span style="width: 22px; height: 22px; border-radius: 999px; background: #EDF0F5; color: #64748B; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">2</span><span style="font-size: 12px; font-weight: 600; color: #4B5563; line-height: 1.2">Carta d'identità</span></div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 9px 10px"><span style="width: 22px; height: 22px; border-radius: 999px; background: #EDF0F5; color: #64748B; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">3</span><span style="font-size: 12px; font-weight: 600; color: #4B5563; line-height: 1.2">Tessera sanitaria</span></div>
+          <div style="display: flex; align-items: center; gap: 8px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 9px 10px"><span style="width: 22px; height: 22px; border-radius: 999px; background: #EDF0F5; color: #64748B; font-size: 11px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">4</span><span style="font-size: 12px; font-weight: 600; color: #4B5563; line-height: 1.2">Certificato di proprietà</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div></div>
+<div class="vista" id="vista-b"><div class="spiega"><b>B · Guidata.</b> Le linguette diventano un menu verticale a sinistra; il progresso sta nella riga alta; i quattro documenti sono quattro righe in fila, il primo aperto con Fronte/Retro in orizzontale, gli altri chiusi con "Da fare".</div><div class="schermo">
+<div style="width: 1280px; height: 900px; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%), radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%), radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222,214,251,0) 66%), #F5F3FE; padding: 28px 140px; display: flex; flex-direction: column; gap: 22px">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.72); border: 1px solid rgba(255,255,255,0.9); box-shadow: 0 10px 30px rgba(15,27,51,0.10); border-radius: 999px; padding: 8px 8px 8px 20px">
+    <span style="font-family: Outfit, sans-serif; font-size: 20px; letter-spacing: -0.035em"><span style="font-weight: 500; color: #46536B">Noi</span><span style="font-weight: 800; color: #0F1B33; margin-left: 0.15em">Demoliamo</span></span>
+    <span style="display: flex; align-items: center; gap: 10px">
+      <a href="#pratiche" style="font-size: 12.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 8px 14px; text-decoration: none">Le tue pratiche</a>
+      <a href="#esci" style="font-size: 12.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 8px 14px; text-decoration: none">Esci</a>
+    </span>
+  </div>
+
+  <div style="display: flex; align-items: center; gap: 16px">
+    <button aria-label="Torna alle pratiche" style="width: 44px; height: 44px; border-radius: 999px; background: rgba(255,255,255,0.8); border: 1px solid rgba(226,232,245,0.9); box-shadow: 0 6px 16px rgba(15,27,51,0.07); display: flex; align-items: center; justify-content: center; cursor: pointer">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+    </button>
+    <div style="flex: 1; min-width: 0">
+      <h1 style="margin: 0; font-size: 30px; font-weight: 800; letter-spacing: -0.9px; line-height: 1.1">CK456ZY <span style="color: #1D4ED8">Fiat Panda</span></h1>
+      <div style="font-size: 14px; color: #4B5A72; margin-top: 4px">Autovettura · Via Roma 10, Milano · richiesta del 05 ott 2026</div>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #DBEAFE; border-radius: 999px; padding: 6px 6px 6px 16px">
+      <span style="font-size: 12.5px; font-weight: 700; color: #0F172A">Carica i documenti</span>
+      <span style="display: flex; gap: 4px">
+        <span style="width: 22px; height: 6px; border-radius: 999px; background: #2563EB"></span>
+        <span style="width: 22px; height: 6px; border-radius: 999px; background: #DBEAFE"></span>
+        <span style="width: 22px; height: 6px; border-radius: 999px; background: #DBEAFE"></span>
+        <span style="width: 22px; height: 6px; border-radius: 999px; background: #DBEAFE"></span>
+      </span>
+      <span style="font-size: 11px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border-radius: 999px; padding: 6px 12px">1 di 4</span>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 24px; align-items: flex-start">
+
+    <div style="width: 290px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(255,255,255,0.7); border: 1px solid rgba(226,232,245,0.9); border-radius: 18px; padding: 8px">
+        <button style="display: flex; align-items: center; gap: 10px; border: none; border-radius: 12px; padding: 11px 14px; font-size: 13.5px; font-weight: 700; background: #2563EB; color: #fff; cursor: pointer; text-align: left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg><span style="flex: 1">Documenti</span><span style="background: #fff; color: #1D4ED8; font-size: 10.5px; border-radius: 999px; padding: 1px 7px">1/4</span>
+        </button>
+        <button style="display: flex; align-items: center; gap: 10px; border: none; border-radius: 12px; padding: 11px 14px; font-size: 13.5px; font-weight: 600; background: transparent; color: #4B5563; cursor: pointer; text-align: left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg><span style="flex: 1">Ritiro</span><span style="width: 8px; height: 8px; border-radius: 999px; background: #E24B4A"></span>
+        </button>
+        <button style="display: flex; align-items: center; gap: 10px; border: none; border-radius: 12px; padding: 11px 14px; font-size: 13.5px; font-weight: 600; background: transparent; color: #4B5563; cursor: pointer; text-align: left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg><span style="flex: 1">Stato</span>
+        </button>
+        <button style="display: flex; align-items: center; gap: 10px; border: none; border-radius: 12px; padding: 11px 14px; font-size: 13.5px; font-weight: 600; background: transparent; color: #4B5563; cursor: pointer; text-align: left">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span style="flex: 1">Chat</span>
+        </button>
+      </div>
+      <div style="background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 700; color: #0F1B33; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px"><span style="width: 3px; height: 13px; background: #2563eb; border-radius: 2px"></span>La pratica</div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Casistica</span><span style="color: #111827; font-weight: 600">Persona fisica</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Consegna</span><span style="color: #111827; font-weight: 600">Io stesso</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Libretto</span><span style="color: #111827; font-weight: 600">Sì, originale</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA"><span style="color: #6B7280">Certificato di proprietà</span><span style="color: #111827; font-weight: 600">Cartaceo</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; padding: 7px 0"><span style="color: #6B7280">Ritiro</span><span style="color: #111827; font-weight: 600">Da fissare</span></div>
+      </div>
+    </div>
+
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+
+      <div style="background: #fff; border: 1.5px solid #BFDBFE; border-radius: 18px; box-shadow: 0 4px 16px rgba(37,99,235,0.12); overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 14px 18px">
+          <span style="width: 30px; height: 30px; border-radius: 999px; background: #2563EB; color: #fff; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">1</span>
+          <div style="flex: 1; min-width: 0">
+            <div style="font-size: 16px; font-weight: 700; color: #111827">Libretto di circolazione</div>
+            <div style="font-size: 12.5px; color: #6B7280; margin-top: 2px">Fronte e retro. Va bene anche una foto fatta col telefono.</div>
+          </div>
+          <span style="font-size: 11.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border-radius: 999px; padding: 5px 11px">Da caricare</span>
+        </div>
+        <div style="padding: 0 18px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <div style="background: #F5F7FB; border: 1.5px solid #E5E9F0; border-radius: 14px; padding: 18px 16px; display: flex; align-items: center; gap: 14px">
+            <span style="width: 46px; height: 46px; border-radius: 12px; background: #fff; border: 1.5px solid #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </span>
+            <div style="flex: 1; min-width: 0">
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #4B5A72">Fronte</div>
+              <button style="margin-top: 6px; background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border: none; border-radius: 999px; padding: 9px 16px; font-size: 12.5px; font-weight: 600; box-shadow: 0 6px 18px rgba(37,99,235,0.3); cursor: pointer">Scegli dal dispositivo</button>
+            </div>
+          </div>
+          <div style="background: #F5F7FB; border: 1.5px solid #E5E9F0; border-radius: 14px; padding: 18px 16px; display: flex; align-items: center; gap: 14px; opacity: 0.6">
+            <span style="width: 46px; height: 46px; border-radius: 12px; background: #fff; border: 1.5px solid #E5E9F0; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            </span>
+            <div style="flex: 1; min-width: 0">
+              <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.8px; text-transform: uppercase; color: #4B5A72">Retro</div>
+              <div style="font-size: 12.5px; color: #6B7280; margin-top: 6px">Dopo il fronte</div>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; border-top: 1px solid #EEF1F5; background: #FAFBFD; font-size: 12.5px; color: #6B7280">
+          <span>Hai una scansione o un PDF? <a href="#allega" style="font-weight: 600">Allega il file</a></span>
+          <span>Lo controlliamo noi entro poco</span>
+        </div>
+      </div>
+
+      <div style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 13px 18px">
+        <span style="width: 30px; height: 30px; border-radius: 999px; background: #EDF0F5; color: #64748B; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">2</span>
+        <div style="flex: 1; min-width: 0"><div style="font-size: 14.5px; font-weight: 700; color: #111827">Carta d'identità del proprietario</div><div style="font-size: 12px; color: #6B7280; margin-top: 1px">Fronte e retro</div></div>
+        <span style="font-size: 11.5px; font-weight: 700; color: #64748B; background: #EDF0F5; border-radius: 999px; padding: 5px 11px">Da fare</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 13px 18px">
+        <span style="width: 30px; height: 30px; border-radius: 999px; background: #EDF0F5; color: #64748B; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">3</span>
+        <div style="flex: 1; min-width: 0"><div style="font-size: 14.5px; font-weight: 700; color: #111827">Tessera sanitaria del proprietario</div><div style="font-size: 12px; color: #6B7280; margin-top: 1px">Fronte e retro</div></div>
+        <span style="font-size: 11.5px; font-weight: 700; color: #64748B; background: #EDF0F5; border-radius: 999px; padding: 5px 11px">Da fare</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 13px 18px">
+        <span style="width: 30px; height: 30px; border-radius: 999px; background: #EDF0F5; color: #64748B; font-size: 13px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0">4</span>
+        <div style="flex: 1; min-width: 0"><div style="font-size: 14.5px; font-weight: 700; color: #111827">Certificato di proprietà cartaceo</div><div style="font-size: 12px; color: #6B7280; margin-top: 1px">Il foglio con lo stemma ACI</div></div>
+        <span style="font-size: 11.5px; font-weight: 700; color: #64748B; background: #EDF0F5; border-radius: 999px; padding: 5px 11px">Da fare</span>
+      </div>
+    </div>
+  </div>
+</div>
+</div></div>
+<script>function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}</script>
+</body></html>

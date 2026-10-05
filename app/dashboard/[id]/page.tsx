@@ -11,7 +11,6 @@ import TabStato from './TabStato'
 import TabChat from './TabChat'
 import AiutoWhatsApp from '../../components/AiutoWhatsApp'
 import IsolaSito, { PillolaIsola } from '../../components/IsolaSito'
-import { NOMI_CASISTICHE } from '@/lib/statiValutazione'
 
 export interface Pratica {
   id: string
@@ -420,7 +419,18 @@ export default function DettaglioPraticaCliente() {
 
           {/* BANNER STATO DINAMICO — ⭐ 28/07 sera: la versione `tenue` è
               rosa di famiglia con testo rosso scuro (via il rosso pieno) */}
-          <div className={`rounded-2xl p-4 flex items-center gap-3 ${banner.tenue ? '' : 'text-white shadow-md'}`} style={{ background: banner.bg, border: banner.tenue ? '1.5px solid #F3C8C8' : undefined, color: banner.tenue ? '#7C2D2D' : undefined }}>
+          {/* ⭐ 05/10 (mockup A/C): su PC il banner è un riquadro bianco snello "Cosa fare adesso" */}
+          {!banner.tenue && (
+            <div className="hidden sm:flex items-center gap-3.5" style={{ background: '#fff', border: '1.5px solid #DBEAFE', borderRadius: 16, padding: '12px 16px', boxShadow: '0 2px 8px rgba(37,99,235,0.08)' }}>
+              <div className="flex items-center justify-center flex-shrink-0 text-white" style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#1d4ed8,#2563eb)' }}>{banner.icona}</div>
+              <div className="flex-1 min-w-0">
+                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: '#1D4ED8' }}>Cosa fare adesso</div>
+                <div className="text-[15px] font-bold leading-tight" style={{ color: '#0F172A', marginTop: 2 }}>{banner.titolo}</div>
+                <div className="text-[12.5px] leading-snug" style={{ color: '#4B5A72', marginTop: 2 }}>{banner.sottotitolo}</div>
+              </div>
+            </div>
+          )}
+          <div className={`rounded-2xl p-4 flex items-center gap-3 ${banner.tenue ? '' : 'text-white shadow-md sm:hidden'}`} style={{ background: banner.bg, border: banner.tenue ? '1.5px solid #F3C8C8' : undefined, color: banner.tenue ? '#7C2D2D' : undefined }}>
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${banner.tenue ? '' : 'bg-white/20'}`} style={banner.tenue ? { background: '#F3C8C8', color: '#A94444' } : undefined}>{banner.icona}</div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-bold leading-tight">{banner.titolo}</div>
@@ -455,21 +465,11 @@ export default function DettaglioPraticaCliente() {
 
           {/* ⭐ 05/10: su PC due colonne. A sinistra il riepilogo della
               pratica, sempre sott'occhio; a destra le linguette e il contenuto */}
-          <div className="sm:flex sm:gap-6 sm:items-start sm:mt-2">
-          <div className="hidden sm:flex sm:flex-col sm:gap-3.5" style={{ width: 290, flexShrink: 0 }}>
-            <PannelloRiepilogo titolo="La pratica" righe={[
-              { k: 'Casistica', v: pratica.casistica ? (NOMI_CASISTICHE[pratica.casistica] || pratica.casistica) : '—' },
-              { k: 'Consegna', v: pratica.delegato_nome ? `Delegata a ${pratica.delegato_nome}` : 'Io stesso' },
-              { k: 'Libretto', v: pratica.libretto === 'si' ? 'Sì, originale' : pratica.libretto === 'denuncia' ? 'Denuncia di smarrimento' : pratica.libretto === 'no' ? 'Non ce l\'ho' : '—' },
-              { k: 'Certificato di proprietà', v: pratica.certificato_proprieta === 'cartaceo' ? 'Cartaceo' : pratica.certificato_proprieta === 'digitale' ? 'Digitale' : pratica.certificato_proprieta === 'smarrito' ? 'Smarrito, con denuncia' : pratica.certificato_proprieta === 'nessuno' ? 'Da verificare' : '—' },
-              { k: 'Carro attrezzi', v: pratica.spazio_carro_attrezzi === 'libero' ? 'Accesso libero' : pratica.spazio_carro_attrezzi === 'stretto' ? 'Spazio stretto' : pratica.spazio_carro_attrezzi === 'no' ? 'Non passa' : '—' },
-            ]} />
-            <PannelloRiepilogo titolo="Il ritiro" righe={[
-              { k: 'Dove', v: pratica.indirizzo_ritiro || '—', lungo: true },
-              { k: 'Quando', v: pratica.data_ritiro_prevista ? new Date(pratica.data_ritiro_prevista).toLocaleString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Da fissare' },
-            ]} />
-          </div>
-          <div className="sm:flex-1 sm:min-w-0 flex flex-col gap-3">
+          {/* ⭐ 05/10 (mockup C): su PC niente riquadri a sinistra, una
+              colonna sola centrata. Casistica, consegna, libretto e
+              certificato vivono nella linguetta "Stato". */}
+          <div className="sm:mx-auto sm:w-[820px] sm:mt-2">
+          <div className="flex flex-col gap-3">
 
           {/* LE QUATTRO LINGUETTE — ⭐ 24/08 (variante C approvata): sul
               telefono scendono in fondo allo schermo (barra fissa, sotto il
@@ -509,23 +509,6 @@ export default function DettaglioPraticaCliente() {
 }
 
 // Il riquadro bianco di riepilogo della colonna di sinistra (solo PC)
-function PannelloRiepilogo({ titolo, righe }: { titolo: string; righe: { k: string; v: string; lungo?: boolean }[] }) {
-  return (
-    <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '14px 16px', boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)' }}>
-      <div className="flex items-center gap-2 mb-2" style={{ fontSize: 11.5, fontWeight: 700, color: '#0F1B33', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-        <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2 }} />
-        {titolo}
-      </div>
-      {righe.map((r, i) => (
-        <div key={r.k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, fontSize: 13, padding: '7px 0', borderBottom: i === righe.length - 1 ? 'none' : '1px solid #F5F7FA' }}>
-          <span style={{ color: '#6B7280', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.k}</span>
-          <span style={{ color: '#111827', fontWeight: 600, textAlign: 'right', minWidth: 0, overflow: r.lungo ? 'visible' : 'hidden', textOverflow: 'ellipsis', whiteSpace: r.lungo ? 'normal' : 'nowrap' }}>{r.v}</span>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function TabButton(props: {
   attivo: boolean
   onClick: () => void

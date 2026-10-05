@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { Pratica } from './page'
@@ -857,7 +857,20 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           {/* ⭐ 28/07 sera (mockup B): coda ATTENUATA — niente card, righe
               grigie leggere coi numerini spenti (informazione secondaria) */}
           {codaWizard.length > 1 && (
-            <div style={{ margin: '13px 10px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="hidden sm:block" style={{ marginTop: 14, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(226,232,245,0.9)', borderRadius: 16, padding: '12px 16px' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#8A94A3', marginBottom: 8 }}>I documenti da preparare</div>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(codaWizard.length, 4)}, minmax(0, 1fr))`, gap: 8 }}>
+                {codaWizard.map((d, i) => (
+                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: i === 0 ? '#EFF6FF' : '#fff', border: `1.5px solid ${i === 0 ? '#BFDBFE' : '#E5E7EB'}`, borderRadius: 12, padding: '9px 10px' }}>
+                    <span style={{ width: 22, height: 22, borderRadius: 999, background: i === 0 ? '#2563EB' : '#EDF0F5', color: i === 0 ? '#fff' : '#64748B', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 1}</span>
+                    <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 600, color: i === 0 ? '#1D4ED8' : '#4B5563', lineHeight: 1.2 }}>{nomeRitiro(d)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {codaWizard.length > 1 && (
+            <div className="sm:hidden" style={{ margin: '13px 10px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {codaWizard.slice(1).map((d, i) => (
                 <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#F1F4F8', color: '#9AA7B5', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
@@ -1120,6 +1133,16 @@ function BollinoAzione({ etichetta, bg, colore, onClick, children }: {
 // "Ho finito, invia in verifica".
 // ============================================================
 
+// ⭐ 05/10: su PC la fotocamera non c'è: le parole dicono "Carica" e il
+// bottone "Scegli dal dispositivo" (sul telefono resta "Scatta")
+function usePc() {
+  return useSyncExternalStore(
+    (avvisa) => { const m = window.matchMedia('(min-width: 640px)'); m.addEventListener('change', avvisa); return () => m.removeEventListener('change', avvisa) },
+    () => window.matchMedia('(min-width: 640px)').matches,
+    () => false,
+  )
+}
+
 function DocCard(props: {
   doc: DocChecklist
   signedMap: Record<string, string>
@@ -1147,6 +1170,7 @@ function DocCard(props: {
 
   const { doc } = props
   const files = leggiFile(doc.file_url)
+  const pc = usePc()
 
   useEffect(() => { setConfermaIdx(null) }, [doc.id, doc.file_url])
   const rifiutato = doc.stato === 'rifiutato'
@@ -1180,8 +1204,8 @@ function DocCard(props: {
     : inModoFile
       ? 'Allega uno o più file (PDF o immagini)'
       : modoSlot
-        ? 'Scatta due foto: fronte e retro'
-        : (doc.descrizione || 'Scatta una foto del documento')
+        ? (pc ? 'Due immagini: il fronte e il retro. Va bene anche una foto fatta col telefono.' : 'Scatta due foto: fronte e retro')
+        : (doc.descrizione || (pc ? 'Carica una foto o una scansione del documento' : 'Scatta una foto del documento'))
   const subColor = rifiutato && doc.nota_admin ? '#B03A2E' : '#6B7280'
 
   // Suggerimento solo quando manca qualcosa: a documento completo il bottone
@@ -1198,8 +1222,8 @@ function DocCard(props: {
       : inModoFile
         ? (files.length > 0 ? '' : 'Allega almeno un file per continuare')
         : modoSlot
-          ? (rifiutato && completo ? '' : completo ? 'Foto complete' : !fronteFile ? 'Scatta il fronte per continuare' : 'Scatta il retro per continuare')
-          : (completo ? '' : 'Scatta una foto per continuare')
+          ? (rifiutato && completo ? '' : completo ? 'Foto complete' : !fronteFile ? (pc ? 'Carica il fronte per continuare' : 'Scatta il fronte per continuare') : (pc ? 'Carica il retro per continuare' : 'Scatta il retro per continuare'))
+          : (completo ? '' : (pc ? 'Carica una foto per continuare' : 'Scatta una foto per continuare'))
 
   // Miniatura di un file (✕ scura; la conferma appare in riga sotto le miniature)
   function renderMini(f: FileCaricato, idx: number, size = 56) {
@@ -1255,14 +1279,17 @@ function DocCard(props: {
     }
 
     return (
-      <div style={{ flex: 1, minWidth: 0, border: '1.5px dashed #B5C6E0', borderRadius: 11, background: '#fff', aspectRatio: '4 / 3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+      <div className="doc-casella" style={{ flex: 1, minWidth: 0, borderRadius: 11, aspectRatio: '4 / 3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
         <div style={{ fontSize: 11, fontWeight: 600, color: colTile, letterSpacing: 0.5, textTransform: 'uppercase' }}>{lato}</div>
         {props.eliminabile && (
           <>
-            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} className="active:scale-[0.96]" style={{ width: 42, height: 42, borderRadius: '50%', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
+            {/* telefono: il tondo blu "Scatta" · PC: la pillola "Scegli dal dispositivo" (⭐ 05/10) */}
+            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} className="active:scale-[0.96] sm:hidden" style={{ width: 42, height: 42, borderRadius: '50%', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
               <IcoCamera size={18} color="#fff" />
             </button>
-            <div style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb' }}>Scatta</div>
+            <div className="sm:hidden" style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb' }}>Scatta</div>
+            <button onClick={() => camRef.current?.click()} aria-label={`Carica il ${lato}`} className="hidden sm:inline-flex active:scale-[0.98]" style={{ marginTop: 4, background: 'linear-gradient(90deg,#1d4ed8,#2563eb)', color: '#fff', border: 'none', borderRadius: 999, padding: '9px 16px', fontSize: 12.5, fontWeight: 600, boxShadow: '0 6px 18px rgba(37,99,235,0.3)', cursor: 'pointer' }}>Scegli dal dispositivo</button>
+            <div className="hidden sm:block" style={{ fontSize: 11.5, color: '#8A94A3' }}>oppure trascina qui l&apos;immagine</div>
           </>
         )}
       </div>

@@ -346,17 +346,21 @@ body {
 .spazio-linguette { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
 
 @media (min-width: 640px) {
+  /* ⭐ 05/10 (mockup A/C): su PC un segmento bianco di vetro a pillole,
+     la voce aperta è la pillola blu */
   .fila-linguette {
     position: static;
-    background: #EFF3F9;
+    background: rgba(255, 255, 255, .7);
     backdrop-filter: none;
     border-top: none;
+    border: 1px solid rgba(226, 232, 245, .9);
     box-shadow: none;
-    border-radius: 16px;
-    padding: 4px;
+    border-radius: 999px;
+    padding: 6px;
+    gap: 8px;
   }
-  .linguetta { --sfondo: #EFF3F9; min-height: 58px; padding: 10px 8px; border-radius: 12px; color: #5F6C7E; }
-  .linguetta--attiva { --sfondo: #2563eb; background: #2563eb; color: #fff; }
+  .linguetta { --sfondo: #fff; flex-direction: row; justify-content: center; gap: 8px; min-height: 0; padding: 10px 14px; border-radius: 999px; color: #4B5563; font-weight: 600; }
+  .linguetta--attiva { --sfondo: #2563eb; background: #2563eb; color: #fff; font-weight: 700; }
   .spazio-linguette { padding-bottom: 16px; }
 }
 
@@ -464,4 +468,12 @@ body {
 
 
 
+
+
+/* ⭐ 05/10 (mockup A/C): la casella fronte/retro dei documenti è
+   tratteggiata sul telefono e PIENA e chiara su PC */
+.doc-casella { border: 1.5px dashed #B5C6E0; background: #fff; }
+@media (min-width: 640px) {
+  .doc-casella { border: 1.5px solid #E5E9F0; background: #F5F7FB; border-radius: 14px; }
+}
 

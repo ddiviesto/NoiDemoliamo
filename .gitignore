@@ -46,3 +46,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 public/icona-a3.html
+.design-pratica-pc/
