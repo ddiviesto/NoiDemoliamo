@@ -899,6 +899,7 @@ I sobbalzi sono bug, non dettagli.
 26. **WhatsApp si fa da parte**: il bottone fisso sparisce mentre si scrive (campo a fuoco), sparisce quando SCORRI IN GIÙ e ricompare quando risali (i bottoni blu a fondo pagina restano liberi), e non esiste sulla tab Chat (lì si parla già con NoiDemoliamo)
 27. ⭐ **Campo di MODIFICA del cliente = pillola in veste "a fuoco"** (bordo blu 1.5px + alone azzurro `rgba(37,99,235,0.12)`): il campo esiste solo mentre si modifica, quindi è sempre "attivo". La riga in modifica è una **colonna ordinata**: etichetta → campo largo → spiegazione → Annulla/Salva a pillola in basso a destra (Salva col gradiente). Applicato alle Impostazioni e al delegato nella tab Stato
 28. **La capsula con l'indirizzo che Safari mostra sopra la tastiera NON è rimovibile** (è del browser): si migliora col dominio corto noidemoliamo.it e si risolve con la futura PWA
+29. ⭐ **I FLUSSI SONO UGUALI (05/10)**: un passo che esiste in più flussi (demolizione `/inizia`, valutazione `/vendi-auto`, "completa la pratica") è **lo stesso componente, stessa grafica, stessi testi, stessa meccanica**. Le uniche differenze sono quelle decise da Davide e scritte qui (foto obbligatorie in valutazione, niente carro attrezzi in valutazione, testo delle targhe smarrite). **Se Claude trova una differenza non decisa o una dissonanza, la segnala a Davide prima di procedere**, non la sistema in silenzio né inventa una variante
 
 ## 6.9 Regola MODIFICA A TASTO (ogni form, admin e cliente)
 
