@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>L'icona A3, costruita col carattere vero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #E9ECF3; padding: 24px; color: #0F172A; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; border-radius: 12px; font-size: 12.5px; line-height: 1.6; margin-bottom: 18px; }
+  .nota b { color: #fff; }
+  .fila { display: flex; gap: 22px; align-items: flex-end; flex-wrap: wrap; }
+  .pezzo { text-align: center; } .pezzo small { display: block; font-size: 11px; color: #7C8AA5; margin-top: 6px; font-weight: 600; }
+  canvas { display: block; }
+  .btn { margin-top: 20px; display: inline-block; background: #2563EB; color: #fff; border: none; border-radius: 999px; padding: 10px 18px; font-size: 13px; font-weight: 700; cursor: pointer; margin-right: 8px; }
+</style>
+</head>
+<body>
+<div class="nota"><b>L&rsquo;ICONA A3 COL CARATTERE VERO</b> &middot; fondo lilla con gli aloni della home, &ldquo;Noi&rdquo; leggero al centro, &ldquo;Demoliamo&rdquo; pieno sotto, fogliolina sulla i con le proporzioni della barra. Disegnata qui con le lettere Outfit vere: i bottoni la scaricano gi&agrave; pronta.</div>
+<div class="fila" id="fila"></div>
+<div>
+  <button class="btn" onclick="scarica(1024,'icona-app.png')">Scarica 1024</button>
+  <button class="btn" onclick="scarica(512,'icon.png')">512</button>
+  <button class="btn" onclick="scarica(180,'apple-icon.png')">180</button>
+  <button class="btn" onclick="scarica(32,'icona-32.png')">32</button>
+</div>
+
+<script>
+  // Le stesse proporzioni del componente Marchio.tsx (in em)
+  const FOGLIA = { larga: 0.60, alto: -0.09, lato: 0.07 }
+  const TRACKING = -0.035
+  const C = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Zm112-16q29 17 59.5 24.5T450-160q46 0 91-18.5t86-59.5q18-18 36.5-50.5t32-85Q709-426 716-500.5t2-177.5q-49-2-110.5-1.5T485-670q-61 9-116 29t-90 55q-45 45-62 89t-17 85q0 59 22.5 103.5T262-246q42-80 111-153.5T534-520q-72 63-125.5 142.5T328-192Z'
+  const P = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Z'
+
+  // Misura una scritta con la spaziatura delle lettere applicata a mano
+  function larghezza(ctx, testo, em) {
+    let w = 0
+    for (const ch of testo) w += ctx.measureText(ch).width + TRACKING * em
+    return w - TRACKING * em
+  }
+  function scrivi(ctx, testo, x, y, em) {
+    for (const ch of testo) { ctx.fillText(ch, x, y); x += ctx.measureText(ch).width + TRACKING * em }
+    return x
+  }
+
+  function disegna(canvas, S) {
+    canvas.width = S; canvas.height = S
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, S, S)
+
+    // angoli tondi (0.22 del lato, come le icone iOS)
+    const r = S * 0.22
+    ctx.beginPath(); ctx.roundRect(0, 0, S, S, r); ctx.clip()
+
+    // il fondo lilla con gli aloni della home
+    ctx.fillStyle = '#F5F3FE'; ctx.fillRect(0, 0, S, S)
+    const alone = (cx, cy, rx, ry, col) => {
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(rx, ry)
+      const g = ctx.createRadialGradient(0, 0, 0, 0, 0, 1)
+      g.addColorStop(0, col); g.addColorStop(0.7, col.replace(')', ',0)').replace('rgb', 'rgba'))
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(0, 0, 1, 0, Math.PI * 2); ctx.fill(); ctx.restore()
+    }
+    alone(S * 0.15, S * 0.05, S * 0.60, S * 0.45, 'rgb(228,236,255)')
+    alone(S * 0.90, S * 0.30, S * 0.55, S * 0.50, 'rgb(233,227,255)')
+    alone(S * 0.30, S * 1.00, S * 0.60, S * 0.55, 'rgb(222,214,251)')
+
+    // la scritta su due righe, centrata
+    const em = S * 0.158
+    const interlinea = em * 0.98
+    const altezzaBlocco = interlinea * 2
+    const yTop = (S - altezzaBlocco) / 2
+    ctx.textBaseline = 'alphabetic'
+
+    // "Noi": 500, grigio-blu
+    ctx.font = `500 ${em}px Outfit`
+    ctx.fillStyle = '#46536B'
+    const wNoi = larghezza(ctx, 'Noi', em)
+    const xNoi = (S - wNoi) / 2
+    const yNoi = yTop + em * 0.80
+    scrivi(ctx, 'Noi', xNoi, yNoi, em)
+    // dove sta la "i": serve per la foglia
+    const wNo = larghezza(ctx, 'No', em) + TRACKING * em
+    const wI = ctx.measureText('i').width
+    const xI = xNoi + wNo
+
+    // "Demoliamo": 800, blu scuro
+    ctx.font = `800 ${em}px Outfit`
+    ctx.fillStyle = '#0F1B33'
+    const wDem = larghezza(ctx, 'Demoliamo', em)
+    scrivi(ctx, 'Demoliamo', (S - wDem) / 2, yNoi + interlinea, em)
+
+    // la fogliolina al posto del puntino: piena bianca sotto, contorno verde sopra
+    const lato = em * FOGLIA.larga
+    const cx = xI + wI / 2 + em * FOGLIA.lato
+    const top = (yNoi - em * 0.80) + em * FOGLIA.alto   // yTop della riga + alto
+    ctx.save()
+    ctx.translate(cx - lato / 2, top)
+    ctx.scale(lato / 960, lato / 960)
+    ctx.translate(0, 960)
+    ctx.fillStyle = '#fff'; ctx.fill(new Path2D(P))
+    ctx.fillStyle = '#16A34A'; ctx.fill(new Path2D(C))
+    ctx.restore()
+  }
+
+  const MISURE = [220, 120, 60, 32]
+  async function avvia() {
+    await document.fonts.load('500 20px Outfit'); await document.fonts.load('800 20px Outfit')
+    const fila = document.getElementById('fila')
+    for (const S of MISURE) {
+      const pezzo = document.createElement('div'); pezzo.className = 'pezzo'
+      const c = document.createElement('canvas'); c.style.width = S + 'px'; c.style.height = S + 'px'
+      disegna(c, S * 2); // disegnata al doppio per gli schermi retina
+      pezzo.appendChild(c); const s = document.createElement('small'); s.textContent = S; pezzo.appendChild(s); fila.appendChild(pezzo)
+    }
+    window.pronta = true
+  }
+  // Restituisce il PNG in base64 di una misura (usato dallo script che scrive i file)
+  window.pngBase64 = (S) => { const c = document.createElement('canvas'); disegna(c, S); return c.toDataURL('image/png').split(',')[1] }
+  function scarica(S, nome) { const a = document.createElement('a'); a.href = 'data:image/png;base64,' + pngBase64(S); a.download = nome; a.click() }
+  avvia()
+</script>
+</body>
+</html>
+<script>
+  // Solo lo STRATO delle lettere e della foglia su fondo trasparente: lo
+  // script di montaggio (sharp) ci mette sotto il lilla con gli aloni e gli
+  // angoli tondi, e ricava le misure piccole dal 1024.
+  window.stratoBase64 = (S) => {
+    const c = document.createElement('canvas'); c.width = S; c.height = S
+    const ctx = c.getContext('2d')
+    const em = S * 0.158, interlinea = em * 0.98, yTop = (S - interlinea * 2) / 2
+    ctx.textBaseline = 'alphabetic'
+    ctx.font = `500 ${em}px Outfit`; ctx.fillStyle = '#46536B'
+    const wNoi = larghezza(ctx, 'Noi', em), xNoi = (S - wNoi) / 2, yNoi = yTop + em * 0.80
+    scrivi(ctx, 'Noi', xNoi, yNoi, em)
+    const wNo = larghezza(ctx, 'No', em) + TRACKING * em, wI = ctx.measureText('i').width, xI = xNoi + wNo
+    ctx.font = `800 ${em}px Outfit`; ctx.fillStyle = '#0F1B33'
+    const wDem = larghezza(ctx, 'Demoliamo', em)
+    scrivi(ctx, 'Demoliamo', (S - wDem) / 2, yNoi + interlinea, em)
+    const lato = em * FOGLIA.larga, cx = xI + wI / 2 + em * FOGLIA.lato, top = yTop + em * FOGLIA.alto
+    ctx.save(); ctx.translate(cx - lato / 2, top); ctx.scale(lato / 960, lato / 960); ctx.translate(0, 960)
+    ctx.fillStyle = '#fff'; ctx.fill(new Path2D(P)); ctx.fillStyle = '#16A34A'; ctx.fill(new Path2D(C)); ctx.restore()
+    return c.toDataURL('image/png').split(',')[1]
+  }
+</script>
