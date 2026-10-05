@@ -221,6 +221,7 @@ export default function VendiAuto() {
     if (!telefono.trim()) return setErrore('Scrivi il tuo telefono: ti chiamiamo Noi con la risposta')
     if (!utenteLoggato) {
       if (!email.trim()) return setErrore('Scrivi la tua email')
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setErrore("Scrivi l'email per intero, es. nome@email.it")
       if (password.length < 6) return setErrore('La password deve avere almeno 6 caratteri')
     }
 
@@ -306,7 +307,7 @@ export default function VendiAuto() {
       setErrore(
         /already registered|already exists/i.test(msg)
           ? 'Questa email ha già un account: accedi e la richiesta la colleghiamo lì.'
-          : 'Non siamo riusciti a inviare la richiesta. Riprova tra un attimo.'
+          : msg ? `Non siamo riusciti a inviare la richiesta: ${msg}` : 'Non siamo riusciti a inviare la richiesta. Riprova tra un attimo.'
       )
       setInvio(false)
     }

@@ -249,9 +249,10 @@ const ICONE_VEICOLO: Record<TipoMezzo, () => React.ReactNode> = {
 function traduciErrore(e: unknown): string {
   const msg = e instanceof Error ? e.message : ''
   const m = msg.toLowerCase()
-  if (m.includes('failed to fetch') || m.includes('network') || m.includes('load failed') || m.includes('fetch')) {
-    return 'Errore di connessione. Controlla la tua rete e riprova.'
-  }
+  // ⭐ 05/10 (segnalazione Davide): prima qualsiasi messaggio con dentro
+  // "fetch" diventava "errore di connessione" e nascondeva il motivo vero.
+  // Ora i casi precisi vengono prima, la rete solo se è davvero la rete,
+  // e il ripiego mostra il dettaglio originale.
   if (m.includes('already registered') || m.includes('already been registered') || m.includes('user already exists')) {
     return "Questa email è già registrata. Prova ad accedere dalla pagina di login, oppure usa un'altra email."
   }
@@ -264,7 +265,15 @@ function traduciErrore(e: unknown): string {
   if (m.includes('rate limit') || m.includes('too many')) {
     return 'Troppi tentativi ravvicinati. Attendi qualche minuto e riprova.'
   }
-  return 'Si è verificato un errore. Riprova tra qualche istante.'
+  if (m === 'failed to fetch' || m === 'load failed' || m.includes('networkerror') || m.includes('network request failed')) {
+    return 'Errore di connessione. Controlla la tua rete e riprova.'
+  }
+  return msg ? `Non siamo riusciti a inviare la richiesta: ${msg}` : 'Si è verificato un errore. Riprova tra qualche istante.'
+}
+
+// Un'email scritta per intero: qualcosa@qualcosa.xx
+function emailValida(v: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim())
 }
 
 // ============================================================
@@ -768,7 +777,9 @@ export default function IniziaPage() {
     if (!dati.telefono) e.telefono = true
     // Cliente già loggato: email e password non servono
     if (!utenteLoggato) {
-      if (!dati.email) e.email = true
+      // ⭐ 05/10: un'email a metà ("dd@") non parte più: Supabase la rifiutava
+      // e il cliente vedeva un errore generico
+      if (!dati.email || !emailValida(dati.email)) e.email = true
       if (!dati.password || dati.password.length < 6) e.password = true
     }
     if (e.nome || e.telefono || e.email || e.password) {
@@ -1021,7 +1032,7 @@ export default function IniziaPage() {
                     <div className="flex-1 text-sm font-medium text-green-800">{dati.indirizzo}</div>
                     <button
                       onClick={() => { update({ indirizzo: '', spazioCarroAttrezzi: null, spazioCarroAttrezziNote: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null); setErroreSpazio(false) }}
-                      className="bg-white border border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 text-xs font-semibold px-3 py-1.5 rounded-lg transition-all flex-shrink-0"
+                      className="bg-white border border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all flex-shrink-0"
                     >
                       Cambia
                     </button>
@@ -1056,7 +1067,7 @@ export default function IniziaPage() {
                       <textarea
                         value={dati.spazioCarroAttrezziNote}
                         onChange={e => update({ spazioCarroAttrezziNote: e.target.value })}
-                        placeholder="Es. Cancello largo 2,5 metri; cortile interno; salita ripida..."
+                        placeholder="Es. cortile con cancello stretto, strada in salita, posto auto sotto una tettoia"
                         rows={2}
                         className={classeCampo(false, 'campo-lungo')}
                       />
@@ -1738,7 +1749,7 @@ export default function IniziaPage() {
               </CampoModulo>
               {!utenteLoggato && (
                 <>
-                  <CampoModulo label="La tua email">
+                  <CampoModulo label="La tua email" errore={erroreAccount.email && dati.email ? "Scrivi l'email per intero, es. nome@email.it" : undefined}>
                     <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
                   </CampoModulo>
                   <CampoModulo
