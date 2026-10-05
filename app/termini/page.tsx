@@ -7,7 +7,7 @@ import TornaIndietro from '../components/TornaIndietro'
  * Testo da far rivedere per la conformità finale.
  */
 
-export const metadata = { title: 'Termini di servizio — NoiDemoliamo' }
+export const metadata = { title: 'Termini di servizio · NoiDemoliamo' }
 
 function Sezione({ titolo, children }: { titolo: string; children: React.ReactNode }) {
   return (

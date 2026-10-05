@@ -8,7 +8,7 @@ import TornaIndietro from '../components/TornaIndietro'
  * conformità finale.
  */
 
-export const metadata = { title: 'Informativa privacy — NoiDemoliamo' }
+export const metadata = { title: 'Informativa privacy · NoiDemoliamo' }
 
 function Sezione({ titolo, children }: { titolo: string; children: React.ReactNode }) {
   return (

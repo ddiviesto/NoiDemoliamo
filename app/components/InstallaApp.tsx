@@ -35,7 +35,11 @@ export function RegistraApp() {
     }
     const prendi = (e: Event) => { e.preventDefault(); window.__ndInstalla = e as EventoInstalla; window.dispatchEvent(new Event('nd-installa-pronta')) }
     window.addEventListener('beforeinstallprompt', prendi)
-    const fatta = () => { window.__ndInstalla = null; window.dispatchEvent(new Event('nd-installa-fatta')) }
+    // ⭐ 05/10 (Davide): appena installata, l'app deve aprirsi su "Accedi"
+    // (o sulle pratiche se è già dentro), non sulla pagina del sito da cui
+    // ha premuto il tasto: Chrome sposta questa scheda nella finestra
+    // dell'app, quindi basta portarla sull'area personale.
+    const fatta = () => { window.__ndInstalla = null; window.dispatchEvent(new Event('nd-installa-fatta')); setTimeout(() => { window.location.href = '/dashboard?da=app' }, 400) }
     window.addEventListener('appinstalled', fatta)
     return () => { window.removeEventListener('beforeinstallprompt', prendi); window.removeEventListener('appinstalled', fatta) }
   }, [])

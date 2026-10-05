@@ -21,7 +21,7 @@ import ScenaHome from './components/ScenaHome'
 import { SezioneInstalla } from './components/InstallaApp'
 
 export const metadata: Metadata = {
-  title: 'NoiDemoliamo — Demolizione auto gratuita in tutta Italia',
+  title: 'NoiDemoliamo, demolizione auto gratuita in tutta Italia',
   description:
     'Demolizione auto gratuita con ritiro a domicilio, certificato di rottamazione e radiazione PRA inclusi. Oppure scopri gratis quanto vale la tua auto prima di rottamarla.',
 }

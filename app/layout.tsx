@@ -14,7 +14,7 @@ const marchio = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "NoiDemoliamo — Demolizione auto gratuita",
+  title: "NoiDemoliamo, demolizione auto gratuita",
   description: "Richiedi la demolizione gratuita della tua auto. Ritiro a domicilio, certificato di rottamazione e radiazione PRA inclusi.",
   // ⭐ 05/10: il sito si INSTALLA come app (web app): manifesto con le icone
   // e nome per la home di iPhone. L'icona della linguetta (app/icon.png) e
