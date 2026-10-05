@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { useInstallaApp, FoglioInstalla } from '../components/InstallaApp'
 
 // ============================================================
 // PANNELLO IMPOSTAZIONI CLIENTE — variante A (restyling 22/07):
@@ -33,6 +34,8 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
 }) {
   const router = useRouter()
   const [sezione, setSezione] = useState<Sezione>(null)
+  const { stato: installaStato, installa } = useInstallaApp()
+  const [foglioInstalla, setFoglioInstalla] = useState(false)
   const [busy, setBusy] = useState(false)
   const [esito, setEsito] = useState<{ tipo: 'ok' | 'errore'; testo: string } | null>(null)
 
@@ -318,6 +321,8 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
   }
 
   return (
+    <>
+    {foglioInstalla && <FoglioInstalla stato={installaStato} onChiudi={() => setFoglioInstalla(false)} />}
     <div className={`fixed inset-0 z-50 ${aperto ? '' : 'pointer-events-none'}`} aria-hidden={!aperto}>
       {/* Sfondo scuro: chiude toccando fuori */}
       <div
@@ -418,6 +423,21 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
           {/* ====== ALTRO ====== */}
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 0.6, color: '#9AA7B5', padding: '14px 16px 7px' }}>ALTRO</div>
 
+          {/* ⭐ 05/10 (mockup approvato): "Installa l'app" come prima voce.
+              Dentro l'app installata diventa "App installata" con la spunta. */}
+          {installaStato === 'installata' ? (
+            <div className="w-full flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #F1F4F8' }}>
+              <Tile bg="#DCF3E4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></Tile>
+              <span className="text-[13.5px] font-semibold flex-1" style={{ color: '#1F7A43' }}>App installata</span>
+            </div>
+          ) : (
+            <Voce
+              onClick={async () => { if (await installa() === 'foglio') setFoglioInstalla(true) }}
+              tile={<Tile bg="#F5F3FE"><img src="/icona-app.png" alt="" width={24} height={24} style={{ borderRadius: 6 }} /></Tile>}
+              label="Installa l'app sul telefono"
+            />
+          )}
+
           <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50" style={{ borderBottom: '1px solid #F1F4F8' }}>
             <Tile bg="#DCF3E4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" /></svg></Tile>
             <span className="text-[13.5px] font-semibold flex-1 text-gray-900">Assistenza WhatsApp</span>
@@ -452,5 +472,6 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
         </div>
       </div>
     </div>
+    </>
   )
 }

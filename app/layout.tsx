@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import { RegistraApp } from "./components/InstallaApp";
 
 // ⭐ 25/08 (scelto da Davide sul mockup): IL CARATTERE DEL MARCHIO.
 // Serve SOLO per scrivere "NoiDemoliamo", non per i testi della pagina:
@@ -15,6 +16,11 @@ const marchio = Outfit({
 export const metadata: Metadata = {
   title: "NoiDemoliamo — Demolizione auto gratuita",
   description: "Richiedi la demolizione gratuita della tua auto. Ritiro a domicilio, certificato di rottamazione e radiazione PRA inclusi.",
+  // ⭐ 05/10: il sito si INSTALLA come app (web app): manifesto con le icone
+  // e nome per la home di iPhone. L'icona della linguetta (app/icon.png) e
+  // quella di iPhone (app/apple-icon.png) le serve Next da solo.
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, title: "NoiDemoliamo", statusBarStyle: "default" },
 };
 
 export const viewport: Viewport = {
@@ -34,7 +40,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="it" className={`h-full antialiased ${marchio.variable}`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col"><RegistraApp />{children}</body>
     </html>
   );
 }

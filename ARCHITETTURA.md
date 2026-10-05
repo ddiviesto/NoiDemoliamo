@@ -694,6 +694,15 @@ Il sistema è **istantaneo su tutto**: nessuna pagina deve richiedere il refresh
 - **Area demolitore**: niente accesso diretto al DB → hook senza tabelle (solo livelli 2+3). Va in pausa (`attivo: false`) mentre un form è aperto, per non sovrascrivere ciò che si scrive.
 - ⭐ **Ogni nuova pagina con dati condivisi deve usare questo hook**, e le sue nuove tabelle vanno aggiunte alla pubblicazione realtime nella stessa SQL di creazione.
 
+## 5.9 "INSTALLA L'APP" — il sito come app (web app) ⭐ 05/10
+
+Non c'è un'app negli store: il sito **si installa** come app (icona nella home, a tutto schermo, stessi accessi). Pezzi:
+- `public/manifest.webmanifest` (nome, `start_url: /dashboard?da=app`, `display: standalone`, colori, icone da `public/icone/`) collegato da `app/layout.tsx` (`metadata.manifest` + `appleWebApp`).
+- `public/sw.js`: il file di servizio minimo che Chrome/Edge chiedono per l'installazione. **Non mette niente in cache di proposito**: ogni richiesta va alla rete, così dopo un deploy non restano pagine vecchie sul telefono. Le push vere arriveranno qui.
+- `app/components/InstallaApp.tsx`: `<RegistraApp />` nel layout registra il file di servizio e **cattura al volo** la richiesta `beforeinstallprompt` di Chrome/Edge; `useInstallaApp()` dice la situazione (`installata` · `pronta` · `iphone` · `istruzioni`); `<FoglioInstalla />` è il foglio coi tre passi; `<SezioneInstalla />` è la **striscia blu prima del piede della home**.
+- **Il tasto** (mockup approvato): sulla home (striscia blu "Porta NoiDemoliamo nella tua home") e nelle **Impostazioni del cliente**, prima voce di "Altro". Su **Android e PC** apre la finestra del browser "Installare NoiDemoliamo?"; su **iPhone** Apple non permette l'installazione dal sito, quindi apre il foglio con i tre tocchi (Condividi → Aggiungi alla schermata Home → Aggiungi; da Chrome per iPhone dice di aprire in Safari); **dentro l'app installata** la striscia sparisce e la voce diventa "App installata" con la spunta.
+- ⚠️ La finestra di Chrome compare solo su HTTPS (Vercel) o localhost, e solo se Chrome giudica il sito "installabile" (manifesto + file di servizio + icone 192/512): se manca qualcosa il tasto ripiega sulle istruzioni.
+
 ## 5.8 IL SITO PUBBLICO (vetrina) — `/`
 
 La vecchia cardina bianca centrata **non esiste più**: `/` è il sito vetrina. Pezzi condivisi in `app/components/`: `SitoBarra` (client), `SitoPiede`, `SitoPezzi`.
@@ -750,6 +759,7 @@ La vecchia cardina bianca centrata **non esiste più**: `/` è il sito vetrina. 
 - ⚠️ **Grandezza e posizione stanno nel componente** (costanti `FOGLIA` e `SPAZIO_TRA_LE_PAROLE` in `Marchio.tsx`), scritte in linea sul pezzo, **non nel foglio di stile**: se il foglio arriva in ritardo, una foglia senza misure prende la sua grandezza naturale, enorme, e spacca la scritta in due righe (successo davvero).
 - Tutte le misure sono in **em**, cioè frazioni della grandezza del testo: valgono uguali a 13px come a 34px. Valori scelti da Davide: **larga 0.60 · alto -0.09 · lato 0.07 · spazio tra le parole 0.15**. Si rimettono a punto con `docs/mockup/scritta-fogliolina.html`.
 - **L'ICONA** (linguetta del browser, iPhone, futura app) ⭐ **05/10 (mockup A3 scelto da Davide)**: è **la scritta della barra, tale e quale, su due righe e centrata** ("Noi" leggero grigio-blu sopra, "Demoliamo" pieno blu scuro sotto, la fogliolina sulla i con le proporzioni di `Marchio.tsx`) **sul lilla con gli aloni della home** (#F5F3FE + i tre aloni), angoli tondi 22%. Via il quadrato blu con "DEMOLIAMO" in maiuscolo. File: `app/icon.png` (512) e `app/apple-icon.png` (180), che Next serve da solo; la copia grande da 1024 sta in `public/icona-app.png` e si usa dove il marchio compare da solo e in grande (login, inviti, faccina in chat). **Come si rifà**: `docs/mockup/icona-a3.html` disegna le lettere con le Outfit vere nel browser (`stratoBase64(1024)` dà lo strato trasparente), `scripts/monta-icona.mjs <strato.png>` ci mette sotto il lilla e scrive i tre file.
+- ⭐ **LA LINGUETTA DEL BROWSER È SOLO LA FOGLIOLINA** (05/10, mockup C): a 16 pixel la scritta non si legge, la foglia sì (come la M di Gmail). `app/icon.png` (64) è la foglia sul quadratino lilla, angoli tondi. **Vale solo per linguetta e preferiti**: iPhone (`apple-icon.png`), manifesto, login e chat tengono l'icona intera. Si rigenera con `scripts/monta-icone-pwa.mjs <strato.png>`, che scrive anche le icone del manifesto in `public/icone/` (192, 512 e la "maskable" per Android: lilla a tutto quadrato con la scritta all'80%).
 - ⚠️ Sul sito il nome è **testo vero**, mai un'immagine: resta nitido a ogni misura e pesa nulla. Le immagini generate dall'AI *imitano* Outfit ma le lettere non sono le stesse.
 - **Misure in uso** (27/08, alzate da Davide perché il nome si leggeva poco): barra del sito **21**, isola del flusso **20**, sidebar admin **17**, piede **34** e riga finale **15**.
 - 📁 **I mockup per rimetterci mano stanno in `docs/mockup/`** (con il loro LEGGIMI): quello della scritta stampa i quattro numeri della fogliolina, quello dell'icona la ridisegna e la scarica in tutte le misure. In `public/` gli stessi file sono in .gitignore e possono sparire con una pulizia: le copie buone sono quelle in `docs/`.
@@ -1018,7 +1028,7 @@ Il flusso `/vendi-auto` (10 passi, vedi 5.2) c'è e salva; **manca tutto il lato
 - **Test cross-platform Android** (LambdaTest/BrowserStack): tastiere, scroll, foto, autocomplete. Mai fatto su device reale
 - **Pagine legali `/privacy` e `/termini` da rivedere insieme**: quali dati anagrafici di NoiDemoliamo inserire (ragione sociale, P.IVA, sede, email — idealmente info@noidemoliamo.it) e completare i [DA COMPLETARE]
 - **Sito vetrina** (vedi 5.8): la home è fatta; restano le pagine dei servizi, dove mettere le domande e i dati azienda. Poi il dominio noidemoliamo.it da collegare a Vercel
-- **PWA**, messaggi preimpostati admin, pagina Polizia Locale veicoli abbandonati
+- ~~PWA~~ **FATTA la base (05/10, vedi 5.9)**: il sito si installa come app. Restano le notifiche push (3.12/8.2 notifiche). Poi messaggi preimpostati admin, pagina Polizia Locale veicoli abbandonati
 - **Prossimi flussi**: asta demolitori (B), commercianti (C), acquisto NoiDemoliamo, area commercianti, fatturazione, statistiche
 
 ### 🟡 DECISIONI ANCORA APERTE

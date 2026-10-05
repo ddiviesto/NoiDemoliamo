@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La foglia nelle linguette e il tasto Installa l'app</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1100px; margin: 0 auto; padding: 18px 20px 6px; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .blocco { max-width: 1100px; margin: 14px auto 30px; padding: 0 20px; }
+  h3 { font-size: 14px; font-weight: 700; margin: 18px 0 8px; color: #0F1B33; }
+
+  /* la striscia delle linguette di Chrome */
+  .chrome { background: #DEE1E6; border-radius: 10px 10px 0 0; padding: 8px 10px 0; display: flex; gap: 2px; align-items: flex-end; }
+  .tab { display: flex; align-items: center; gap: 8px; background: #F2F3F5; border-radius: 8px 8px 0 0; padding: 8px 12px; font-size: 12px; color: #3C4043; width: 200px; white-space: nowrap; overflow: hidden; }
+  .tab.attiva { background: #fff; }
+  .tab .x { margin-left: auto; color: #5F6368; }
+  .tab i { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .barraurl { background: #fff; padding: 8px 12px; border-radius: 0 0 10px 10px; font-size: 12px; color: #5F6368; display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .barraurl span { flex: 1; background: #F1F3F4; border-radius: 999px; padding: 6px 12px; }
+  .gm { font-weight: 900; font-size: 14px; color: #EA4335; font-family: Arial, sans-serif; }
+  .zoom { display: flex; gap: 22px; align-items: flex-end; margin-top: 10px; }
+  .zoom .p { text-align: center; } .zoom .p small { display: block; font-size: 11px; color: #7C8AA5; margin-top: 6px; font-weight: 600; }
+  .quad { display: inline-flex; align-items: center; justify-content: center; }
+
+  /* il tasto e le schermate */
+  .sezione-home { background: linear-gradient(135deg,#1d4ed8,#2563eb); color: #fff; border-radius: 22px; padding: 26px 30px; display: flex; align-items: center; gap: 26px; box-shadow: 0 10px 30px rgba(37,99,235,.25); }
+  .sezione-home .ic { width: 72px; height: 72px; border-radius: 18px; flex-shrink: 0; background: #F5F3FE; display: flex; align-items: center; justify-content: center; }
+  .sezione-home h4 { font-size: 22px; font-weight: 800; letter-spacing: -.5px; }
+  .sezione-home p { font-size: 14px; opacity: .92; margin-top: 4px; line-height: 1.5; }
+  .btn-bianco { background: #fff; color: #1D4ED8; border-radius: 999px; padding: 13px 24px; font-size: 14px; font-weight: 700; white-space: nowrap; box-shadow: 0 6px 18px rgba(0,0,0,.15); display: inline-flex; align-items: center; gap: 8px; }
+  .btn-blu { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border-radius: 999px; padding: 13px 24px; font-size: 14px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+  .tel { width: 320px; border-radius: 34px; overflow: hidden; border: 9px solid #0F172A; box-shadow: 0 18px 44px rgba(15,27,51,.28); background: #fff; }
+  .tel .testata { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; padding: 12px 14px; font-size: 13.5px; font-weight: 600; }
+  .voce { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #F1F4F8; font-size: 13.5px; font-weight: 600; color: #111827; }
+  .voce .tile { width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .voce .fr { margin-left: auto; color: #9CA3AF; }
+  .eti { font-size: 10px; font-weight: 700; letter-spacing: .6px; color: #9AA7B5; padding: 14px 16px 7px; }
+  .fila { display: flex; gap: 26px; flex-wrap: wrap; align-items: flex-start; }
+  .did { text-align: center; font-size: 12.5px; color: #55637A; margin-top: 10px; font-weight: 600; max-width: 320px; line-height: 1.5; }
+  /* il foglio che sale dal basso (iPhone) */
+  .foglio { background: #fff; border-radius: 20px 20px 0 0; padding: 18px 18px 22px; box-shadow: 0 -10px 30px rgba(15,27,51,.18); }
+  .foglio h5 { font-size: 16px; font-weight: 800; letter-spacing: -.3px; }
+  .foglio p { font-size: 12.5px; color: #6B7280; margin-top: 3px; }
+  .passo { display: flex; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid #F1F4F8; font-size: 13px; color: #374151; }
+  .passo b { width: 24px; height: 24px; border-radius: 999px; background: #EFF6FF; border: 1.5px solid #93C5FD; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; }
+  .passo .k { background: #F1F3F6; border-radius: 6px; padding: 2px 7px; font-weight: 600; color: #111827; }
+  .velo { background: rgba(15,23,42,.45); height: 230px; }
+  .dialogo { background: #fff; border-radius: 12px; padding: 14px; margin: 40px 14px 0; box-shadow: 0 10px 30px rgba(0,0,0,.3); font-size: 13px; }
+  .dialogo b { display: block; font-size: 14px; margin-bottom: 4px; }
+  .dialogo .az { display: flex; justify-content: flex-end; gap: 14px; margin-top: 14px; font-weight: 700; color: #1A73E8; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>LA FOGLIA NELLE LINGUETTE E IL TASTO &ldquo;INSTALLA L&rsquo;APP&rdquo;</b> &middot; due cose: solo nelle linguette del browser l&rsquo;icona diventa la fogliolina (come la M di Gmail), tutto il resto tiene l&rsquo;icona nuova; e un tasto che mette NoiDemoliamo nella home del telefono o sul PC, sul sito e nelle impostazioni del cliente.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">1 &middot; La foglia nelle linguette</span>
+  <span onclick="vista('b',this)">2 &middot; Il tasto &ldquo;Installa l&rsquo;app&rdquo;</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  const C = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Zm112-16q29 17 59.5 24.5T450-160q46 0 91-18.5t86-59.5q18-18 36.5-50.5t32-85Q709-426 716-500.5t2-177.5q-49-2-110.5-1.5T485-670q-61 9-116 29t-90 55q-45 45-62 89t-17 85q0 59 22.5 103.5T262-246q42-80 111-153.5T534-520q-72 63-125.5 142.5T328-192Z'
+  const P = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Z'
+  // le quattro foglie per la linguetta, disegnate a una misura S
+  const FOGLIE = {
+    a: { nome: 'A · Foglia sola', spiega: 'solo la fogliolina del marchio, contorno verde e dentro bianco, senza quadratino', d: (S) => `<svg width="${S}" height="${S}" viewBox="0 -960 960 960"><path d="${P}" fill="#fff"/><path d="${C}" fill="#16A34A"/></svg>` },
+    b: { nome: 'B · Foglia verde piena', spiega: 'la stessa foglia ma tutta verde, più leggibile da piccola (la venatura sparisce)', d: (S) => `<svg width="${S}" height="${S}" viewBox="0 -960 960 960"><path d="${P}" fill="#16A34A"/></svg>` },
+    c: { nome: 'C · Foglia sul quadratino lilla', spiega: 'la foglia sul lilla dell’icona, angoli tondi: si riconosce come la stessa cosa dell’icona', d: (S) => `<svg width="${S}" height="${S}" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#EDE9FE"/><g transform="translate(14 14) scale(0.075)"><g transform="translate(0 960)"><path d="${P}" fill="#fff"/><path d="${C}" fill="#16A34A"/></g></g></svg>` },
+    d: { nome: 'D · Foglia sul quadratino blu', spiega: 'la foglia sul blu del sito, dentro bianco: contrasto massimo nella striscia grigia delle linguette', d: (S) => `<svg width="${S}" height="${S}" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#2563EB"/><g transform="translate(14 14) scale(0.075)"><g transform="translate(0 960)"><path d="${P}" fill="#fff"/><path d="${C}" fill="#fff"/></g></g></svg>` },
+  }
+  const striscia = (k) => `<div class="chrome">
+      <div class="tab"><i><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5F6368" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></i>Informativa privacy — NoiDemoliamo<span class="x">✕</span></div>
+      <div class="tab"><i><span class="gm">M</span></i>Lettera di intenti Piazza Argentina<span class="x">✕</span></div>
+      <div class="tab attiva"><i>${FOGLIE[k].d(16)}</i>NoiDemoliamo — Demolizione auto<span class="x">✕</span></div>
+      <div class="tab" style="width:34px;justify-content:center">+</div>
+    </div><div class="barraurl">← → ⟳<span>noidemoliamo.it</span></div>`
+  let A = '<div class="spiega">Le linguette di Chrome mostrano l&rsquo;icona a <b>16 pixel</b>: la scritta non si legge, la foglia sì. Quattro modi; sotto ogni striscia la foglia ingrandita per capire cosa c&rsquo;&egrave;. <b>Vale solo per la linguetta</b> (e la barra dei preferiti): icona dell&rsquo;app, home del telefono, login e chat tengono l&rsquo;icona nuova.</div>'
+  for (const k of Object.keys(FOGLIE)) {
+    A += `<div class="blocco"><h3>${FOGLIE[k].nome}</h3><div style="font-size:13px;color:#4C4A70;margin-bottom:10px">${FOGLIE[k].spiega}</div>${striscia(k)}
+      <div class="zoom"><div class="p">${FOGLIE[k].d(16)}<small>16 (vera)</small></div><div class="p">${FOGLIE[k].d(32)}<small>32</small></div><div class="p">${FOGLIE[k].d(64)}<small>64</small></div></div></div>`
+  }
+
+  // 2 · il tasto Installa l'app
+  const ICONA = `<svg width="46" height="46" viewBox="0 0 100 100"><rect width="100" height="100" rx="22" fill="#F5F3FE"/><text x="50" y="47" text-anchor="middle" font-family="Outfit" font-weight="500" font-size="19" fill="#46536B" letter-spacing="-0.6">Noi</text><text x="50" y="68" text-anchor="middle" font-family="Outfit" font-weight="800" font-size="19" fill="#0F1B33" letter-spacing="-0.6">Demoliamo</text><g transform="translate(55 25) scale(0.012)"><g transform="translate(0 960)"><path d="${P}" fill="#fff"/><path d="${C}" fill="#16A34A"/></g></g></svg>`
+  const SCARICA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+  const CONDIVIDI = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>'
+  const B = `<div class="spiega"><b>Cos&rsquo;&egrave; davvero</b>: non c&rsquo;&egrave; un&rsquo;app negli store, &egrave; il sito che si <b>installa</b> come app (si chiama &ldquo;web app&rdquo;): icona nella home, si apre a tutto schermo senza la barra del browser, stessi accessi. Serve aggiungere al sito un &ldquo;manifesto&rdquo; e un piccolo file di servizio: lo faccio io. Il tasto si comporta in modo diverso a seconda di dove sei, e questo il mockup lo mostra.</div>
+    <div class="blocco"><h3>Dove sta il tasto · 1: sul sito, una striscia blu prima del piede</h3>
+      <div class="sezione-home"><span class="ic">${ICONA}</span><div style="flex:1"><h4>Porta NoiDemoliamo nella tua home</h4><p>Installa l&rsquo;app sul telefono o sul computer: segui la pratica, carica i documenti e ricevi gli aggiornamenti senza aprire il browser. Gratis, senza store.</p></div><span class="btn-bianco">${SCARICA} Installa l&rsquo;app</span></div>
+    </div>
+    <div class="blocco"><h3>Dove sta il tasto · 2: nelle impostazioni del cliente, sotto &ldquo;Altro&rdquo;</h3>
+      <div class="fila"><div><div class="tel"><div class="testata">Impostazioni</div>
+        <div class="eti">ALTRO</div>
+        <div class="voce"><span class="tile" style="background:#F5F3FE">${ICONA.replace('width="46" height="46"', 'width="24" height="24"')}</span>Installa l&rsquo;app sul telefono<span class="fr">›</span></div>
+        <div class="voce"><span class="tile" style="background:#DCF3E4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" stroke-width="1.8"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>Assistenza WhatsApp<span class="fr">›</span></div>
+        <div class="voce"><span class="tile" style="background:#EFF6FF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>Privacy<span class="fr">›</span></div>
+        <div class="voce" style="border:none"><span class="tile" style="background:#EFF6FF"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg></span>Termini di servizio<span class="fr">›</span></div>
+        <div style="height:30px"></div></div><div class="did">Nelle impostazioni: prima voce di &ldquo;Altro&rdquo;. Quando l&rsquo;app &egrave; gi&agrave; installata la voce dice &ldquo;App installata&rdquo; con la spunta e non fa niente.</div></div>
+      </div></div>
+    <div class="blocco"><h3>Cosa succede quando lo premi</h3>
+      <div class="fila">
+        <div><div class="tel"><div class="testata">Android e PC (Chrome, Edge)</div><div class="velo"><div class="dialogo"><b>Installare NoiDemoliamo?</b>noidemoliamo.it<div class="az"><span style="color:#5F6368">Annulla</span><span>Installa</span></div></div></div></div><div class="did">Su Android e sul PC il browser mostra la sua finestra: un tocco su &ldquo;Installa&rdquo; e l&rsquo;icona compare nella home o sul desktop.</div></div>
+        <div><div class="tel"><div class="testata">iPhone (Safari)</div><div class="velo" style="height:120px"></div><div class="foglio"><h5>Aggiungi NoiDemoliamo alla home</h5><p>Su iPhone si fa in tre tocchi, te li mostriamo:</p>
+          <div class="passo"><b>1</b>Tocca <span class="k">${CONDIVIDI} Condividi</span> in basso in Safari</div>
+          <div class="passo"><b>2</b>Scegli <span class="k">Aggiungi alla schermata Home</span></div>
+          <div class="passo" style="border:none"><b>3</b>Tocca <span class="k">Aggiungi</span> in alto a destra</div>
+          <span class="btn-blu" style="width:100%;justify-content:center;margin-top:12px">Ho capito</span></div></div><div class="did">Su iPhone Apple non permette al sito di installarsi da solo: il tasto apre questo foglio con i tre passi. Se il cliente &egrave; su Chrome per iPhone, gli diciamo di aprire il link in Safari.</div></div>
+        <div><div class="tel"><div class="testata">Gi&agrave; installata</div><div style="padding:16px"><div class="voce" style="border:1.5px solid #B7E4C7;border-radius:12px;background:#DCF3E4;color:#1F7A43"><span class="tile" style="background:#fff"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg></span>App installata</div><p style="font-size:12.5px;color:#6B7280;margin-top:10px;line-height:1.5">Se apri il sito dall&rsquo;app, il tasto non compare pi&ugrave;: non c&rsquo;&egrave; niente da installare.</p></div></div><div class="did">Dentro l&rsquo;app installata il tasto sparisce.</div></div>
+      </div></div>`
+
+  const V = { a: A, b: B }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}">${V[k]}</div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>

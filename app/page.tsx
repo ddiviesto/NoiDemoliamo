@@ -18,6 +18,7 @@ import SitoBarra from './components/SitoBarra'
 import SitoPiede from './components/SitoPiede'
 import { Spunta } from './components/SitoPezzi'
 import ScenaHome from './components/ScenaHome'
+import { SezioneInstalla } from './components/InstallaApp'
 
 export const metadata: Metadata = {
   title: 'NoiDemoliamo — Demolizione auto gratuita in tutta Italia',
@@ -272,6 +273,9 @@ export default function Home() {
         </section>
 
       </div>
+
+      {/* ⭐ 05/10 (mockup approvato): la striscia "Installa l'app" prima del piede */}
+      <SezioneInstalla />
 
       <SitoPiede />
       <AiutoWhatsApp />
