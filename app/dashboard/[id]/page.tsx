@@ -10,6 +10,8 @@ import TabRitiro from './TabRitiro'
 import TabStato from './TabStato'
 import TabChat from './TabChat'
 import AiutoWhatsApp from '../../components/AiutoWhatsApp'
+import IsolaSito, { PillolaIsola } from '../../components/IsolaSito'
+import { NOMI_CASISTICHE } from '@/lib/statiValutazione'
 
 export interface Pratica {
   id: string
@@ -360,11 +362,38 @@ export default function DettaglioPraticaCliente() {
   return (
     // ⭐ 28/07 (mockup approvato, proposta 2): sul TELEFONO l'app è a TUTTO
     // SCHERMO (bianco fino ai bordi, header blu in cima); su PC card centrata
-    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
-      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden relative min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
+    // ⭐ 05/10 (mockup A "linguette sopra, riepilogo a sinistra"): su PC la
+    // pagina entra nel mondo del sito come la home dell'area: fondo lilla,
+    // isola, riga alta con targa e modello in grande, due colonne
+    <main className="flusso-scena min-h-screen flex justify-center sm:p-7 sm:pt-8 bg-white">
+      <div className="w-full sm:max-w-[1000px] bg-white sm:bg-transparent overflow-hidden sm:overflow-visible relative min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
 
-        {/* HEADER BLU (stile banner /inizia) */}
-        <div className="px-4 py-3 flex items-center gap-3 text-white sticky top-0 z-30" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
+        <IsolaSito className="mb-7" destra={<><PillolaIsola onClick={() => router.push('/dashboard')}>Le tue pratiche</PillolaIsola><PillolaIsola onClick={async () => { await supabase.auth.signOut(); router.push('/') }}>Esci</PillolaIsola></>} />
+
+        {/* RIGA ALTA — solo PC: freccia tonda, targa e modello, stato */}
+        <div className="hidden sm:flex items-center gap-4 mb-5">
+          <button
+            onClick={() => router.push('/dashboard')}
+            aria-label="Torna alle pratiche"
+            className="flex items-center justify-center flex-shrink-0 transition-all hover:bg-white active:scale-95"
+            style={{ width: 44, height: 44, borderRadius: 999, background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(226,232,245,0.9)', boxShadow: '0 6px 16px rgba(15,27,51,0.07)', cursor: 'pointer' }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" /></svg>
+          </button>
+          <div className="flex-1 min-w-0">
+            <h1 className="flusso-titolo text-[30px] font-extrabold text-[#0F172A] tracking-[-0.9px] leading-tight truncate">
+              {pratica.targa || 'Targa mancante'}{' '}
+              <span className="parola" style={{ color: '#1D4ED8' }}>{[pratica.marca, pratica.modello].filter(Boolean).join(' ') || 'Veicolo'}</span>
+            </h1>
+            <div className="text-[14px] text-gray-700 mt-1 truncate">
+              {[pratica.tipo_mezzo ? pratica.tipo_mezzo.charAt(0).toUpperCase() + pratica.tipo_mezzo.slice(1) : null, pratica.indirizzo_ritiro, `richiesta del ${new Date(pratica.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}`].filter(Boolean).join(' · ')}
+            </div>
+          </div>
+          <span className="flex-shrink-0 text-[11px] font-bold px-3 py-1.5 rounded-full" style={{ background: badge.bg, color: badge.text }}>{badge.label}</span>
+        </div>
+
+        {/* HEADER BLU (stile banner /inizia) — solo telefono */}
+        <div className="sm:hidden px-4 py-3 flex items-center gap-3 text-white sticky top-0 z-30" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
           {/* ⭐ 29/07 (stessa quadra di /inizia): TONDO traslucido con la sola
               freccia sottile al posto della pillastrella "← Pratiche" */}
           <button
@@ -387,7 +416,7 @@ export default function DettaglioPraticaCliente() {
           </span>
         </div>
 
-        <div className="p-4 flex flex-col gap-3 spazio-linguette">
+        <div className="p-4 sm:p-0 flex flex-col gap-3 spazio-linguette">
 
           {/* BANNER STATO DINAMICO — ⭐ 28/07 sera: la versione `tenue` è
               rosa di famiglia con testo rosso scuro (via il rosso pieno) */}
@@ -424,6 +453,24 @@ export default function DettaglioPraticaCliente() {
             </button>
           )}
 
+          {/* ⭐ 05/10: su PC due colonne. A sinistra il riepilogo della
+              pratica, sempre sott'occhio; a destra le linguette e il contenuto */}
+          <div className="sm:flex sm:gap-6 sm:items-start sm:mt-2">
+          <div className="hidden sm:flex sm:flex-col sm:gap-3.5" style={{ width: 290, flexShrink: 0 }}>
+            <PannelloRiepilogo titolo="La pratica" righe={[
+              { k: 'Casistica', v: pratica.casistica ? (NOMI_CASISTICHE[pratica.casistica] || pratica.casistica) : '—' },
+              { k: 'Consegna', v: pratica.delegato_nome ? `Delegata a ${pratica.delegato_nome}` : 'Io stesso' },
+              { k: 'Libretto', v: pratica.libretto === 'si' ? 'Sì, originale' : pratica.libretto === 'denuncia' ? 'Denuncia di smarrimento' : pratica.libretto === 'no' ? 'Non ce l\'ho' : '—' },
+              { k: 'Certificato di proprietà', v: pratica.certificato_proprieta === 'cartaceo' ? 'Cartaceo' : pratica.certificato_proprieta === 'digitale' ? 'Digitale' : pratica.certificato_proprieta === 'smarrito' ? 'Smarrito, con denuncia' : pratica.certificato_proprieta === 'nessuno' ? 'Da verificare' : '—' },
+              { k: 'Carro attrezzi', v: pratica.spazio_carro_attrezzi === 'libero' ? 'Accesso libero' : pratica.spazio_carro_attrezzi === 'stretto' ? 'Spazio stretto' : pratica.spazio_carro_attrezzi === 'no' ? 'Non passa' : '—' },
+            ]} />
+            <PannelloRiepilogo titolo="Il ritiro" righe={[
+              { k: 'Dove', v: pratica.indirizzo_ritiro || '—', lungo: true },
+              { k: 'Quando', v: pratica.data_ritiro_prevista ? new Date(pratica.data_ritiro_prevista).toLocaleString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'Da fissare' },
+            ]} />
+          </div>
+          <div className="sm:flex-1 sm:min-w-0 flex flex-col gap-3">
+
           {/* LE QUATTRO LINGUETTE — ⭐ 24/08 (variante C approvata): sul
               telefono scendono in fondo allo schermo (barra fissa, sotto il
               pollice), su PC restano qui a pillole. Veste in globals.css */}
@@ -449,6 +496,8 @@ export default function DettaglioPraticaCliente() {
             />
           )}
 
+          </div>
+          </div>
         </div>
       </div>
 
@@ -456,6 +505,24 @@ export default function DettaglioPraticaCliente() {
           — lì si parla già con NoiDemoliamo, e copriva il tasto d'invio */}
       {tab !== 'chat' && <AiutoWhatsApp alzato />}
     </main>
+  )
+}
+
+// Il riquadro bianco di riepilogo della colonna di sinistra (solo PC)
+function PannelloRiepilogo({ titolo, righe }: { titolo: string; righe: { k: string; v: string; lungo?: boolean }[] }) {
+  return (
+    <div style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '14px 16px', boxShadow: '0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)' }}>
+      <div className="flex items-center gap-2 mb-2" style={{ fontSize: 11.5, fontWeight: 700, color: '#0F1B33', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2 }} />
+        {titolo}
+      </div>
+      {righe.map((r, i) => (
+        <div key={r.k} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, fontSize: 13, padding: '7px 0', borderBottom: i === righe.length - 1 ? 'none' : '1px solid #F5F7FA' }}>
+          <span style={{ color: '#6B7280', whiteSpace: 'nowrap', flexShrink: 0 }}>{r.k}</span>
+          <span style={{ color: '#111827', fontWeight: 600, textAlign: 'right', minWidth: 0, overflow: r.lungo ? 'visible' : 'hidden', textOverflow: 'ellipsis', whiteSpace: r.lungo ? 'normal' : 'nowrap' }}>{r.v}</span>
+        </div>
+      ))}
+    </div>
   )
 }
 

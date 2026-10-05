@@ -24,3 +24,4 @@ Per guardarne uno: copialo in `public/` e aprilo su `localhost:3000/nome.html`.
 | `valutazioni-in-admin.html` | La **lista Valutazioni nel CRM**: sidebar, flusso a pillole, righe e tendina con la scheda "Risposta al cliente" (A, scelta il 18/09), la variante coi bottoni sulla coda (B) e com'è dopo la risposta (C) |
 | `proposta-nell-area-personale.html` | La **card della valutazione nell'area del cliente** nei suoi cinque momenti (in valutazione, proposta gratuita, proposta con la cifra, accettata, rifiutata). Scelta la **A** (tutto nella card) il 03/10 |
 | `area-personale-su-pc.html` | L'**area del cliente su PC**: fondo lilla, isola, titolo grande e tre impaginazioni delle pratiche (righe larghe, due colonne, tessere). Scelta la **A** il 05/10 |
+| `pratica-e-accesso-su-pc.html` | La **pagina della pratica su PC** (A: linguette sopra e riepilogo a sinistra, scelta il 05/10; B: menu verticale) e l'**accesso** sul fondo lilla con l'isola |

@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>La pagina della pratica su PC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1120px; margin: 0 auto; padding: 18px 20px 0; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .schermo { max-width: 1240px; margin: 14px auto 40px; border-radius: 14px; overflow: hidden; box-shadow: 0 16px 44px rgba(15,27,51,.18); border: 1px solid #D8DEE9; }
+  .barra-url { background: #E8EDF5; padding: 8px 14px; display: flex; align-items: center; gap: 9px; }
+  .barra-url i { width: 9px; height: 9px; border-radius: 999px; background: #C6CFDC; display: block; }
+  .barra-url .url { flex: 1; background: #fff; border: 1px solid #D8E0EC; border-radius: 999px; padding: 4px 12px; font-size: 11.5px; color: #5B6779; }
+  .scena { min-height: 640px; padding: 22px 28px 50px;
+    background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%),
+                radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%),
+                radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222,214,251,0) 66%), #F5F3FE; }
+  .isola { max-width: 1000px; margin: 0 auto 26px; display: flex; align-items: center; justify-content: space-between;
+    background: rgba(255,255,255,.72); backdrop-filter: blur(16px); border: 1px solid rgba(255,255,255,.9);
+    box-shadow: 0 10px 30px rgba(15,27,51,.10); border-radius: 999px; padding: 8px 8px 8px 20px; }
+  .marchio { font-family: 'Outfit', sans-serif; font-size: 20px; letter-spacing: -.035em; }
+  .marchio .noi { font-weight: 500; color: #46536B; } .marchio .dem { font-weight: 800; color: #0F1B33; margin-left: .15em; }
+  .isola .dx { display: flex; align-items: center; gap: 10px; }
+  .isola .ciao { font-size: 13px; font-weight: 600; color: #3E4C63; }
+  .isola .ing { width: 36px; height: 36px; border-radius: 999px; background: #fff; border: 1px solid #E2E8F5; }
+  .isola .esci { font-size: 12.5px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 8px 14px; }
+  .contenuto { max-width: 1000px; margin: 0 auto; }
+  .riga-alta { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
+  .indietro { width: 44px; height: 44px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid rgba(226,232,245,.9); box-shadow: 0 6px 16px rgba(15,27,51,.07); display: flex; align-items: center; justify-content: center; }
+  .titolone { font-size: 30px; font-weight: 800; letter-spacing: -.9px; line-height: 1.1; }
+  .titolone span { background: linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sottot { font-size: 14px; color: #4B5A72; margin-top: 4px; }
+  .pill { font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 999px; background: #EFF6FF; color: #1D4ED8; white-space: nowrap; margin-left: auto; }
+  .due { display: flex; gap: 24px; align-items: flex-start; }
+  .sx { width: 300px; flex-shrink: 0; } .dx2 { flex: 1; min-width: 0; }
+  .pannello { background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(16,24,40,.06), 0 5px 14px rgba(16,24,40,.07); }
+  .pannello + .pannello { margin-top: 14px; }
+  .pannello h3 { font-size: 12px; font-weight: 700; color: #0F1B33; display: flex; align-items: center; gap: 7px; margin-bottom: 10px; text-transform: uppercase; letter-spacing: .5px; }
+  .pannello h3::before { content: ''; width: 3px; height: 13px; background: #2563eb; border-radius: 2px; }
+  .r { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; padding: 7px 0; border-bottom: 1px solid #F5F7FA; color: #6B7280; }
+  .r b { color: #111827; font-weight: 600; text-align: right; } .r:last-child { border-bottom: none; }
+  .banner { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: center; box-shadow: 0 6px 18px rgba(37,99,235,.25); }
+  .banner .ic { width: 44px; height: 44px; border-radius: 12px; background: rgba(255,255,255,.2); flex-shrink: 0; }
+  .banner b { display: block; font-size: 14px; } .banner small { font-size: 12px; opacity: .9; }
+  /* le linguette */
+  .linguette { display: flex; gap: 8px; margin-bottom: 14px; }
+  .lin { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 600; color: #4B5563; background: rgba(255,255,255,.7); border: 1.5px solid #E5E7EB; border-radius: 999px; padding: 9px 16px; }
+  .lin.qui { background: #EFF6FF; border-color: #2563eb; color: #1D4ED8; box-shadow: 0 0 0 3px rgba(37,99,235,.12); }
+  .lin .n { background: #E24B4A; color: #fff; font-size: 10px; border-radius: 999px; padding: 1px 6px; }
+  /* menu verticale (variante B) */
+  .menu { display: flex; flex-direction: column; gap: 6px; }
+  .menu .lin { border-radius: 12px; padding: 11px 14px; }
+  /* contenuto documenti */
+  .doc { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 1.5px solid #E5E7EB; border-radius: 14px; background: #fff; }
+  .doc + .doc { margin-top: 8px; }
+  .doc .q { width: 40px; height: 40px; border-radius: 11px; background: #DBEAFE; flex-shrink: 0; }
+  .doc .t { font-size: 13.5px; font-weight: 600; color: #111827; } .doc .s { font-size: 12px; color: #6B7280; margin-top: 2px; }
+  .doc .st { margin-left: auto; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+  .st.da { background: #EFF6FF; color: #1D4ED8; } .st.ok { background: #DCF3E4; color: #1F7A43; } .st.no { background: #F3D9D9; color: #A94444; }
+  .btn { display: inline-block; background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border-radius: 999px; padding: 11px 24px; font-size: 13.5px; font-weight: 600; box-shadow: 0 6px 18px rgba(37,99,235,.35); margin-top: 14px; }
+  /* login */
+  .login { max-width: 440px; margin: 40px auto 0; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 22px; padding: 28px; box-shadow: 0 10px 30px rgba(15,27,51,.10); }
+  .login .ic { width: 58px; height: 58px; border-radius: 16px; background: linear-gradient(135deg,#2563eb,#4f46e5); margin-bottom: 14px; }
+  .login h2 { font-size: 24px; font-weight: 800; letter-spacing: -.6px; }
+  .login p { font-size: 13.5px; color: #6B7280; margin-top: 4px; }
+  .campo { margin-top: 14px; } .campo label { display: block; font-size: 12.5px; font-weight: 700; color: #4A5A75; margin-bottom: 6px; padding-left: 16px; }
+  .campo .pil { background: #fff; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 13px 20px; font-size: 15px; color: #9AA7BC; }
+  .login .btn { width: 100%; text-align: center; margin-top: 20px; padding: 14px 0; }
+  .login .link { text-align: center; font-size: 13px; color: #1D4ED8; font-weight: 600; margin-top: 14px; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>LE PAGINE RESTANTI SU PC</b> &middot; stesso impianto della home dell&rsquo;area (mockup A approvato): fondo lilla, isola, titolo grande. Qui la <b>pagina della singola pratica</b> (due modi) e in fondo l&rsquo;<b>accesso</b>. Sul telefono non cambia niente.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">A &middot; linguette sopra, riepilogo a sinistra</span>
+  <span onclick="vista('b',this)">B &middot; menu verticale a sinistra</span>
+  <span onclick="vista('c',this)">C &middot; l&rsquo;accesso</span>
+</div>
+
+<div id="viste"></div>
+
+<script>
+  const ING = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="margin:9px"><circle cx="12" cy="12" r="3"/></svg>'
+  const FR = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
+  const isola = () => `<div class="isola"><span class="marchio"><span class="noi">Noi</span><span class="dem">Demoliamo</span></span><span class="dx"><span class="ciao">Ciao, Mario</span><span class="ing">${ING}</span><span class="esci">Esci</span></span></div>`
+  const schermo = (url, dentro) => `<div class="schermo"><div class="barra-url"><i></i><i></i><i></i><span class="url">${url}</span></div><div class="scena">${isola()}<div class="contenuto">${dentro}</div></div></div>`
+
+  const testa = `<div class="riga-alta"><span class="indietro">${FR}</span><div><div class="titolone">CK456ZY <span>Fiat Panda</span></div><div class="sottot">Autovettura &middot; Via Roma 10, Milano &middot; richiesta del 05 ott 2026</div></div><span class="pill">In attesa documenti</span></div>`
+  const banner = `<div class="banner"><span class="ic"></span><div><b>Carica i documenti richiesti</b><small>Basta una foto fatta col telefono. Ne mancano 3.</small></div></div>`
+  const riepilogo = `<div class="pannello"><h3>La pratica</h3><div class="r">Casistica <b>Standard</b></div><div class="r">Targhe <b>Presenti</b></div><div class="r">Fermo <b>No</b></div><div class="r">Consegna <b>Io stesso</b></div><div class="r">Libretto <b>S&igrave;, originale</b></div></div>
+    <div class="pannello"><h3>Da portare al ritiro</h3><div class="r">Libretto <b>originale</b></div><div class="r">Certificato di propriet&agrave; <b>cartaceo</b></div><div class="r">Documento d&rsquo;identit&agrave; <b>originale</b></div></div>`
+  const documenti = `<div class="doc"><span class="q"></span><div><div class="t">Carta d&rsquo;identit&agrave;</div><div class="s">Fronte e retro</div></div><span class="st da">Da caricare</span></div>
+    <div class="doc"><span class="q"></span><div><div class="t">Codice fiscale</div><div class="s">Fronte e retro</div></div><span class="st da">Da caricare</span></div>
+    <div class="doc"><span class="q"></span><div><div class="t">Libretto di circolazione</div><div class="s">Tutte le pagine</div></div><span class="st ok">Caricato</span></div>
+    <div class="doc"><span class="q"></span><div><div class="t">Dichiarazione stato veicolo</div><div class="s">Modulo da firmare: lo prepariamo noi</div></div><span class="st no">Da rifare</span></div>
+    <span class="btn">Carica il prossimo documento</span>`
+  const lin = (vert) => `<div class="${vert ? 'menu' : 'linguette'}"><span class="lin qui">Documenti <span class="n">3</span></span><span class="lin">Ritiro</span><span class="lin">Stato</span><span class="lin">Chat <span class="n">1</span></span></div>`
+
+  const A = schermo('noidemoliamo.it/dashboard/…', `${testa}${banner}<div class="due" style="margin-top:18px"><div class="sx">${riepilogo}</div><div class="dx2">${lin(false)}${documenti}</div></div>`)
+  const B = schermo('noidemoliamo.it/dashboard/…', `${testa}<div class="due" style="margin-top:4px"><div class="sx">${lin(true)}<div style="height:14px"></div>${riepilogo}</div><div class="dx2">${banner}<div style="height:14px"></div>${documenti}</div></div>`)
+  const C = schermo('noidemoliamo.it/login', `<div class="login"><div class="ic"></div><h2>Bentornato</h2><p>Accedi per seguire la tua pratica.</p>
+    <div class="campo"><label>Email</label><div class="pil">mario@email.it</div></div><div class="campo"><label>Password</label><div class="pil">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;</div></div>
+    <span class="btn">Accedi</span><div class="link">Password dimenticata?</div></div>`)
+
+  const V = {
+    a: { html: A, spiega: 'Sopra, la riga con la freccia tonda, <b>targa e modello in grande</b>, la pillola dello stato e il banner blu con la cosa da fare. Sotto, due colonne: a sinistra il <b>riepilogo della pratica</b> (casistica, targhe, fermo, consegna) e &ldquo;Da portare al ritiro&rdquo;, sempre sott&rsquo;occhio; a destra le <b>quattro linguette a pillola</b> (come oggi) e il contenuto. Documenti, Ritiro, Stato e Chat restano gli stessi componenti.' },
+    b: { html: B, spiega: 'Come la A, ma le quattro voci diventano un <b>menu verticale</b> nella colonna di sinistra, sopra il riepilogo, e il banner con la cosa da fare sta in cima al contenuto. Pi&ugrave; da &ldquo;gestionale&rdquo;; le linguette restano in alto solo sul telefono.' },
+    c: { html: C, spiega: 'L&rsquo;<b>accesso</b> (e con lui recupero e nuova password): la scatola bianca resta, perch&eacute; qui &egrave; giusto che il modulo sia piccolo e centrato, ma sta sul fondo lilla con l&rsquo;isola in cima invece che sul lavanda piatto. Campi a pillola come nei flussi.' },
+  }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}"><div class="spiega">${V[k].spiega}</div>${V[k].html}</div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>

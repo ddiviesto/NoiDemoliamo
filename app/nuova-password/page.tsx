@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
+import IsolaSito from '../components/IsolaSito'
 
 type Fase = 'verifica' | 'pronta' | 'link_non_valido'
 
@@ -99,8 +100,11 @@ export default function NuovaPassword() {
   const lunghezzaOk = password.length >= LUNGHEZZA_MINIMA
 
   return (
-    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
-      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
+    <main className="flusso-scena min-h-screen flex justify-center sm:p-7 sm:pt-8 bg-white">
+      {/* ⭐ 05/10 (mockup C approvato): su PC la scatola resta piccola e centrata ma sta sul fondo lilla, con l'isola in cima */}
+      <div className="w-full sm:max-w-[1000px] flex flex-col items-center">
+      <IsolaSito className="w-full mb-8" destra={<a href="/" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '8px 14px' }}>Torna al sito</a>} />
+      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'center' }}>
 
         {/* BANNER SOTTILE (pagina di passaggio) */}
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
@@ -137,7 +141,7 @@ export default function NuovaPassword() {
                 </svg>
                 <span>Questo link non è più valido (è scaduto o è già stato usato). Chiedine uno nuovo: ci vuole un attimo.</span>
               </div>
-              <Link href="/recupera-password" className="btn-pagina text-center">
+              <Link href="/recupera-password" className="btn-pagina sm:!w-full text-center">
                 Richiedi un nuovo link
               </Link>
             </>
@@ -194,7 +198,7 @@ export default function NuovaPassword() {
                 </div>
               )}
 
-              <button onClick={handleSalva} disabled={salvando} className="btn-pagina">
+              <button onClick={handleSalva} disabled={salvando} className="btn-pagina sm:!w-full">
                 {salvando ? 'Salvataggio…' : 'Salva ed entra'}
               </button>
             </>
@@ -204,6 +208,7 @@ export default function NuovaPassword() {
       </div>
 
       <AiutoWhatsApp />
+      </div>
     </main>
   )
 }

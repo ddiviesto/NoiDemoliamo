@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
+import IsolaSito from '../components/IsolaSito'
 
 // Campo a pillola condiviso con la pagina di login
 const CAMPO_PILLOLA = 'group flex items-center gap-2.5 rounded-full px-[18px] py-[13px] bg-[#F9FAFB] border-[1.5px] border-[#E5E7EB] transition-[border-color,background-color,box-shadow] duration-150 focus-within:bg-white focus-within:border-[#2563eb] focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.12)]'
@@ -68,8 +69,11 @@ export default function RecuperaPassword() {
   const formatoConto = `${Math.floor(secondi / 60)}:${String(secondi % 60).padStart(2, '0')}`
 
   return (
-    <main className="min-h-screen flex justify-center sm:p-4 sm:pt-6 bg-white sm:bg-[linear-gradient(135deg,#e0e7ff_0%,#ddd6fe_100%)]">
-      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'flex-start' }}>
+    <main className="flusso-scena min-h-screen flex justify-center sm:p-7 sm:pt-8 bg-white">
+      {/* ⭐ 05/10 (mockup C approvato): su PC la scatola resta piccola e centrata ma sta sul fondo lilla, con l'isola in cima */}
+      <div className="w-full sm:max-w-[1000px] flex flex-col items-center">
+      <IsolaSito className="w-full mb-8" destra={<a href="/" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '8px 14px' }}>Torna al sito</a>} />
+      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'center' }}>
 
         {/* BANNER SOTTILE (pagina di passaggio) */}
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
@@ -130,7 +134,7 @@ export default function RecuperaPassword() {
                 </div>
               )}
 
-              <button onClick={handleInvia} disabled={invioInCorso} className="btn-pagina">
+              <button onClick={handleInvia} disabled={invioInCorso} className="btn-pagina sm:!w-full">
                 {invioInCorso ? 'Invio in corso...' : 'Inviami il link'}
               </button>
             </>
@@ -165,7 +169,7 @@ export default function RecuperaPassword() {
                   Rimanda il link ({formatoConto})
                 </button>
               ) : (
-                <button onClick={handleInvia} disabled={invioInCorso} className="btn-pagina">
+                <button onClick={handleInvia} disabled={invioInCorso} className="btn-pagina sm:!w-full">
                   {invioInCorso ? 'Invio in corso...' : 'Rimanda il link'}
                 </button>
               )}
@@ -180,6 +184,7 @@ export default function RecuperaPassword() {
       </div>
 
       <AiutoWhatsApp />
+      </div>
     </main>
   )
 }
