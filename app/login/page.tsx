@@ -1,4 +1,5 @@
 'use client'
+import Marchio from '../components/Marchio'
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -69,7 +70,7 @@ export default function Login() {
                 <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
               </svg>
             </Link>
-            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
+            <Marchio misura={17} chiaro />
           </div>
           <h1 className="text-[22px] font-bold mt-4 leading-tight">Bentornato</h1>
           <p className="text-[13px] mt-1" style={{ color: '#DBEAFE' }}>Entra nella tua area personale</p>

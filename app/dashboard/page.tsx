@@ -232,11 +232,10 @@ export default function DashboardCliente() {
         <div className="sm:hidden px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
           {/* Logo vero (variante A su mockup 22/07): lo stesso di /inizia e login */}
           
-          <div className="flex-1 min-w-0">
-            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
-            <div className="text-sm font-semibold leading-tight truncate">
-              {nomeUtente ? `Ciao, ${nomeUtente}!` : 'La tua area personale'}
-            </div>
+          <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+            {/* ⭐ 05/10 (mockup C): il marchio vero al posto della scritta in maiuscolo, il titolo della pagina a destra */}
+            <Marchio misura={17} chiaro />
+            <span className="text-[13.5px] font-medium leading-tight truncate" style={{ opacity: 0.92 }}>{nomeUtente ? `Ciao, ${nomeUtente}!` : 'La tua area personale'}</span>
           </div>
           {/* Ingranaggio: apre il pannello impostazioni (Esci ora vive lì) */}
           <button

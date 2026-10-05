@@ -1,3 +1,4 @@
+import Marchio from '../components/Marchio'
 import TornaIndietro from '../components/TornaIndietro'
 
 /**
@@ -24,9 +25,10 @@ export default function Privacy() {
       <div className="w-full max-w-2xl bg-white rounded-3xl shadow-lg overflow-hidden" style={{ alignSelf: 'flex-start' }}>
         <div className="px-4 py-3 flex items-center gap-3 text-white" style={{ background: 'linear-gradient(90deg, #1d4ed8 0%, #2563eb 100%)' }}>
           <TornaIndietro />
-          <div>
-            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
-            <div className="text-sm font-semibold leading-tight">Informativa privacy</div>
+          <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+            {/* ⭐ 05/10 (mockup C): il marchio vero al posto della scritta in maiuscolo, il titolo della pagina a destra */}
+            <Marchio misura={17} chiaro />
+            <span className="text-[13.5px] font-medium leading-tight truncate" style={{ opacity: 0.92 }}>Informativa privacy</span>
           </div>
         </div>
 

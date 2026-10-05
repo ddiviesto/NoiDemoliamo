@@ -1,4 +1,5 @@
 'use client'
+import Marchio from '../components/Marchio'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
@@ -87,9 +88,10 @@ export default function RecuperaPassword() {
               <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
             </svg>
           </Link>
-          <div className="flex-1 min-w-0">
-            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
-            <div className="text-sm font-semibold leading-tight">Recupera la password</div>
+          <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+            {/* ⭐ 05/10 (mockup C): il marchio vero al posto della scritta in maiuscolo, il titolo della pagina a destra */}
+            <Marchio misura={17} chiaro />
+            <span className="text-[13.5px] font-medium leading-tight truncate" style={{ opacity: 0.92 }}>Recupera la password</span>
           </div>
         </div>
 

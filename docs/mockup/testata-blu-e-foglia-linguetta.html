@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il marchio nelle testate blu e la foglia più grande</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1100px; margin: 0 auto; padding: 18px 20px 6px; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .blocco { max-width: 1100px; margin: 14px auto 26px; padding: 0 20px; }
+  h3 { font-size: 14px; font-weight: 700; margin: 18px 0 4px; color: #0F1B33; }
+  .sotto { font-size: 13px; color: #4C4A70; margin-bottom: 10px; }
+
+  /* il marchio, identico al componente */
+  .marchio { font-family: 'Outfit', sans-serif; letter-spacing: -.035em; color: #0F1B33; white-space: nowrap; line-height: 1; display: inline-block; }
+  .marchio .noi { font-weight: 500; color: #46536B; } .marchio .dem { font-weight: 800; margin-left: .15em; }
+  .marchio.chiaro { color: #fff; } .marchio.chiaro .noi { color: #BFD3F5; }
+  .mi { position: relative; }
+  .foglia { position: absolute; left: 50%; top: -.09em; width: .6em; height: .6em; transform: translateX(calc(-50% + .07em)); pointer-events: none; }
+  .foglia svg { display: block; width: 100%; height: 100%; }
+  .occhiello { font-family: 'Outfit', sans-serif; font-weight: 700; text-transform: uppercase; letter-spacing: 1.6px; font-size: 10px; color: #BFD3F5; }
+
+  /* le testate blu */
+  .fila { display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start; }
+  .card { width: 420px; background: #fff; border-radius: 22px; overflow: hidden; box-shadow: 0 10px 30px rgba(15,27,51,.12); }
+  .testata { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  .tondo { width: 38px; height: 38px; border-radius: 999px; background: rgba(255,255,255,.18); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .tit { font-size: 14px; font-weight: 600; line-height: 1.2; }
+  .corpo { padding: 16px; font-size: 12.5px; color: #6B7280; }
+  .did { font-size: 12.5px; color: #55637A; margin-top: 8px; font-weight: 600; width: 420px; line-height: 1.5; }
+
+  /* la striscia delle linguette */
+  .chrome { background: #DEE1E6; border-radius: 10px 10px 0 0; padding: 8px 10px 0; display: flex; gap: 2px; align-items: flex-end; }
+  .tab { display: flex; align-items: center; gap: 8px; background: #F2F3F5; border-radius: 8px 8px 0 0; padding: 8px 12px; font-size: 12px; color: #3C4043; width: 210px; white-space: nowrap; overflow: hidden; }
+  .tab.attiva { background: #fff; }
+  .tab .x { margin-left: auto; color: #5F6368; }
+  .tab i { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+  .barraurl { background: #fff; padding: 8px 12px; border-radius: 0 0 10px 10px; font-size: 12px; color: #5F6368; display: flex; gap: 10px; align-items: center; }
+  .barraurl span { flex: 1; background: #F1F3F4; border-radius: 999px; padding: 6px 12px; }
+  .gm { font-weight: 900; font-size: 15px; color: #EA4335; font-family: Arial, sans-serif; line-height: 1; }
+  .zoom { display: flex; gap: 26px; align-items: flex-end; margin-top: 12px; }
+  .zoom .p { text-align: center; } .zoom .p small { display: block; font-size: 11px; color: #7C8AA5; margin-top: 6px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>DUE RIFINITURE</b> &middot; 1: nelle testate blu (privacy, termini, accesso, inviti, home del cliente sul telefono) al posto della scritta in maiuscolo spaziato ci va <b>il marchio vero</b>, con la fogliolina. 2: la foglia nella linguetta &egrave; <b>pi&ugrave; piccola della M di Gmail</b>: la ingrandiamo.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">1 &middot; Il marchio nelle testate blu</span>
+  <span onclick="vista('b',this)">2 &middot; La foglia pi&ugrave; grande</span>
+</div>
+<div id="viste"></div>
+
+<script>
+  const C = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Zm112-16q29 17 59.5 24.5T450-160q46 0 91-18.5t86-59.5q18-18 36.5-50.5t32-85Q709-426 716-500.5t2-177.5q-49-2-110.5-1.5T485-670q-61 9-116 29t-90 55q-45 45-62 89t-17 85q0 59 22.5 103.5T262-246q42-80 111-153.5T534-520q-72 63-125.5 142.5T328-192Z'
+  const P = 'M216-176q-45-45-70.5-104T120-402q0-63 24-124.5T222-642q60-60 169.5-91T675-759q26 1 48 11t39 27q17 17 27 39.5t11 48.5q2 82-4.5 151.5t-21 125.5q-14.5 56-37 99.5T684-182q-53 53-112.5 77.5T450-80q-65 0-127-25.5T216-176Z'
+  const foglia = (chiaro) => `<span class="foglia"><svg viewBox="0 -960 960 960"><path d="${P}" fill="${chiaro ? '#BFD3F5' : '#fff'}"/><path d="${C}" fill="#16A34A"/></svg></span>`
+  const marchio = (px, chiaro) => `<span class="marchio ${chiaro ? 'chiaro' : ''}" style="font-size:${px}px"><span class="noi">No<span class="mi">i${foglia(chiaro)}</span></span><span class="dem">Demoliamo</span></span>`
+  const FR = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
+
+  // 1 · le testate
+  const testata = (sopra, titolo) => `<div class="card"><div class="testata"><span class="tondo">${FR}</span><div style="flex:1;min-width:0">${sopra}<div class="tit">${titolo}</div></div></div><div class="corpo">Ultimo aggiornamento: luglio 2026<br><br><b style="color:#111827">1. Titolare del trattamento</b><br>Il titolare del trattamento dei dati &egrave; [DA COMPLETARE]&hellip;</div></div>`
+  const A = `<div class="spiega">Oggi sopra il titolo c&rsquo;&egrave; &ldquo;NOIDEMOLIAMO&rdquo; in maiuscolo spaziato (la versione &ldquo;occhiello&rdquo; del marchio): &egrave; una scritta qualsiasi, non il marchio. Tre modi di metterci il marchio vero, nella versione chiara per il blu (&ldquo;Noi&rdquo; azzurro, &ldquo;Demoliamo&rdquo; bianco, foglia col dentro azzurro). Vale per <b>tutte e sette le testate blu</b>: privacy, termini, accesso, recupero e nuova password, inviti, home del cliente sul telefono.</div>
+    <div class="blocco"><div class="fila">
+      <div>${testata('<div class="occhiello">NoiDemoliamo</div>', 'Informativa privacy')}<div class="did">Com&rsquo;&egrave; oggi: maiuscolo spaziato, senza foglia.</div></div>
+      <div>${testata(`<div style="margin-bottom:3px">${marchio(12, true)}</div>`, 'Informativa privacy')}<div class="did"><b>A</b> &middot; il marchio vero piccolo (12px) sopra il titolo, stesso posto di oggi.</div></div>
+      <div>${testata(`<div style="margin-bottom:3px">${marchio(15, true)}</div>`, 'Informativa privacy')}<div class="did"><b>B</b> &middot; il marchio pi&ugrave; grande (15px) sopra il titolo: si legge, la foglia si vede.</div></div>
+      <div><div class="card"><div class="testata"><span class="tondo">${FR}</span><div style="flex:1;min-width:0">${marchio(17, true)}</div><span class="tit" style="font-weight:500;opacity:.92">Informativa privacy</span></div><div class="corpo">Ultimo aggiornamento: luglio 2026&hellip;</div></div><div class="did"><b>C</b> &middot; il marchio al posto del titolo, e il titolo della pagina a destra, pi&ugrave; leggero. Pi&ugrave; &ldquo;barra&rdquo;, meno &ldquo;testata&rdquo;.</div></div>
+    </div></div>`
+
+  // 2 · la foglia più grande
+  const fog = (S, quota, quadr, piena) => {
+    const lato = 100 * quota, off = (100 - lato) / 2, sc = lato / 960
+    const dentro = `<g transform="translate(${off} ${off}) scale(${sc})"><g transform="translate(0 960)"><path d="${P}" fill="${piena ? '#16A34A' : '#fff'}"/><path d="${C}" fill="#16A34A"/></g></g>`
+    return `<svg width="${S}" height="${S}" viewBox="0 0 100 100">${quadr ? '<rect width="100" height="100" rx="22" fill="#EDE9FE"/>' : ''}${dentro}</svg>`
+  }
+  const FOGLIE = {
+    c1: { nome: 'C1 · Com’è oggi', spiega: 'foglia al 72% del quadratino lilla', d: (S) => fog(S, 0.72, true, false) },
+    c2: { nome: 'C2 · Foglia a filo del quadratino', spiega: 'foglia al 94%: tocca quasi i bordi del lilla, come la M tocca quelli di Gmail', d: (S) => fog(S, 0.94, true, false) },
+    c3: { nome: 'C3 · Foglia senza quadratino, a tutto spazio', spiega: 'via il lilla: la foglia usa tutti i 16 pixel, contorno verde e dentro bianco', d: (S) => fog(S, 1, false, false) },
+    c4: { nome: 'C4 · Foglia verde piena, a tutto spazio', spiega: 'come la C3 ma piena: a 16px il contorno sottile si perde, il verde pieno no', d: (S) => fog(S, 1, false, true) },
+  }
+  const striscia = (k) => `<div class="chrome">
+      <div class="tab"><i><span class="gm">M</span></i>Lettera di intenti Piazza Argentina<span class="x">✕</span></div>
+      <div class="tab attiva"><i>${FOGLIE[k].d(16)}</i>NoiDemoliamo — Demolizione auto<span class="x">✕</span></div>
+      <div class="tab"><i><span class="gm">M</span></i>Posta in arrivo (3) - Gmail<span class="x">✕</span></div>
+      <div class="tab" style="width:34px;justify-content:center">+</div>
+    </div><div class="barraurl">← → ⟳<span>noidemoliamo.it</span></div>`
+  let B = '<div class="spiega">La M di Gmail riempie quasi tutti i 16 pixel. La nostra foglia oggi ha il quadratino intorno e dentro una cornice d&rsquo;aria: risulta pi&ugrave; piccola. Quattro modi, ognuno messo <b>tra due linguette di Gmail</b> per confrontare; sotto, ingrandita.</div>'
+  for (const k of Object.keys(FOGLIE)) B += `<div class="blocco"><h3>${FOGLIE[k].nome}</h3><div class="sotto">${FOGLIE[k].spiega}</div>${striscia(k)}<div class="zoom"><div class="p"><span class="gm" style="font-size:16px">M</span>${''}<small>Gmail 16</small></div><div class="p">${FOGLIE[k].d(16)}<small>16 (vera)</small></div><div class="p">${FOGLIE[k].d(48)}<small>48</small></div></div></div>`
+
+  const V = { a: A, b: B }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}">${V[k]}</div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>

@@ -8,6 +8,7 @@
 
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
+import Marchio from '../components/Marchio'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
@@ -95,9 +96,10 @@ export default function ImpostaPassword() {
               <rect x="3" y="11" width="18" height="10" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
             </svg>
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="marchio marchio--chiaro marchio--occhiello text-[10px]">NoiDemoliamo</div>
-            <div className="text-sm font-semibold leading-tight">Imposta la tua password</div>
+          <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
+            {/* ⭐ 05/10 (mockup C): il marchio vero al posto della scritta in maiuscolo, il titolo della pagina a destra */}
+            <Marchio misura={17} chiaro />
+            <span className="text-[13.5px] font-medium leading-tight truncate" style={{ opacity: 0.92 }}>Imposta la tua password</span>
           </div>
         </div>
 
