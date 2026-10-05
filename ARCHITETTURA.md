@@ -881,7 +881,7 @@ I sobbalzi sono bug, non dettagli.
 8. **Una sola cosa per pagina** nei mini-step
 9. **Un solo box di stato per schermata**: se il banner in alto lo dice già, niente riquadro sotto che lo ripete
 10. **NO scrollIntoView automatico** sugli input (su iPhone la schermata sobbalza quando si apre la tastiera)
-11. ⭐ **Niente trattini "—" in NESSUN testo visibile all'utente** (titoli, bottoni, descrizioni, banner, avvisi): non sono professionali. Al loro posto due punti, parentesi o virgole. Unica eccezione: "—" come segnaposto di un valore vuoto
+11. ⭐ **Niente trattini "—" in NESSUN testo visibile all'utente** (titoli, bottoni, descrizioni, banner, avvisi): non sono professionali. Al loro posto due punti, parentesi o virgole; il **trattino corto "-" va bene** quando è adatto al contesto (titoli delle pagine "NoiDemoliamo - Demolizione auto gratuita", separatori, date, codici; chiarito 05/10). Unica eccezione per il lungo: "—" come segnaposto di un valore vuoto
 12. **Niente gergo tecnico o burocratico** nei testi utente (mai parole come "tab")
 13. **Rassicurare sui dati sensibili**: ogni campo telefono spiega a cosa serve
 14. **Possessivi nei label** quando serve distinguere le persone
