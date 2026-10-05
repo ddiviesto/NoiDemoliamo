@@ -35,7 +35,7 @@ export const NOMI_INTESTAZIONE: Record<string, string> = {
 }
 
 export const NOMI_CASISTICHE: Record<string, string> = {
-  persona_fisica: 'Standard',
+  persona_fisica: 'Persona fisica',
   eredi_accettato: 'Eredi (accettata)',
   eredi_rinuncia: 'Eredi (con rinuncia)',
   societa: 'Società',
