@@ -5,6 +5,7 @@ import { DatiPratica, datiPraticaIniziali, TipoMezzo, SpazioCarroAttrezzi, Intes
 import { StepTipoVeicolo } from './steps/StepTipoVeicolo'
 import { StepIdentificaVeicolo } from './steps/StepIdentificaVeicolo'
 import { StepCondizioniVeicolo } from './steps/StepCondizioniVeicolo'
+import { StepFoto } from './steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -533,10 +534,7 @@ export default function IniziaPage() {
   const [indirizzoConfermato, setIndirizzoConfermato] = useState(false)
   const [datiIndirizzoExtra, setDatiIndirizzoExtra] = useState<DatiIndirizzo | null>(null)
   const [foto, setFoto] = useState<File[]>([])
-  const [mostraSheetFoto, setMostraSheetFoto] = useState(false)
   const [loadingMessage, setLoadingMessage] = useState<string>('')
-  const fotoCameraRef = useRef<HTMLInputElement>(null)
-  const fotoGalleriaRef = useRef<HTMLInputElement>(null)
 
   // Stati di errore per ogni step (mostrati al click su Continua)
   const [erroreIndirizzo, setErroreIndirizzo] = useState(false)
@@ -787,24 +785,6 @@ export default function IniziaPage() {
       return
     }
     handleSubmit()
-  }
-
-  function handleFoto(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files) {
-      const nuove = Array.from(e.target.files)
-      setFoto(prev => [...prev, ...nuove])
-    }
-    setMostraSheetFoto(false)
-  }
-
-  function apriCamera() {
-    setMostraSheetFoto(false)
-    setTimeout(() => fotoCameraRef.current?.click(), 100)
-  }
-
-  function apriGalleria() {
-    setMostraSheetFoto(false)
-    setTimeout(() => fotoGalleriaRef.current?.click(), 100)
   }
 
   function rimuoviFoto(idx: number) {
@@ -1211,205 +1191,12 @@ export default function IniziaPage() {
         )}
 
         {curStep === 'foto' && (
-          <>
-            <p className="text-[14px] text-gray-700 leading-relaxed mb-3">Aiutano il demolitore a capire le condizioni {articoloDel(tipo, tipoAltro)} e a scegliere il mezzo di trasporto corretto.</p>
-            <div className="flex items-start gap-2 bg-blue-50/60 border-l-[3px] border-blue-500 rounded-r-md py-2.5 px-3 text-sm text-blue-800 mb-4">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              <span className="text-xs leading-relaxed">Frontale, posteriore, laterali e abitacolo. Non serve che siano perfette.</span>
-            </div>
-            <div className="flex flex-col gap-2">
-              <input ref={fotoCameraRef} type="file" accept="image/*" capture="environment" multiple onChange={handleFoto} className="hidden" />
-              <input ref={fotoGalleriaRef} type="file" accept="image/*" multiple onChange={handleFoto} className="hidden" />
-
-              <button
-                onClick={() => fotoCameraRef.current?.click()}
-                className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                    <circle cx="12" cy="13" r="4"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-sm text-gray-900">Scatta una foto</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Apre la fotocamera</div>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 flex-shrink-0">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-
-              <button
-                onClick={() => fotoGalleriaRef.current?.click()}
-                className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all"
-              >
-                <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                </div>
-                <div className="flex-1">
-                  <div className="font-semibold text-sm text-gray-900">Carica dalla galleria</div>
-                  <div className="text-xs text-gray-500 mt-0.5">Da telefono o PC</div>
-                </div>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400 flex-shrink-0">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-
-              {foto.length > 0 && (
-                <div className="mt-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-gray-700">
-                      {foto.length} {foto.length === 1 ? 'foto caricata' : 'foto caricate'}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-xs text-green-700 font-medium">
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      Pronte
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {foto.map((f, i) => (
-                      <div key={i} className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={URL.createObjectURL(f)} alt={`foto ${i + 1}`} className="w-full h-full object-cover" />
-                        {/* ✕ scura trasparente, stessa famiglia della home del cliente (XElimina) */}
-                        <button
-                          onClick={() => rimuoviFoto(i)}
-                          className="absolute top-1 right-1 w-6 h-6 rounded-full flex items-center justify-center transition-opacity hover:opacity-80"
-                          style={{ background: 'rgba(15,23,42,0.55)' }}
-                          aria-label="Rimuovi foto"
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
-                            <line x1="18" y1="6" x2="6" y2="18" />
-                            <line x1="6" y1="6" x2="18" y2="18" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      onClick={() => setMostraSheetFoto(true)}
-                      className="aspect-square rounded-xl border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 hover:scale-[1.02] flex flex-col items-center justify-center gap-1 text-blue-600 transition-all"
-                      aria-label="Aggiungi altra foto"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold leading-none">
-                        +
-                      </div>
-                      <span className="text-[10px] font-semibold leading-tight text-center">Aggiungi<br/>altra foto</span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {foto.length > 0 && foto.length < 4 && (
-                <div className="mt-3 flex items-start gap-2.5 bg-blue-50 border-[1.5px] border-blue-200 rounded-xl p-3">
-                  <span className="w-[30px] h-[30px] rounded-[9px] bg-blue-100 text-blue-700 flex items-center justify-center flex-shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                      <circle cx="12" cy="13" r="4"/>
-                    </svg>
-                  </span>
-                  <span>
-                    <span className="block text-[12.5px] font-bold text-blue-900">Ottimo inizio!</span>
-                    <span className="block text-xs text-[#37507E] leading-snug mt-0.5">Aggiungi <strong className="text-blue-900">almeno {4 - foto.length} {4 - foto.length === 1 ? 'altra foto' : 'altre foto'}</strong> (frontale, posteriore, laterali, abitacolo) per aiutare il demolitore a preventivare meglio.</span>
-                  </span>
-                </div>
-              )}
-
-              {foto.length >= 4 && (
-                <div className="mt-3 flex items-start gap-2 bg-green-50 border border-green-200 rounded-xl p-3 text-xs text-green-800">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                  <span>Perfetto! Hai caricato un buon numero di foto. Puoi continuare o aggiungerne ancora.</span>
-                </div>
-              )}
-
-              {foto.length === 0 && (
-                <button onClick={next} className="w-full py-3.5 mt-3 rounded-full font-semibold text-sm active:scale-[0.99] transition-all hover:opacity-90" style={{ border: '1.5px solid #93C5FD', background: '#DBEAFE', color: '#1D4ED8' }}>
-                  Continua senza foto, le aggiungo dopo
-                </button>
-              )}
-
-              {foto.length > 0 && foto.length < 4 && (
-                <button onClick={next} className="w-full py-3.5 mt-2 rounded-full font-semibold text-sm bg-white text-blue-700 border-[1.5px] border-blue-300 hover:border-blue-400 hover:bg-blue-50 active:scale-[0.99] transition-all">
-                  Continua comunque con {foto.length} {foto.length === 1 ? 'foto' : 'foto'}
-                </button>
-              )}
-
-              {foto.length >= 4 && (
-                <button onClick={next} className="btn-pagina mt-2">
-                  Continua con {foto.length} foto
-                </button>
-              )}
-            </div>
-
-            {/* Sheet popup scelta foto: tendina dal basso sul telefono, finestra centrata su PC */}
-            {mostraSheetFoto && (
-              <div
-                className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200 sm:p-4"
-                onClick={() => setMostraSheetFoto(false)}
-              >
-                <div
-                  className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl p-5 pb-8 sm:pb-5 shadow-2xl animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="w-12 h-1.5 bg-gray-300 rounded-full mx-auto mb-4 sm:hidden" />
-                  <h3 className="text-base font-bold text-gray-900 text-center mb-1">Aggiungi una foto</h3>
-                  <p className="text-xs text-gray-500 text-center mb-5">Come vuoi procedere?</p>
-
-                  <button
-                    onClick={apriCamera}
-                    className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all mb-2"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-                        <circle cx="12" cy="13" r="4"/>
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-gray-900">Scatta una foto</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Apre la fotocamera</div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={apriGalleria}
-                    className="w-full flex items-center gap-3 p-4 rounded-xl border-[1.5px] border-gray-200 bg-gray-50 hover:border-blue-300 hover:bg-blue-50/50 text-left transition-all mb-4"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center flex-shrink-0">
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-semibold text-sm text-gray-900">Carica dalla galleria</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Da telefono o PC</div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => setMostraSheetFoto(false)}
-                    className="w-full py-3 rounded-full font-medium text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
-                  >
-                    Annulla
-                  </button>
-                </div>
-              </div>
-            )}
-          </>
+          <StepFoto
+            foto={foto}
+            onAggiungi={nuove => setFoto(prev => [...prev, ...nuove])}
+            onRimuovi={rimuoviFoto}
+            onContinua={next}
+          />
         )}
 
         {curStep === 'intestazione' && (

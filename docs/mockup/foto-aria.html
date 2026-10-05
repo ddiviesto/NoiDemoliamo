@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il passo delle foto, più bello</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1120px; margin: 0 auto; padding: 18px 20px 0; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .fila { max-width: 1180px; margin: 14px auto 36px; padding: 0 20px; display: flex; gap: 22px; align-items: flex-start; flex-wrap: wrap; justify-content: center; }
+  .pezzo h4 { font-size: 12px; font-weight: 700; color: #7C8AA5; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; text-align: center; }
+  .tel { width: 320px; border-radius: 34px; overflow: hidden; border: 9px solid #0F172A; box-shadow: 0 18px 44px rgba(15,27,51,.28); background: #fff; }
+  .tel .testata { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; padding: 11px 14px; display: flex; align-items: center; gap: 10px; }
+  .tel .testata .tondo { width: 34px; height: 34px; border-radius: 999px; background: rgba(255,255,255,.18); }
+  .tel .testata .mid { flex: 1; text-align: center; font-size: 13px; font-weight: 700; }
+  .tel .testata .mid small { display: block; font-size: 9.5px; letter-spacing: 1.4px; color: #C7D8FF; }
+  .tel .corpo { padding: 16px 16px 24px; }
+  .tit { font-size: 21px; font-weight: 800; letter-spacing: -.4px; margin-bottom: 4px; } .tit span { color: #1D4ED8; }
+  .sot { font-size: 13px; color: #4B5563; margin-bottom: 12px; line-height: 1.5; }
+  .pc { width: 470px; background: linear-gradient(160deg,#F5F3FE,#EDE9FE); border: 1px solid #D8DEE9; border-radius: 16px; padding: 18px; }
+  .btn { margin-top: 12px; text-align: center; border-radius: 999px; padding: 13px; font-size: 14px; font-weight: 600; }
+  .btn.bianco { background: #fff; border: 1.5px solid #BFDBFE; color: #1D4ED8; }
+  .btn.blu { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+  .foto { position: relative; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg,#C9D2E3,#9FB0CA); aspect-ratio: 1; box-shadow: 0 2px 8px rgba(15,27,51,.10); }
+  .foto .x { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 999px; background: rgba(255,255,255,.92); color: #0F172A; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; box-shadow: 0 1px 4px rgba(0,0,0,.2); }
+  .foto .n { position: absolute; left: 7px; bottom: 7px; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: rgba(15,23,42,.6); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+  /* 1 · ARIA: tutto più respirato, pillole con icona nel tondino, contatore a pillola verde */
+  .v1 .griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .v1 .testa { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .v1 .testa b { font-size: 14px; color: #111827; }
+  .v1 .stato { font-size: 11.5px; font-weight: 700; border-radius: 999px; padding: 4px 10px; background: #EFF6FF; color: #1D4ED8; }
+  .v1 .stato.ok { background: #DCF3E4; color: #1F7A43; }
+  .v1 .pillole { display: flex; gap: 8px; margin-top: 12px; }
+  .v1 .pillole span { flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 9px 12px 9px 9px; font-size: 13px; font-weight: 700; color: #1F2937; box-shadow: 0 2px 6px rgba(15,27,51,.05); }
+  .v1 .pillole i { width: 26px; height: 26px; border-radius: 999px; background: #EFF6FF; display: flex; align-items: center; justify-content: center; }
+  .v1 .inc { display: flex; gap: 10px; align-items: center; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 14px; padding: 11px 12px; font-size: 12.5px; color: #1E3A8A; line-height: 1.5; margin-top: 12px; }
+  .v1 .inc.verde { background: #DCF3E4; border-color: #B7E4C7; color: #1F7A43; }
+  .v1 .inc .anello { width: 38px; height: 38px; border-radius: 999px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #1D4ED8; background: conic-gradient(#2563eb var(--p), #DBEAFE 0); }
+  .v1 .inc .anello b { width: 28px; height: 28px; border-radius: 999px; background: #EFF6FF; display: flex; align-items: center; justify-content: center; }
+  .v1 .inc.verde .anello { background: conic-gradient(#16A34A 100%, #B7E4C7 0); color: #1F7A43; } .v1 .inc.verde .anello b { background: #DCF3E4; }
+  .v1 .riga { display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 14px; margin-bottom: 8px; box-shadow: 0 2px 6px rgba(15,27,51,.05); }
+  .v1 .riga i { width: 42px; height: 42px; border-radius: 13px; background: linear-gradient(135deg,#DBEAFE,#EFF6FF); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .v1 .riga b { display: block; font-size: 14px; color: #111827; } .v1 .riga small { font-size: 12px; color: #6B7280; }
+  .v1 .riga .fr { margin-left: auto; width: 26px; height: 26px; border-radius: 999px; background: #EFF6FF; color: #1D4ED8; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+  /* 2 · ALBUM: le foto in una card bianca "Le tue foto" con la prima grande */
+  .v2 .album { background: #fff; border: 1.5px solid #E5E7EB; border-radius: 18px; padding: 12px; box-shadow: 0 2px 8px rgba(15,27,51,.06); }
+  .v2 .album .testa { display: flex; justify-content: space-between; align-items: center; padding: 2px 4px 10px; }
+  .v2 .album .testa b { font-size: 13.5px; color: #111827; }
+  .v2 .pallini { display: flex; gap: 5px; } .v2 .pallini i { width: 9px; height: 9px; border-radius: 999px; background: #E2E8F0; } .v2 .pallini i.on { background: #2563eb; } .v2 .pallini i.ok { background: #16A34A; }
+  .v2 .mosaico { display: grid; grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; }
+  .v2 .mosaico .foto:first-child { grid-row: 1 / 3; aspect-ratio: auto; }
+  .v2 .mosaico.una { grid-template-columns: 1fr; grid-template-rows: auto; } .v2 .mosaico.una .foto { aspect-ratio: 4/3; grid-row: auto; }
+  .v2 .mosaico.piu { grid-template-columns: 2fr 1fr 1fr; }
+  .v2 .pillole { display: flex; gap: 8px; margin-top: 10px; }
+  .v2 .pillole span { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; background: #EFF6FF; border: 1.5px solid #DBEAFE; border-radius: 999px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: #1D4ED8; }
+  .v2 .inc { font-size: 12.5px; color: #1E3A8A; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 10px 12px; margin-top: 12px; line-height: 1.5; }
+  .v2 .inc.verde { background: #DCF3E4; border-color: #B7E4C7; color: #1F7A43; }
+  .v2 .riga { display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 14px; margin-bottom: 8px; }
+  .v2 .riga i { width: 42px; height: 42px; border-radius: 13px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .v2 .riga b { display: block; font-size: 14px; color: #111827; } .v2 .riga small { font-size: 12px; color: #6B7280; } .v2 .riga .fr { margin-left: auto; color: #9CA3AF; }
+
+  /* 3 · STRISCIA: anteprime grandi che scorrono in orizzontale, barra dei 4 */
+  .v3 .striscia { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+  .v3 .striscia .foto { width: 128px; flex-shrink: 0; aspect-ratio: 3/4; }
+  .v3 .barra { display: flex; gap: 5px; margin-top: 8px; } .v3 .barra i { flex: 1; height: 6px; border-radius: 999px; background: #E2E8F0; } .v3 .barra i.on { background: linear-gradient(90deg,#2563eb,#7c3aed); }
+  .v3 .sottobarra { display: flex; justify-content: space-between; font-size: 12px; color: #6B7280; margin-top: 5px; font-weight: 600; }
+  .v3 .sottobarra b { color: #111827; }
+  .v3 .pillole { display: flex; gap: 8px; margin-top: 12px; }
+  .v3 .pillole span { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: #1D4ED8; }
+  .v3 .inc { display: flex; gap: 10px; align-items: flex-start; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 11px 12px; font-size: 12.5px; color: #1E3A8A; line-height: 1.5; margin-top: 12px; }
+  .v3 .inc.verde { background: #DCF3E4; border-color: #B7E4C7; color: #1F7A43; }
+  .v3 .riga { display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 16px; padding: 14px; margin-bottom: 8px; }
+  .v3 .riga i { width: 42px; height: 42px; border-radius: 13px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .v3 .riga b { display: block; font-size: 14px; color: #111827; } .v3 .riga small { font-size: 12px; color: #6B7280; } .v3 .riga .fr { margin-left: auto; color: #9CA3AF; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>LA B1, PI&Ugrave; BELLA</b> &middot; stessa meccanica approvata (righe all&rsquo;inizio, poi solo le foto vere con la ✕ e le pillole per aggiungerne, su PC &ldquo;Scegli dal dispositivo&rdquo;). Tre vesti diverse, ognuna sul telefono con una foto e con quattro, e sul PC.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">1 &middot; Aria: tondini, anello che si riempie</span>
+  <span onclick="vista('b',this)">2 &middot; Album: card &ldquo;Le tue foto&rdquo; con la prima grande</span>
+  <span onclick="vista('c',this)">3 &middot; Striscia: anteprime grandi che scorrono</span>
+</div>
+<div id="viste"></div>
+
+<script>
+  const CAM = (c = '#1D4ED8') => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>`
+  const GAL = (c = '#1D4ED8') => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>`
+  const DISP = (c = '#1D4ED8') => `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>`
+  const foto = (n, num) => Array.from({ length: n }, (_, i) => `<div class="foto"><span class="x">✕</span>${num ? `<span class="n">${i + 1}</span>` : ''}</div>`).join('')
+  const tel = (titolo, cls, dentro) => `<div class="pezzo"><h4>${titolo}</h4><div class="tel ${cls}"><div class="testata"><span class="tondo"></span><span class="mid"><small>PASSO 8 DI 13</small>Foto</span><span style="width:34px"></span></div><div class="corpo"><div class="tit"><span>Foto</span> dell&rsquo;autovettura</div><div class="sot">Le foto ci aiutano a capire le condizioni e a scegliere il mezzo giusto per il ritiro.</div>${dentro}</div></div></div>`
+  const pc = (titolo, cls, dentro) => `<div class="pezzo"><h4>${titolo}</h4><div class="pc ${cls}">${dentro}</div></div>`
+  const righe = (c) => `<div class="riga"><i>${CAM()}</i><div><b>Scatta una foto</b><small>Apre la fotocamera</small></div><span class="fr">›</span></div><div class="riga"><i>${GAL()}</i><div><b>Carica dalla galleria</b><small>Le foto del telefono</small></div><span class="fr">›</span></div>`
+  const rigaPc = `<div class="riga"><i>${DISP()}</i><div><b>Scegli le foto dal dispositivo</b><small>Anche più di una insieme</small></div><span class="fr">›</span></div>`
+
+  // 1 · ARIA
+  const v1 = (n, pcMode) => {
+    const ok = n >= 4
+    const testa = `<div class="testa"><b>${n} ${n === 1 ? 'foto' : 'foto'}</b><span class="stato ${ok ? 'ok' : ''}">${ok ? '✓ Pronte' : `consigliate 4`}</span></div>`
+    const pil = pcMode ? `<div class="pillole"><span><i>${DISP()}</i>Scegli dal dispositivo</span></div>` : `<div class="pillole"><span><i>${CAM()}</i>Scatta</span><span><i>${GAL()}</i>Galleria</span></div>`
+    const inc = ok ? `<div class="inc verde"><span class="anello"><b>4</b></span><span><b>Perfetto!</b> Un buon numero di foto. Puoi continuare o aggiungerne ancora.</span></div>`
+      : `<div class="inc"><span class="anello" style="--p:${n * 25}%"><b>${n}/4</b></span><span><b>Ottimo inizio!</b> Aggiungi almeno ${4 - n} altre foto: frontale, posteriore, laterali, abitacolo.</span></div>`
+    return `${testa}<div class="griglia">${foto(n)}</div>${pil}${inc}<div class="btn ${ok ? 'blu' : 'bianco'}">${ok ? 'Continua con 4 foto' : `Continua comunque con ${n} foto`}</div>`
+  }
+  // 2 · ALBUM
+  const v2 = (n, pcMode) => {
+    const ok = n >= 4
+    const pallini = `<span class="pallini">${[0,1,2,3].map(i => `<i class="${i < n ? (ok ? 'ok' : 'on') : ''}"></i>`).join('')}</span>`
+    const mos = n === 1 ? `<div class="mosaico una">${foto(1)}</div>` : n <= 3 ? `<div class="mosaico">${foto(n)}</div>` : `<div class="mosaico piu">${foto(5).split('</div>').slice(0, 5).join('</div>')}</div>`
+    const pil = pcMode ? `<div class="pillole"><span>${DISP()} Scegli dal dispositivo</span></div>` : `<div class="pillole"><span>${CAM()} Scatta</span><span>${GAL()} Galleria</span></div>`
+    const inc = ok ? `<div class="inc verde"><b>Perfetto!</b> Un buon numero di foto. Puoi continuare o aggiungerne ancora.</div>` : `<div class="inc"><b>Ottimo inizio!</b> Aggiungi almeno ${4 - n} altre foto: frontale, posteriore, laterali, abitacolo.</div>`
+    return `<div class="album"><div class="testa"><b>Le tue foto · ${n}</b>${pallini}</div>${mos}${pil}</div>${inc}<div class="btn ${ok ? 'blu' : 'bianco'}">${ok ? 'Continua con 4 foto' : `Continua comunque con ${n} foto`}</div>`
+  }
+  // 3 · STRISCIA
+  const v3 = (n, pcMode) => {
+    const ok = n >= 4
+    const barra = `<div class="barra">${[0,1,2,3].map(i => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div><div class="sottobarra"><span><b>${n}</b> di 4 consigliate</span><span>${ok ? '✓ Pronte' : `ne mancano ${4 - n}`}</span></div>`
+    const pil = pcMode ? `<div class="pillole"><span>${DISP()} Scegli dal dispositivo</span></div>` : `<div class="pillole"><span>${CAM()} Scatta</span><span>${GAL()} Galleria</span></div>`
+    const inc = ok ? `<div class="inc verde"><span><b>Perfetto!</b> Un buon numero di foto. Puoi continuare o aggiungerne ancora.</span></div>` : `<div class="inc"><span><b>Ottimo inizio!</b> Aggiungi almeno ${4 - n} altre foto: frontale, posteriore, laterali, abitacolo.</span></div>`
+    return `<div class="striscia">${foto(n, true)}</div>${barra}${pil}${inc}<div class="btn ${ok ? 'blu' : 'bianco'}">${ok ? 'Continua con 4 foto' : `Continua comunque con ${n} foto`}</div>`
+  }
+
+  const blocco = (cls, fn) => [
+    tel('Telefono · nessuna foto', cls, `${righe()}<div class="btn bianco">Continua senza foto, le aggiungo dopo</div>`),
+    tel('Telefono · una foto', cls, fn(1, false)),
+    tel('Telefono · quattro foto', cls, fn(4, false)),
+    pc('PC · nessuna foto', cls, `${rigaPc}<div class="btn bianco">Continua senza foto, le aggiungo dopo</div>`),
+    pc('PC · due foto', cls, fn(2, true)),
+  ].join('')
+
+  const V = {
+    a: { spiega: '<b>Aria</b>: le righe iniziali con l&rsquo;icona nel quadrotto sfumato e la freccia nel tondino; le pillole &ldquo;Scatta / Galleria&rdquo; con l&rsquo;icona dentro un tondino azzurro; il contatore a sinistra e la pillola &ldquo;consigliate 4 / Pronte&rdquo; a destra; nell&rsquo;incoraggiamento un <b>anello che si riempie</b> (1/4, 2/4&hellip;) al posto dell&rsquo;icona. La ✕ bianca sulle foto, pi&ugrave; pulita.', html: blocco('v1', v1) },
+    b: { spiega: '<b>Album</b>: le foto vivono in una <b>card bianca &ldquo;Le tue foto&rdquo;</b> con quattro pallini che si accendono; la prima foto &egrave; <b>grande</b> e le altre piccole accanto (mosaico), le pillole stanno dentro la card in azzurro. Sembra un album, non una griglia.', html: blocco('v2', v2) },
+    c: { spiega: '<b>Striscia</b>: anteprime <b>grandi e verticali</b> che scorrono di lato col dito, numerate; sotto una <b>barra in quattro segmenti</b> che si colora e &ldquo;2 di 4 consigliate &middot; ne mancano 2&rdquo;. Le foto si vedono meglio, il progresso &egrave; immediato.', html: blocco('v3', v3) },
+  }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}"><div class="spiega">${V[k].spiega}</div><div class="fila">${V[k].html}</div></div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>

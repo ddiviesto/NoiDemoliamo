@@ -545,7 +545,7 @@ C:\Progetto_NoiDemoliamo\
 5  DOVE SI TROVA (senza spazio carro attrezzi: serve al ritiro, non alla valutazione)
 6  TARGA (+ targhe presenti sì/no, come in demolizione)
 7  CF DINAMICO                                         [saltato per targhe straniere]
-8  FOTO: 6 riquadri guidati (davanti, dietro, i due lati, interni, cruscotto), ALMENO 4 OBBLIGATORIE
+8  FOTO: lo STESSO `StepFoto` della demolizione (libere, niente "davanti/lato destro"), ma ALMENO 4 OBBLIGATORIE (05/10)
 9  FERMO AMMINISTRATIVO (stesso sottotitolo della demolizione)  [saltato per targhe straniere]
 10 ACCOUNT ("Ultimo passo!") → salva in `veicoli_vendita`
 ```
@@ -564,7 +564,12 @@ Usa gli **stessi componenti** della demolizione (`StepTipoVeicolo`, `StepIntesta
 5  INDIRIZZO + SPAZIO CARRO ATTREZZI
 6  TARGA ("La trovi sul libretto di circolazione." + box targhe presenti; adattato per targhe straniere)
 7  CF DINAMICO                                         [saltato per targhe straniere]
-8  FOTO (libere e facoltative, con l'incoraggiamento ad arrivare a 4)
+8  FOTO (libere e facoltative, con l'incoraggiamento ad arrivare a 4) ⭐ 05/10: componente CONDIVISO `steps/StepFoto.tsx`
+   (mockup B1 + veste "Aria"): nessuna foto → due righe "Scatta una foto" / "Carica dalla galleria" (su PC una sola,
+   "Scegli le foto dal dispositivo"); dalla prima foto → contatore con pillola "consigliate 4 / ✓ Pronte", SOLO le foto
+   vere con la ✕ bianca, due pillole "Scatta / Galleria" (PC "Scegli dal dispositivo"), incoraggiamento con l'ANELLO
+   che si riempie (1/4…), bottone. Niente riquadri tratteggiati, niente posti vuoti, niente foglietto. In valutazione
+   lo stesso componente con `minime={4}`: bottone spento finché non ci sono (foto libere, senza "davanti/lato destro")
 9  FERMO AMMINISTRATIVO                                [saltato per targhe straniere]
    sottotitolo fisso (03/09): "Il fermo amministrativo non blocca la demolizione: possiamo aiutarti a
    svincolare il mezzo dal fermo solo per demolizione. Troverai i moduli da compilare nella tua area personale."

@@ -26,6 +26,7 @@ import { DatiVeicolo, Intestazione, TipoMezzo, FermoAmministrativo, derivaCasist
 import { StepTipoVeicolo } from '../inizia/steps/StepTipoVeicolo'
 import { StepIdentificaVeicolo } from '../inizia/steps/StepIdentificaVeicolo'
 import { StepCondizioniVeicolo } from '../inizia/steps/StepCondizioniVeicolo'
+import { StepFoto } from '../inizia/steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from '../inizia/steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
@@ -105,15 +106,6 @@ function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intesta
   }
 }
 
-// Le sei foto guidate: le prime quattro (davanti, dietro, i due lati) bastano
-const POSIZIONI_FOTO = [
-  { chiave: 'davanti', label: 'Davanti' },
-  { chiave: 'dietro', label: 'Dietro' },
-  { chiave: 'destro', label: 'Lato destro' },
-  { chiave: 'sinistro', label: 'Lato sinistro' },
-  { chiave: 'interni', label: 'Interni' },
-  { chiave: 'cruscotto', label: 'Cruscotto coi km' },
-]
 const FOTO_MINIME = 4
 
 // ============================================================
@@ -145,7 +137,7 @@ export default function VendiAuto() {
   const [targa, setTarga] = useState('')
   const [targhePresenti, setTarghePresenti] = useState<'si' | 'no' | null>(null)
   const [cf, setCf] = useState('')
-  const [foto, setFoto] = useState<Record<string, File>>({})
+  const [foto, setFoto] = useState<File[]>([])
   const [fermo, setFermo] = useState<FermoAmministrativo | null>(null)
 
   // ---- account ----
@@ -170,7 +162,7 @@ export default function VendiAuto() {
 
   const cfAccetta11 = intestazione === 'societa' || intestazione === 'associazione'
   const cfValido = cfAccetta11 ? (cf.length === 11 || cf.length === 16) : cf.length === 16
-  const numeroFoto = Object.keys(foto).length
+  const numeroFoto = foto.length
 
   // ---- navigazione ----
   function avanti() {
@@ -207,7 +199,7 @@ export default function VendiAuto() {
       if (intestazione !== 'targhe_straniere' && !targhePresenti) return setErrore('Indica se le targhe sono presenti sul mezzo')
     }
     if (passo === 'cf' && !cfValido) return setErrore(cfAccetta11 ? 'Inserisci una partita IVA (11 cifre) o un codice fiscale valido (16 caratteri)' : 'Inserisci un codice fiscale valido di 16 caratteri')
-    if (passo === 'foto' && numeroFoto < FOTO_MINIME) return setErrore(`Aggiungi almeno ${FOTO_MINIME} foto: davanti, dietro e i due lati. Senza non riusciamo a valutare`)
+    if (passo === 'foto' && numeroFoto < FOTO_MINIME) return setErrore(`Aggiungi almeno ${FOTO_MINIME} foto: frontale, posteriore e i due lati. Senza non riusciamo a valutare`)
     if (passo === 'fermo' && !fermo) return setErrore("Seleziona un'opzione per continuare")
     avanti()
   }
@@ -284,19 +276,17 @@ export default function VendiAuto() {
       if (errDb) throw errDb
       const richiestaId = creata!.id
 
-      // 3. le foto, ognuna con la sua posizione
-      const chiavi = Object.keys(foto)
-      for (let i = 0; i < chiavi.length; i++) {
-        setMessaggioInvio(`Carico le tue foto (${i + 1}/${chiavi.length})...`)
-        const chiave = chiavi[i]
-        const file = foto[chiave]
+      // 3. le foto (⭐ 05/10: libere, senza posizione, come in demolizione)
+      for (let i = 0; i < foto.length; i++) {
+        setMessaggioInvio(`Carico le tue foto (${i + 1}/${foto.length})...`)
+        const file = foto[i]
         const ext = file.name.split('.').pop() || 'jpg'
-        const path = `vendita/${richiestaId}/${chiave}-${Date.now()}.${ext}`
+        const path = `vendita/${richiestaId}/${Date.now()}-${i}.${ext}`
         const { error: errUp } = await supabase.storage.from('foto-pratiche').upload(path, file, { contentType: file.type || 'image/jpeg', upsert: false })
         if (errUp) { console.error('Errore upload foto valutazione:', errUp); continue }
         const { data: pub } = supabase.storage.from('foto-pratiche').getPublicUrl(path)
         if (pub?.publicUrl) {
-          await supabase.from('foto_veicoli_vendita').insert({ veicolo_vendita_id: richiestaId, url: pub.publicUrl, posizione: chiave })
+          await supabase.from('foto_veicoli_vendita').insert({ veicolo_vendita_id: richiestaId, url: pub.publicUrl, posizione: null })
         }
       }
 
@@ -314,7 +304,7 @@ export default function VendiAuto() {
   }
 
   // I passi che hanno il bottone "Continua" dentro il componente riusato
-  const bottoneDentro = passo === 'tipo-veicolo' || passo === 'intestazione' || passo === 'identifica' || passo === 'condizioni'
+  const bottoneDentro = passo === 'tipo-veicolo' || passo === 'intestazione' || passo === 'identifica' || passo === 'condizioni' || passo === 'foto'
 
   // ============================================================
   return (
@@ -457,53 +447,14 @@ export default function VendiAuto() {
         )}
 
         {passo === 'foto' && (
-          <>
-            <div className="grid grid-cols-3 gap-2">
-              {POSIZIONI_FOTO.map(p => {
-                const file = foto[p.chiave]
-                return (
-                  <label key={p.chiave} className="cursor-pointer">
-                    <input
-                      type="file" accept="image/*" className="hidden"
-                      onChange={e => {
-                        const f = e.target.files?.[0]
-                        if (f) { setFoto(prev => ({ ...prev, [p.chiave]: f })); setErrore('') }
-                      }}
-                    />
-                    <span
-                      className="relative flex flex-col items-center justify-center text-center overflow-hidden"
-                      style={{
-                        aspectRatio: '1', borderRadius: 12, fontSize: 11, padding: 4, lineHeight: 1.3,
-                        border: file ? '1.5px solid #1D4ED8' : '1.5px dashed #C7D0DE',
-                        background: file ? '#EFF6FF' : '#F8FAFC',
-                        color: file ? '#1D4ED8' : '#8A94A3',
-                      }}
-                    >
-                      {file
-                        ? <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={URL.createObjectURL(file)} alt={p.label} className="absolute inset-0 w-full h-full object-cover" />
-                            <span className="absolute inset-x-0 bottom-0 py-1 font-semibold text-white" style={{ background: 'rgba(29,78,216,0.85)' }}>{p.label}</span>
-                          </>
-                        : <>
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.2" /></svg>
-                            <span className="mt-1">{p.label}</span>
-                          </>}
-                    </span>
-                  </label>
-                )
-              })}
-            </div>
-            <div className="mt-3 flex items-center justify-between px-1">
-              <span className="text-xs font-semibold" style={{ color: numeroFoto >= FOTO_MINIME ? '#16A34A' : '#4B5563' }}>
-                {numeroFoto} di {POSIZIONI_FOTO.length} foto
-              </span>
-              <span className="text-xs" style={{ color: '#6B7280' }}>
-                {numeroFoto >= FOTO_MINIME ? 'Puoi continuare' : `Ne servono almeno ${FOTO_MINIME}`}
-              </span>
-            </div>
-            <div className="mt-3"><InfoBadge>Hai un danno da mostrare? Rifai una delle foto inquadrandolo: aiuta a non sbagliare la risposta.</InfoBadge></div>
-          </>
+          <StepFoto
+            foto={foto}
+            onAggiungi={nuove => { setFoto(prev => [...prev, ...nuove]); setErrore('') }}
+            onRimuovi={i => setFoto(prev => prev.filter((_, j) => j !== i))}
+            onContinua={avantiControllato}
+            minime={FOTO_MINIME}
+            perChi="chi valuta"
+          />
         )}
 
         {passo === 'fermo' && (

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il passo delle foto</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1120px; margin: 0 auto; padding: 18px 20px 0; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .schermo { max-width: 1180px; margin: 14px auto 30px; border-radius: 16px; overflow: hidden; box-shadow: 0 16px 44px rgba(15,27,51,.18); border: 1px solid #D8DEE9; }
+  .scena { min-height: 520px; padding: 22px 28px 40px;
+    background: radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228,236,255,0) 62%), radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233,227,255,0) 62%), #F5F3FE; }
+  .isola { margin: 0 auto 18px; display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,.72); border: 1px solid rgba(255,255,255,.9); box-shadow: 0 10px 30px rgba(15,27,51,.10); border-radius: 999px; padding: 8px 8px 8px 20px; }
+  .marchio { font-family: 'Outfit', sans-serif; font-size: 20px; letter-spacing: -.035em; }
+  .marchio .noi { font-weight: 500; color: #46536B; } .marchio .dem { font-weight: 800; color: #0F1B33; margin-left: .15em; }
+  .isola .pill { font-size: 12px; font-weight: 700; color: #1D4ED8; background: #EFF6FF; border: 1px solid #DBEAFE; border-radius: 999px; padding: 7px 14px; }
+  .riga-alta { display: flex; align-items: center; gap: 14px; margin-bottom: 26px; }
+  .riga-alta .indietro { width: 42px; height: 42px; border-radius: 999px; background: rgba(255,255,255,.8); border: 1px solid rgba(226,232,245,.9); box-shadow: 0 6px 16px rgba(15,27,51,.07); }
+  .riga-alta .barra { flex: 1; height: 5px; background: rgba(15,27,51,.07); border-radius: 999px; overflow: hidden; }
+  .riga-alta .barra i { display: block; height: 100%; width: 78%; background: linear-gradient(90deg,#2563eb,#7c3aed); border-radius: 999px; }
+  .riga-alta .conta { font-size: 12px; font-weight: 700; color: #7C8AA5; letter-spacing: .4px; }
+  .due { display: flex; gap: 40px; align-items: flex-start; }
+  .sx { flex: .95; } .dx { flex: 1.05; min-width: 0; }
+  .titolone { font-size: 34px; font-weight: 800; letter-spacing: -1px; line-height: 1.1; }
+  .titolone span { background: linear-gradient(90deg,#2563eb,#7c3aed); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .sotto { font-size: 15px; color: #4B5A72; margin-top: 12px; max-width: 420px; line-height: 1.6; }
+  .continua { margin-top: 22px; background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; border: none; border-radius: 999px; padding: 15px 40px; font-size: 15px; font-weight: 600; box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+  .badge { display: flex; gap: 10px; align-items: flex-start; border-radius: 12px; padding: 12px; font-size: 13.5px; line-height: 1.55; background: #EFF6FF; border: 1.5px solid #BFDBFE; color: #1E3A8A; margin-top: 12px; }
+
+  /* le foto */
+  .foto { position: relative; border-radius: 12px; overflow: hidden; background: linear-gradient(135deg,#C9D2E3,#9FB0CA); aspect-ratio: 4/3; }
+  .foto .eti { position: absolute; left: 0; right: 0; bottom: 0; padding: 5px 8px; font-size: 11px; font-weight: 700; color: #fff; background: rgba(15,23,42,.55); }
+  .foto .x { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 999px; background: rgba(15,23,42,.6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; }
+  .vuota { border: 1.5px dashed #C7D0DE; border-radius: 12px; background: #F8FAFC; aspect-ratio: 4/3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; font-size: 11.5px; color: #8A94A3; font-weight: 600; }
+  .vuota.prossima { border-color: #93C5FD; background: #EFF6FF; color: #1D4ED8; border-style: solid; }
+  .cam { width: 26px; height: 26px; border-radius: 999px; background: #2563eb; display: flex; align-items: center; justify-content: center; }
+  .contatore { display: flex; justify-content: space-between; font-size: 12.5px; margin-top: 10px; }
+  .contatore b { color: #4B5563; } .contatore span { color: #6B7280; }
+  /* A · griglia compatta */
+  .griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  /* B · una posizione alla volta */
+  .grande { border: 1.5px solid #BFDBFE; border-radius: 16px; background: #fff; padding: 16px; }
+  .grande .tit { font-size: 15px; font-weight: 700; color: #111827; } .grande .sub { font-size: 12.5px; color: #6B7280; margin-top: 2px; }
+  .scatta { display: flex; gap: 10px; margin-top: 12px; }
+  .scatta span { flex: 1; display: flex; align-items: center; gap: 10px; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 12px 14px; font-size: 13.5px; font-weight: 600; color: #111827; background: #F8FAFC; }
+  .scatta i { width: 34px; height: 34px; border-radius: 10px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; }
+  .fatte { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .fatte .foto { width: 86px; aspect-ratio: 1; border-radius: 10px; }
+  .fatte .chip { width: 86px; aspect-ratio: 1; border-radius: 10px; border: 1.5px dashed #C7D0DE; display: flex; align-items: center; justify-content: center; font-size: 11px; color: #8A94A3; text-align: center; padding: 4px; }
+  /* C · libera, come la demolizione */
+  .libera .griglia { grid-template-columns: repeat(3, 1fr); }
+  .piu { border: 2px dashed #93C5FD; background: #EFF6FF; border-radius: 12px; aspect-ratio: 4/3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #1D4ED8; font-size: 11px; font-weight: 700; }
+  .piu b { width: 30px; height: 30px; border-radius: 999px; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  /* telefono */
+  .telefoni { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap; padding: 0 20px 50px; }
+  .tel { width: 320px; border-radius: 34px; overflow: hidden; border: 9px solid #0F172A; box-shadow: 0 18px 44px rgba(15,27,51,.28); background: #fff; }
+  .tel .testata { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; padding: 11px 14px; display: flex; align-items: center; gap: 10px; }
+  .tel .testata .tondo { width: 34px; height: 34px; border-radius: 999px; background: rgba(255,255,255,.18); }
+  .tel .testata .mid { flex: 1; text-align: center; font-size: 13px; font-weight: 700; }
+  .tel .testata .mid small { display: block; font-size: 9.5px; letter-spacing: 1.4px; color: #C7D8FF; font-weight: 700; }
+  .tel .corpo { padding: 16px 16px 26px; }
+  .tel .tit { font-size: 21px; font-weight: 800; letter-spacing: -.4px; margin-bottom: 4px; } .tel .tit span { color: #1D4ED8; }
+  .tel .sot { font-size: 13.5px; color: #4B5563; margin-bottom: 14px; }
+  .tel .griglia { gap: 8px; }
+  .tel .continua { width: 100%; margin-top: 16px; padding: 14px 0; }
+  .did { text-align: center; font-size: 12.5px; color: #55637A; margin-top: 10px; font-weight: 600; width: 320px; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>IL PASSO DELLE FOTO</b> &middot; oggi in valutazione sono sei caselle vuote e tratteggiate, e una foto messa non si pu&ograve; togliere. Tre modi di rifarlo, su PC e sul telefono. Lo stesso passo poi vale per tutti e due i flussi (in demolizione le foto restano facoltative, in valutazione ne servono almeno quattro).</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">A &middot; griglia compatta con la ✕</span>
+  <span onclick="vista('b',this)">B &middot; una posizione alla volta</span>
+  <span onclick="vista('c',this)">C &middot; libera, scatta o carica</span>
+</div>
+<div id="viste"></div>
+
+<script>
+  const CAM = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+  const CAMG = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A94A3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+  const CAMB = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+  const GAL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+  const INFO = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+  const POS = ['Davanti', 'Dietro', 'Lato destro', 'Lato sinistro', 'Interni', 'Cruscotto coi km']
+  const foto = (eti, x) => `<div class="foto">${x ? '<span class="x">✕</span>' : ''}${eti ? `<span class="eti">${eti}</span>` : ''}</div>`
+
+  // A · griglia compatta: 3 per riga, caselle piccole, la prossima da fare è azzurra, ✕ sulle messe
+  const A_dentro = () => `<div class="griglia">${foto('Davanti', true)}${foto('Dietro', true)}<div class="vuota prossima"><span class="cam">${CAM}</span>Lato destro</div><div class="vuota">${CAMG}Lato sinistro</div><div class="vuota">${CAMG}Interni</div><div class="vuota">${CAMG}Cruscotto coi km</div></div>
+    <div class="contatore"><b>2 di 6 foto</b><span>Ne servono almeno 4: mancano 2</span></div>
+    <div class="badge">${INFO}<span>Tocca una casella per scattare o scegliere dalla galleria. La ✕ toglie la foto. Hai un danno da mostrare? Rifalla inquadrandolo.</span></div>`
+  // B · una posizione alla volta: riquadro grande con la posizione corrente, sotto le fatte con ✕
+  const B_dentro = () => `<div class="grande"><div class="tit">3 di 6 &middot; Lato destro</div><div class="sub">Inquadra tutta la fiancata, da un passo indietro.</div>
+      <div class="scatta"><span><i>${CAMB}</i>Scatta una foto</span><span><i>${GAL}</i>Dalla galleria</span></div>
+      <div class="fatte">${foto('Davanti', true).replace('class="foto"', 'class="foto"')}${foto('Dietro', true)}<div class="chip">Lato sinistro</div><div class="chip">Interni</div><div class="chip">Cruscotto</div></div>
+      <div class="contatore"><b>2 di 6 foto</b><span>Ne servono almeno 4</span></div></div>
+    <div class="badge">${INFO}<span>Una posizione alla volta: dopo ogni scatto passiamo alla prossima. Puoi saltarne una e tornarci dopo toccando la casella.</span></div>`
+  // C · libera: due bottoni, la griglia delle messe con ✕ e il +; nessuna posizione imposta
+  const C_dentro = () => `<div class="libera"><div class="scatta" style="margin-top:0"><span><i>${CAMB}</i>Scatta una foto</span><span><i>${GAL}</i>Carica dalla galleria</span></div>
+      <div class="griglia" style="margin-top:12px">${foto('', true)}${foto('', true)}<div class="piu"><b>+</b>Aggiungi</div></div>
+      <div class="contatore"><b>2 foto</b><span>Ne servono almeno 4: davanti, dietro e i due lati</span></div></div>
+    <div class="badge">${INFO}<span>Nessun ordine: fai le foto come vuoi, l&rsquo;importante &egrave; che si vedano davanti, dietro e i due lati. La ✕ toglie la foto.</span></div>`
+
+  const pc = (dentro) => `<div class="schermo"><div class="scena">
+      <div class="isola"><span class="marchio"><span class="noi">Noi</span><span class="dem">Demoliamo</span></span><span><span class="pill">Richiesta valutazione gratuita</span> <span style="font-size:12px;font-weight:600;color:#3E4C63">Autovettura</span></span></div>
+      <div class="riga-alta"><span class="indietro"></span><span class="barra"><i></i></span><span class="conta">PASSO 8 DI 10</span></div>
+      <div class="due"><div class="sx"><div class="titolone"><span>Foto</span> dell&rsquo;autovettura</div><div class="sotto">Ne servono almeno quattro: pi&ugrave; sono chiare, pi&ugrave; la risposta sar&agrave; precisa.</div></div>
+      <div class="dx">${dentro}<button class="continua">Continua</button></div></div></div></div>`
+  const tel = (dentro, did) => `<div><div class="tel"><div class="testata"><span class="tondo"></span><span class="mid"><small>PASSO 8 DI 10</small>Foto</span><span style="width:34px"></span></div><div class="corpo"><div class="tit"><span>Foto</span> dell&rsquo;autovettura</div><div class="sot">Ne servono almeno quattro.</div>${dentro}<button class="continua">Continua</button></div></div><div class="did">${did}</div></div>`
+
+  const V = {
+    a: { spiega: 'La griglia resta guidata (sei posizioni) ma <b>compatta</b>: caselle piccole con la macchinetta e il nome, <b>la prossima da fare &egrave; azzurra</b>, le foto messe hanno la <b>✕ per toglierle</b> e il nome sopra. Sotto, il contatore dice quante mancano. Niente pi&ugrave; sei scatoloni vuoti.', pc: pc(A_dentro()), tel: tel(A_dentro(), 'Sul telefono: tre per riga, piccole, si scorre poco.') },
+    b: { spiega: '<b>Una posizione alla volta</b>, come il caricamento dei documenti: un riquadro grande dice cosa inquadrare adesso (&ldquo;3 di 6 &middot; Lato destro&rdquo;, con un consiglio), due bottoni scatta/galleria, e sotto le foto gi&agrave; fatte con la ✕ e le posizioni che restano. Dopo ogni scatto passa alla prossima. Guida di pi&ugrave; chi non sa cosa fotografare.', pc: pc(B_dentro()), tel: tel(B_dentro(), 'Sul telefono: il riquadro della posizione corrente e la fila delle fatte.') },
+    c: { spiega: '<b>Libera, come la demolizione</b>: due bottoni (scatta / carica), la griglia delle foto messe con la ✕ e il + per aggiungerne. Nessuna posizione imposta: il contatore ricorda solo che ne servono almeno quattro (davanti, dietro, i due lati). La pi&ugrave; veloce, ma non sappiamo se ha fatto davvero le quattro viste.', pc: pc(C_dentro()), tel: tel(C_dentro(), 'Sul telefono: i due bottoni e la griglia.') },
+  }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}"><div class="spiega">${V[k].spiega}</div>${V[k].pc}<div class="telefoni">${V[k].tel}</div></div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>
