@@ -16,7 +16,7 @@
 //      per iPhone (o le istruzioni generiche).
 // ============================================================
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Marchio from './Marchio'
 
 interface EventoInstalla extends Event {
@@ -83,32 +83,64 @@ export function useInstallaApp() {
 const CONDIVIDI = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: '-2px' }}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
 
 /** Il foglio con i passi: sale dal basso sul telefono, finestra centrata su PC */
-export function FoglioInstalla({ stato, onChiudi }: { stato: StatoInstalla; onChiudi: () => void }) {
+/** Le istruzioni per installare. Sul TELEFONO è il foglio che sale dal
+ *  basso; su PC (⭐ 08/10, mockup A scelto da Davide) è una NUVOLETTA
+ *  ancorata al bottone col becco, come le altre nuvolette dell'app (regola
+ *  20): chi la usa la mette dentro un contenitore `relative` accanto al
+ *  bottone. `lato` dice da che parte sta il becco. Clic fuori o Esc chiude. */
+export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 360 }: { stato: StatoInstalla; onChiudi: () => void; lato?: 'sinistra' | 'destra'; larghezza?: number }) {
   const iphone = stato === 'iphone'
   const chrome = /CriOS/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
   const tasto = (t: React.ReactNode) => <span style={{ background: '#F1F3F6', borderRadius: 6, padding: '2px 7px', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>{t}</span>
-  const passi: React.ReactNode[] = iphone
-    ? (chrome
-      ? [<>Apri questa pagina in <b>Safari</b> (da Chrome non si può)</>, <>Tocca {tasto(<>{CONDIVIDI} Condividi</>)} in basso</>, <>Scegli {tasto('Aggiungi alla schermata Home')} e poi {tasto('Aggiungi')}</>]
-      : [<>Tocca {tasto(<>{CONDIVIDI} Condividi</>)} in basso in Safari</>, <>Scegli {tasto('Aggiungi alla schermata Home')}</>, <>Tocca {tasto('Aggiungi')} in alto a destra</>])
-    : [<>Apri il menu del browser (i tre puntini in alto a destra)</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare nella home o sul desktop</>]
+  const passiIphone: React.ReactNode[] = chrome
+    ? [<>Apri questa pagina in <b>Safari</b> (da Chrome non si può)</>, <>Tocca {tasto(<>{CONDIVIDI} Condividi</>)} in basso</>, <>Scegli {tasto('Aggiungi alla schermata Home')} e poi {tasto('Aggiungi')}</>]
+    : [<>Tocca {tasto(<>{CONDIVIDI} Condividi</>)} in basso in Safari</>, <>Scegli {tasto('Aggiungi alla schermata Home')}</>, <>Tocca {tasto('Aggiungi')} in alto a destra</>]
+  const passiTelefono: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra)</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare nella home o sul desktop</>]
+  const passiPc: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra) oppure clicca l&apos;iconcina {tasto(<span style={{ display: 'inline-flex', verticalAlign: '-2px' }}>{SCARICA}</span>)} nella barra dell&apos;indirizzo</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare sul desktop e nel menu Start</>]
+
+  // la nuvoletta si chiude cliccando fuori o con Esc
+  const nuvola = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const fuori = (e: MouseEvent) => { if (nuvola.current && !nuvola.current.contains(e.target as Node)) onChiudi() }
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onChiudi() }
+    document.addEventListener('mousedown', fuori)
+    document.addEventListener('keydown', esc)
+    return () => { document.removeEventListener('mousedown', fuori); document.removeEventListener('keydown', esc) }
+  }, [onChiudi])
+
+  const lista = (passi: React.ReactNode[]) => passi.map((p, i) => (
+    <div key={i} className="flex items-center gap-2.5 py-2.5 text-[13px] text-gray-700" style={{ borderBottom: i === passi.length - 1 ? 'none' : '1px solid #F1F4F8' }}>
+      <span className="flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ width: 24, height: 24, borderRadius: 999, background: '#EFF6FF', border: '1.5px solid #93C5FD', color: '#1D4ED8' }}>{i + 1}</span>
+      <span>{p}</span>
+    </div>
+  ))
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center" style={{ background: 'rgba(15,23,42,0.45)' }} onClick={onChiudi}>
-      <div className="w-full sm:max-w-md bg-white sm:rounded-3xl" style={{ borderRadius: '20px 20px 0 0', padding: '18px 18px 22px', boxShadow: '0 -10px 30px rgba(15,27,51,0.18)' }} onClick={e => e.stopPropagation()}>
-        <h3 className="text-[16px] font-extrabold tracking-[-0.3px] text-[#0F172A]">Aggiungi NoiDemoliamo alla home</h3>
-        <p className="text-[12.5px] text-gray-500 mt-0.5">{iphone ? 'Su iPhone si fa in tre tocchi:' : 'Si fa in tre passi dal tuo browser:'}</p>
-        <div className="mt-2">
-          {passi.map((p, i) => (
-            <div key={i} className="flex items-center gap-2.5 py-2.5 text-[13px] text-gray-700" style={{ borderBottom: i === passi.length - 1 ? 'none' : '1px solid #F1F4F8' }}>
-              <span className="flex items-center justify-center flex-shrink-0 text-[11px] font-bold" style={{ width: 24, height: 24, borderRadius: 999, background: '#EFF6FF', border: '1.5px solid #93C5FD', color: '#1D4ED8' }}>{i + 1}</span>
-              <span>{p}</span>
-            </div>
-          ))}
+    <>
+      {/* TELEFONO: il foglio dal basso */}
+      <div className="sm:hidden fixed inset-0 z-[90] flex items-end justify-center" style={{ background: 'rgba(15,23,42,0.45)' }} onClick={onChiudi}>
+        <div className="w-full bg-white" style={{ borderRadius: '20px 20px 0 0', padding: '18px 18px 22px', boxShadow: '0 -10px 30px rgba(15,27,51,0.18)' }} onClick={e => e.stopPropagation()}>
+          <h3 className="text-[16px] font-bold tracking-[-0.3px] text-[#0F172A]">Aggiungi NoiDemoliamo alla home</h3>
+          <p className="text-[12.5px] text-gray-500 mt-0.5">{iphone ? 'Su iPhone si fa in tre tocchi:' : 'Si fa in tre passi dal tuo browser:'}</p>
+          <div className="mt-2">{lista(iphone ? passiIphone : passiTelefono)}</div>
+          <button onClick={onChiudi} className="btn-pagina mt-3">Ho capito</button>
         </div>
-        <button onClick={onChiudi} className="btn-pagina mt-3 sm:!w-full">Ho capito</button>
       </div>
-    </div>
+
+      {/* PC: la nuvoletta ancorata al bottone */}
+      <div ref={nuvola} className="hidden sm:block absolute z-[60] text-left" style={{ top: 'calc(100% + 14px)', [lato === 'destra' ? 'right' : 'left']: 0, width: larghezza, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 18, padding: '16px 18px', boxShadow: '0 14px 40px rgba(15,27,51,0.16)' }}>
+        <span aria-hidden="true" style={{ position: 'absolute', top: -9, [lato === 'destra' ? 'right' : 'left']: 46, width: 16, height: 16, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB', transform: 'rotate(45deg)' }} />
+        <button onClick={onChiudi} aria-label="Chiudi" className="absolute flex items-center justify-center hover:bg-gray-200 transition-colors" style={{ top: 12, right: 12, width: 26, height: 26, borderRadius: 999, background: '#F1F3F6', border: 'none', cursor: 'pointer' }}>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+        </button>
+        <h3 className="text-[15px] font-bold text-[#0F172A]" style={{ paddingRight: 30 }}>{iphone ? 'Aggiungi NoiDemoliamo alla home' : 'Aggiungi NoiDemoliamo al computer'}</h3>
+        <p className="text-[12px] text-gray-500" style={{ margin: '2px 0 6px' }}>{iphone ? 'Su iPhone si fa in tre tocchi:' : 'Si fa in tre passi dal tuo browser:'}</p>
+        {lista(iphone ? passiIphone : passiPc)}
+        <div className="flex justify-end" style={{ marginTop: 10 }}>
+          <button onClick={onChiudi} className="btn-pagina btn-pagina--auto" style={{ fontSize: 13.5, padding: '10px 26px', width: 'auto' }}>Ho capito</button>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -153,12 +185,14 @@ export function StrisciaInstalla({ className = '' }: { className?: string }) {
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>Hai già l&apos;app?</div>
             <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 2, lineHeight: 1.45 }}>Quando il certificato è pronto lo scarichi direttamente da lì, e la pratica la segui con un tocco. Gratis, senza store.</div>
           </div>
-          <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="flex-shrink-0 self-start sm:self-auto inline-flex items-center gap-1.5 transition-colors hover:bg-blue-50 active:scale-[0.98]" style={{ background: '#fff', color: '#2563eb', border: '1.5px solid #BFDBFE', borderRadius: 999, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
-            {SCARICA} Installa l&apos;app
-          </button>
+          <span className="relative flex-shrink-0 self-start sm:self-auto">
+            <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="inline-flex items-center gap-1.5 transition-colors hover:bg-blue-50 active:scale-[0.98]" style={{ background: foglio ? '#EFF6FF' : '#fff', color: '#2563eb', border: `1.5px solid ${foglio ? '#2563eb' : '#BFDBFE'}`, borderRadius: 999, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
+              {SCARICA} Installa l&apos;app
+            </button>
+            {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="destra" />}
+          </span>
         </div>
       </div>
-      {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} />}
     </>
   )
 }
@@ -193,14 +227,14 @@ export function SezioneInstalla() {
               </span>
             ))}
           </div>
-          <div style={{ marginTop: 20 }}>
+          <div className="relative inline-block" style={{ marginTop: 20 }}>
             <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="btn-pagina btn-pagina--auto" style={{ fontSize: 14, padding: '13px 26px' }}>
               {SCARICA} Installa l&apos;app
             </button>
+            {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="sinistra" />}
           </div>
         </div>
       </div>
-      {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} />}
     </section>
   )
 }

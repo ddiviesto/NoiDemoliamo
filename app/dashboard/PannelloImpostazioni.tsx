@@ -322,7 +322,6 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
 
   return (
     <>
-    {foglioInstalla && <FoglioInstalla stato={installaStato} onChiudi={() => setFoglioInstalla(false)} />}
     <div className={`fixed inset-0 z-50 ${aperto ? '' : 'pointer-events-none'}`} aria-hidden={!aperto}>
       {/* Sfondo scuro: chiude toccando fuori */}
       <div
@@ -431,11 +430,15 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
               <span className="text-[13.5px] font-semibold flex-1" style={{ color: '#1F7A43' }}>App installata</span>
             </div>
           ) : (
-            <Voce
-              onClick={async () => { if (await installa() === 'foglio') setFoglioInstalla(true) }}
-              tile={<Tile bg="#F5F3FE"><img src="/icona-app.png" alt="" width={24} height={24} style={{ borderRadius: 6 }} /></Tile>}
-              label="Installa l'app sul telefono"
-            />
+            <div className="relative">
+              <Voce
+                onClick={async () => { if (await installa() === 'foglio') setFoglioInstalla(true) }}
+                tile={<Tile bg="#F5F3FE"><img src="/icona-app.png" alt="" width={24} height={24} style={{ borderRadius: 6 }} /></Tile>}
+                label="Installa l'app sul telefono"
+              />
+              {/* su PC le istruzioni sono la nuvoletta sotto la voce (08/10, mockup A) */}
+              {foglioInstalla && <div className="relative" style={{ margin: '0 12px' }}><FoglioInstalla stato={installaStato} onChiudi={() => setFoglioInstalla(false)} lato="sinistra" larghezza={316} /></div>}
+            </div>
           )}
 
           <a href="https://wa.me/393518280493" target="_blank" rel="noopener noreferrer" className="w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-50" style={{ borderBottom: '1px solid #F1F4F8' }}>
