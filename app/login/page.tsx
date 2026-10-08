@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import IsolaSito from '../components/IsolaSito'
+import { StrisciaInstalla } from '../components/InstallaApp'
 
 // Campo a pillola: si "accende" quando il cliente ci scrive dentro
 const CAMPO_PILLOLA = 'group flex items-center gap-2.5 rounded-full px-[18px] py-[13px] bg-[#F9FAFB] border-[1.5px] border-[#E5E7EB] transition-[border-color,background-color,box-shadow] duration-150 focus-within:bg-white focus-within:border-[#2563eb] focus-within:shadow-[0_0_0_4px_rgba(37,99,235,0.12)]'
@@ -54,7 +55,7 @@ export default function Login() {
     <main className="flusso-scena min-h-screen flex justify-center sm:p-7 sm:pt-8 bg-white">
       {/* ⭐ 05/10 (mockup C approvato): su PC la scatola resta piccola e centrata ma sta sul fondo lilla, con l'isola in cima */}
       <div className="w-full sm:max-w-[1000px] flex flex-col items-center">
-      <IsolaSito className="w-full mb-8" destra={<a href="/" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '8px 14px' }}>Torna al sito</a>} />
+      <IsolaSito className="w-full mb-8" destra={<Link href="/" style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '8px 14px' }}>Torna al sito</Link>} />
       <div className="w-full sm:max-w-md bg-white sm:rounded-3xl sm:shadow-lg overflow-hidden min-h-screen sm:min-h-0" style={{ alignSelf: 'center' }}>
 
         {/* TESTATA BLU ALTA col benvenuto e il logo a cavallo (mockup approvato) */}
@@ -155,8 +156,14 @@ export default function Login() {
             {caricamento ? 'Accesso in corso...' : 'Accedi'}
           </button>
 
+          {/* ⭐ 08/10 (mockup A): sul telefono la striscia "Installa l'app"
+              sta dentro la scatola, sotto Accedi (lilla chiaro) */}
+          <StrisciaInstalla className="sm:hidden mt-5 !bg-[#F5F3FE] !border-[#E6E3F7]" />
         </div>
       </div>
+
+      {/* su PC la striscia è di vetro sul lilla, sotto la scatola */}
+      <StrisciaInstalla className="hidden sm:flex w-full sm:max-w-md mt-4" />
 
       <AiutoWhatsApp />
       </div>

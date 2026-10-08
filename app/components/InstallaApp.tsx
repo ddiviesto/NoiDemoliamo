@@ -114,6 +114,55 @@ export function FoglioInstalla({ stato, onChiudi }: { stato: StatoInstalla; onCh
 
 const SCARICA = <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
 
+/** Il telefonino con l'icona di NoiDemoliamo già nella home (disegno puro,
+ *  niente immagine): grande nella sezione della home, piccolo nella striscia
+ *  dell'accesso. `larghezza` 150 = la misura della home. */
+function Telefonino({ larghezza = 150 }: { larghezza?: number }) {
+  const k = larghezza / 150
+  const ico = Math.round(32 * k)
+  return (
+    <div className="flex-shrink-0" aria-hidden="true" style={{ width: larghezza, height: larghezza * 2, borderRadius: 26 * k, border: `${Math.max(2, 7 * k)}px solid #0F172A`, background: 'linear-gradient(160deg,#1e293b,#0f172a)', padding: `${26 * k}px ${12 * k}px`, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: `${10 * k}px ${8 * k}px`, alignContent: 'start' }}>
+      {[0, 1, 2, 3, 4, 5].map(i => (
+        <div key={i}>
+          {i === 2
+            /* eslint-disable-next-line @next/next/no-img-element */
+            ? <img src="/icona-app.png" alt="" width={ico} height={ico} style={{ display: 'block', margin: '0 auto', borderRadius: 9 * k }} />
+            : <span style={{ display: 'block', width: ico, height: ico, borderRadius: 9 * k, background: '#94A3B8', opacity: 0.45, margin: '0 auto' }} />}
+          {k >= 0.8 && <span style={{ display: 'block', textAlign: 'center', fontSize: 7, color: '#E2E8F0', marginTop: 3 }}>{i === 2 ? 'NoiDemoliamo' : ['Messaggi', 'Foto', '', 'Mappe', 'Meteo', 'Note'][i]}</span>}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** ⭐ 08/10 (mockup A "secondo giro", Davide): la STRISCIA nella pagina di
+ *  accesso. Telefonino piccolo, "Hai già l'app?", il gancio dei certificati,
+ *  e una pillola BIANCA col bordo celeste: nella pagina il blu resta solo di
+ *  "Accedi". Sparisce dentro l'app installata. */
+export function StrisciaInstalla({ className = '' }: { className?: string }) {
+  const { stato, installa } = useInstallaApp()
+  const [foglio, setFoglio] = useState(false)
+  if (stato === 'installata') return null
+  return (
+    <>
+      <div className={`flex items-center gap-3.5 ${className}`} style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(231,235,243,0.9)', borderRadius: 18, padding: '12px 14px' }}>
+        <Telefonino larghezza={44} />
+        {/* sul telefono la pillola scende sotto il testo (in riga lo strizzava) */}
+        <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3.5">
+          <div className="flex-1 min-w-0">
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>Hai già l&apos;app?</div>
+            <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 2, lineHeight: 1.45 }}>Quando il certificato è pronto lo scarichi direttamente da lì, e la pratica la segui con un tocco. Gratis, senza store.</div>
+          </div>
+          <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="flex-shrink-0 self-start sm:self-auto inline-flex items-center gap-1.5 transition-colors hover:bg-blue-50 active:scale-[0.98]" style={{ background: '#fff', color: '#2563eb', border: '1.5px solid #BFDBFE', borderRadius: 999, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
+            {SCARICA} Installa l&apos;app
+          </button>
+        </div>
+      </div>
+      {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} />}
+    </>
+  )
+}
+
 /** La sezione del sito, prima del piede (⭐ 05/10, mockup B): card di vetro
  *  come le altre sezioni, col telefono che ha già l'icona nella home.
  *  Sparisce dentro l'app installata. */
@@ -129,17 +178,7 @@ export function SezioneInstalla() {
         style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid rgba(231,235,243,0.9)', borderRadius: 26, padding: '30px 34px' }}
       >
         {/* il telefono con l'icona già nella home */}
-        <div className="flex-shrink-0" aria-hidden="true" style={{ width: 150, height: 300, borderRadius: 26, border: '7px solid #0F172A', background: 'linear-gradient(160deg,#1e293b,#0f172a)', padding: '26px 12px', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px 8px', alignContent: 'start' }}>
-          {[0, 1, 2, 3, 4, 5].map(i => (
-            <div key={i}>
-              {i === 2
-                /* eslint-disable-next-line @next/next/no-img-element */
-                ? <img src="/icona-app.png" alt="" width={32} height={32} style={{ display: 'block', margin: '0 auto', borderRadius: 9 }} />
-                : <span style={{ display: 'block', width: 32, height: 32, borderRadius: 9, background: '#94A3B8', opacity: 0.45, margin: '0 auto' }} />}
-              <span style={{ display: 'block', textAlign: 'center', fontSize: 7, color: '#E2E8F0', marginTop: 3 }}>{i === 2 ? 'NoiDemoliamo' : ['Messaggi', 'Foto', '', 'Mappe', 'Meteo', 'Note'][i]}</span>
-            </div>
-          ))}
-        </div>
+        <Telefonino />
 
         <div className="flex-1 min-w-0">
           <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase', color: '#2563eb' }}>L&apos;app</div>

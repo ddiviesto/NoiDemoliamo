@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Installa l'app: un solo bottone blu, il gancio dei certificati</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1120px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.due{display:flex;gap:28px;align-items:flex-start;justify-content:center;padding:10px 20px 40px;flex-wrap:wrap}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:0 0 8px 4px}
+.lilla{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),radial-gradient(900px 520px at 30% 104%,#DED6FB 0%,rgba(222,214,251,0) 66%),#F5F3FE}
+.pc{width:760px;border-radius:16px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.18);border:1px solid #D8DEE9;padding:22px 0 34px}
+.pc .col{width:600px;margin:0 auto;display:flex;flex-direction:column;align-items:center;gap:0}
+.tel{width:375px;border-radius:34px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.22);border:8px solid #0F172A;background:#fff}
+.isola{width:100%;display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 30px rgba(15,27,51,.10);border-radius:999px;padding:8px 8px 8px 20px;margin-bottom:26px}
+.marchio{font-family:Outfit,sans-serif;font-size:20px;letter-spacing:-.035em}.marchio .noi{font-weight:500;color:#46536B}.marchio .dem{font-weight:800;color:#0F1B33;margin-left:.15em}
+.marchio.ch .noi{color:#BFD3F5}.marchio.ch .dem{color:#fff}.marchio.s{font-size:17px}
+.pill{font-size:12.5px;font-weight:700;color:#1D4ED8;background:#EFF6FF;border:1px solid #DBEAFE;border-radius:999px;padding:8px 14px}
+.scatola{width:100%;max-width:400px;background:#fff;border-radius:24px;box-shadow:0 10px 30px rgba(15,27,51,.10);overflow:hidden}
+.tel .scatola{max-width:none;border-radius:0;box-shadow:none}
+.testa{position:relative;color:#fff;padding:14px 16px 48px;background:linear-gradient(120deg,#1d4ed8 0%,#2563eb 55%,#3b82f6 100%)}
+.testa .ind{width:38px;height:38px;border-radius:999px;background:rgba(255,255,255,.18);display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-right:10px}
+.testa h1{margin:16px 0 0;font-size:22px;font-weight:700}.testa p{margin:4px 0 0;font-size:13px;color:#DBEAFE}
+.testa .ic{position:absolute;left:24px;bottom:-37px;width:74px;height:74px;border-radius:20px;background:#fff;box-shadow:0 8px 20px rgba(16,24,40,.18);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.corpo{padding:56px 24px 28px}
+.lab{font-size:12px;font-weight:600;color:#374151;margin:0 0 6px 4px}
+.campo{display:flex;align-items:center;gap:10px;border-radius:999px;padding:13px 18px;background:#F9FAFB;border:1.5px solid #E5E7EB;font-size:15px;color:#9CA3AF;margin-bottom:16px}
+.dim{text-align:right;font-size:13px;font-weight:600;color:#2563eb;margin:-8px 4px 18px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;border-radius:999px;padding:15px 0;font-size:15px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.35)}
+.btnp{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.3);white-space:nowrap}
+/* A: striscia di vetro sotto la scatola */
+.striscia{width:100%;max-width:400px;margin-top:16px;display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);border:1px solid rgba(231,235,243,.9);border-radius:18px;padding:12px 14px}
+.striscia .q{width:42px;height:42px;border-radius:12px;overflow:hidden;flex-shrink:0;box-shadow:0 3px 9px rgba(15,27,51,.12)}
+.striscia .t{font-size:13.5px;font-weight:700;color:#111827}.striscia .s{font-size:11.5px;color:#6B7280;margin-top:1px}
+.tel .striscia{margin:0 16px 20px;max-width:none;width:auto;background:#F5F3FE;border-color:#E6E3F7}
+/* B: riga dentro la scatola */
+.rigab{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:18px;padding-top:16px;border-top:1px solid #EEF1F5;font-size:13px;color:#6B7280}
+.rigab a{color:#2563eb;font-weight:700;text-decoration:underline}
+/* C: card grande come in home */
+.grande{width:100%;max-width:400px;margin-top:16px;display:flex;align-items:center;gap:18px;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);border:1px solid rgba(231,235,243,.9);border-radius:22px;padding:18px 20px}
+.grande .fone{flex-shrink:0;width:64px;height:124px;border-radius:14px;border:4px solid #0F172A;background:linear-gradient(160deg,#1e293b,#0f172a);padding:12px 6px;display:grid;grid-template-columns:repeat(2,1fr);gap:6px 4px;align-content:start}
+.grande .fone span{display:block;width:18px;height:18px;border-radius:5px;background:#94A3B8;opacity:.45;margin:0 auto}.grande .fone .ico{opacity:1;background:none;overflow:hidden}
+.grande .occ{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#2563eb}
+.grande h3{margin:4px 0 0;font-size:16px;font-weight:700;color:#0F1B33;line-height:1.2}.grande p{margin:5px 0 0;font-size:12.5px;color:#5B6779;line-height:1.5}
+.tel .grande{margin:0 16px 20px;max-width:none;width:auto;background:#F5F3FE;border-color:#E6E3F7}
+.btnb{display:inline-flex;align-items:center;gap:7px;background:#fff;color:#2563eb;border:1.5px solid #BFDBFE;border-radius:999px;padding:9px 16px;font-size:13px;font-weight:700;white-space:nowrap}
+.qi{width:42px;height:42px;border-radius:12px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.striscia{align-items:center}
+.solo{width:100%;max-width:400px;margin-top:18px;text-align:center;padding:0 10px}
+.solo .t{font-size:14.5px;font-weight:700;color:#111827}.solo .s{font-size:12.5px;color:#6B7280;margin-top:4px;line-height:1.5}.solo .btnb{margin-top:10px}
+.tel .solo{margin:0 16px 22px;max-width:none;width:auto}
+.rim{display:flex;align-items:flex-start;gap:10px;margin-top:18px;padding-top:16px;border-top:1px solid #EEF1F5}
+.rim .t{font-size:13.5px;font-weight:700;color:#111827}.rim .s{font-size:12.5px;color:#6B7280;margin-top:2px;line-height:1.5}.rim a{color:#2563eb;font-weight:700;text-decoration:underline}
+.ico-app{width:100%;height:100%;object-fit:cover;display:block}
+</style></head><body>
+<div class="nota"><b>INSTALLA L'APP, SECONDO GIRO</b> · un solo bottone blu nella pagina (quello di "Accedi"), niente secondo logo, e il gancio dei certificati che si scaricano direttamente. Tre modi, su PC e sul telefono.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">A · quadratino col certificato, pillola bianca</span>
+<span onclick="vista('b',this)">B · solo testo, pillola bianca al centro</span>
+<span onclick="vista('c',this)">C · "Hai già l’app?", solo un rimando</span>
+</div>
+<div id="viste"></div>
+<script>
+const SC='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+const FR='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>'
+const ICO='<img class="ico-app" src="/icona-app.png" alt="">'
+const marchio=(ch)=>`<span class="marchio ${ch?'ch s':''}"><span class="noi">Noi</span><span class="dem">Demoliamo</span></span>`
+
+const CERT='<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><polyline points="9 15 11 17 15 13"/></svg>'
+const sA=`<div class="striscia"><span class="qi">${CERT}</span><div style="flex:1;min-width:0"><div class="t">Hai già l’app?</div><div class="s">Quando il certificato è pronto lo scarichi direttamente da lì, e la pratica la segui con un tocco. Gratis, senza store.</div></div><span class="btnb">${SC} Installa l’app</span></div>`
+const sB=`<div class="solo"><div class="t">Certificati pronti? Li scarichi dall’app</div><div class="s">Rottamazione e radiazione PRA arrivano nella tua pratica: con l’app li hai a portata di mano, insieme a foto e stato. Gratis, senza store.</div><span class="btnb">${SC} Installa l’app</span></div>`
+const sC=`<div class="rim"><span class="qi" style="width:36px;height:36px;border-radius:10px">${CERT}</span><div style="flex:1;min-width:0"><div class="t">Hai già l’app?</div><div class="s">I certificati li scarichi direttamente da lì appena pronti, i documenti li fotografi al volo e la pratica è sempre sott’occhio. Gratis, senza store. <a>Installa l’app</a></div></div></div>`
+const rigab=`<div class="rigab">${SC.replace('currentColor','#6B7280')} Vuoi l’icona sul telefono? <a>Installa l’app</a></div>`
+const grande=`<div class="grande"><div class="fone"><span></span><span></span><span class="ico">${ICO}</span><span></span><span></span><span></span></div><div style="flex:1;min-width:0"><div class="occ">L’app</div><h3>Porta NoiDemoliamo nella tua home</h3><p>Si installa dal sito, senza store. Gratis, su iPhone, Android e PC.</p><div style="margin-top:10px"><span class="btnp">${SC} Installa l’app</span></div></div></div>`
+
+function scatola(dentro, tel){
+  return `<div class="scatola"><div class="testa"><span class="ind">${FR}</span>${marchio(true)}<h1>Bentornato</h1><p>Entra nella tua area personale</p><span class="ic">${ICO}</span></div>
+  <div class="corpo"><div class="lab">Email</div><div class="campo">nome@email.it</div><div class="lab">Password</div><div class="campo">La tua password</div><div class="dim">Password dimenticata?</div><div class="btn">Accedi</div>${dentro||''}</div></div>`
+}
+function pc(sotto, dentro){
+  return `<div class="pc lilla"><div class="col"><div class="isola">${marchio(false)}<span class="pill">Torna al sito</span></div>${scatola(dentro)}${sotto||''}</div></div>`
+}
+function tel(sotto, dentro){
+  return `<div class="tel">${scatola(dentro,true)}${sotto||''}</div>`
+}
+function coppia(sotto, dentro){
+  return `<div class="due"><div><div class="eti">Su PC</div>${pc(sotto,dentro)}</div><div><div class="eti">Sul telefono</div>${tel(sotto,dentro)}</div></div>`
+}
+const V={
+ a:{s:'<b>A.</b> La striscia sotto la scatola, ma al posto del logo c’è il <b>quadratino azzurro col certificato</b> (la stessa famiglia delle card) e il bottone è una <b>pillola bianca col bordo celeste</b>: si vede, ma il blu resta solo di "Accedi". Testo 3 col gancio: "Quando il certificato è pronto lo scarichi direttamente da lì".', h:coppia(sA)},
+ b:{s:'<b>B.</b> <b>Niente riquadro e niente icona</b>: due righe di testo centrate sotto la scatola e la pillola bianca. Il titolo è il gancio: "Certificati pronti? Li scarichi dall’app". La più leggera, sembra una nota a piè di pagina.', h:coppia(sB)},
+ c:{s:'<b>C.</b> Dentro la scatola, sotto "Accedi", separata da un filo: quadratino col certificato, "Hai già l’app?" e il testo con i tre fatti; "Installa l’app" è <b>solo un rimando sottolineato</b>, nessun bottone. Zero concorrenza con "Accedi".', h:coppia('',sC)},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
