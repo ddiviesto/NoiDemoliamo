@@ -860,38 +860,32 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
 
           {/* CONTINUA di pagina SUBITO SOTTO la card (l'azione è attaccata a
               ciò che hai appena completato); grigio finché le foto non sono complete */}
+          {/* ⭐ 08/10 (Davide, mockup 6): su PC il bottone sta al CENTRO
+              (sul telefono resta a tutta larghezza) */}
           {puoEliminare && (
-            <button
-              onClick={() => inviaInVerifica(docAttivo)}
-              disabled={inviandoId === docAttivo.id || !docCompleto(docAttivo)}
-              className="btn-pagina"
-              style={{ marginTop: 12 }}
-            >
-              {inviandoId === docAttivo.id ? 'Invio…' : docAttivo.stato === 'rifiutato' ? 'Invia di nuovo' : codaWizard.length > 1 ? 'Vai al prossimo documento' : "Invia l'ultimo documento"}
-            </button>
+            <div className="sm:flex sm:justify-center">
+              <button
+                onClick={() => inviaInVerifica(docAttivo)}
+                disabled={inviandoId === docAttivo.id || !docCompleto(docAttivo)}
+                className="btn-pagina"
+                style={{ marginTop: 12 }}
+              >
+                {inviandoId === docAttivo.id ? 'Invio…' : docAttivo.stato === 'rifiutato' ? 'Invia di nuovo' : codaWizard.length > 1 ? 'Vai al prossimo documento' : "Invia l'ultimo documento"}
+              </button>
+            </div>
           )}
 
           {/* ⭐ 28/07 sera (mockup B): coda ATTENUATA — niente card, righe
-              grigie leggere coi numerini spenti (informazione secondaria) */}
+              grigie leggere coi numerini spenti (informazione secondaria).
+              ⭐ 08/10 (Davide, mockup 6 A): anche su PC è questa lista
+              semplice, via il riquadro con le tessere numerate */}
           {codaWizard.length > 1 && (
-            <div className="hidden sm:block" style={{ marginTop: 14, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(226,232,245,0.9)', borderRadius: 16, padding: '12px 16px' }}>
-              <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#6B7280', marginBottom: 8 }}>I documenti da preparare</div>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(codaWizard.length, 4)}, minmax(0, 1fr))`, gap: 8 }}>
-                {codaWizard.map((d, i) => (
-                  <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: i === 0 ? '#EFF6FF' : '#fff', border: `1.5px solid ${i === 0 ? '#BFDBFE' : '#E5E7EB'}`, borderRadius: 12, padding: '9px 10px' }}>
-                    <span style={{ width: 22, height: 22, borderRadius: 999, background: i === 0 ? '#2563EB' : '#EDF0F5', color: i === 0 ? '#fff' : '#64748B', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 1}</span>
-                    <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 600, color: i === 0 ? '#1D4ED8' : '#4B5563', lineHeight: 1.2 }}>{nomeRitiro(d)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-          {codaWizard.length > 1 && (
-            <div className="sm:hidden" style={{ margin: '13px 10px 0', display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div className="flex flex-col gap-2 sm:gap-2.5" style={{ margin: '13px 10px 0' }}>
+              <div className="hidden sm:block" style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#6B7280' }}>Dopo questo</div>
               {codaWizard.slice(1).map((d, i) => (
-                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ width: 18, height: 18, borderRadius: '50%', background: '#F1F4F8', color: '#9AA7B5', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
-                  <span style={{ fontSize: 12, color: '#8B98A9' }}>{nomeRitiro(d)}</span>
+                <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="sm:!w-[22px] sm:!h-[22px] sm:!text-[11px] sm:!bg-[#EDF0F5] sm:!text-[#64748B]" style={{ width: 18, height: 18, borderRadius: '50%', background: '#F1F4F8', color: '#9AA7B5', fontSize: 10, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 2}</span>
+                  <span className="sm:!text-[13.5px] sm:!text-[#6B7280]" style={{ fontSize: 12, color: '#8B98A9' }}>{nomeRitiro(d)}</span>
                 </div>
               ))}
             </div>
@@ -1358,7 +1352,7 @@ function DocCard(props: {
         <div className={classe} {...trascinamento}>
           {testata}
           <div style={pc
-            ? { position: 'relative', height: 190, background: '#f3f5f8' }
+            ? { position: 'relative', height: 150, background: '#f3f5f8' }
             : { position: 'relative', border: '1.5px solid #C7D6EC', borderRadius: 11, overflow: 'hidden', background: '#f3f5f8', aspectRatio: '4 / 3' }}>
             <button onClick={() => props.onApri(url, doc.nome)} aria-label={`Guarda il ${lato}`} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
               {pdf ? (
@@ -1383,7 +1377,7 @@ function DocCard(props: {
     }
 
     const tondo = (bordo: string) => (
-      <span style={{ width: 48, height: 48, borderRadius: 999, background: '#fff', border: `1.5px solid ${bordo}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <span style={{ width: 44, height: 44, borderRadius: 999, background: '#fff', border: `1.5px solid ${bordo}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
       </span>
     )
@@ -1392,7 +1386,7 @@ function DocCard(props: {
       <div className={classe} {...trascinamento}>
         {testata}
         <div className="doc-casella" style={pc
-          ? { minHeight: 170, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '22px 16px' }
+          ? { minHeight: 150, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '16px' }
           : { borderRadius: 11, aspectRatio: '4 / 3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
           {!pc && <div style={{ fontSize: 11, fontWeight: 600, color: colTile, letterSpacing: 0.5, textTransform: 'uppercase' }}>{lato}</div>}
           {props.eliminabile && (pc ? (

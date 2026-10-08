@@ -400,7 +400,7 @@ export default function DashboardCliente() {
                   mockup 22/07 — via il riquadro tratteggiato col +) */}
               <button
                 onClick={() => router.push('/inizia')}
-                className="w-full text-left hover:!border-[#BFDBFE] active:scale-[0.995] sm:hidden"
+                className="w-full text-left hover:!border-[#BFDBFE] active:scale-[0.995]"
                 style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '12px 13px', transition: 'border-color 0.15s' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -416,13 +416,8 @@ export default function DashboardCliente() {
                 </div>
               </button>
 
-              {/* ⭐ 05/10 (Davide): su PC niente card tratteggiata a tutta larghezza, un BOTTONE a pillola centrato */}
-              <div className="hidden sm:flex justify-center" style={{ marginTop: 10 }}>
-                <button onClick={() => router.push('/inizia')} className="btn-pagina btn-pagina--auto" style={{ fontSize: 14, padding: '12px 26px' }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                  Aggiungi un altro veicolo
-                </button>
-              </div>
+              {/* ⭐ 08/10 (Davide, mockup 6): anche su PC è la stessa riga del
+                  telefono (la pillola blu centrata del 05/10 è stata tolta) */}
             </div>
           )}
 
