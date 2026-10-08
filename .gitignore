@@ -47,3 +47,7 @@ yarn-error.log*
 next-env.d.ts
 public/icona-a3.html
 .design-pratica-pc/
+
+# Impeccable (skill di design): resta il solo config condiviso, il resto è locale
+/.impeccable/*
+!/.impeccable/config.json
