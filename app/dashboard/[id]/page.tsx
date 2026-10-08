@@ -386,6 +386,9 @@ export default function DettaglioPraticaCliente() {
   const banner = bannerInfo(pratica)
   // il riquadro verde è solo dei traguardi (documenti approvati, completata)
   const traguardo = banner.bg.includes('#16a34a')
+  // dove porta il banner: la linguetta del suo stato, se non è già aperta
+  const linguettaDelBanner = linguettaPerStato(pratica.stato)
+  const bannerPorta: Tab | null = linguettaDelBanner !== tab ? linguettaDelBanner : null
   const badge = pillolaStato(pratica.stato, pratica.in_attesa)
 
   return (
@@ -459,23 +462,39 @@ export default function DettaglioPraticaCliente() {
             <TabButton attivo={tab === 'chat'} onClick={() => setTab('chat')} Icona={IconaChat} label="Chat" badge={chatNonLetti} />
           </div>
 
+          {/* ⭐ 08/10 (Davide): il banner PORTA dove dice. Se il cliente sta
+              su un'altra linguetta e il riquadro parla di documenti (o di
+              ritiro, o di stato), un clic apre quella linguetta; la freccina
+              a destra compare solo quando c'è un posto dove andare */}
           {!banner.tenue && (
-            <div className="hidden sm:flex items-center gap-3.5" style={{ background: '#fff', border: `1.5px solid ${traguardo ? '#CDEBD6' : '#DBEAFE'}`, borderRadius: 16, padding: '12px 16px', boxShadow: traguardo ? '0 2px 8px rgba(31,122,67,0.08)' : '0 2px 8px rgba(37,99,235,0.08)' }}>
+            <button
+              type="button"
+              onClick={bannerPorta ? () => setTab(bannerPorta) : undefined}
+              className={`hidden sm:flex items-center gap-3.5 text-left w-full${bannerPorta ? ' transition-colors hover:bg-blue-50/60 active:scale-[0.995]' : ''}`}
+              style={{ background: '#fff', border: `1.5px solid ${traguardo ? '#CDEBD6' : '#DBEAFE'}`, borderRadius: 16, padding: '12px 16px', boxShadow: traguardo ? '0 2px 8px rgba(31,122,67,0.08)' : '0 2px 8px rgba(37,99,235,0.08)', cursor: bannerPorta ? 'pointer' : 'default' }}
+            >
               <div className="flex items-center justify-center flex-shrink-0 text-white" style={{ width: 40, height: 40, borderRadius: 12, background: traguardo ? 'linear-gradient(135deg,#16a34a,#15803d)' : 'linear-gradient(135deg,#1d4ed8,#2563eb)' }}>{banner.icona}</div>
               <div className="flex-1 min-w-0">
                 <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: traguardo ? '#1F7A43' : '#1D4ED8' }}>Cosa fare adesso</div>
                 <div className="text-[15px] font-bold leading-tight" style={{ color: '#0F172A', marginTop: 2 }}>{banner.titolo}</div>
                 <div className="text-[12.5px] leading-snug" style={{ color: '#4B5A72', marginTop: 2 }}>{banner.sottotitolo}</div>
               </div>
-            </div>
+              {bannerPorta && <FrecciaBanner colore={traguardo ? '#1F7A43' : '#2563eb'} />}
+            </button>
           )}
-          <div className={`rounded-2xl p-4 flex items-center gap-3 ${banner.tenue ? '' : 'text-white shadow-md sm:hidden'}`} style={{ background: banner.bg, border: banner.tenue ? '1.5px solid #F3C8C8' : undefined, color: banner.tenue ? '#7C2D2D' : undefined }}>
+          <button
+            type="button"
+            onClick={bannerPorta ? () => setTab(bannerPorta) : undefined}
+            className={`rounded-2xl p-4 flex items-center gap-3 text-left w-full ${banner.tenue ? '' : 'text-white shadow-md sm:hidden'}${bannerPorta ? ' active:scale-[0.99] transition-transform' : ''}`}
+            style={{ background: banner.bg, border: banner.tenue ? '1.5px solid #F3C8C8' : 'none', color: banner.tenue ? '#7C2D2D' : undefined, cursor: bannerPorta ? 'pointer' : 'default' }}
+          >
             <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 ${banner.tenue ? '' : 'bg-white/20'}`} style={banner.tenue ? { background: '#F3C8C8', color: '#A94444' } : undefined}>{banner.icona}</div>
             <div className="flex-1 min-w-0">
               <div className="text-sm font-bold leading-tight">{banner.titolo}</div>
               <div className="text-xs opacity-90 mt-1 leading-snug">{banner.sottotitolo}</div>
             </div>
-          </div>
+            {bannerPorta && <FrecciaBanner colore={banner.tenue ? '#A94444' : '#fff'} />}
+          </button>
 
           {/* ⭐ 29/07 (mockup approvato): INVITO ALLE FOTO — solo in
               "Documenti in verifica", zero foto, e MAI sulla tab Documenti
@@ -541,7 +560,15 @@ export default function DettaglioPraticaCliente() {
   )
 }
 
-// Il riquadro bianco di riepilogo della colonna di sinistra (solo PC)
+// La freccina a destra del banner "Cosa fare adesso" quando porta a una linguetta
+function FrecciaBanner({ colore }: { colore: string }) {
+  return (
+    <span className="flex items-center justify-center flex-shrink-0" style={{ width: 30, height: 30, borderRadius: 999, background: colore === '#fff' ? 'rgba(255,255,255,0.2)' : 'rgba(37,99,235,0.08)' }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={colore} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+    </span>
+  )
+}
+
 function TabButton(props: {
   attivo: boolean
   onClick: () => void
