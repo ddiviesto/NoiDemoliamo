@@ -473,7 +473,20 @@ body {
 /* ⭐ 05/10 (mockup A/C): la casella fronte/retro dei documenti è
    tratteggiata sul telefono e PIENA e chiara su PC */
 .doc-casella { border: 1.5px dashed #B5C6E0; background: #fff; }
+.doc-tessera { flex: 1; min-width: 0; }
 @media (min-width: 640px) {
-  .doc-casella { border: 1.5px solid #E5E9F0; background: #F5F7FB; border-radius: 14px; }
+  /* ⭐ 08/10 (mockup 5, variante C): su PC la casella è dentro una TESSERA
+     con la testata bianca numerata; la casella stessa non ha più bordo */
+  .doc-casella { border: none; background: transparent; border-radius: 0; }
+  .doc-tessera { border: 1.5px solid #E5E9F0; border-radius: 14px; overflow: hidden; background: #F5F7FB; transition: border-color .16s, background .16s, box-shadow .16s; }
+  .doc-tessera-cap { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: #fff; border-bottom: 1px solid #E5E9F0; font-size: 11.5px; font-weight: 700; letter-spacing: .8px; text-transform: uppercase; color: #4B5A72; transition: background .16s, color .16s; }
+  .doc-tessera-cap b { width: 20px; height: 20px; border-radius: 999px; background: #2563EB; color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .doc-tessera--piena { background: #fff; }
+  .doc-tessera--piena .doc-tessera-cap b { background: #1F7A43; }
+  .doc-tessera--attesa { background: #FAFBFD; }
+  .doc-tessera--attesa .doc-tessera-cap { color: #64748B; }
+  .doc-tessera--attesa .doc-tessera-cap b { background: #EDF0F5; color: #64748B; }
+  .doc-tessera--drag { border-color: #2563EB; background: #EFF6FF; box-shadow: 0 0 0 3px rgba(37, 99, 235, .15); }
+  .doc-tessera--drag .doc-tessera-cap { background: #E4EEFF; border-color: #BFD3F5; color: #1D4ED8; }
 }
 

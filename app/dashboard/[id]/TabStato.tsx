@@ -247,6 +247,31 @@ export default function TabStato({ pratica }: Props) {
             </div>
           )}
         </div>
+
+        {/* ⭐ 08/10 (mockup 5, scena 6): I CERTIFICATI stanno qui, in fondo al
+            percorso, dal ritiro in poi. Finché il demolitore non li carica la
+            pillola dice "In arrivo"; il bollino per scaricare arriverà con
+            l'area demolitore (fase 3). Prima il banner rimandava a un
+            "tab Documenti" dove non c'era nulla. */}
+        {!isAnnullata && stepIdx >= TIMELINE_STEPS.length - 2 && (
+          <div style={{ padding: '0 14px 14px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#6B7280', marginBottom: 6 }}>I tuoi certificati</div>
+            {[
+              { nome: 'Certificato di rottamazione', data: pratica.data_certificato_rottamazione },
+              { nome: 'Radiazione al PRA', data: pratica.data_certificato_pra },
+            ].map(c => (
+              <div key={c.nome} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#F5F7FB', border: '1.5px solid #E5E9F0', borderRadius: 14, padding: '11px 14px', marginTop: 6 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>{c.nome}</div>
+                  <div style={{ fontSize: 12, color: '#6B7280', marginTop: 1 }}>
+                    {c.data ? `Emesso il ${new Date(c.data).toLocaleDateString('it-IT', { day: 'numeric', month: 'long' })}: te lo mandiamo noi` : 'Te lo mandiamo noi appena è pronto'}
+                  </div>
+                </div>
+                <span style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '5px 10px', background: c.data ? '#DCF3E4' : '#E8ECF3', color: c.data ? '#1F7A43' : '#5B6779' }}>{c.data ? 'Emesso' : 'In arrivo'}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* ====== CARD DATI DEL VEICOLO ====== */}

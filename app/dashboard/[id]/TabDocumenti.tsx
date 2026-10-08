@@ -395,7 +395,12 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   const [signedMap, setSignedMap] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
   const [caricandoId, setCaricandoId] = useState<string | null>(null)
+  const [latoInCarico, setLatoInCarico] = useState<'fronte' | 'retro' | null>(null)
   const [inviandoId, setInviandoId] = useState<string | null>(null)
+  // ⭐ 08/10 (mockup 5, scena 4): niente finestrelle alert() del browser.
+  // L'avviso compare in riga dentro la pagina, dice cosa è successo e ha
+  // il suo "Riprova".
+  const [avviso, setAvviso] = useState<Avviso | null>(null)
   // ⭐ 28/07 (mockup approvato, proposta 4): il visore è un PALCO SCURO a
   // tutto schermo con la navigazione tra i file dello stesso documento
   const [anteprima, setAnteprima] = useState<{ lista: { url: string; titolo: string }[]; indice: number } | null>(null)
@@ -574,6 +579,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
   // finché il cliente non preme "Ho finito, invia in verifica".
   async function caricaFile(doc: DocChecklist, files: File[], lato?: 'fronte' | 'retro') {
     setCaricandoId(doc.id)
+    setLatoInCarico(lato ?? null)
+    setAvviso(null)
     try {
       // Cintura di sicurezza (22/07): niente aggiunte a un documento che
       // l'admin ha appena approvato (pagina rimasta indietro)
@@ -584,7 +591,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
         .single()
       if (fresco?.stato === 'approvato') {
         await carica()
-        alert('Questo documento è stato appena approvato da NoiDemoliamo: è tutto a posto, non serve modificarlo.')
+        setAvviso({ tono: 'blu', titolo: 'Questo documento è stato appena approvato', testo: 'È tutto a posto, non serve modificarlo.' })
         return
       }
       const esistenti = leggiFile(doc.file_url)
@@ -612,9 +619,15 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       await carica()
     } catch (err) {
       console.error('Errore upload:', err)
-      alert('Errore nel caricamento. Riprova.')
+      setAvviso({
+        tono: 'rosso',
+        titolo: lato ? `Il ${lato} non è stato caricato` : files.length > 1 ? 'I file non sono stati caricati' : 'Il file non è stato caricato',
+        testo: spiegaErrore(err),
+        riprova: () => caricaFile(doc, files, lato),
+      })
     }
     setCaricandoId(null)
+    setLatoInCarico(null)
   }
 
   // Chiede al server di ricalcolare lo stato della pratica (es. tutti i documenti
@@ -651,7 +664,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       await ricalcolaStatoPratica()
     } catch (err) {
       console.error('Errore invio in verifica:', err)
-      alert('Errore nell\'invio. Riprova.')
+      setAvviso({ tono: 'rosso', titolo: 'Il documento non è partito', testo: spiegaErrore(err), riprova: () => inviaInVerifica(doc) })
     }
     setInviandoId(null)
   }
@@ -668,7 +681,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
         .single()
       if (fresco?.stato === 'approvato') {
         await carica()
-        alert('Questo documento è stato appena approvato da NoiDemoliamo: è tutto a posto, non serve modificarlo.')
+        setAvviso({ tono: 'blu', titolo: 'Questo documento è stato appena approvato', testo: 'È tutto a posto, non serve modificarlo.' })
         return
       }
       const files = leggiFile(doc.file_url)
@@ -696,7 +709,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       if (nuovoStato !== doc.stato) await ricalcolaStatoPratica()
     } catch (err) {
       console.error('Errore eliminazione:', err)
-      alert('Errore nell\'eliminazione. Riprova.')
+      setAvviso({ tono: 'rosso', titolo: 'Non sono riuscito a eliminare il file', testo: spiegaErrore(err), riprova: () => eliminaFile(doc, fileIdx) })
     }
   }
 
@@ -708,7 +721,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
       await carica()
     } catch (err) {
       console.error('Errore eliminazione foto:', err)
-      alert('Errore nell\'eliminazione. Riprova.')
+      setAvviso({ tono: 'rosso', titolo: 'Non sono riuscito a eliminare la foto', testo: spiegaErrore(err), riprova: () => eliminaFoto(f) })
     }
   }
 
@@ -797,6 +810,8 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
           documento SENZA miniature. Tocco sulla riga → tutto il pannello si gira
           (flip) e mostra quel documento in grande, con elimina/aggiungi.
           Quando il wizard è finito, le foto del veicolo sono l'ultima riga. */}
+      {avviso && !docAttivo && <AvvisoInRiga avviso={avviso} onChiudi={() => setAvviso(null)} />}
+
       {sistemati.length > 0 && (
         <PannelloInviati
           docs={sistemati}
@@ -823,7 +838,7 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
               etichetta a sinistra, pillolina "Documento X di Y" a destra;
               il palco è della card qui sotto */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '2px 2px 10px' }}>
-            <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, color: '#9AA7B5' }}>DA PREPARARE</span>
+            <span style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 0.8, color: '#6B7280' }}>DA PREPARARE</span>
             <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontSize: 11, fontWeight: 700, borderRadius: 999, padding: '3px 10px' }}>
               Documento {Math.min(inviatiCount + 1, totaleDocWizard)} di {totaleDocWizard}
             </span>
@@ -837,9 +852,11 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
             </div>
           )}
 
-          <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} eliminabile={puoEliminare}
+          <DocCard doc={docAttivo} signedMap={signedMap} caricamento={caricandoId === docAttivo.id} latoInCarico={latoInCarico} eliminabile={puoEliminare}
             onCarica={(files, lato) => caricaFile(docAttivo, files, lato)} onApri={apriAnteprima} onElimina={(idx) => eliminaFile(docAttivo, idx)}
             guidaAttestazione={docAttivo.codice === 'ATTESTAZIONE_INUTILIZZABILITA'} />
+
+          {avviso && <AvvisoInRiga avviso={avviso} onChiudi={() => setAvviso(null)} />}
 
           {/* CONTINUA di pagina SUBITO SOTTO la card (l'azione è attaccata a
               ciò che hai appena completato); grigio finché le foto non sono complete */}
@@ -858,11 +875,11 @@ export default function TabDocumenti({ pratica, onDocRifiutatiCambiati, onStatoC
               grigie leggere coi numerini spenti (informazione secondaria) */}
           {codaWizard.length > 1 && (
             <div className="hidden sm:block" style={{ marginTop: 14, background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(226,232,245,0.9)', borderRadius: 16, padding: '12px 16px' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#8A94A3', marginBottom: 8 }}>I documenti da preparare</div>
+              <div style={{ fontSize: 11.5, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', color: '#6B7280', marginBottom: 8 }}>I documenti da preparare</div>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(codaWizard.length, 4)}, minmax(0, 1fr))`, gap: 8 }}>
                 {codaWizard.map((d, i) => (
                   <div key={d.id} style={{ display: 'flex', alignItems: 'center', gap: 8, background: i === 0 ? '#EFF6FF' : '#fff', border: `1.5px solid ${i === 0 ? '#BFDBFE' : '#E5E7EB'}`, borderRadius: 12, padding: '9px 10px' }}>
-                    <span style={{ width: 22, height: 22, borderRadius: 999, background: i === 0 ? '#2563EB' : '#EDF0F5', color: i === 0 ? '#fff' : '#64748B', fontSize: 11, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 1}</span>
+                    <span style={{ width: 22, height: 22, borderRadius: 999, background: i === 0 ? '#2563EB' : '#EDF0F5', color: i === 0 ? '#fff' : '#64748B', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{inviatiCount + i + 1}</span>
                     <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 600, color: i === 0 ? '#1D4ED8' : '#4B5563', lineHeight: 1.2 }}>{nomeRitiro(d)}</span>
                   </div>
                 ))}
@@ -1025,6 +1042,44 @@ function ConfermaSullaFoto({ cosa, compatta, onAnnulla, onConferma }: {
   )
 }
 
+// ⭐ 08/10 (mockup 5, scena 4): l'avviso IN RIGA al posto delle finestrelle
+// alert() del browser. Rosso tenue di famiglia per gli errori (con "Riprova"),
+// scheda azzurra per le informazioni. Dice sempre COSA è successo.
+type Avviso = { tono: 'rosso' | 'blu'; titolo: string; testo: string; riprova?: () => void }
+
+function spiegaErrore(err: unknown): string {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) return 'La connessione è caduta a metà. Il file non è andato perso: riprova quando sei di nuovo in rete.'
+  const msg = String((err as { message?: string })?.message || err || '').toLowerCase()
+  if (msg.includes('too large') || msg.includes('exceeded') || msg.includes('payload') || msg.includes('413')) return 'Il file è troppo pesante. Prova con una foto più leggera o una scansione a risoluzione più bassa.'
+  if (msg.includes('fetch') || msg.includes('network') || msg.includes('timeout')) return 'La rete non ha risposto. Controlla la connessione e riprova.'
+  return 'Qualcosa non ha funzionato dalla nostra parte. Riprova tra un momento: se continua, scrivici in chat.'
+}
+
+function AvvisoInRiga({ avviso, onChiudi }: { avviso: Avviso; onChiudi: () => void }) {
+  const rosso = avviso.tono === 'rosso'
+  return (
+    <div role="alert" style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: rosso ? '#FEF6F6' : '#EFF6FF', border: `1.5px solid ${rosso ? '#F3C8C8' : '#DBEAFE'}`, borderRadius: 14, padding: '12px 14px', marginTop: 10 }}>
+      <span style={{ width: 34, height: 34, borderRadius: 10, background: rosso ? '#FBDADA' : '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        {rosso
+          ? <IcoAlert size={17} color="#A94444" />
+          : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+      </span>
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 13.5, fontWeight: 700, color: rosso ? '#A94444' : '#1E4E8C' }}>{avviso.titolo}</span>
+        <span style={{ display: 'block', fontSize: 12.5, color: rosso ? '#7C2D2D' : '#1E4E8C', marginTop: 2, lineHeight: 1.45 }}>
+          {avviso.testo}
+          {avviso.riprova && (
+            <button onClick={() => { onChiudi(); avviso.riprova?.() }} style={{ background: 'none', border: 'none', padding: 0, marginLeft: 6, color: '#A94444', fontWeight: 700, textDecoration: 'underline', cursor: 'pointer', fontSize: 12.5 }}>Riprova</button>
+          )}
+        </span>
+      </span>
+      <button onClick={onChiudi} aria-label="Chiudi l'avviso" style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', color: rosso ? '#A94444' : '#1E4E8C', flexShrink: 0 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+      </button>
+    </div>
+  )
+}
+
 function ConfermaInRiga({ cosa, onAnnulla, onConferma }: {
   cosa: string
   onAnnulla: () => void
@@ -1147,6 +1202,8 @@ function DocCard(props: {
   doc: DocChecklist
   signedMap: Record<string, string>
   caricamento: boolean
+  // quale casella sta caricando (solo per i documenti fronte/retro)
+  latoInCarico?: 'fronte' | 'retro' | null
   eliminabile: boolean
   onCarica: (files: File[], lato?: 'fronte' | 'retro') => void
   onApri: (url: string, titolo: string) => void
@@ -1171,6 +1228,18 @@ function DocCard(props: {
   const { doc } = props
   const files = leggiFile(doc.file_url)
   const pc = usePc()
+
+  // ⭐ 08/10 (mockup 5, scene 2-3): su PC il trascinamento FUNZIONA. La
+  // casella sotto il file si accende di azzurro; fuori dalle caselle il
+  // browser non deve aprire il file al posto della pagina.
+  const [trascina, setTrascina] = useState<'fronte' | 'retro' | null>(null)
+  useEffect(() => {
+    if (!pc) return
+    const blocca = (e: DragEvent) => { e.preventDefault() }
+    window.addEventListener('dragover', blocca)
+    window.addEventListener('drop', blocca)
+    return () => { window.removeEventListener('dragover', blocca); window.removeEventListener('drop', blocca) }
+  }, [pc])
 
   useEffect(() => { setConfermaIdx(null) }, [doc.id, doc.file_url])
   const rifiutato = doc.stato === 'rifiutato'
@@ -1249,49 +1318,116 @@ function DocCard(props: {
   // Casella FRONTE o RETRO: un solo gesto possibile, Scatta.
   // Quando la foto c'è, riempie TUTTA la casella (niente spazio sprecato):
   // etichetta a pillola sopra la foto, ✕ nell'angolo, tocco = anteprima.
+  // ⭐ 08/10 (mockup 5, variante C scelta da Davide): su PC le caselle sono
+  // due TESSERE numerate 1 e 2 con la testata bianca; il retro resta in
+  // attesa ("Dopo il fronte") finché il fronte non c'è, così c'è un solo
+  // bottone blu alla volta. Il trascinamento accende la tessera. Sul
+  // telefono resta la casella tratteggiata col tondo "Scatta".
   function renderSlot(lato: 'fronte' | 'retro', file: FileCaricato | undefined, camRef: React.RefObject<HTMLInputElement | null>) {
     const idx = file ? files.indexOf(file) : -1
+    const numero = lato === 'fronte' ? 1 : 2
+    const attesa = pc && lato === 'retro' && !file && !fronteFile
+    const inCarico = props.caricamento && props.latoInCarico === lato
+    const trascinaQui = trascina === lato
+    const puoRicevere = props.eliminabile && !attesa && !inCarico
+
+    const classe = ['doc-tessera', file ? 'doc-tessera--piena' : '', attesa ? 'doc-tessera--attesa' : '', trascinaQui ? 'doc-tessera--drag' : ''].filter(Boolean).join(' ')
+    const trascinamento = pc ? {
+      onDragOver: (e: React.DragEvent) => { if (!puoRicevere) return; e.preventDefault(); if (!trascinaQui) setTrascina(lato) },
+      onDragLeave: (e: React.DragEvent) => { if (e.currentTarget.contains(e.relatedTarget as Node | null)) return; setTrascina(null) },
+      onDrop: (e: React.DragEvent) => {
+        e.preventDefault()
+        setTrascina(null)
+        if (!puoRicevere) return
+        const accettati = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type === 'application/pdf')
+        if (accettati.length) props.onCarica(accettati.slice(0, 1), lato)
+      },
+    } : {}
+
+    const testata = pc && (
+      <div className="doc-tessera-cap">
+        <b>{file ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg> : numero}</b>
+        {lato}
+      </div>
+    )
 
     if (file) {
       const url = props.signedMap[file.url] || file.url
       const pdf = isPdfUrl(file.nome) || isPdfUrl(file.url)
       return (
-        <div style={{ flex: 1, minWidth: 0, position: 'relative', border: '1.5px solid #C7D6EC', borderRadius: 11, overflow: 'hidden', background: '#f3f5f8', aspectRatio: '4 / 3' }}>
-          <button onClick={() => props.onApri(url, doc.nome)} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
-            {pdf ? (
-              <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#c0392b' }}>PDF</div>
-            ) : (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        <div className={classe} {...trascinamento}>
+          {testata}
+          <div style={pc
+            ? { position: 'relative', height: 190, background: '#f3f5f8' }
+            : { position: 'relative', border: '1.5px solid #C7D6EC', borderRadius: 11, overflow: 'hidden', background: '#f3f5f8', aspectRatio: '4 / 3' }}>
+            <button onClick={() => props.onApri(url, doc.nome)} aria-label={`Guarda il ${lato}`} style={{ display: 'block', width: '100%', height: '100%', padding: 0, border: 'none', background: 'none', cursor: 'pointer' }}>
+              {pdf ? (
+                <div style={{ width: '100%', height: '100%', background: '#fbeaea', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#c0392b' }}>PDF</div>
+              ) : (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              )}
+            </button>
+            {!pc && <span style={{ position: 'absolute', top: 6, left: 6, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.5, color: colTile, background: 'rgba(255,255,255,0.92)', borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', pointerEvents: 'none' }}>{lato}</span>}
+            {props.eliminabile && <XElimina onClick={() => setConfermaIdx(idx)} />}
+            {confermaIdx === idx && (
+              <ConfermaSullaFoto
+                cosa={pdf ? 'questo file' : 'questa foto'}
+                onAnnulla={() => setConfermaIdx(null)}
+                onConferma={() => props.onElimina(idx)}
+              />
             )}
-          </button>
-          <span style={{ position: 'absolute', top: 6, left: 6, fontSize: 9.5, fontWeight: 600, letterSpacing: 0.5, color: colTile, background: 'rgba(255,255,255,0.92)', borderRadius: 20, padding: '2px 8px', textTransform: 'uppercase', pointerEvents: 'none' }}>{lato}</span>
-          {props.eliminabile && <XElimina onClick={() => setConfermaIdx(idx)} />}
-          {confermaIdx === idx && (
-            <ConfermaSullaFoto
-              cosa={pdf ? 'questo file' : 'questa foto'}
-              onAnnulla={() => setConfermaIdx(null)}
-              onConferma={() => props.onElimina(idx)}
-            />
-          )}
+          </div>
         </div>
       )
     }
 
+    const tondo = (bordo: string) => (
+      <span style={{ width: 48, height: 48, borderRadius: 999, background: '#fff', border: `1.5px solid ${bordo}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+      </span>
+    )
+
     return (
-      <div className="doc-casella" style={{ flex: 1, minWidth: 0, borderRadius: 11, aspectRatio: '4 / 3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-        <div style={{ fontSize: 11, fontWeight: 600, color: colTile, letterSpacing: 0.5, textTransform: 'uppercase' }}>{lato}</div>
-        {props.eliminabile && (
-          <>
-            {/* telefono: il tondo blu "Scatta" · PC: la pillola "Scegli dal dispositivo" (⭐ 05/10) */}
-            <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} className="active:scale-[0.96] sm:hidden" style={{ width: 42, height: 42, borderRadius: '50%', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
-              <IcoCamera size={18} color="#fff" />
-            </button>
-            <div className="sm:hidden" style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb' }}>Scatta</div>
-            <button onClick={() => camRef.current?.click()} aria-label={`Carica il ${lato}`} className="hidden sm:inline-flex active:scale-[0.98]" style={{ marginTop: 4, background: 'linear-gradient(90deg,#1d4ed8,#2563eb)', color: '#fff', border: 'none', borderRadius: 999, padding: '9px 16px', fontSize: 12.5, fontWeight: 600, boxShadow: '0 6px 18px rgba(37,99,235,0.3)', cursor: 'pointer' }}>Scegli dal dispositivo</button>
-            <div className="hidden sm:block" style={{ fontSize: 11.5, color: '#8A94A3' }}>oppure trascina qui l&apos;immagine</div>
-          </>
-        )}
+      <div className={classe} {...trascinamento}>
+        {testata}
+        <div className="doc-casella" style={pc
+          ? { minHeight: 170, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 9, padding: '22px 16px' }
+          : { borderRadius: 11, aspectRatio: '4 / 3', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          {!pc && <div style={{ fontSize: 11, fontWeight: 600, color: colTile, letterSpacing: 0.5, textTransform: 'uppercase' }}>{lato}</div>}
+          {props.eliminabile && (pc ? (
+            inCarico ? (
+              <>
+                <div className="w-7 h-7 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                <span style={{ fontSize: 13, fontWeight: 600, color: '#1D4ED8' }}>Carico il {lato}…</span>
+              </>
+            ) : attesa ? (
+              <>
+                {tondo('#E5E9F0')}
+                <span style={{ fontSize: 12.5, color: '#6B7280' }}>Dopo il fronte</span>
+              </>
+            ) : trascinaQui ? (
+              <>
+                {tondo('#2563EB')}
+                <span style={{ fontSize: 14, fontWeight: 700, color: '#1D4ED8', pointerEvents: 'none' }}>Lascia qui il {lato}</span>
+              </>
+            ) : (
+              <>
+                {tondo('#DBEAFE')}
+                <button onClick={() => camRef.current?.click()} aria-label={`Carica il ${lato}`} className="active:scale-[0.98]" style={{ background: 'linear-gradient(90deg,#1d4ed8,#2563eb)', color: '#fff', border: 'none', borderRadius: 999, padding: '10px 18px', fontSize: 13, fontWeight: 600, boxShadow: '0 6px 18px rgba(37,99,235,0.3)', cursor: 'pointer' }}>Scegli dal dispositivo</button>
+                <span style={{ fontSize: 12, color: '#6B7280' }}>oppure trascina qui l&apos;immagine</span>
+              </>
+            )
+          ) : (
+            <>
+              {/* telefono: il tondo blu "Scatta" */}
+              <button onClick={() => camRef.current?.click()} aria-label={`Scatta il ${lato}`} className="active:scale-[0.96]" style={{ width: 42, height: 42, borderRadius: '50%', background: '#2563eb', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 3px 9px rgba(37,99,235,0.25)', transition: 'transform 0.1s' }}>
+                <IcoCamera size={18} color="#fff" />
+              </button>
+              <div style={{ fontSize: 10.5, fontWeight: 600, color: '#2563eb' }}>Scatta</div>
+            </>
+          ))}
+        </div>
       </div>
     )
   }
@@ -1435,7 +1571,7 @@ function DocCard(props: {
         <div style={{ textAlign: 'center', marginTop: 10, paddingTop: 10, borderTop: '1px solid #EEF1F5' }}>
           <button onClick={() => setModoFile(true)} style={{ background: 'none', border: 'none', fontSize: 12, color: '#6B7280', cursor: 'pointer' }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: '-2px', marginRight: 4 }}><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" /></svg>
-            Hai una scansione o un PDF? <span style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'underline' }}>Allega file</span>
+            Hai una scansione o un PDF{pc ? ' con fronte e retro insieme' : ''}? <span style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'underline' }}>Allega il file</span>
           </button>
         </div>
       )}

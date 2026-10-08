@@ -24,7 +24,7 @@ function cosaFare(stato: string, inAttesa: boolean | null): { testo: string; lin
     case 'ritiro_confermato': return { testo: 'Guarda giorno e ora del ritiro', link: true }
     case 'ritirata': case 'in_attesa_recensione_cliente': case 'in_attesa_cert_rottamazione': return { testo: 'Ritirata: aspettiamo il certificato di rottamazione' }
     case 'in_attesa_cert_radiazione_pra': return { testo: 'Aspettiamo la radiazione al PRA' }
-    case 'completata': return { testo: 'Scarica i certificati', link: true }
+    case 'completata': return { testo: 'Completata: i certificati arrivano nella pratica', link: true }
     case 'annullata': return { testo: 'Pratica annullata' }
     default: return { testo: 'Apri la pratica', link: true }
   }
@@ -265,7 +265,10 @@ export default function DashboardCliente() {
                 const inVal = valutazioni.filter(v => v.stato === 'da_valutare').length
                 const parti = []
                 if (inVal) parti.push(`${inVal} ${inVal === 1 ? 'richiesta' : 'richieste'}`)
-                parti.push(`${pratiche.length} ${pratiche.length === 1 ? 'pratica attiva' : 'pratiche'}`)
+                const attive = pratiche.filter(p => p.stato !== 'completata' && p.stato !== 'annullata').length
+                parti.push(attive === pratiche.length
+                  ? `${pratiche.length} ${pratiche.length === 1 ? 'pratica attiva' : 'pratiche attive'}`
+                  : `${pratiche.length} ${pratiche.length === 1 ? 'pratica' : 'pratiche'}${attive ? `, ${attive} ${attive === 1 ? 'attiva' : 'attive'}` : ''}`)
                 return parti.join(', ')
               })()}
             </p>
@@ -329,13 +332,16 @@ export default function DashboardCliente() {
                             </div>
                           </div>
                           <div style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
-                            <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#8A94A3' }}>Dove si trova</div>
+                            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#6B7280' }}>Dove si trova</div>
                             <div style={{ fontSize: 13.5, color: '#374151', fontWeight: 600, marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.indirizzo_ritiro || '—'}</div>
                             <div style={{ fontSize: 12.5, color: '#6B7280', marginTop: 2 }}>Richiesta del {new Date(p.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
                           </div>
                           <div style={{ flex: 1.2, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
                             <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 999, background: s.bg, color: s.text, whiteSpace: 'nowrap' }}>{s.label}</span>
-                            <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 5, color: fai.link ? '#1D4ED8' : '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fai.testo}{fai.link ? ' →' : ''}</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 5, color: fai.link ? '#1D4ED8' : '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{fai.testo}</span>
+                              {fai.link && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" /></svg>}
+                            </div>
                           </div>
                           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6" /></svg>
                         </div>

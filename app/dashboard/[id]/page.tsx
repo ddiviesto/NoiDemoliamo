@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
@@ -52,6 +52,23 @@ export interface Pratica {
 // tra Documenti e Stato — la casa degli originali da consegnare e della
 // data fissata dal demolitore
 type Tab = 'documenti' | 'ritiro' | 'stato' | 'chat'
+const LINGUETTE: Tab[] = ['documenti', 'ritiro', 'stato', 'chat']
+
+// ⭐ 08/10 (critica Impeccable, scelta di Davide): la pagina si apre sulla
+// linguetta di cui parla "Cosa fare adesso", non sempre su Documenti.
+// Documenti finché servono documenti, Ritiro quando il ritiro è fissato,
+// Stato dal ritiro in poi. La linguetta resta nell'indirizzo (?linguetta=)
+// così ricaricando si è ancora lì.
+function linguettaPerStato(stato: string): Tab {
+  if (stato === 'ritiro_confermato') return 'ritiro'
+  if (['ritirata', 'in_attesa_recensione_cliente', 'in_attesa_cert_rottamazione', 'in_attesa_cert_radiazione_pra', 'completata', 'annullata'].includes(stato)) return 'stato'
+  return 'documenti'
+}
+function linguettaDaIndirizzo(): Tab | null {
+  if (typeof window === 'undefined') return null
+  const v = new URLSearchParams(window.location.search).get('linguetta')
+  return LINGUETTE.includes(v as Tab) ? (v as Tab) : null
+}
 
 function chatDemolitoreVisibile(stato: string): boolean {
   const statiVisibili = [
@@ -89,7 +106,7 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
       return {
         icona: ico(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></>),
         titolo: 'Carica i tuoi documenti',
-        sottotitolo: "Procedi al caricamento dei documenti per l'assegnazione al demolitore",
+        sottotitolo: 'Un documento alla volta: bastano le foto. Li controlliamo noi e ti diciamo subito se va tutto bene.',
         bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'in_attesa_approvazione_admin':
@@ -131,14 +148,14 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
         return {
           icona: ico(<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>),
           titolo: 'Nuovo demolitore in arrivo',
-          sottotitolo: 'Abbiamo aggiornato l\'assegnazione: un nuovo demolitore ti contatterà entro 8 ore lavorative per fissare il ritiro',
+          sottotitolo: 'Abbiamo aggiornato l\'assegnazione: un nuovo demolitore ti contatterà a breve per fissare giorno e ora del ritiro',
           bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
         }
       }
       return {
         icona: ico(<><path d="M3 21h18M6 21V7l6-4 6 4v14" /><path d="M10 21v-6h4v6" /></>),
         titolo: 'Il tuo demolitore è pronto',
-        sottotitolo: 'Ti contatterà entro 8 ore lavorative per concordare giorno e ora del ritiro',
+        sottotitolo: 'Ti contatterà a breve per concordare giorno e ora del ritiro',
         bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'ritiro_confermato':
@@ -162,14 +179,14 @@ function bannerInfo(p: Pratica): { icona: React.ReactNode; titolo: string; sotto
       return {
         icona: ico(<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></>),
         titolo: 'In attesa radiazione PRA',
-        sottotitolo: 'Disponibile entro 15 giorni dal ritiro',
+        sottotitolo: 'Arriva dopo il ritiro: ti avvisiamo noi appena è pronta',
         bg: 'linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%)',
       }
     case 'completata':
       return {
         icona: ico(<polyline points="20 6 9 17 4 12"/>),
         titolo: 'Pratica completata',
-        sottotitolo: 'Scarica i certificati dal tab Documenti',
+        sottotitolo: 'I certificati arrivano qui, nella linguetta Stato: ti avvisiamo noi. Grazie per aver scelto NoiDemoliamo.',
         bg: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)',
       }
     case 'annullata':
@@ -250,7 +267,16 @@ export default function DettaglioPraticaCliente() {
 
   const [pratica, setPratica] = useState<Pratica | null>(null)
   const [loading, setLoading] = useState(true)
-  const [tab, setTab] = useState<Tab>('documenti')
+  const [tab, setTabStato] = useState<Tab>(() => linguettaDaIndirizzo() ?? 'documenti')
+  // true quando la linguetta è già stata decisa (dall'indirizzo o dallo stato)
+  const linguettaDecisa = useRef(linguettaDaIndirizzo() !== null)
+  const setTab = useCallback((t: Tab) => {
+    setTabStato(t)
+    linguettaDecisa.current = true
+    const u = new URL(window.location.href)
+    u.searchParams.set('linguetta', t)
+    window.history.replaceState(null, '', u)
+  }, [])
   const [docRifiutati, setDocRifiutati] = useState(0)
   const [chatNonLetti, setChatNonLetti] = useState(0)
   // ⭐ Pallino sulla linguetta Ritiro (28/07 sera, variante A): FISSO per
@@ -321,10 +347,12 @@ export default function DettaglioPraticaCliente() {
         .single()
       if (error || !data) { router.push('/dashboard'); return }
       setPratica(data)
+      // Prima apertura senza linguetta nell'indirizzo: la sceglie lo stato
+      if (!linguettaDecisa.current) setTab(linguettaPerStato(data.stato))
       setLoading(false)
     }
     if (id) carica()
-  }, [id, router])
+  }, [id, router, setTab])
 
   useEffect(() => {
     async function contaNonLetti() {
@@ -356,6 +384,8 @@ export default function DettaglioPraticaCliente() {
   if (!pratica) return null
 
   const banner = bannerInfo(pratica)
+  // il riquadro verde è solo dei traguardi (documenti approvati, completata)
+  const traguardo = banner.bg.includes('#16a34a')
   const badge = pillolaStato(pratica.stato, pratica.in_attesa)
 
   return (
@@ -420,11 +450,20 @@ export default function DettaglioPraticaCliente() {
           {/* BANNER STATO DINAMICO — ⭐ 28/07 sera: la versione `tenue` è
               rosa di famiglia con testo rosso scuro (via il rosso pieno) */}
           {/* ⭐ 05/10 (mockup A/C): su PC il banner è un riquadro bianco snello "Cosa fare adesso" */}
+          {/* ⭐ 08/10 (mockup 5): le linguette stanno SOPRA "Cosa fare adesso"
+              (sul telefono restano fisse in fondo, l'ordine qui non conta) */}
+          <div className="fila-linguette">
+            <TabButton attivo={tab === 'documenti'} onClick={() => setTab('documenti')} Icona={IconaDocumenti} label="Documenti" badge={docRifiutati > 0 ? docRifiutati : 0} />
+            <TabButton attivo={tab === 'ritiro'} onClick={apriTabRitiro} Icona={IconaRitiro} label="Ritiro" puntino={ritiroNuovo && tab !== 'ritiro'} />
+            <TabButton attivo={tab === 'stato'} onClick={() => setTab('stato')} Icona={IconaStato} label="Stato" />
+            <TabButton attivo={tab === 'chat'} onClick={() => setTab('chat')} Icona={IconaChat} label="Chat" badge={chatNonLetti} />
+          </div>
+
           {!banner.tenue && (
-            <div className="hidden sm:flex items-center gap-3.5" style={{ background: '#fff', border: '1.5px solid #DBEAFE', borderRadius: 16, padding: '12px 16px', boxShadow: '0 2px 8px rgba(37,99,235,0.08)' }}>
-              <div className="flex items-center justify-center flex-shrink-0 text-white" style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#1d4ed8,#2563eb)' }}>{banner.icona}</div>
+            <div className="hidden sm:flex items-center gap-3.5" style={{ background: '#fff', border: `1.5px solid ${traguardo ? '#CDEBD6' : '#DBEAFE'}`, borderRadius: 16, padding: '12px 16px', boxShadow: traguardo ? '0 2px 8px rgba(31,122,67,0.08)' : '0 2px 8px rgba(37,99,235,0.08)' }}>
+              <div className="flex items-center justify-center flex-shrink-0 text-white" style={{ width: 40, height: 40, borderRadius: 12, background: traguardo ? 'linear-gradient(135deg,#16a34a,#15803d)' : 'linear-gradient(135deg,#1d4ed8,#2563eb)' }}>{banner.icona}</div>
               <div className="flex-1 min-w-0">
-                <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: '#1D4ED8' }}>Cosa fare adesso</div>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.8, textTransform: 'uppercase', color: traguardo ? '#1F7A43' : '#1D4ED8' }}>Cosa fare adesso</div>
                 <div className="text-[15px] font-bold leading-tight" style={{ color: '#0F172A', marginTop: 2 }}>{banner.titolo}</div>
                 <div className="text-[12.5px] leading-snug" style={{ color: '#4B5A72', marginTop: 2 }}>{banner.sottotitolo}</div>
               </div>
@@ -468,18 +507,12 @@ export default function DettaglioPraticaCliente() {
           {/* ⭐ 05/10 (mockup C): su PC niente riquadri a sinistra, una
               colonna sola centrata. Casistica, consegna, libretto e
               certificato vivono nella linguetta "Stato". */}
-          <div className="sm:mx-auto sm:w-[820px] sm:mt-2">
+          {/* ⭐ 08/10 (mockup 5, regola dello stesso bordo): tutti i blocchi
+              larghi uguali, 1000 come la lista. Le quattro linguette stanno
+              più su, sopra "Cosa fare adesso" (24/08 variante C: sul telefono
+              sono la barra fissa in fondo; veste in globals.css) */}
+          <div>
           <div className="flex flex-col gap-3">
-
-          {/* LE QUATTRO LINGUETTE — ⭐ 24/08 (variante C approvata): sul
-              telefono scendono in fondo allo schermo (barra fissa, sotto il
-              pollice), su PC restano qui a pillole. Veste in globals.css */}
-          <div className="fila-linguette">
-            <TabButton attivo={tab === 'documenti'} onClick={() => setTab('documenti')} Icona={IconaDocumenti} label="Documenti" badge={docRifiutati > 0 ? docRifiutati : 0} />
-            <TabButton attivo={tab === 'ritiro'} onClick={apriTabRitiro} Icona={IconaRitiro} label="Ritiro" puntino={ritiroNuovo} />
-            <TabButton attivo={tab === 'stato'} onClick={() => setTab('stato')} Icona={IconaStato} label="Stato" />
-            <TabButton attivo={tab === 'chat'} onClick={() => setTab('chat')} Icona={IconaChat} label="Chat" badge={chatNonLetti} />
-          </div>
 
           {/* CONTENUTO TAB */}
           {tab === 'documenti' && (

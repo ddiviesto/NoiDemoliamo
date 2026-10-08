@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>La pagina della pratica su PC, versione C definitiva</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1120px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.schermo{width:1280px;margin:14px auto 40px;border-radius:16px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.18);border:1px solid #D8DEE9;background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),radial-gradient(900px 520px at 30% 104%,#DED6FB 0%,rgba(222,214,251,0) 66%),#F5F3FE;padding:28px 0 40px}
+.col{margin:0 auto;display:flex;flex-direction:column;gap:18px;width:1000px}
+.isola{display:flex;align-items:center;justify-content:space-between;background:rgba(255,255,255,.72);border:1px solid rgba(255,255,255,.9);box-shadow:0 10px 30px rgba(15,27,51,.10);border-radius:999px;padding:8px 8px 8px 20px}
+.marchio{font-family:Outfit,sans-serif;font-size:20px;letter-spacing:-.035em}.marchio .noi{font-weight:500;color:#46536B}.marchio .dem{font-weight:800;color:#0F1B33;margin-left:.15em}
+.pill{font-size:12.5px;font-weight:700;color:#1D4ED8;background:#EFF6FF;border:1px solid #DBEAFE;border-radius:999px;padding:8px 14px}
+.riga{display:flex;align-items:center;gap:16px}.indietro{width:44px;height:44px;border-radius:999px;background:rgba(255,255,255,.8);border:1px solid rgba(226,232,245,.9);box-shadow:0 6px 16px rgba(15,27,51,.07);display:flex;align-items:center;justify-content:center}
+h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.9px;line-height:1.1}h1 span{color:#1D4ED8}.meta{font-size:14px;color:#4B5A72;margin-top:4px}
+.stato{font-size:11px;font-weight:700;color:#1D4ED8;background:#EFF6FF;border-radius:999px;padding:6px 12px;white-space:nowrap}.stato.ok{background:#DCF3E4;color:#1F7A43}
+.tabs{display:flex;gap:8px;background:rgba(255,255,255,.7);border:1px solid rgba(226,232,245,.9);border-radius:999px;padding:6px}
+.tab{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;padding:10px 14px;font-size:13.5px;font-weight:600;color:#4B5563}.tab.on{background:#2563EB;color:#fff;font-weight:700}
+.tab .n{background:#fff;color:#1D4ED8;font-size:11px;border-radius:999px;padding:1px 7px}.tab .p{width:8px;height:8px;border-radius:999px;background:#E24B4A}
+.fare{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #DBEAFE;border-radius:16px;padding:12px 16px;box-shadow:0 2px 8px rgba(37,99,235,.08)}
+.fare .ic{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#1d4ed8,#2563eb);flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.fare.ok{border-color:#CDEBD6}.fare.ok .ic{background:linear-gradient(135deg,#16a34a,#15803d)}.fare.ok .occ{color:#1F7A43}
+.fare .occ{font-size:11px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#1D4ED8}.fare .t{font-size:15px;font-weight:700;margin-top:2px}.fare .s{font-size:12.5px;color:#4B5A72;margin-top:2px}
+.sopra{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:700;letter-spacing:.8px;color:#6B7280}
+.sopra .doc{background:#EFF6FF;color:#1D4ED8;border-radius:999px;padding:3px 10px;letter-spacing:0}
+.card{background:#fff;border:1.5px solid #E5E7EB;border-radius:18px;box-shadow:0 1px 2px rgba(16,24,40,.06),0 5px 14px rgba(16,24,40,.07);overflow:hidden}
+.card .testa{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid #EEF1F5}
+.card .testa i{width:42px;height:42px;border-radius:12px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card .testa b{display:block;font-size:16px}.card .testa small{font-size:12.5px;color:#6B7280}
+.tess{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:16px 18px}
+.t1{border:1.5px solid #E5E9F0;border-radius:14px;overflow:hidden;background:#F5F7FB;transition:border-color .16s,background .16s,box-shadow .16s}
+.t1 .cap{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#fff;border-bottom:1px solid #E5E9F0;font-size:11.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#4B5A72}
+.t1 .cap b{width:20px;height:20px;border-radius:999px;background:#2563EB;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+.t1 .cap b.g{background:#EDF0F5;color:#64748B}.t1 .cap b.v{background:#1F7A43}
+.t1 .dentro{padding:22px 16px;display:flex;flex-direction:column;align-items:center;gap:9px;min-height:170px;justify-content:center;position:relative}
+.t1.attesa{background:#FAFBFD}.t1.attesa .cap{color:#64748B}
+.t1.sopra-drag{border-color:#2563EB;background:#EFF6FF;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.t1.sopra-drag .cap{background:#E4EEFF;border-color:#BFD3F5;color:#1D4ED8}
+.t1.piena{background:#fff}.t1.piena .dentro{padding:0;min-height:170px}
+.foto{width:100%;height:170px;background:linear-gradient(135deg,#C9D4E6 0%,#9FB0CB 55%,#7D90B0 100%);position:relative;display:flex;align-items:flex-end;justify-content:center}
+.foto .doc-finto{width:62%;height:70%;margin-bottom:12px;background:#F2EBD9;border-radius:6px;box-shadow:0 4px 12px rgba(15,27,51,.25);position:relative;overflow:hidden}
+.foto .doc-finto::before{content:'';position:absolute;left:10%;right:10%;top:14%;height:6px;border-radius:3px;background:#B6AD95;box-shadow:0 14px 0 #CFC7B1,0 28px 0 #CFC7B1,0 42px 0 #CFC7B1}
+.x{position:absolute;top:8px;right:8px;width:28px;height:28px;border-radius:999px;background:rgba(15,23,42,.55);display:flex;align-items:center;justify-content:center}
+.btn{background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;border-radius:999px;padding:10px 18px;font-size:13px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.3)}
+.hint{font-size:12px;color:#6B7280}
+.piede{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-top:1px solid #EEF1F5;background:#FAFBFD;font-size:12.5px;color:#6B7280}
+.piede a{color:#1D4ED8;font-weight:600}.spento{background:#E5E7EB;color:#9CA3AF;border-radius:999px;padding:10px 22px;font-size:13.5px;font-weight:600}
+.lista{background:rgba(255,255,255,.7);border:1px solid rgba(226,232,245,.9);border-radius:16px;padding:12px 16px}
+.lista .eti{font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#6B7280;margin-bottom:8px}
+.lista .g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.lista .d{display:flex;align-items:center;gap:8px;background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:9px 10px;font-size:12px;font-weight:600;color:#4B5563}
+.lista .d.on{background:#EFF6FF;border-color:#BFDBFE;color:#1D4ED8;font-weight:700}.lista .d b{width:22px;height:22px;border-radius:999px;background:#EDF0F5;color:#64748B;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}.lista .d.on b{background:#2563EB;color:#fff}
+/* linguetta Ritiro e Stato */
+.dati{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.box{background:#fff;border:1.5px solid #E5E7EB;border-radius:16px;padding:16px 18px;box-shadow:0 1px 3px rgba(16,24,40,.07)}
+.box .k{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#5B6779}.box .v{font-size:15px;font-weight:600;color:#3E4C63;margin-top:4px}
+.box .big{font-size:22px;font-weight:700;color:#0F172A;margin-top:4px}
+.tappe{display:flex;flex-direction:column;gap:0;padding:6px 18px 14px}
+.tappa{display:flex;gap:14px;align-items:flex-start;position:relative;padding:8px 0}
+.tappa .c{width:26px;height:26px;border-radius:999px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:1}
+.tappa .c.ok{background:#2563EB}.tappa .c.fine{background:#1F7A43}
+.tappa .f{position:absolute;left:12px;top:34px;bottom:-8px;width:2px;background:#DBEAFE}
+.tappa .l{font-size:14px;font-weight:700;color:#111827}.tappa .d{font-size:12.5px;color:#6B7280;margin-top:1px}
+.cert{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#F5F7FB;border:1.5px solid #E5E9F0;border-radius:14px;padding:12px 14px;margin-top:8px}
+.cert .n{font-size:13.5px;font-weight:700;color:#111827}.cert .s{font-size:12px;color:#6B7280;margin-top:1px}
+.cert .pr{font-size:11px;font-weight:700;color:#1F7A43;background:#DCF3E4;border-radius:999px;padding:5px 10px}
+.cert .arr{font-size:11px;font-weight:700;color:#5B6779;background:#E8ECF3;border-radius:999px;padding:5px 10px}
+.bollo{width:34px;height:34px;border-radius:999px;background:#EFF6FF;border:1px solid #DBEAFE;display:flex;align-items:center;justify-content:center}
+.avviso{display:flex;gap:12px;align-items:flex-start;background:#FEF6F6;border:1.5px solid #F3C8C8;border-radius:14px;padding:12px 14px;margin:0 18px 16px}
+.avviso i{width:34px;height:34px;border-radius:10px;background:#FBDADA;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.avviso b{display:block;font-size:13.5px;color:#A94444}.avviso span{font-size:12.5px;color:#7C2D2D}.avviso a{color:#A94444;font-weight:700;text-decoration:underline;margin-left:6px}
+</style></head><body>
+<div class="nota"><b>LA PAGINA DELLA PRATICA SU PC, VERSIONE C DEFINITIVA</b> · variante C alla larghezza della A (1000). Ogni scheda qui sotto è la stessa pagina in un momento diverso della pratica: guardale in ordine.</div>
+<div class="schede">
+<span class="qui" onclick="vista('1',this)">1 · Documenti, all'inizio</span>
+<span onclick="vista('2',this)">2 · Mentre trascini il file</span>
+<span onclick="vista('3',this)">3 · Fronte caricato, tocca al retro</span>
+<span onclick="vista('4',this)">4 · Se il caricamento fallisce</span>
+<span onclick="vista('5',this)">5 · Ritiro fissato: si apre su Ritiro</span>
+<span onclick="vista('6',this)">6 · Pratica completata: si apre su Stato</span>
+</div>
+<div id="viste"></div>
+<script>
+const FR='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
+const UP='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'
+const DOWN='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+const X='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+const OK='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+const OKB='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+const DOC='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
+const CAL='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
+const ALERT='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#A94444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+const tondo=(c,bg='#fff')=>`<span style="width:48px;height:48px;border-radius:999px;background:${bg};border:1.5px solid ${c};display:flex;align-items:center;justify-content:center">${UP}</span>`
+
+// una tessera: stato = 'attiva' | 'attesa' | 'drag' | 'piena'
+function tessera(lab,num,stato){
+  if(stato==='attesa') return `<div class="t1 attesa"><div class="cap"><b class="g">${num}</b>${lab}</div><div class="dentro">${tondo('#E5E9F0','#F5F7FB')}<span class="hint">Dopo il fronte</span></div></div>`
+  if(stato==='drag') return `<div class="t1 sopra-drag"><div class="cap"><b>${num}</b>${lab}</div><div class="dentro">${tondo('#2563EB','#fff')}<span style="font-size:14px;font-weight:700;color:#1D4ED8">Lascia qui il ${lab.toLowerCase()}</span></div></div>`
+  if(stato==='piena') return `<div class="t1 piena"><div class="cap"><b class="v">${OKB}</b>${lab}</div><div class="dentro"><div class="foto"><div class="doc-finto"></div><span class="x">${X}</span></div></div></div>`
+  return `<div class="t1"><div class="cap"><b>${num}</b>${lab}</div><div class="dentro">${tondo('#DBEAFE')}<span class="btn">Scegli dal dispositivo</span><span class="hint">oppure trascina qui l’immagine</span></div></div>`
+}
+
+function testa(o){
+  return `<div class="isola"><span class="marchio"><span class="noi">Noi</span><span class="dem">Demoliamo</span></span><span style="display:flex;gap:10px"><span class="pill">Le tue pratiche</span><span class="pill">Esci</span></span></div>
+    <div class="riga"><span class="indietro">${FR}</span><div style="flex:1"><h1>CK456ZY <span>Fiat Panda</span></h1><div class="meta">Autovettura · Via Roma 10, Milano · richiesta del 05 ott 2026</div></div><span class="stato ${o.verde?'ok':''}">${o.stato}</span></div>
+    <div class="tabs">${['Documenti','Ritiro','Stato','Chat'].map(t=>`<span class="tab ${t===o.tab?'on':''}">${t}${t==='Documenti'&&o.badge?` <span class="n">${o.badge}</span>`:''}${t==='Ritiro'&&o.pallino?' <span class="p"></span>':''}</span>`).join('')}</div>
+    <div class="fare ${o.verde?'ok':''}"><span class="ic">${o.icona||DOC.replace('#2563eb','#fff')}</span><div><div class="occ">${o.occ||'Cosa fare adesso'}</div><div class="t">${o.t}</div><div class="s">${o.s}</div></div></div>`
+}
+
+function documenti(o){
+  return `<div class="schermo"><div class="col">${testa({stato:'In attesa documenti',tab:'Documenti',badge:o.badge||'1/4',pallino:false,t:'Carica i tuoi documenti',s:'Un documento alla volta: bastano le foto. Li controlliamo noi e ti diciamo subito se va tutto bene.'})}
+    <div class="sopra"><span>DA PREPARARE</span><span class="doc">Documento 1 di 4</span></div>
+    <div class="card"><div class="testa"><i>${DOC}</i><div><b>Libretto di circolazione</b><small>Due immagini: il fronte e il retro. Va bene anche una foto fatta col telefono.</small></div></div>
+      <div class="tess">${tessera('Fronte',1,o.fronte)}${tessera('Retro',2,o.retro)}</div>
+      ${o.avviso||''}
+      <div class="piede"><span>Hai una scansione o un PDF con fronte e retro insieme? <a>Allega il file</a></span><span class="${o.pronto?'btn':'spento'}" style="${o.pronto?'padding:10px 22px;font-size:13.5px':''}">Vai al prossimo documento</span></div></div>
+    <div class="lista"><div class="eti">I documenti da preparare</div><div class="g"><div class="d on"><b>1</b>Libretto di circolazione</div><div class="d"><b>2</b>Carta d’identità</div><div class="d"><b>3</b>Tessera sanitaria</div><div class="d"><b>4</b>Certificato di proprietà</div></div></div>
+  </div></div>`
+}
+
+function ritiro(){
+  return `<div class="schermo"><div class="col">${testa({stato:'Assegnata · ritiro fissato',tab:'Ritiro',badge:'',pallino:false,icona:CAL,t:'Ritiro confermato',s:'Il demolitore arriverà giovedì 15 ottobre, tra le 9 e le 12. Tieni pronti gli originali dei documenti.'})}
+    <div class="dati">
+      <div class="box"><div class="k">Giorno e ora</div><div class="big">Giovedì 15 ottobre</div><div class="v">tra le 9:00 e le 12:00</div></div>
+      <div class="box"><div class="k">Dove</div><div class="big">Via Roma 10, Milano</div><div class="v">Accesso libero per il carro attrezzi</div></div>
+    </div>
+    <div class="box"><div class="k">Chi viene a ritirare</div><div class="v" style="font-size:16px;color:#111827">Autodemolizioni Rossi</div><div style="font-size:12.5px;color:#6B7280;margin-top:3px">Ti chiama lui se cambia qualcosa. Puoi scrivergli dalla linguetta Chat.</div></div>
+    <div class="box" style="background:#EFF6FF;border-color:#DBEAFE"><div class="k" style="color:#1D4ED8">Da consegnare al ritiro</div><div class="v" style="color:#1E3A8A">Libretto di circolazione in originale · Certificato di proprietà · Targhe</div></div>
+  </div></div>`
+}
+
+function completata(){
+  const tappa=(l,d,cls,ultima)=>`<div class="tappa"><span class="c ${cls}">${cls?OKB:''}</span><div><div class="l">${l}</div><div class="d">${d}</div></div>${ultima?'':'<span class="f"></span>'}</div>`
+  return `<div class="schermo"><div class="col">${testa({stato:'Completata',verde:true,tab:'Stato',badge:'',pallino:false,icona:OK,t:'Pratica completata',s:'I certificati sono qui sotto, pronti da scaricare. Grazie per aver scelto NoiDemoliamo.'})}
+    <div class="card"><div class="testa"><i>${DOC}</i><div><b>Il percorso della tua pratica</b><small>Tutte le tappe sono state completate</small></div></div>
+      <div class="tappe">
+        ${tappa('Documenti inviati','Caricati il 05 ottobre','ok')}
+        ${tappa('Documenti approvati','Controllati da NoiDemoliamo','ok')}
+        ${tappa('Demolitore assegnato','Autodemolizioni Rossi','ok')}
+        ${tappa('Veicolo ritirato','Giovedì 15 ottobre','ok')}
+        ${tappa('Pratica completata','Radiazione PRA emessa il 28 ottobre','fine',true)}
+      </div>
+      <div style="padding:0 18px 16px">
+        <div class="eti" style="font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:#6B7280;margin-bottom:6px">I tuoi certificati</div>
+        <div class="cert"><div><div class="n">Certificato di rottamazione</div><div class="s">Emesso dal demolitore il 16 ottobre</div></div><div style="display:flex;align-items:center;gap:10px"><span class="pr">Pronto</span><span class="bollo">${DOWN}</span></div></div>
+        <div class="cert"><div><div class="n">Radiazione al PRA</div><div class="s">Emessa il 28 ottobre</div></div><div style="display:flex;align-items:center;gap:10px"><span class="pr">Pronto</span><span class="bollo">${DOWN}</span></div></div>
+      </div>
+    </div>
+  </div></div>`
+}
+
+const avvisoErrore=`<div class="avviso"><i>${ALERT}</i><div><b>Il fronte non è stato caricato</b><span>La connessione è caduta a metà. Il file non è andato perso: riprova quando sei di nuovo in rete.<a>Riprova</a></span></div></div>`
+
+const V={
+ '1':{s:'<b>1. All’inizio.</b> La C come l’avevi vista, ma larga 1000 come la lista: stessi bordi per isola, titolo, linguette, riquadro, card e coda. Le tessere sono numerate <b>1</b> e <b>2</b>; il retro aspetta ("Dopo il fronte") ma resta leggibile, non sembra facoltativo. Un solo bottone blu alla volta. Ho alzato i grigi piccoli (le etichette "DA PREPARARE", "oppure trascina qui") perché erano sotto la soglia di leggibilità. Nel piede la frase per chi ha lo scanner dice ora chiaramente <b>"fronte e retro insieme"</b>. Il sottotitolo di "Cosa fare adesso" non parla più di "assegnazione al demolitore".', h:documenti({fronte:'attiva',retro:'attesa'})},
+ '2':{s:'<b>2. Mentre trascini.</b> La riga "oppure trascina qui l’immagine" oggi è una promessa vuota: il browser apre la foto e la pagina sparisce. Con l’implementazione il trascinamento <b>funziona davvero</b>: appena il file passa sopra la tessera, questa si accende di azzurro con il bordo blu (gli stessi colori del campo a fuoco) e dice "Lascia qui il fronte". Se lo lasci fuori dalla tessera non succede nulla, non si esce dalla pagina.', h:documenti({fronte:'drag',retro:'attesa'})},
+ '3':{s:'<b>3. Fronte caricato, tocca al retro.</b> La tessera 1 mostra la foto con la ✕ scura sull’angolo (come sul telefono) e la spunta verde nella testata. La tessera 2 <b>si accende</b> con un movimento morbido e diventa l’unico bottone blu: il cliente capisce da solo che è il suo turno. "Vai al prossimo documento" resta grigio finché mancano le due immagini.', h:documenti({fronte:'piena',retro:'attiva'})},
+ '4':{s:'<b>4. Se il caricamento fallisce.</b> Niente finestrella del browser con "Errore nel caricamento. Riprova.": l’avviso compare <b>in riga dentro la card</b>, nella veste rossa tenue che già usiamo per i documenti rifiutati, dice <b>cosa è successo</b> e ha il suo "Riprova". Il resto della pagina non cambia.', h:documenti({fronte:'attiva',retro:'attesa',avviso:avvisoErrore})},
+ '5':{s:'<b>5. Ritiro fissato.</b> Oggi la pagina si apre sempre su Documenti anche quando non c’è più nulla da caricare. Con la regola che hai scelto, quando "Cosa fare adesso" parla di ritiro la pagina <b>si apre direttamente sulla linguetta Ritiro</b> (e la linguetta resta nell’indirizzo: se ricarichi, sei ancora lì). Il pallino rosso su Ritiro sparisce quando sei dentro. Niente più "entro 8 ore lavorative": si dice il giorno vero.', h:ritiro()},
+ '6':{s:'<b>6. Pratica completata.</b> Si apre su <b>Stato</b>. Il riquadro diventa verde (il traguardo) e non promette più "Scarica i certificati dal tab Documenti", dove non c’era nulla: i certificati stanno <b>qui sotto, in fondo al percorso</b>, con la pillola "Pronto" e il bollino per scaricare. Finché il demolitore non li ha caricati, la pillola dice "In arrivo" in grigio e il riquadro dice "I certificati arrivano qui: ti avvisiamo noi". Anche la riga nella lista pratiche dirà "Scarica i certificati" solo quando sono pronti davvero.', h:completata()},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='1'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
