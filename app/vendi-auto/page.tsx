@@ -102,7 +102,7 @@ function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intesta
     case 'account':
       return loggato
         ? { banner: 'Conferma e invia', titolo: 'Conferma e invia', sotto: 'Sei già registrato: la risposta la troverai nella tua area personale.' }
-        : { banner: 'Crea il tuo account', titolo: '*Ultimo passo!*', sotto: 'Crea il tuo account gratuito: lì troverai la nostra risposta e potrai accettarla.' }
+        : { banner: 'Invia la richiesta', titolo: '*Ultimo passo!*', sotto: 'Crea il tuo account gratuito: lì troverai la nostra risposta e potrai accettarla.' }
   }
 }
 

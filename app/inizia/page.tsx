@@ -436,7 +436,7 @@ function getStepMeta(stepKey: string, tipo: TipoMezzo | null, tipoAltro?: string
     case 'account':
       return {
         icona: IconaAccount,
-        titoloBanner: 'Crea il tuo account',
+        titoloBanner: 'Invia la richiesta',
         titoloPagina: 'Crea il tuo account',
         sottoPagina: `Potrai seguire la pratica, caricare i documenti e scaricare il certificato di rottamazione direttamente dalla tua area personale.`,
       }
