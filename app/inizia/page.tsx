@@ -1421,16 +1421,17 @@ export default function IniziaPage() {
 
         {curStep === 'cdc' && (
           <>
-            {/* Avviso anti-confusione: molti lo scambiano per il libretto */}
-            <div className="flex items-start gap-2.5 rounded-xl py-2.5 px-3 mb-3" style={{ background: '#FDF4E0', border: '1.5px solid #EFD9A7' }}>
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-              <span className="text-[13px] leading-relaxed" style={{ color: '#6B4A0A' }}><strong>Attenzione: NON è il libretto.</strong> È un documento separato.</span>
-            </div>
-
+            {/* ⭐ 13/10 (mockup A, Davide): l'avviso anti-confusione (molti lo
+                scambiano per il libretto) è la PRIMA RIGA del riquadro blu, in
+                evidenza: via la scheda gialla, che nel tema è da allarme */}
             <div className="rounded-xl py-3 px-3.5 mb-4" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
               <div className="flex items-center gap-2 mb-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
                 <span className="text-[13px] font-bold" style={{ color: '#1E3A8A' }}>Come capire quale hai</span>
+              </div>
+              <div className="flex items-start gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #BFDBFE' }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 7 }} />
+                <span className="text-[13px] leading-relaxed font-semibold" style={{ color: '#1E3A8A' }}><strong>Non è il libretto di circolazione</strong>: è un documento a parte.</span>
               </div>
               <div className="flex items-start gap-2 mb-1.5">
                 <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 7 }} />

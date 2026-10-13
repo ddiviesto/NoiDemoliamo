@@ -233,14 +233,25 @@ export default function CompletaPratica() {
 
       {passo === 'cdc' && (
         <>
-          <div className="flex items-start gap-2.5 rounded-xl py-2.5 px-3 mb-3" style={{ background: '#FDF4E0', border: '1.5px solid #EFD9A7' }}>
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
-            <span className="text-[13px] leading-relaxed" style={{ color: '#6B4A0A' }}><strong>Attenzione: NON è il libretto.</strong> È un documento separato.</span>
-          </div>
+          {/* ⭐ 13/10 (mockup A): stesso riquadro blu di /inizia, con l'avviso
+              "non è il libretto" come prima riga (via la scheda gialla) */}
           <div className="rounded-xl py-3 px-3.5 mb-4" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
-            <div className="text-[13px] font-bold mb-2" style={{ color: '#1E3A8A' }}>Come capire quale hai</div>
-            <div className="text-[13px] leading-relaxed" style={{ color: '#1E3A8A' }}>• Passaggio di proprietà <strong>prima di ottobre 2015</strong>: foglio <strong>cartaceo</strong> con stemma ACI in alto.</div>
-            <div className="text-[13px] leading-relaxed" style={{ color: '#1E3A8A' }}>• Passaggio <strong>dopo ottobre 2015</strong>: è <strong>digitale</strong>, non esiste un foglio da conservare.</div>
+            <div className="flex items-center gap-2 mb-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
+              <span className="text-[13px] font-bold" style={{ color: '#1E3A8A' }}>Come capire quale hai</span>
+            </div>
+            <div className="flex items-start gap-2 mb-2 pb-2" style={{ borderBottom: '1px solid #BFDBFE' }}>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 7 }} />
+              <span className="text-[13px] leading-relaxed font-semibold" style={{ color: '#1E3A8A' }}><strong>Non è il libretto di circolazione</strong>: è un documento a parte.</span>
+            </div>
+            <div className="flex items-start gap-2 mb-1.5">
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 7 }} />
+              <span className="text-[13px] leading-relaxed" style={{ color: '#1E3A8A' }}>Passaggio di proprietà <strong>prima di ottobre 2015</strong>: foglio <strong>cartaceo</strong> con stemma ACI in alto.</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#2563eb', flexShrink: 0, marginTop: 7 }} />
+              <span className="text-[13px] leading-relaxed" style={{ color: '#1E3A8A' }}>Passaggio <strong>dopo ottobre 2015</strong>: è <strong>digitale</strong>, non esiste un foglio da conservare.</span>
+            </div>
           </div>
           <div className="flex flex-col gap-2">
             <RuoloButton
