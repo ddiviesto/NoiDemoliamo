@@ -1444,14 +1444,6 @@ export default function IniziaPage() {
             {erroreCdc && <div className="mb-3"><ErrorBadge>Seleziona un&apos;opzione per continuare.</ErrorBadge></div>}
             <div className="flex flex-col gap-2">
               <RuoloButton
-                iconSvg={<svg width="20" height="20" viewBox="-4 -2 24 24" fill="currentColor"><path d="M3 0h10a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V3a3 3 0 0 1 3-3m0 2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm2 1h6a1 1 0 0 1 0 2H5a1 1 0 1 1 0-2m0 12h2a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2m0-4h6a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2m0-4h6a1 1 0 0 1 0 2H5a1 1 0 1 1 0-2"/></svg>}
-                label="Sì, ho quello cartaceo"
-                sub="Il foglio con lo stemma ACI in alto: va consegnato al momento del ritiro"
-                selected={dati.cdc === 'cartaceo'}
-                onClick={() => { update({ cdc: 'cartaceo' }); setErroreCdc(false) }}
-                errorBorder={erroreCdc}
-              />
-              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"><path d="M14 21h2m-2 0a1.5 1.5 0 0 1-1.5-1.5V17H12m2 4h-4m0 0H8m2 0a1.5 1.5 0 0 0 1.5-1.5V17h.5m0 0v4m4-18H8c-2.828 0-4.243 0-5.121.879C2 4.757 2 6.172 2 9v2c0 2.828 0 4.243.879 5.121C3.757 17 5.172 17 8 17h8c2.828 0 4.243 0 5.121-.879C22 15.243 22 13.828 22 11V9c0-2.828 0-4.243-.879-5.121C20.243 3 18.828 3 16 3"/><path d="M12 10.5a2 2 0 1 0 0-4a2 2 0 0 0 0 4m0 0a3 3 0 0 0-3 3m3-3a3 3 0 0 1 3 3"/></svg>}
                 label="Il mio è digitale"
                 sub="Passaggio dopo ottobre 2015: il certificato è negli archivi digitali del PRA e non va consegnato al ritiro"
@@ -1460,8 +1452,16 @@ export default function IniziaPage() {
                 errorBorder={erroreCdc}
               />
               <RuoloButton
+                iconSvg={<svg width="20" height="20" viewBox="-4 -2 24 24" fill="currentColor"><path d="M3 0h10a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V3a3 3 0 0 1 3-3m0 2a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V3a1 1 0 0 0-1-1zm2 1h6a1 1 0 0 1 0 2H5a1 1 0 1 1 0-2m0 12h2a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2m0-4h6a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2m0-4h6a1 1 0 0 1 0 2H5a1 1 0 1 1 0-2"/></svg>}
+                label="Sì, ho quello cartaceo"
+                sub="Il foglio con lo stemma ACI in alto: va consegnato al momento del ritiro"
+                selected={dati.cdc === 'cartaceo'}
+                onClick={() => { update({ cdc: 'cartaceo' }); setErroreCdc(false) }}
+                errorBorder={erroreCdc}
+              />
+              <RuoloButton
                 iconSvg={<svg width="20" height="20" viewBox="0 0 32 32" fill="currentColor"><circle cx="9" cy="28.5" r="1.5"/><path d="M10 25H8v-4h2a2 2 0 0 0 0-4H8a2 2 0 0 0-2 2v.5H4V19a4.005 4.005 0 0 1 4-4h2a4 4 0 0 1 0 8Z"/><path d="m27.7 9.3l-7-7A.9.9 0 0 0 20 2H10a2.006 2.006 0 0 0-2 2v8h2V4h8v6a2.006 2.006 0 0 0 2 2h6v16H14v2h12a2.006 2.006 0 0 0 2-2V10a.91.91 0 0 0-.3-.7M20 10V4.4l5.6 5.6Z"/></svg>}
-                label="L'ho smarrito, ho la denuncia"
+                label="Ho smarrito il cartaceo, ho la denuncia"
                 sub="La denuncia in originale va consegnata al momento del ritiro"
                 selected={dati.cdc === 'smarrito'}
                 onClick={() => { update({ cdc: 'smarrito' }); setErroreCdc(false) }}
