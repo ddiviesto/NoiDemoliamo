@@ -175,7 +175,7 @@ export default function CompletaPratica() {
             <SceltaPillola label="Non passa" larga presa={spazio === 'no'} onClick={() => { setSpazio('no'); setErrore('') }} />
           </div>
           <CampoModulo label="Note aggiuntive (opzionale)">
-            <textarea value={spazioNote} onChange={e => setSpazioNote(e.target.value)} placeholder="Es. cortile con cancello stretto, strada in salita, posto auto sotto una tettoia" rows={2} className={classeCampo(false, 'campo-lungo')} />
+            <textarea value={spazioNote} onChange={e => setSpazioNote(e.target.value)} placeholder="Es. auto in garage, cortile con cancello stretto, strada in salita, posto auto sotto una tettoia" rows={2} className={classeCampo(false, 'campo-lungo')} />
           </CampoModulo>
         </div>
       )}

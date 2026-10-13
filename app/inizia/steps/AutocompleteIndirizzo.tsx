@@ -419,14 +419,14 @@ function RipiegoAMano({ query, onConferma, compatto }: { query: string; onConfer
   if (!compatto) {
     return (
       <p className="text-[11.5px] text-gray-500 mt-2 px-4 leading-relaxed">
-        I suggerimenti non sono disponibili in questo momento: scrivi l&apos;indirizzo completo (via, numero civico, città e provincia) e premi Continua.
+        Scrivi via, numero civico, città e provincia, poi premi Continua.
       </p>
     )
   }
   return (
     <div className="mt-2">
       <p className="text-[11.5px] text-gray-500 leading-relaxed">
-        I suggerimenti non sono disponibili in questo momento. Scrivi l&apos;indirizzo completo e conferma.
+        Scrivi via, numero civico, città e provincia, poi conferma.
       </p>
       <button
         type="button"

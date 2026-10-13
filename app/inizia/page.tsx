@@ -1003,19 +1003,24 @@ export default function IniziaPage() {
             <div className="flex flex-col gap-4">
               {indirizzoConfermato ? (
                 <>
-                  <div className="flex items-center gap-3 bg-green-50 border border-green-200 rounded-xl p-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
+                  {/* ⭐ 13/10 (mockup A, Davide): l'indirizzo confermato è il
+                      SUO campo, la pillola bianca dei flussi in lettura, con
+                      lo spillo e "Cambia" dentro. Via il riquadro verde con la
+                      spunta: il verde è dei traguardi, non di un campo pieno */}
+                  <div>
+                    <label className="campo-etichetta">Indirizzo</label>
+                    <div className="campo-pillola flex items-center gap-2.5" style={{ padding: '9px 9px 9px 18px' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>
+                      <span className="flex-1 min-w-0 truncate" style={{ fontSize: 16, color: '#0F172A' }}>{dati.indirizzo}</span>
+                      <button
+                        type="button"
+                        onClick={() => { update({ indirizzo: '', spazioCarroAttrezzi: null, spazioCarroAttrezziNote: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null); setErroreSpazio(false) }}
+                        className="flex-shrink-0 transition-colors hover:bg-blue-100"
+                        style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '8px 14px', cursor: 'pointer' }}
+                      >
+                        Cambia
+                      </button>
                     </div>
-                    <div className="flex-1 text-sm font-medium text-green-800">{dati.indirizzo}</div>
-                    <button
-                      onClick={() => { update({ indirizzo: '', spazioCarroAttrezzi: null, spazioCarroAttrezziNote: '' }); setIndirizzoConfermato(false); setDatiIndirizzoExtra(null); setErroreSpazio(false) }}
-                      className="bg-white border border-green-300 text-green-700 hover:bg-green-100 hover:border-green-400 text-xs font-semibold px-3.5 py-1.5 rounded-full transition-all flex-shrink-0"
-                    >
-                      Cambia
-                    </button>
                   </div>
 
                   <div id="box-spazio" className={`border rounded-xl p-4 transition-all ${erroreSpazio ? 'border-red-300 bg-red-50/40 shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : 'bg-blue-50/50 border-blue-100'}`}>
@@ -1047,7 +1052,7 @@ export default function IniziaPage() {
                       <textarea
                         value={dati.spazioCarroAttrezziNote}
                         onChange={e => update({ spazioCarroAttrezziNote: e.target.value })}
-                        placeholder="Es. cortile con cancello stretto, strada in salita, posto auto sotto una tettoia"
+                        placeholder="Es. auto in garage, cortile con cancello stretto, strada in salita, posto auto sotto una tettoia"
                         rows={2}
                         className={classeCampo(false, 'campo-lungo')}
                       />
