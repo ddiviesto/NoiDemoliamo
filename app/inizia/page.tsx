@@ -464,7 +464,7 @@ const NOME_PASSO: Record<string, string> = {
   consegna: 'Chi consegna',
   libretto: 'Libretto',
   cdc: 'Certificato di proprietà',
-  account: 'Crea il tuo account',
+  account: 'Invia la richiesta',
 }
 
 function getSteps(dati: DatiPratica) {

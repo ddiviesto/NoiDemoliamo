@@ -59,7 +59,7 @@ function calcolaPassi(intestazione: Intestazione | null, erediRinuncia: 'si' | '
 const ETICHETTE: Record<Passo, string> = {
   'tipo-veicolo': 'Tipo di veicolo', intestazione: 'Intestazione', eredi: 'Eredità', 'societa-fallita': 'Società',
   identifica: 'Informazioni sul veicolo', condizioni: 'Condizioni', indirizzo: 'Dove si trova',
-  targa: 'Targa', cf: 'Codice fiscale', foto: 'Foto', fermo: 'Fermo amministrativo', account: 'Crea il tuo account',
+  targa: 'Targa', cf: 'Codice fiscale', foto: 'Foto', fermo: 'Fermo amministrativo', account: 'Invia la richiesta',
 }
 
 // I titoli sono GEMELLI di quelli del flusso demolizione (stesse parole,
