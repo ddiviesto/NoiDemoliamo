@@ -1491,12 +1491,10 @@ export default function IniziaPage() {
             )}
 
             {/* Cosa succede dopo (solo per chi si registra ora).
-                Variante E: testata blu piena, corpo bianco ad alto contrasto —
-                il blu vive solo nella testata e nei numeri, il testo è scuro. */}
-            {!utenteLoggato && (
-            {/* ⭐ 13/10 (mockup A, Davide): stessa SCHEDA CELESTE del
+                ⭐ 13/10 (mockup A, Davide): stessa SCHEDA CELESTE del
                 riquadro "Come capire quale hai" del certificato, così i
                 riquadri informativi del flusso hanno una veste sola */}
+            {!utenteLoggato && (
             <div className="rounded-xl py-3 px-3.5 mb-4" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
               <div className="flex items-center gap-2 mb-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
