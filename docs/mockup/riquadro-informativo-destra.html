@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Il riquadro a destra, una veste sola</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1120px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:14px auto 8px;max-width:1120px;padding:0 4px}
+.lilla{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),#F5F3FE}
+.pc{width:1120px;margin:0 auto 26px;border-radius:16px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.18);border:1px solid #D8DEE9;padding:26px 40px 34px}
+.barra{display:flex;align-items:center;gap:14px;margin-bottom:28px}.ind{width:40px;height:40px;border-radius:999px;background:#fff;box-shadow:0 6px 16px rgba(15,27,51,.07);display:flex;align-items:center;justify-content:center}
+.prog{flex:1;height:4px;border-radius:999px;background:#E2E6F0;position:relative}.prog i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:linear-gradient(90deg,#2563eb,#7c3aed)}
+.passo{font-size:11px;font-weight:700;letter-spacing:.8px;color:#6B7280}
+.cols{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:start}
+h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.1}h1 b{color:#1D4ED8}
+.sotto{font-size:15px;color:#4B5A72;line-height:1.55;margin-top:10px}
+.sx{display:flex;flex-direction:column;gap:18px}
+.lista{padding-top:18px;border-top:1px solid #E2E6F0}.lista .k{font-size:11px;font-weight:700;letter-spacing:1px;color:#6B7280;margin-bottom:10px}
+.lista div.r{display:flex;align-items:center;gap:10px;font-size:14px;color:#6B7280;margin-top:9px}.lista b{width:22px;height:22px;border-radius:999px;background:#EDF0F5;color:#64748B;font-size:11px;display:flex;align-items:center;justify-content:center}
+.lista .r.on{color:#0F172A;font-weight:700}.lista .r.on b{background:#2563EB;color:#fff}
+.col{display:flex;flex-direction:column;gap:12px}
+.op{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #E5E7EB;border-radius:14px;padding:12px 14px}
+.op .i{width:38px;height:38px;border-radius:11px;background:#DBEAFE;flex-shrink:0}.op .l{font-size:14px;font-weight:600}.op .s{font-size:12px;color:#6B7280;margin-top:1px}.op .o{width:20px;height:20px;border-radius:999px;border:1.5px solid #D1D5DB;margin-left:auto;flex-shrink:0}
+.lab{font-size:12.5px;font-weight:700;color:#4A5A75;margin:0 0 6px 2px}.campo{background:#fff;border:1.5px solid #E2E8F0;border-radius:999px;padding:13px 20px;font-size:16px;color:#9AA7BC;box-shadow:0 2px 6px rgba(15,27,51,.04)}
+.aiuto{font-size:12px;color:#6B7280;margin:5px 0 0 4px}
+.btn{display:inline-block;background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;border-radius:999px;padding:15px 40px;font-size:15px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.35);align-self:flex-start;margin-top:4px}
+/* veste "Cosa fare adesso": bianca, bordo celeste, quadratino col gradiente */
+.vD{background:#fff;border:1.5px solid #DBEAFE;border-radius:16px;padding:12px 14px;color:#374151;box-shadow:0 2px 8px rgba(37,99,235,.08)}.vD .t{margin-bottom:10px}.vD .t .q{width:36px;height:36px;border-radius:11px;background:linear-gradient(135deg,#1d4ed8,#2563eb);display:flex;align-items:center;justify-content:center;flex-shrink:0}.vD .t span{color:#0F172A;font-size:14px}.vD .corpo{display:flex;flex-direction:column;gap:8px}.vD .forte{border-color:#E5E9F0}
+/* le tre vesti del riquadro */
+.rq .t{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700}
+.rq .r{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.5}
+.rq .r i{width:6px;height:6px;border-radius:999px;background:#2563eb;flex-shrink:0;margin-top:8px}
+.rq .r b.n{width:22px;height:22px;border-radius:999px;background:#EFF6FF;border:1.5px solid #93C5FD;color:#1D4ED8;font-size:11.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rq .forte{font-weight:600;padding-bottom:8px;border-bottom:1px solid #BFDBFE}
+/* A celeste */
+.vA{background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:14px;padding:12px 14px;color:#1E3A8A}.vA .t{color:#1E3A8A;margin-bottom:8px}.vA .r+.r{margin-top:6px}
+/* B bianco con testata azzurra */
+.vB{background:#fff;border:1.5px solid #E5E7EB;border-radius:16px;overflow:hidden;color:#374151}.vB .t{background:#DBEAFE;color:#1E40AF;padding:9px 14px}.vB .corpo{display:flex;flex-direction:column;gap:9px;padding:12px 14px}.vB .forte{border-color:#E5E9F0}
+/* C bianco, quadratino icona, famiglia card */
+.vC{background:#fff;border:1.5px solid #E5E7EB;border-radius:16px;padding:12px 14px;color:#374151;box-shadow:0 1px 3px rgba(16,24,40,.07)}.vC .t{margin-bottom:10px}.vC .t .q{width:34px;height:34px;border-radius:10px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0}.vC .t span{color:#111827;font-size:14px}.vC .corpo{display:flex;flex-direction:column;gap:8px}.vC .forte{border-color:#E5E9F0}
+</style></head><body>
+<div class="nota"><b>IL RIQUADRO A DESTRA, UNA VESTE SOLA</b> · resta dov'è, sopra scelte e campi. Oggi il certificato ha la scheda celeste e l'ultimo passo la scatola bianca con la testata azzurra: qui le tre vesti possibili, ognuna applicata a tutte e due le pagine.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">A · scheda celeste per tutti e due</span>
+<span onclick="vista('b',this)">B · bianca con testata azzurra per tutti e due</span>
+<span onclick="vista('c',this)">C · la veste di "Cosa fare adesso" per tutti e due</span>
+</div>
+<div id="viste"></div>
+<script>
+const FR='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
+const INFO=(c)=>`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
+const LISTA='<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>'
+const S=(t)=>t.replace(/<b>/g,'<strong style="color:inherit">').replace(/<\/b>/g,'</strong>')
+const cdcRighe=['<b>Non è il libretto di circolazione</b>: è un documento a parte.','Passaggio di proprietà <b>prima di ottobre 2015</b>: foglio <b>cartaceo</b> con stemma ACI in alto.','Passaggio <b>dopo ottobre 2015</b>: è <b>digitale</b>, non esiste un foglio da conservare.']
+const dopoRighe=['Entri <b>subito nella tua area personale</b>, senza attese','Carichi i documenti richiesti: <b>basta una foto fatta col telefono</b>','I moduli da firmare? <b>Te li prepariamo noi già compilati</b>','Documenti ok: fissiamo insieme il <b>ritiro gratuito a domicilio</b>']
+
+function riquadro(veste, titolo, righe, numerate){
+  const pal = veste==='a' ? '#2563eb' : '#2563eb'
+  const righeH = righe.map((t,i)=>`<div class="r ${!numerate&&i===0&&righe===cdcRighe?'forte':''}">${numerate?`<b class="n">${i+1}</b>`:'<i></i>'}<span>${S(t)}</span></div>`).join('')
+  if(veste==='a') return `<div class="rq vA"><div class="t">${INFO('#2563eb')} ${titolo}</div>${righeH}</div>`
+  if(veste==='b') return `<div class="rq vB"><div class="t">${titolo}</div><div class="corpo">${righeH}</div></div>`
+  return `<div class="rq vD"><div class="t"><span class="q">${righe===cdcRighe?INFO('#fff'):LISTA.replace(/#2563eb/g,'#fff')}</span><span>${titolo}</span></div><div class="corpo">${righeH}</div></div>`
+}
+const lista=(n,a,b)=>`<div class="lista"><div class="k">A CHE PUNTO SEI</div><div class="r on"><b>${n}</b>${a}</div><div class="r"><b>${n+1}</b>${b}</div></div>`
+const opzioni=`<div class="op"><span class="i"></span><div><div class="l">Il mio è digitale</div><div class="s">Passaggio dopo ottobre 2015: il certificato è negli archivi digitali del PRA e non va consegnato al ritiro</div></div><span class="o"></span></div>
+<div class="op"><span class="i"></span><div><div class="l">Sì, ho quello cartaceo</div><div class="s">Il foglio con lo stemma ACI in alto: va consegnato al momento del ritiro</div></div><span class="o"></span></div>
+<div class="op"><span class="i"></span><div><div class="l">Ho smarrito il cartaceo, ho la denuncia</div><div class="s">La denuncia in originale va consegnata al momento del ritiro</div></div><span class="o"></span></div>
+<div class="op"><span class="i"></span><div><div class="l">Non lo trovo o non so cosa sia</div><div class="s">Nessun problema: lo verifichiamo noi gratuitamente. Intanto puoi continuare e completare la richiesta</div></div><span class="o"></span></div><span class="btn">Continua</span>`
+const campi=`<div><div class="lab">Il tuo nome e cognome</div><div class="campo">Mario Rossi</div></div><div><div class="lab">Il tuo numero di telefono</div><div class="campo">+39 333 1234567</div><div class="aiuto">Lo usiamo solo per coordinare il ritiro e aggiornarti sulla tua pratica. Nessuna chiamata commerciale.</div></div><div><div class="lab">La tua email</div><div class="campo">mario@email.it</div></div><div><div class="lab">Scegli una password</div><div class="campo">••••••••</div><div class="aiuto">Almeno 6 caratteri.</div></div><span class="btn">Conferma e invia richiesta</span>`
+
+function pagina(veste, passo, tot, titolo, sotto, rq, listaH, destra){
+  return `<div class="pc lilla"><div class="barra"><span class="ind">${FR}</span><span class="prog"><i style="width:${Math.round(passo/tot*100)}%"></i></span><span class="passo">PASSO ${passo} DI ${tot}</span></div>
+  <div class="cols"><div class="sx"><div><h1>${titolo}</h1><div class="sotto">${sotto}</div></div>${listaH}</div><div class="col">${rq}${destra}</div></div></div>`
+}
+function coppia(v){
+  return `<div class="eti">Passo 12 · Certificato di proprietà</div>${pagina(v,12,13,'Hai il <b>Certificato di Proprietà</b>?','È il documento che dimostra chi è il proprietario del mezzo.',riquadro(v,'Come capire quale hai',cdcRighe,false),lista(12,'Certificato di proprietà','Invia la richiesta'),opzioni)}
+  <div class="eti">Passo 13 · Invia la richiesta</div>${pagina(v,13,13,'Ultimo passo!','Crea il tuo account per seguire la pratica fino al ritiro.',riquadro(v,'Cosa succede dopo',dopoRighe,true),lista(13,'Invia la richiesta',''),campi)}`
+}
+const V={
+ a:{s:'<b>A. Scheda celeste per tutti e due.</b> Quella che oggi ha "Come capire quale hai": fondo celeste, bordo azzurro, iconcina "i", testo blu scuro. "Cosa succede dopo" la prende anche lui, coi numerini. È la regola degli avvisi informativi in scheda blu.', h:coppia('a')},
+ b:{s:'<b>B. Bianca con testata azzurra per tutti e due.</b> Quella che oggi ha "Cosa succede dopo": card bianca, striscia azzurra col titolo, testo scuro. "Come capire quale hai" la prende anche lui.', h:coppia('b')},
+ c:{s:'<b>C. La veste di "Cosa fare adesso" per tutti e due.</b> La scatola che ti era piaciuta nell’area personale: bianca, bordo celeste sottile, quadratino blu col gradiente e l’icona, titolo scuro. Così il cliente ritrova nel modulo la stessa veste che poi vede nella sua pratica.', h:coppia('c')},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
