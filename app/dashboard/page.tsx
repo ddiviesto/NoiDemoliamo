@@ -104,9 +104,14 @@ export default function DashboardCliente() {
       // Recupera dati utente
       const { data: utente } = await supabase
         .from('utenti')
-        .select('nome, cognome, telefono, email')
+        .select('nome, cognome, telefono, email, tipo')
         .eq('id', session.user.id)
         .single()
+      // ⭐ 23/10 (Davide): l'app installata si apre sempre qui, ma qui ci
+      // sta solo il cliente. Admin e demolitore vanno nella loro area, come
+      // fa già la pagina di accesso.
+      if (utente?.tipo === 'admin') { router.replace('/admin'); return }
+      if (utente?.tipo === 'demolitore') { router.replace('/demolitore'); return }
       if (utente?.nome) setNomeUtente(utente.nome.split(' ')[0])
       const emailLogin = session.user.email || ''
       setProfilo({ nome: utente?.nome || '', cognome: utente?.cognome || '', telefono: utente?.telefono || '', email: emailLogin || utente?.email || '' })
