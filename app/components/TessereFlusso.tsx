@@ -47,20 +47,28 @@ export function TesseraFase({ nome, valore, attivo, rossa, chiusa, freccia, titl
   const rossaViva = !!rossa && valore > 0
   const colNumero = rossaViva ? '#A32D2D' : valore === 0 ? '#94A3B8' : chiusa ? '#1F7A43' : '#1D4ED8'
   return (
+    // ⭐ 07/11 (Davide): TUTTA la tessera è cliccabile, non solo il numero e
+    // il nome; le vocine dentro fermano il clic per conto loro
     <div
-      className="relative flex flex-col min-w-0 transition-shadow"
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } }}
+      title={title}
+      className="relative flex flex-col min-w-0 transition-all hover:shadow-md"
       style={{
         background: rossaViva ? '#FCEBEB' : attivo ? '#EFF6FF' : chiusa ? '#F5F7FB' : '#fff',
         border: `1.5px solid ${attivo ? '#2563EB' : rossaViva ? '#F3C8C8' : '#E5E7EB'}`,
         borderRadius: 12,
         boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
         minHeight: 96,
+        cursor: 'pointer',
       }}
     >
-      <button onClick={onClick} title={title} className="text-left hover:bg-black/[0.02] transition-colors" style={{ padding: '9px 10px 6px', borderRadius: 12, background: 'none', border: 'none', cursor: 'pointer' }}>
+      <div className="text-left" style={{ padding: '9px 10px 6px' }}>
         <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, color: colNumero }}>{valore}</div>
         <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2, marginTop: 4, color: rossaViva ? '#A32D2D' : '#1E293B' }}>{nome}</div>
-      </button>
+      </div>
 
       {/* le vocine, subito sotto il nome (non in fondo: in "Assegnata" ce n'è una sola) */}
       {vocine && vocine.length > 0 && (
@@ -70,7 +78,7 @@ export function TesseraFase({ nome, valore, attivo, rossa, chiusa, freccia, titl
             return (
               <button
                 key={v.nome}
-                onClick={v.onClick}
+                onClick={e => { e.stopPropagation(); v.onClick() }}
                 title={v.title}
                 className="flex items-center justify-between gap-2 text-left transition-colors hover:bg-black/[0.02]"
                 style={{ fontSize: 10.5, padding: '4px 0', background: 'none', border: 'none', borderTop: '1px solid #EEF1F5', cursor: 'pointer', color: viva ? '#A32D2D' : v.attivo ? '#1D4ED8' : '#4B5A72', fontWeight: v.attivo ? 700 : 500 }}
