@@ -19,9 +19,15 @@ export type Vocina = {
   onClick: () => void
 }
 
+// Le tessere hanno la STESSA larghezza in tutte le aree (⭐ 07/11, Davide):
+// la misura di riferimento è quella delle nove tessere del flusso pratiche,
+// quindi una fila più corta occupa solo la sua parte di riga.
+const COLONNE_RIFERIMENTO = 9
+
 export function TessereFlusso({ children, colonne }: { children: React.ReactNode; colonne: number }) {
+  const quota = Math.min(1, colonne / COLONNE_RIFERIMENTO)
   return (
-    <div className="mb-3" style={{ display: 'grid', gridTemplateColumns: `repeat(${colonne}, minmax(0, 1fr))`, gap: 6, alignItems: 'stretch' }}>
+    <div className="mb-3" style={{ display: 'grid', gridTemplateColumns: `repeat(${colonne}, minmax(0, 1fr))`, gap: 6, alignItems: 'stretch', width: `calc(${quota * 100}% - ${(1 - quota) * 6}px)` }}>
       {children}
     </div>
   )
