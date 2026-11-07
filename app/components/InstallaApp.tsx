@@ -58,9 +58,6 @@ export function doveStaLApp(): string {
 
 export function useInstallaApp() {
   const [stato, setStato] = useState<StatoInstalla>('istruzioni')
-  // diagnostica (07/11): con ?diagnostica-app nell'indirizzo la striscia
-  // dell'accesso scrive cosa risponde Chrome, così Davide non usa la console
-  const [diagnostica, setDiagnostica] = useState('')
   useEffect(() => {
     const calcola = () => {
       const dentroApp = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true
@@ -68,14 +65,11 @@ export function useInstallaApp() {
       if (window.__ndInstalla) return setStato('pronta')
       // ⭐ 07/11 (Davide): se l'app c'è già, niente istruzioni inutili.
       // Chrome (Android e PC) risponde solo se il manifesto si cita da solo
-      // in related_applications; gli altri browser non hanno la funzione.
+      // in related_applications: su PC pretende anche l'`id` dell'app
+      // (assoluto, uno per ogni indirizzo del sito), su Android basta l'url.
+      // Gli altri browser non hanno la funzione. Provato da Davide su Vercel.
       const nav = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<unknown[]> }
-      const vuoleDiagnostica = window.location.search.includes('diagnostica-app')
-      if (!nav.getInstalledRelatedApps) { if (vuoleDiagnostica) setDiagnostica('Questo browser non ha getInstalledRelatedApps'); return }
-      nav.getInstalledRelatedApps().then(apps => {
-        if (apps.length > 0) setStato('gia')
-        if (vuoleDiagnostica) setDiagnostica('Chrome risponde: ' + JSON.stringify(apps) + ' · finestra pronta: ' + (window.__ndInstalla ? 'sì' : 'no'))
-      }).catch(e => { if (vuoleDiagnostica) setDiagnostica('Errore: ' + String(e?.message || e)) })
+      nav.getInstalledRelatedApps?.().then(apps => { if (apps.length > 0) setStato('gia') }).catch(() => { /* non sa dirlo: si va avanti */ })
       const ua = navigator.userAgent
       const iphone = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
       setStato(iphone ? 'iphone' : 'istruzioni')
@@ -98,7 +92,7 @@ export function useInstallaApp() {
     }
     return 'foglio'
   }
-  return { stato, installa, diagnostica }
+  return { stato, installa }
 }
 
 const CONDIVIDI = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'inline', verticalAlign: '-2px' }}><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" /><polyline points="16 6 12 2 8 6" /><line x1="12" y1="2" x2="12" y2="15" /></svg>
@@ -209,7 +203,7 @@ function Telefonino({ larghezza = 150 }: { larghezza?: number }) {
  *  e una pillola BIANCA col bordo celeste: nella pagina il blu resta solo di
  *  "Accedi". Sparisce dentro l'app installata. */
 export function StrisciaInstalla({ className = '' }: { className?: string }) {
-  const { stato, installa, diagnostica } = useInstallaApp()
+  const { stato, installa } = useInstallaApp()
   const [foglio, setFoglio] = useState(false)
   if (stato === 'installata') return null
   return (
@@ -221,7 +215,6 @@ export function StrisciaInstalla({ className = '' }: { className?: string }) {
           <div className="flex-1 min-w-0">
             <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>{stato === 'gia' ? 'L\'app è già sul tuo dispositivo' : 'Hai già l\'app?'}</div>
             <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 2, lineHeight: 1.45 }}>{stato === 'gia' ? `La trovi ${doveStaLApp()}: da lì segui la pratica e scarichi il certificato quando è pronto.` : 'Quando il certificato è pronto lo scarichi direttamente da lì, e la pratica la segui con un tocco. Gratis, senza store.'}</div>
-            {diagnostica && <div style={{ fontSize: 11.5, color: '#A32D2D', marginTop: 6, wordBreak: 'break-all' }}>{diagnostica}</div>}
           </div>
           {stato === 'gia' ? <GiaInstallata /> : <span className="relative flex-shrink-0 self-start sm:self-auto">
             <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="inline-flex items-center gap-1.5 transition-colors hover:bg-blue-50 active:scale-[0.98]" style={{ background: foglio ? '#EFF6FF' : '#fff', color: '#2563eb', border: `1.5px solid ${foglio ? '#2563eb' : '#BFDBFE'}`, borderRadius: 999, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
