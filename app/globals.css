@@ -13,6 +13,11 @@ html {
   scrollbar-gutter: stable;
   background: #e0e7ff;
 }
+/* ⭐ 07/11 (Davide): sulle pagine con la scena lilla (flussi, accesso, area
+   cliente) lo spazio riservato alla barra di scorrimento prendeva il lavanda
+   di sopra e si vedeva come una striscia a destra: qui prende il lilla
+   della scena, così sparisce nell'insieme */
+html:has(main.flusso-scena) { background: #F5F3FE; }
 
 /* ⭐ 05/08 (mockup A approvato): nelle AREE DI LAVORO (admin e demolitore,
    la classe la mettono le sidebar) lo spazio riservato si SPEGNE — quelle
@@ -501,3 +506,4 @@ body {
 @keyframes schede-sfumano { from { opacity: 0 } to { opacity: 1 } }
 .schede-sfumano { animation: schede-sfumano .22s ease; }
 .schede-sfumano > div { min-height: 210px; }
+
