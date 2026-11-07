@@ -84,6 +84,16 @@ export async function POST(req: NextRequest) {
       if (error) console.warn(`Delete ${tabella}:`, error.message)
     }
 
+    // 2b) ⭐ 07/11 (Davide): la RICHIESTA DI VALUTAZIONE da cui è nata questa
+    //     pratica va via con lei, foto comprese (stanno in foto-pratiche/vendita/<id richiesta>)
+    const { data: valutazioniCollegate } = await supabase.from('veicoli_vendita').select('id').eq('pratica_id', praticaId)
+    for (const v of valutazioniCollegate || []) {
+      try { await svuotaCartellaStorage(supabase, 'foto-pratiche', 'vendita/' + v.id) } catch (e) { console.warn('Storage foto valutazione:', e) }
+      await supabase.from('foto_veicoli_vendita').delete().eq('veicolo_vendita_id', v.id)
+      const { error } = await supabase.from('veicoli_vendita').delete().eq('id', v.id)
+      if (error) console.warn('Delete veicoli_vendita:', error.message)
+    }
+
     // 3) Cancella la pratica
     const { error: errPratica } = await supabase.from('pratiche').delete().eq('id', praticaId)
     if (errPratica) {
@@ -96,9 +106,15 @@ export async function POST(req: NextRequest) {
     let accountEliminato = false
     let accountNonEliminatoMotivo: string | null = null
     if (eliminaAccount && userId) {
-      const { count } = await supabase.from('pratiche').select('id', { count: 'exact', head: true }).eq('user_id', userId)
-      if (count && count > 0) {
-        accountNonEliminatoMotivo = 'Il cliente ha altre pratiche: account mantenuto per non lasciarle orfane.'
+      // ⭐ 07/11 (Davide): contano anche le richieste di valutazione ancora aperte
+      const [{ count: nPratiche }, { count: nValutazioni }] = await Promise.all([
+        supabase.from('pratiche').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+        supabase.from('veicoli_vendita').select('id', { count: 'exact', head: true }).eq('user_id', userId),
+      ])
+      if ((nPratiche && nPratiche > 0) || (nValutazioni && nValutazioni > 0)) {
+        accountNonEliminatoMotivo = nPratiche && nPratiche > 0
+          ? 'Il cliente ha altre pratiche: account mantenuto per non lasciarle orfane.'
+          : 'Il cliente ha una richiesta di valutazione aperta: account mantenuto per non lasciarla orfana.'
       } else {
         const { data: au } = await supabase.auth.admin.getUserById(userId)
         const { data: profilo } = await supabase.from('utenti').select('tipo').eq('id', userId).single()

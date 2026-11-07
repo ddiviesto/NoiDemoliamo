@@ -1141,7 +1141,7 @@ export default function AdminDashboard() {
                                 <button onClick={() => eliminaDallaTendina(p, true)} disabled={!!eliminando} className="w-full text-left flex items-start gap-2 rounded-[9px] px-3 py-2 transition-colors hover:bg-red-50 disabled:opacity-40" style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
                                   <span>
                                     <span className="block text-[12px] font-bold" style={{ color: '#A94444' }}>{eliminando === 'account' ? 'Elimino…' : 'Elimina pratica e account'}</span>
-                                    <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>solo se il cliente non ha altre pratiche</span>
+                                    <span className="block text-[10px] mt-0.5" style={{ color: '#8B95A5' }}>solo se non ha altre pratiche o valutazioni</span>
                                   </span>
                                 </button>
                                 {eliminaErr && <div className="text-[10.5px] text-red-600 px-3 pb-1.5">{eliminaErr}</div>}

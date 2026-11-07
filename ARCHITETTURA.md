@@ -659,7 +659,7 @@ Pannello che **scivola da destra a tutta altezza**. ⭐ I pezzi del palco (`Zoom
 - **`/api/pratica-fee`** — Trattativa: imposta o rimuove l'importo concordato (0 compreso).
 - **`/api/pratica-annulla`** — annullo (motivo obbligatorio) e riattivazione.
 - **`/api/modulo-pdf`** — download dei moduli (Bearer token, cliente proprietario o admin), traccia `scaricato_il`. Tutti i moduli escono **in bianco** e sono scaricabili **subito**.
-- **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
+- **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica **+ la richiesta di valutazione da cui è nata, foto comprese**; 07/11). Opzione "pratica e account": l'account va via **solo se al cliente non restano né pratiche né richieste di valutazione**, mai admin e operatori.
 - **`/api/profilo`** — dati del cliente (service role, ognuno solo la propria riga).
 - **`/api/email-cliente`** — l'email vera di login (il browser admin non può leggere `utenti` per RLS).
 - **`/api/pulisci-utenti`** — cancella account clienti senza pratiche **né richieste di valutazione**, compresi gli **accessi senza scheda in `utenti`** (prove interrotte a metà: la lista li mostra come "email (solo accesso, senza scheda)"; 07/11; mai admin/operatori, ma il testo del pannello non li nomina).
