@@ -80,11 +80,12 @@ export function TesseraFase({ nome, valore, attivo, rossa, chiusa, freccia, titl
                 key={v.nome}
                 onClick={e => { e.stopPropagation(); v.onClick() }}
                 title={v.title}
-                className="flex items-center justify-between gap-2 text-left transition-colors hover:bg-black/[0.02]"
+                className="flex items-baseline gap-1.5 text-left transition-colors hover:bg-black/[0.02]"
                 style={{ fontSize: 10.5, padding: '4px 0', background: 'none', border: 'none', borderTop: '1px solid #EEF1F5', cursor: 'pointer', color: viva ? '#A32D2D' : v.attivo ? '#1D4ED8' : '#4B5A72', fontWeight: v.attivo ? 700 : 500 }}
               >
+                {/* ⭐ 07/11 (mockup B): il numero STA A SINISTRA, prima del nome, come nella tessera grande */}
+                <span style={{ fontSize: 12, fontWeight: 700, minWidth: 10, color: viva ? '#A32D2D' : v.attivo ? '#1D4ED8' : v.valore === 0 ? '#94A3B8' : '#1D4ED8' }}>{v.valore}</span>
                 <span className="truncate">{v.nome}</span>
-                <span style={{ fontWeight: 700, color: viva ? '#A32D2D' : v.attivo ? '#1D4ED8' : v.valore === 0 ? '#94A3B8' : '#1E293B' }}>{v.valore}</span>
               </button>
             )
           })}

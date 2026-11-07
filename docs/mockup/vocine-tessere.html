@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Le vocine dentro le tessere, allineate</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:14px auto 8px;max-width:1180px;padding:0 4px}
+.crm{width:1180px;margin:0 auto 26px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;padding:18px 22px 22px}
+.k{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5B6779;margin-bottom:8px}
+.griglia{display:grid;grid-template-columns:repeat(9,minmax(0,1fr));gap:6px;align-items:stretch}.griglia>*{min-width:0}
+.tappa{background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:9px 10px 8px;position:relative;min-height:96px;display:flex;flex-direction:column;box-shadow:0 1px 3px rgba(16,24,40,.07)}
+.tappa .n{font-size:20px;font-weight:700;color:#94A3B8;line-height:1}.tappa .n.viva{color:#1D4ED8}.tappa .n.rossa{color:#A32D2D}
+.tappa .t{font-size:11.5px;font-weight:700;color:#1E293B;margin-top:4px;line-height:1.2}
+.tappa.on{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15);background:#EFF6FF}
+.tappa.chiusa{background:#F5F7FB}.tappa.chiusa .n{color:#1F7A43}
+.freccia{position:absolute;right:-9px;top:26px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:6px solid #C3CBD9}
+/* A: pillole piccole col numero nel tondino a sinistra */
+.vA{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.vA span{display:inline-flex;align-items:center;gap:6px;background:#F5F7FB;border:1px solid #E5E9F0;border-radius:999px;padding:3px 8px 3px 4px;font-size:10.5px;font-weight:600;color:#4B5A72;max-width:100%;overflow:hidden}
+.vA b{width:16px;height:16px;border-radius:999px;background:#E5E9F0;color:#4B5A72;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vA span.rossa{background:#FCEBEB;border-color:#F3C8C8;color:#A32D2D}.vA span.rossa b{background:#A32D2D;color:#fff}
+/* B: righe "numero · nome", numero a sinistra come la tessera */
+.vB{display:flex;flex-direction:column;margin-top:6px}
+.vB div{display:flex;align-items:baseline;gap:6px;font-size:10.5px;color:#4B5A72;padding:4px 0;border-top:1px solid #EEF1F5}
+.vB b{font-size:12px;font-weight:700;color:#94A3B8;min-width:10px}.vB b.viva{color:#1D4ED8}.vB div.rossa{color:#A32D2D}.vB div.rossa b{color:#A32D2D}
+/* C: tessera divisa a metà: sopra la fase, sotto le sottofasi con lo stesso disegno in piccolo */
+.vC{margin-top:auto;display:grid;grid-template-columns:1fr 1fr;gap:4px;padding-top:6px;border-top:1px solid #EEF1F5}
+.vC div{background:#F5F7FB;border-radius:8px;padding:5px 6px}
+.vC b{display:block;font-size:13px;font-weight:700;color:#94A3B8;line-height:1}.vC b.viva{color:#1D4ED8}.vC small{display:block;font-size:9.5px;font-weight:600;color:#4B5A72;margin-top:2px;line-height:1.15}
+.vC div.rossa{background:#FCEBEB}.vC div.rossa b,.vC div.rossa small{color:#A32D2D}
+.vC.una{grid-template-columns:1fr}
+.lista{margin-top:14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:14px;padding:26px;text-align:center;font-size:13px;color:#6B7280}
+</style></head><body>
+<div class="nota"><b>LE VOCINE DENTRO LE TESSERE</b> · oggi "Allerta 8 ore · 0" ha lo zero a destra, staccato: tre modi per allinearle meglio. Mostrati con numeri a zero (come oggi) e, sotto, con qualche numero vero per vedere i colori.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">A · pilloline col numero nel tondino, a sinistra</span>
+<span onclick="vista('b',this)">B · righe "numero · nome", numero a sinistra come la tessera</span>
+<span onclick="vista('c',this)">C · mini tessere dentro la tessera, stesso disegno in piccolo</span>
+</div>
+<div id="viste"></div>
+<script>
+const FILA=[
+ {t:'Da contattare',rossaSe:true},{t:'In attesa documenti',on:true},{t:'In attesa',f:true},{t:'Documenti da verificare',f:true},{t:'Da assegnare',f:true},
+ {t:'Assegnata',f:true,sotto:[{t:'Allerta 8 ore',rossaSe:true}]},{t:'Ritiro Programmato',f:true},{t:'Ritirata',f:true,sotto:[{t:'Attesa Certificati'},{t:'Attesa PRA'}]},{t:'Completata',chiusa:true},
+]
+const NUMERI_ZERO={}, NUMERI_VERI={'Da contattare':2,'In attesa documenti':4,'Documenti da verificare':1,'Assegnata':3,'Allerta 8 ore':1,'Ritiro Programmato':2,'Ritirata':5,'Attesa Certificati':3,'Attesa PRA':2,'Completata':12}
+function vocine(veste,f,num){
+  if(!f.sotto) return ''
+  const v=f.sotto.map(s=>{const n=num[s.t]||0;const r=s.rossaSe&&n>0
+    if(veste==='a') return `<span class="${r?'rossa':''}"><b>${n}</b>${s.t}</span>`
+    if(veste==='b') return `<div class="${r?'rossa':''}"><b class="${n>0?'viva':''}">${n}</b><span>${s.t}</span></div>`
+    return `<div class="${r?'rossa':''}"><b class="${n>0?'viva':''}">${n}</b><small>${s.t}</small></div>`}).join('')
+  if(veste==='a') return `<div class="vA">${v}</div>`
+  if(veste==='b') return `<div class="vB">${v}</div>`
+  return `<div class="vC ${f.sotto.length===1?'una':''}">${v}</div>`
+}
+function fila(veste,num){
+  return `<div class="k">Flusso pratiche</div><div class="griglia">${FILA.map(f=>{const n=num[f.t]||0;const r=f.rossaSe&&n>0
+    return `<div class="tappa ${f.on?'on':''} ${f.chiusa?'chiusa':''}" ${r?'style="background:#FCEBEB;border-color:#F3C8C8"':''}><div class="n ${r?'rossa':n>0?'viva':''}">${n}</div><div class="t" ${r?'style="color:#A32D2D"':''}>${f.t}</div>${vocine(veste,f,num)}${f.f?'<span class="freccia"></span>':''}</div>`}).join('')}</div><div class="lista">Nessuna pratica in questa vista.</div>`
+}
+const blocco=(veste)=>`<div class="eti">A zero, come oggi</div><div class="crm">${fila(veste,NUMERI_ZERO)}</div><div class="eti">Con qualche numero vero</div><div class="crm">${fila(veste,NUMERI_VERI)}</div>`
+const V={
+ a:{s:'<b>A. Pilloline.</b> Ogni vocina è una pillolina grigia col <b>numero nel tondino a sinistra</b> e il nome accanto, una sotto l’altra, allineate al bordo sinistro della tessera come il numero grande. "Allerta 8 ore" diventa rossa quando conta qualcosa. Si legge come le pillole di stato del resto dell’admin.', h:blocco('a')},
+ b:{s:'<b>B. Righe "numero · nome".</b> Come oggi ma il <b>numero sta a sinistra</b>, prima del nome, un po’ più grande e dello stesso colore del numero grande (grigio a zero, blu quando c’è qualcosa). Tutto allineato a sinistra su una colonna sola: numero grande, nome, poi le righe. La più sobria.', h:blocco('b')},
+ c:{s:'<b>C. Mini tessere.</b> Dentro la tessera, in fondo, le sottofasi sono <b>tesserine grigie con lo stesso disegno in piccolo</b> (numero sopra, nome sotto): Allerta 8 ore ne occupa una larga, Attesa Certificati e Attesa PRA due affiancate. Si capisce al volo che sono "pezzi" della fase. È la più ricca.', h:blocco('c')},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
