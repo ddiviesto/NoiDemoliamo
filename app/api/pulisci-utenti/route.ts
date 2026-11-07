@@ -46,10 +46,15 @@ export async function POST(req: NextRequest) {
     const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
     const supabase = createClient(supabaseUrl, serviceKey)
 
-    // Utenti che HANNO almeno una pratica
-    const { data: praticheUsers } = await supabase.from('pratiche').select('user_id')
+    // Utenti che HANNO almeno una pratica o una richiesta di valutazione
+    // (⭐ 07/11, Davide: chi ha chiesto una valutazione non ha ancora una
+    // pratica, ma non è un resto da cancellare)
+    const [{ data: praticheUsers }, { data: valutazioniUsers }] = await Promise.all([
+      supabase.from('pratiche').select('user_id'),
+      supabase.from('veicoli_vendita').select('user_id'),
+    ])
     const conPratiche = new Set<string>()
-    for (const p of praticheUsers || []) if (p.user_id) conPratiche.add(p.user_id as string)
+    for (const p of [...(praticheUsers || []), ...(valutazioniUsers || [])]) if (p.user_id) conPratiche.add(p.user_id as string)
 
     // Tutti gli utenti registrati
     const { data: utenti } = await supabase.from('utenti').select('id, nome, tipo')

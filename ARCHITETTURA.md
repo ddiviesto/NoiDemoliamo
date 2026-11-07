@@ -661,7 +661,7 @@ Pannello che **scivola da destra a tutta altezza**. ⭐ I pezzi del palco (`Zoom
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
 - **`/api/profilo`** — dati del cliente (service role, ognuno solo la propria riga).
 - **`/api/email-cliente`** — l'email vera di login (il browser admin non può leggere `utenti` per RLS).
-- **`/api/pulisci-utenti`** — cancella account clienti senza pratiche (mai admin/operatori).
+- **`/api/pulisci-utenti`** — cancella account clienti senza pratiche **né richieste di valutazione** (07/11; mai admin/operatori, ma il testo del pannello non li nomina).
 - **`/api/invita-demolitore`** · **`/api/accesso-demolitore`** · **`/api/elimina-demolitore`**
 - **Area demolitore** (il ruolo demolitore non tocca MAI il DB direttamente, RLS): `/api/demolitore-pratiche` (il dettaglio RIFIRMA sempre gli URL dei documenti del bucket privato, e manda `documenti_ritiro` — lista completa consegna/caricato — e `viaggio` km · minuti via Distance Matrix con la cache in memoria per pratica), `/api/demolitore-azioni` (fissa/sposta ritiro — **spostare richiede il motivo, il server rifiuta senza** —, segna ritirata, rottamazione a mano), `/api/demolitore-certificato`, `/api/demolitore-chat`, `/api/demolitore-rapidi` (frasi rapide SUE della chat, semina + gestione), `/api/demolitore-impegni` (impegni personali della pagina Ritiri), `/api/demolitore-note`, `/api/demolitore-profilo`. Auth condivisa in `lib/demolitoreAuth.ts`.
 - **`lib/googleMaps.ts`** — carica lo script UNA volta per pagina (autocomplete e mappa convivono senza conflitto).
