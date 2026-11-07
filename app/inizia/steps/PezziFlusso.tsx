@@ -18,14 +18,17 @@ export function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorde
   // fondo azzurro della selezione e il bordo celeste pieno (il blu pieno e la
   // spunta restano solo della scelta); prima era un velo azzurro al 40% che sul
   // lilla della pagina sembrava lilla
-  const baseBg = selected ? 'bg-[#EFF6FF]' : errorBorder ? 'bg-white' : 'bg-white hover:bg-[#EFF6FF] hover:!border-[#93C5FD]'
+  // ⭐ 07/11 (mockup B, Davide): dopo una scelta le altre caselle si
+  // affievoliscono e al passaggio tornano piene col solo bordo celeste; la
+  // veste del passaggio sta in globals.css (.scelta, .scelta--presa)
+  const baseBg = selected ? 'bg-[#EFF6FF]' : 'bg-white'
   const borderStyle: React.CSSProperties = selected
     ? { border: '2px solid #1D4ED8', boxShadow: '0 2px 8px rgba(37,99,235,0.12)' }
     : errorBorder
       ? { border: '2px solid #FCA5A5' }
       : { border: '2px solid #D7DCE5' }
   return (
-    <button onClick={onClick} className={`w-full flex items-center gap-3 p-3.5 rounded-[13px] text-left transition-all active:scale-[0.995] ${baseBg}`} style={{ ...borderStyle, minHeight: uniforme ? 92 : undefined }}>
+    <button onClick={onClick} className={`scelta${selected ? ' scelta--presa' : ''} w-full flex items-center gap-3 p-3.5 rounded-[13px] text-left transition-all active:scale-[0.995] ${baseBg}`} style={{ ...borderStyle, minHeight: uniforme ? 92 : undefined }}>
       <div className={`w-[42px] h-[42px] rounded-xl flex items-center justify-center flex-shrink-0 ${selected ? 'bg-blue-600 text-white' : 'bg-[#DBEAFE] text-blue-600'}`}>
         {iconSvg}
       </div>

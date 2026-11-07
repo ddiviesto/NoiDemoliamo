@@ -507,3 +507,15 @@ body {
 .schede-sfumano { animation: schede-sfumano .22s ease; }
 .schede-sfumano > div { min-height: 210px; }
 
+
+/* ⭐ 07/11 (mockup B1 + B, Davide): LE CASELLE A SCELTA dei flussi (RuoloButton)
+   al passaggio del mouse. Prima della scelta: fondo azzurro della selezione e
+   bordo celeste pieno. Dopo una scelta: le altre si affievoliscono e al
+   passaggio tornano piene col solo bordo celeste (l'azzurro di fondo resta
+   uno solo, quello della scelta). I bordi sono in linea nel componente,
+   quindi qui servono gli !important. */
+.scelta { transition: background-color .15s, border-color .15s, opacity .15s, transform .1s; }
+.scelta:not(.scelta--presa):hover { background: #EFF6FF !important; border-color: #93C5FD !important; }
+:has(> .scelta--presa) > .scelta:not(.scelta--presa) { opacity: .7; }
+:has(> .scelta--presa) > .scelta:not(.scelta--presa):hover { opacity: 1; background: #fff !important; border-color: #93C5FD !important; }
+
