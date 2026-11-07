@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AdminSidebar from '../_components/AdminSidebar'
 import AutocompleteIndirizzo from '../../inizia/steps/AutocompleteIndirizzo'
-import TendinaDemolitore from './TendinaDemolitore'
+import TendinaDemolitore, { prefetchDemolitore } from './TendinaDemolitore'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -176,6 +176,9 @@ export default function GestioneDemolitori() {
       <div
         key={d.id}
         onClick={() => setSelId(d.id)}
+        // ⭐ 07/11: al passaggio del mouse i dati della tendina si precaricano,
+        // così al clic si apre già piena (come le pratiche)
+        onMouseEnter={() => prefetchDemolitore(d.id)}
         // ⭐ 27/07: hover AZZURRO gemello delle righe pratiche (#EFF6FF);
         // la barretta colorata a sinistra (stato) resta com'è
         className="group bg-white cursor-pointer transition-all hover:!bg-[#EFF6FF] hover:!border-t-[#BFDBFE] hover:!border-r-[#BFDBFE] hover:!border-b-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]"

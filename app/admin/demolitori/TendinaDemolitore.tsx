@@ -53,6 +53,53 @@ interface DemolitoreFull {
 interface PraticaAnnullata { id: string; targa: string | null; marca: string | null; modello: string | null; nome_richiedente: string | null; motivo_annullamento: string | null; aggiornato_il: string | null }
 
 type SezioneEdit = 'azienda' | 'contatti' | 'persone' | null
+
+// ⭐ 07/11 (Davide: "quando apro i dati devono essere già lì"): i dati della
+// tendina si PRECARICANO al passaggio del mouse sulla riga e restano in
+// memoria, così all'apertura la tendina è già piena e non cambia più.
+type DatiTendina = { dem: DemolitoreFull | null; copertura: CoperturaRecord[]; stats: { aperte: number; completate: number; annullate: number }; annullate: PraticaAnnullata[]; tariffe: Tariffa[]; note: Nota[] }
+const cacheTendina = new Map<string, DatiTendina>()
+const inCorsoTendina = new Map<string, Promise<DatiTendina>>()
+
+async function caricaDatiTendina(demolitoreId: string): Promise<DatiTendina> {
+  const giaInCorso = inCorsoTendina.get(demolitoreId)
+  if (giaInCorso) return giaInCorso
+  const p = (async () => {
+    // le cinque letture partono TUTTE INSIEME (28/07)
+    const [dRes, covRes, pratRes, tarRes, ntRes] = await Promise.all([
+      supabase.from('demolitori').select('*').eq('id', demolitoreId).single(),
+      supabase.from('demolitori_comuni').select('*').eq('demolitore_id', demolitoreId),
+      supabase.from('pratiche').select('id, targa, marca, modello, nome_richiedente, stato, motivo_annullamento, aggiornato_il').eq('demolitore_id', demolitoreId),
+      supabase.from('demolitori_tariffe').select('*').eq('demolitore_id', demolitoreId).order('tipo'),
+      supabase.from('demolitori_note').select('*').eq('demolitore_id', demolitoreId).order('creato_il', { ascending: false }),
+    ])
+    const prat = pratRes.data || []
+    const listaAnnullate = prat.filter(p => p.stato === 'annullata')
+    const dati: DatiTendina = {
+      dem: (dRes.data as DemolitoreFull) || null,
+      copertura: (covRes.data as CoperturaRecord[]) || [],
+      stats: {
+        aperte: prat.filter(p => p.stato !== 'completata' && p.stato !== 'annullata').length,
+        completate: prat.filter(p => p.stato === 'completata').length,
+        annullate: listaAnnullate.length,
+      },
+      annullate: listaAnnullate,
+      tariffe: (tarRes.data as Tariffa[]) || [],
+      note: (ntRes.data as Nota[]) || [],
+    }
+    cacheTendina.set(demolitoreId, dati)
+    inCorsoTendina.delete(demolitoreId)
+    return dati
+  })()
+  inCorsoTendina.set(demolitoreId, p)
+  return p
+}
+
+/** Da chiamare al passaggio del mouse sulla riga: la tendina si aprirà già piena */
+export function prefetchDemolitore(demolitoreId: string) {
+  if (cacheTendina.has(demolitoreId) || inCorsoTendina.has(demolitoreId)) return
+  caricaDatiTendina(demolitoreId).catch(() => {})
+}
 type NuvolaAperta = 'accesso' | 'stato' | 'elimina' | null
 type DrawerAperto = 'copertura' | 'annullate' | null
 
@@ -105,7 +152,8 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   onDatiCambiati: () => void
 }) {
   const router = useRouter()
-  const [dem, setDem] = useState<DemolitoreFull | null>(null)
+  const inCache = cacheTendina.get(demolitoreId)
+  const [dem, setDem] = useState<DemolitoreFull | null>(inCache?.dem ?? null)
   // Apertura morbida (srotolamento come la tendina delle pratiche)
   const [aperto, setAperto] = useState(false)
   useEffect(() => {
@@ -122,12 +170,13 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
     setAperto(false)
     setTimeout(onChiudi, 300)
   }
-  const [copertura, setCopertura] = useState<CoperturaRecord[]>([])
-  const [stats, setStats] = useState({ aperte: 0, completate: 0, annullate: 0 })
-  const [annullate, setAnnullate] = useState<PraticaAnnullata[]>([])
-  const [tariffe, setTariffe] = useState<Tariffa[]>([])
-  const [note, setNote] = useState<Nota[]>([])
-  const [loading, setLoading] = useState(true)
+  const [copertura, setCopertura] = useState<CoperturaRecord[]>(inCache?.copertura ?? [])
+  const [stats, setStats] = useState(inCache?.stats ?? { aperte: 0, completate: 0, annullate: 0 })
+  const [annullate, setAnnullate] = useState<PraticaAnnullata[]>(inCache?.annullate ?? [])
+  const [tariffe, setTariffe] = useState<Tariffa[]>(inCache?.tariffe ?? [])
+  const [note, setNote] = useState<Nota[]>(inCache?.note ?? [])
+  // già in memoria (precaricata all'hover): niente filigrane, niente sobbalzi
+  const [loading, setLoading] = useState(!inCache)
 
   // Modifica sul posto per scheda
   const [sezEdit, setSezEdit] = useState<SezioneEdit>(null)
@@ -192,32 +241,20 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
   const [salvaCopSegnale, setSalvaCopSegnale] = useState(0)
 
   useEffect(() => {
-    async function carica() {
-      // ⭐ 28/07 (lag segnalato da Davide): le cinque letture partono TUTTE
-      // INSIEME, non una dietro l'altra — l'apertura è immediata
-      const [dRes, covRes, pratRes, tarRes, ntRes] = await Promise.all([
-        supabase.from('demolitori').select('*').eq('id', demolitoreId).single(),
-        supabase.from('demolitori_comuni').select('*').eq('demolitore_id', demolitoreId),
-        supabase.from('pratiche').select('id, targa, marca, modello, nome_richiedente, stato, motivo_annullamento, aggiornato_il').eq('demolitore_id', demolitoreId),
-        supabase.from('demolitori_tariffe').select('*').eq('demolitore_id', demolitoreId).order('tipo'),
-        supabase.from('demolitori_note').select('*').eq('demolitore_id', demolitoreId).order('creato_il', { ascending: false }),
-      ])
-      if (dRes.data) setDem(dRes.data as DemolitoreFull)
-      setCopertura((covRes.data as CoperturaRecord[]) || [])
-      const prat = pratRes.data || []
-      const listaAnnullate = prat.filter(p => p.stato === 'annullata')
-      setStats({
-        aperte: prat.filter(p => p.stato !== 'completata' && p.stato !== 'annullata').length,
-        completate: prat.filter(p => p.stato === 'completata').length,
-        annullate: listaAnnullate.length,
-      })
-      setAnnullate(listaAnnullate)
-      setTariffe((tarRes.data as Tariffa[]) || [])
-      setNote((ntRes.data as Nota[]) || [])
+    let vivo = true
+    caricaDatiTendina(demolitoreId).then(d => {
+      if (!vivo) return
+      setDem(d.dem); setCopertura(d.copertura); setStats(d.stats); setAnnullate(d.annullate); setTariffe(d.tariffe); setNote(d.note)
       setLoading(false)
-    }
-    carica()
+    }).catch(() => { if (vivo) setLoading(false) })
+    return () => { vivo = false }
   }, [demolitoreId])
+
+  // Ogni modifica fatta qui dentro (note, tariffe, dati azienda, copertura)
+  // aggiorna la memoria: la prossima apertura non mostra dati vecchi
+  useEffect(() => {
+    if (!loading) cacheTendina.set(demolitoreId, { dem, copertura, stats, annullate, tariffe, note })
+  }, [demolitoreId, loading, dem, copertura, stats, annullate, tariffe, note])
 
   // LED accesso: chiede al server se esiste un account di login collegato
   useEffect(() => {

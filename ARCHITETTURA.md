@@ -875,6 +875,7 @@ I sobbalzi sono bug, non dettagli.
 - **`scrollbar-gutter: stable` globale**: lo spazio della barra di Windows è sempre riservato, così le aperture non fanno slittare la pagina
 - **Rotellina a schermo pieno SOLO al primo caricamento**: upload, invii ed eliminazioni aggiornano in silenzio
 - **Niente lampi**: stati "non so ancora" = non mostrare nulla (né avvisi né "Nessun messaggio" prima del caricamento). Cambiando pagina admin restano sidebar e struttura
+- ⭐ **Le tendine si aprono già piene** (07/11): i dati si **precaricano al passaggio del mouse** sulla riga e restano in memoria (`prefetchCronologia` per le pratiche, `prefetchPratica` nel demolitore, `prefetchDemolitore` per i demolitori); mentre arrivano, al posto della rotellina ci sono le schede in filigrana della stessa altezza, così la tendina si srotola una volta sola e i dati sfumano dentro senza sobbalzi
 - **Modifica sul posto senza sobbalzi**: campo con solo **filo blu** sotto (niente cornice), zona valore/campo ad altezza fissa con dissolvenza, bottoni a larghezza riservata
 - **Pagina bloccata col visore aperto**: `body.overflow=hidden` + `overscroll-behavior: contain` sugli elenchi
 
