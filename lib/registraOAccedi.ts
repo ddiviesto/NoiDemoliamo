@@ -5,8 +5,17 @@ import { supabase } from '@/lib/supabase'
 // (per esempio una prova precedente, o un cliente che torna), non si blocca
 // con "User already registered": si prova ad ENTRARE con la password scritta.
 // Se è quella giusta, la richiesta si aggancia a quell'account; se no, il
-// messaggio dice cosa fare. Condiviso da /inizia e /vendi-auto (regola 29).
+// flusso cambia faccia (solo email e password, "Accedi e invia").
+// Condiviso da /inizia e /vendi-auto (regola 29).
 // ============================================================
+
+/** L'email esiste già e la password scritta non è la sua */
+export class EmailGiaRegistrata extends Error {
+  constructor() {
+    super('Questa email ha già un account e la password non è quella.')
+    this.name = 'EmailGiaRegistrata'
+  }
+}
 
 export async function registraOAccedi(email: string, password: string): Promise<string> {
   const { data: reg, error: errReg } = await supabase.auth.signUp({ email, password })
@@ -21,8 +30,6 @@ export async function registraOAccedi(email: string, password: string): Promise<
 
   // già registrata: proviamo ad entrare con la password scritta
   const { data: acc, error: errAcc } = await supabase.auth.signInWithPassword({ email, password })
-  if (errAcc || !acc.user) {
-    throw new Error('Questa email ha già un account, ma la password non è quella: accedi dalla pagina Accedi (o recupera la password) e poi rifai la richiesta.')
-  }
+  if (errAcc || !acc.user) throw new EmailGiaRegistrata()
   return acc.user.id
 }

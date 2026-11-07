@@ -8,7 +8,8 @@ import { StepCondizioniVeicolo } from './steps/StepCondizioniVeicolo'
 import { StepFoto } from './steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
-import { registraOAccedi } from '@/lib/registraOAccedi'
+import { registraOAccedi, EmailGiaRegistrata } from '@/lib/registraOAccedi'
+import { SchedaChi, CampiAccesso } from './steps/PassoAccount'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import { RuoloButton, InfoBadge, ErrorBadge, CampoModulo, SceltaPillola, classeCampo } from './steps/PezziFlusso'
@@ -556,6 +557,9 @@ export default function IniziaPage() {
   const [erroreCdc, setErroreCdc] = useState(false)
   const [erroreAccount, setErroreAccount] = useState<{nome?: boolean; telefono?: boolean; email?: boolean; password?: boolean}>({})
   const [mostraPasswordAccount, setMostraPasswordAccount] = useState(false)
+  // ⭐ 07/11: l'email scritta ha già un account e la password non è quella →
+  // il passo cambia faccia (solo email e password, "Accedi e invia")
+  const [giaRegistrata, setGiaRegistrata] = useState(false)
 
   // Cliente GIÀ registrato e loggato: la nuova pratica si aggancia al suo account
   // (niente creazione account allo step finale, le pratiche si mettono in fila).
@@ -772,14 +776,17 @@ export default function IniziaPage() {
 
   function handleContinuaAccount() {
     const e: {nome?: boolean; telefono?: boolean; email?: boolean; password?: boolean} = {}
-    if (!dati.nome) e.nome = true
-    if (!dati.telefono) e.telefono = true
+    // già dentro o "accedi e invia": nome e telefono non si richiedono
+    if (!utenteLoggato && !giaRegistrata) {
+      if (!dati.nome) e.nome = true
+      if (!dati.telefono) e.telefono = true
+    }
     // Cliente già loggato: email e password non servono
     if (!utenteLoggato) {
       // ⭐ 05/10: un'email a metà ("dd@") non parte più: Supabase la rifiutava
       // e il cliente vedeva un errore generico
       if (!dati.email || !emailValida(dati.email)) e.email = true
-      if (!dati.password || dati.password.length < 6) e.password = true
+      if (!dati.password || (!giaRegistrata && dati.password.length < 6)) e.password = true
     }
     if (e.nome || e.telefono || e.email || e.password) {
       setErroreAccount(e)
@@ -919,6 +926,12 @@ export default function IniziaPage() {
 
       router.push('/dashboard')
     } catch (e: unknown) {
+      if (e instanceof EmailGiaRegistrata) {
+        // prima volta: il passo diventa "accedi e invia"; se c'era già, la password è sbagliata
+        if (giaRegistrata) setErroreAccount(prev => ({ ...prev, password: true }))
+        else { setGiaRegistrata(true); update({ password: '' }) }
+        return
+      }
       console.error('Errore invio pratica:', e)
       setError(traduciErrore(e))
     } finally {
@@ -941,8 +954,8 @@ export default function IniziaPage() {
       passo={idxCorrente + 1}
       totale={total}
       titoloBanner={meta.titoloBanner}
-      titolo={curStep === 'cdc' ? 'Hai il *Certificato di Proprietà*?' : curStep === 'account' ? (utenteLoggato ? 'Conferma e invia' : 'Ultimo passo!') : meta.titoloPagina}
-      sotto={curStep === 'cdc' ? 'È il documento che dimostra chi è il proprietario del mezzo.' : curStep === 'account' ? (utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : 'Crea il tuo account per seguire la pratica fino al ritiro.') : meta.sottoPagina}
+      titolo={curStep === 'cdc' ? 'Hai il *Certificato di Proprietà*?' : curStep === 'account' ? (utenteLoggato ? 'Conferma e invia' : giaRegistrata ? 'Ultimo passo: *accedi e invia*' : 'Ultimo passo!') : meta.titoloPagina}
+      sotto={curStep === 'cdc' ? 'È il documento che dimostra chi è il proprietario del mezzo.' : curStep === 'account' ? (utenteLoggato ? 'Sei già registrato: questa richiesta si aggiunge alle tue pratiche.' : giaRegistrata ? 'Questa email ha già un account: basta la password e la richiesta è inviata.' : 'Crea il tuo account per seguire la pratica fino al ritiro.') : meta.sottoPagina}
       icona={<meta.icona />}
       onIndietro={idxCorrente > 0 ? back : () => router.push(utenteLoggato ? '/dashboard' : '/')}
       passiEtichette={steps.map(k => NOME_PASSO[k] ?? k)}
@@ -1480,6 +1493,12 @@ export default function IniziaPage() {
         {curStep === 'account' && (
           <>
             {utenteLoggato && (
+              <div className="mb-3">
+                <SchedaChi nome={dati.nome} email={dati.email} telefono={dati.telefono}
+                  onEsci={async () => { await supabase.auth.signOut(); setUtenteLoggato(null); update({ nome: '', telefono: '', email: '', password: '' }) }} />
+              </div>
+            )}
+            {utenteLoggato && (
               <div className="flex items-start gap-2.5 rounded-2xl p-3.5 mb-4 text-[13px] leading-relaxed bg-white" style={{ border: '1.5px solid #E5E7EB', color: '#374151' }}>
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5"><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
                 <span>La troverai subito nella tua <strong style={{ color: '#111827' }}>area personale</strong>, accanto alle altre pratiche, pronta per il caricamento dei documenti.</span>
@@ -1490,7 +1509,7 @@ export default function IniziaPage() {
                 ⭐ 13/10 (mockup A, Davide): stessa SCHEDA CELESTE del
                 riquadro "Come capire quale hai" del certificato, così i
                 riquadri informativi del flusso hanno una veste sola */}
-            {!utenteLoggato && (
+            {!utenteLoggato && !giaRegistrata && (
             <div className="rounded-xl py-3 px-3.5 mb-4" style={{ background: '#EFF6FF', border: '1.5px solid #BFDBFE' }}>
               <div className="flex items-center gap-2 mb-2">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" /></svg>
@@ -1524,6 +1543,18 @@ export default function IniziaPage() {
             <div className="flex flex-col gap-3">
               {/* ⭐ 24/08: etichette nude, senza iconcine blu: con le pillole
                   bianche facevano rumore e non aggiungevano niente. */}
+              {giaRegistrata && !utenteLoggato && (
+                <CampiAccesso
+                  email={dati.email} password={dati.password}
+                  onEmail={v => { update({ email: v }); setErroreAccount(prev => ({ ...prev, email: false })) }}
+                  onPassword={v => { update({ password: v }); setErroreAccount(prev => ({ ...prev, password: false })) }}
+                  mostra={mostraPasswordAccount} onMostra={() => setMostraPasswordAccount(v => !v)}
+                  errorePassword={erroreAccount.password}
+                  onUsaAltraEmail={() => { setGiaRegistrata(false); update({ email: '', password: '' }); setErroreAccount({}) }}
+                />
+              )}
+              {!utenteLoggato && !giaRegistrata && (
+              <>
               <CampoModulo label="Il tuo nome e cognome">
                 <input type="text" defaultValue={dati.nome} onChange={e => { update({ nome: e.target.value }); setErroreAccount(prev => ({ ...prev, nome: false })) }} placeholder="Mario Rossi" className={inputClass(erroreAccount.nome)} />
               </CampoModulo>
@@ -1533,7 +1564,9 @@ export default function IniziaPage() {
               >
                 <input type="tel" inputMode="tel" defaultValue={dati.telefono} onChange={e => { update({ telefono: e.target.value }); setErroreAccount(prev => ({ ...prev, telefono: false })) }} placeholder="+39 333 1234567" className={inputClass(erroreAccount.telefono)} />
               </CampoModulo>
-              {!utenteLoggato && (
+              </>
+              )}
+              {!utenteLoggato && !giaRegistrata && (
                 <>
                   <CampoModulo label="La tua email" errore={erroreAccount.email && dati.email ? "Scrivi l'email per intero, es. nome@email.it" : undefined}>
                     <input type="email" inputMode="email" defaultValue={dati.email} onChange={e => { update({ email: e.target.value }); setErroreAccount(prev => ({ ...prev, email: false })) }} placeholder="mario@email.it" className={inputClass(erroreAccount.email)} />
@@ -1569,11 +1602,11 @@ export default function IniziaPage() {
                 </>
               )}
               <button onClick={handleContinuaAccount} disabled={loading} className={`btn-pagina ${loading ? 'btn-pagina--spento cursor-not-allowed' : ''}`}>
-                {loading ? (loadingMessage || 'Invio in corso...') : 'Conferma e invia richiesta'}
+                {loading ? (loadingMessage || 'Invio in corso...') : giaRegistrata && !utenteLoggato ? 'Accedi e invia richiesta' : 'Conferma e invia richiesta'}
               </button>
 
               {/* Benefit account (solo per chi si registra ora) */}
-              {!utenteLoggato && (
+              {!utenteLoggato && !giaRegistrata && (
               <div className="mt-1">
                 <div className="text-[11px] font-bold text-blue-900 text-center mb-2">Col tuo account gratuito hai:</div>
                 <div className="flex items-center justify-center gap-4 flex-wrap">

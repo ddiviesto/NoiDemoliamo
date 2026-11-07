@@ -29,7 +29,8 @@ import { StepCondizioniVeicolo } from '../inizia/steps/StepCondizioniVeicolo'
 import { StepFoto } from '../inizia/steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from '../inizia/steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
-import { registraOAccedi } from '@/lib/registraOAccedi'
+import { registraOAccedi, EmailGiaRegistrata } from '@/lib/registraOAccedi'
+import { SchedaChi, CampiAccesso } from '../inizia/steps/PassoAccount'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import { CampoModulo, ErrorBadge, InfoBadge, RuoloButton, SceltaPillola, classeCampo } from '../inizia/steps/PezziFlusso'
 import { GuscioFlusso } from '../inizia/steps/GuscioFlusso'
@@ -66,7 +67,7 @@ const ETICHETTE: Record<Passo, string> = {
 // I titoli sono GEMELLI di quelli del flusso demolizione (stesse parole,
 // stesso nome del mezzo scelto). Dove il testo è diverso c'è un motivo
 // scritto accanto.
-function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intestazione: Intestazione | null, loggato: boolean): { banner: string; titolo: string; sotto: string } {
+function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intestazione: Intestazione | null, loggato: boolean, giaRegistrata = false): { banner: string; titolo: string; sotto: string } {
   const art = articolo(tipo, tipoAltro)
   const artDel = articoloDel(tipo, tipoAltro)
   const a = isFemminile(tipo) ? 'a' : 'o'
@@ -103,7 +104,9 @@ function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intesta
     case 'account':
       return loggato
         ? { banner: 'Conferma e invia', titolo: 'Conferma e invia', sotto: 'Sei già registrato: la risposta la troverai nella tua area personale.' }
-        : { banner: 'Invia la richiesta', titolo: '*Ultimo passo!*', sotto: 'Crea il tuo account gratuito: lì troverai la nostra risposta e potrai accettarla.' }
+        : giaRegistrata
+          ? { banner: 'Invia la richiesta', titolo: 'Ultimo passo: *accedi e invia*', sotto: 'Questa email ha già un account: basta la password e la richiesta è inviata.' }
+          : { banner: 'Invia la richiesta', titolo: '*Ultimo passo!*', sotto: 'Crea il tuo account gratuito: lì troverai la nostra risposta e potrai accettarla.' }
   }
 }
 
@@ -141,7 +144,11 @@ export default function VendiAuto() {
   const [fermo, setFermo] = useState<FermoAmministrativo | null>(null)
 
   // ---- account ----
-  const [utenteLoggato, setUtenteLoggato] = useState<{ id: string } | null>(null)
+  const [utenteLoggato, setUtenteLoggato] = useState<{ id: string; nome: string; email: string; telefono: string } | null>(null)
+  // ⭐ 07/11: l'email scritta ha già un account e la password non è quella →
+  // il passo cambia faccia (solo email e password, "Accedi e invia")
+  const [giaRegistrata, setGiaRegistrata] = useState(false)
+  const [errorePassword, setErrorePassword] = useState(false)
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [telefono, setTelefono] = useState('')
@@ -149,16 +156,23 @@ export default function VendiAuto() {
   const [mostraPassword, setMostraPassword] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) setUtenteLoggato({ id: session.user.id })
-    })
+    async function rileva() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) return
+      const { data: u } = await supabase.from('utenti').select('nome, telefono, email, tipo').eq('id', session.user.id).single()
+      if (u?.tipo && u.tipo !== 'cliente') return // admin e operatori: flusso normale
+      const dati = { id: session.user.id, nome: u?.nome || '', email: u?.email || session.user.email || '', telefono: u?.telefono || '' }
+      setUtenteLoggato(dati)
+      setNome(dati.nome); setEmail(dati.email); setTelefono(dati.telefono)
+    }
+    rileva()
   }, [])
 
   // ---- i passi (cambiano con l'intestazione) e dove siamo ----
   const passi = calcolaPassi(intestazione, erediRinuncia, societaFallita)
   const [idx, setIdx] = useState(0)
   const passo: Passo = passi[Math.min(idx, passi.length - 1)]
-  const meta = metaDi(passo, veicolo.tipo, veicolo.tipoAltro, intestazione, !!utenteLoggato)
+  const meta = metaDi(passo, veicolo.tipo, veicolo.tipoAltro, intestazione, !!utenteLoggato, giaRegistrata)
 
   const cfAccetta11 = intestazione === 'societa' || intestazione === 'associazione'
   const cfValido = cfAccetta11 ? (cf.length === 11 || cf.length === 16) : cf.length === 16
@@ -207,12 +221,17 @@ export default function VendiAuto() {
   // ============================================================
   async function invia() {
     setErrore('')
-    if (!nome.trim()) return setErrore('Scrivi il tuo nome')
-    if (!telefono.trim()) return setErrore('Scrivi il tuo telefono: ti chiamiamo Noi con la risposta')
+    setErrorePassword(false)
+    // già dentro o "accedi e invia": nome e telefono non si richiedono
+    if (!utenteLoggato && !giaRegistrata) {
+      if (!nome.trim()) return setErrore('Scrivi il tuo nome')
+      if (!telefono.trim()) return setErrore('Scrivi il tuo telefono: ti chiamiamo Noi con la risposta')
+    }
     if (!utenteLoggato) {
       if (!email.trim()) return setErrore('Scrivi la tua email')
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return setErrore("Scrivi l'email per intero, es. nome@email.it")
-      if (password.length < 6) return setErrore('La password deve avere almeno 6 caratteri')
+      if (giaRegistrata && !password) return setErrorePassword(true)
+      if (!giaRegistrata && password.length < 6) return setErrore('La password deve avere almeno 6 caratteri')
     }
 
     setInvio(true)
@@ -264,8 +283,8 @@ export default function VendiAuto() {
           societa_fallita: societaFallita === null ? null : societaFallita === 'si',
           casistica: cas,
           fermo_amministrativo: fermo,
-          nome_richiedente: nome.trim(),
-          telefono: telefono.trim(),
+          nome_richiedente: nome.trim() || utenteLoggato?.nome || email.trim(),
+          telefono: telefono.trim() || utenteLoggato?.telefono || null,
         })
         .select('id')
         .single()
@@ -288,6 +307,13 @@ export default function VendiAuto() {
 
       router.push('/dashboard')
     } catch (e: unknown) {
+      if (e instanceof EmailGiaRegistrata) {
+        // prima volta: il passo diventa "accedi e invia"; se c'era già, la password è sbagliata
+        if (giaRegistrata) setErrorePassword(true)
+        else { setGiaRegistrata(true); setPassword('') }
+        setInvio(false)
+        return
+      }
       // nel registro vanno TUTTE le proprietà (gli errori di Supabase non si vedono con un semplice console.error)
       const tutto = e && typeof e === 'object' ? Object.fromEntries(Object.getOwnPropertyNames(e).map(k => [k, (e as Record<string, unknown>)[k]])) : e
       console.error('Errore invio richiesta valutazione:', JSON.stringify(tutto, null, 2))
@@ -492,14 +518,29 @@ export default function VendiAuto() {
 
         {passo === 'account' && (
           <div className="flex flex-col gap-3">
-            <CampoModulo label="Il tuo nome e cognome">
-              <input value={nome} onChange={e => { setNome(e.target.value); setErrore('') }} placeholder="Mario Rossi" className={classeCampo()} />
-            </CampoModulo>
-            <CampoModulo label="Il tuo numero di telefono" aiuto="Lo usiamo solo per la tua richiesta. Nessuna chiamata commerciale.">
-              <input value={telefono} onChange={e => { setTelefono(e.target.value); setErrore('') }} type="tel" inputMode="tel" placeholder="+39 333 1234567" className={classeCampo()} />
-            </CampoModulo>
-            {!utenteLoggato && (
+            {/* ⭐ 07/11 (mockup scelto da Davide): tre facce dello stesso passo.
+                1) GIÀ DENTRO: niente campi, la riga dice a nome di chi parte.
+                2) EMAIL GIÀ REGISTRATA: solo email (con l'avviso) e password.
+                3) NUOVO: nome, telefono, email, password. */}
+            {utenteLoggato ? (
+              <SchedaChi nome={utenteLoggato.nome} email={utenteLoggato.email} telefono={utenteLoggato.telefono}
+                onEsci={async () => { await supabase.auth.signOut(); setUtenteLoggato(null); setNome(''); setTelefono(''); setEmail(''); setPassword('') }} />
+            ) : giaRegistrata ? (
+              <CampiAccesso
+                email={email} password={password}
+                onEmail={v => { setEmail(v); setErrore('') }} onPassword={v => { setPassword(v); setErrorePassword(false); setErrore('') }}
+                mostra={mostraPassword} onMostra={() => setMostraPassword(v => !v)}
+                errorePassword={errorePassword}
+                onUsaAltraEmail={() => { setGiaRegistrata(false); setEmail(''); setPassword(''); setErrorePassword(false); setErrore('') }}
+              />
+            ) : (
               <>
+                <CampoModulo label="Il tuo nome e cognome">
+                  <input value={nome} onChange={e => { setNome(e.target.value); setErrore('') }} placeholder="Mario Rossi" className={classeCampo()} />
+                </CampoModulo>
+                <CampoModulo label="Il tuo numero di telefono" aiuto="Lo usiamo solo per la tua richiesta. Nessuna chiamata commerciale.">
+                  <input value={telefono} onChange={e => { setTelefono(e.target.value); setErrore('') }} type="tel" inputMode="tel" placeholder="+39 333 1234567" className={classeCampo()} />
+                </CampoModulo>
                 <CampoModulo label="La tua email">
                   <input value={email} onChange={e => { setEmail(e.target.value); setErrore('') }} type="email" inputMode="email" placeholder="mario@email.it" className={classeCampo()} />
                 </CampoModulo>
@@ -537,7 +578,7 @@ export default function VendiAuto() {
             disabled={invio}
             className="btn-pagina mt-5 disabled:opacity-70"
           >
-            {invio ? (messaggioInvio || 'Invio in corso...') : passo === 'account' ? 'Invia la richiesta' : 'Continua'}
+            {invio ? (messaggioInvio || 'Invio in corso...') : passo === 'account' ? (giaRegistrata ? 'Accedi e invia la richiesta' : 'Invia la richiesta') : 'Continua'}
           </button>
         )}
       <AiutoWhatsApp />

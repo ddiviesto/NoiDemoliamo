@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Ultimo passo quando l'email è già registrata</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.due{display:flex;gap:28px;align-items:flex-start;justify-content:center;padding:10px 20px 40px;flex-wrap:wrap}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:0 0 8px 4px}
+.lilla{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),#F5F3FE}
+.pc{width:1000px;border-radius:16px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.18);border:1px solid #D8DEE9;padding:26px 36px 34px}
+.barra{display:flex;align-items:center;gap:14px;margin-bottom:28px}.ind{width:40px;height:40px;border-radius:999px;background:#fff;box-shadow:0 6px 16px rgba(15,27,51,.07);display:flex;align-items:center;justify-content:center}
+.prog{flex:1;height:4px;border-radius:999px;background:#E2E6F0;position:relative}.prog i{position:absolute;left:0;top:0;bottom:0;width:100%;border-radius:999px;background:linear-gradient(90deg,#2563eb,#7c3aed)}
+.passo{font-size:11px;font-weight:700;letter-spacing:.8px;color:#6B7280}
+.cols{display:grid;grid-template-columns:1fr 1.15fr;gap:48px;align-items:start}
+h1{margin:0;font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1.1}h1 b{color:#1D4ED8}
+.sotto{font-size:15px;color:#4B5A72;line-height:1.55;margin-top:10px}
+.lista{margin-top:24px;padding-top:18px;border-top:1px solid #E2E6F0}.lista .k{font-size:11px;font-weight:700;letter-spacing:1px;color:#6B7280;margin-bottom:10px}
+.lista div.r{display:flex;align-items:center;gap:10px;font-size:14px;color:#0F172A;font-weight:700}.lista b{width:22px;height:22px;border-radius:999px;background:#2563EB;color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center}
+.col{display:flex;flex-direction:column;gap:14px}
+.tel{width:375px;border-radius:34px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.22);border:8px solid #0F172A;background:#fff}
+.tel .testa{background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;padding:12px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:10px}
+.tel .testa .o{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:#DBEAFE;display:block}
+.tel .corpo{padding:16px}.tel h2{margin:0 0 6px;font-size:22px;font-weight:800;letter-spacing:-.5px;line-height:1.15}.tel h2 b{color:#1D4ED8}.tel .sotto{font-size:13.5px;margin:0 0 14px}
+.lab{font-size:12.5px;font-weight:700;color:#4A5A75;margin:0 0 6px 2px}
+.campo{background:#fff;border:1.5px solid #E2E8F0;border-radius:999px;padding:13px 20px;font-size:16px;color:#0F172A;box-shadow:0 2px 6px rgba(15,27,51,.04)}
+.campo.ph{color:#9AA7BC}.campo.err{border-color:#FCA5A5;background:#FEF6F6}
+.aiuto{font-size:12px;color:#6B7280;margin:5px 0 0 4px;line-height:1.45}
+.errore{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:#A94444;margin:6px 0 0 2px;line-height:1.45}.errore a{color:#1D4ED8;font-weight:700;text-decoration:underline}
+.btn{display:inline-block;background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;border-radius:999px;padding:15px 40px;font-size:15px;font-weight:600;box-shadow:0 6px 18px rgba(37,99,235,.35);align-self:center}
+.tel .btn{align-self:stretch;text-align:center}
+.blu{background:#EFF6FF;border:1.5px solid #DBEAFE;border-radius:14px;padding:12px 14px;display:flex;gap:11px;align-items:flex-start}
+.blu .q{width:38px;height:38px;border-radius:11px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.blu .k{font-size:13.5px;font-weight:700;color:#0C447C}.blu .s{font-size:12.5px;color:#1E4E8C;margin-top:3px;line-height:1.5}
+.chi{display:flex;align-items:center;gap:12px;background:#fff;border:1.5px solid #E5E7EB;border-radius:16px;padding:12px 14px;box-shadow:0 1px 3px rgba(16,24,40,.07)}
+.chi .q{width:42px;height:42px;border-radius:12px;background:#DBEAFE;color:#1E4E8C;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.chi .t{font-size:14px;font-weight:700;color:#111827}.chi .s{font-size:12px;color:#6B7280;margin-top:2px}.chi a{margin-left:auto;font-size:12.5px;font-weight:700;color:#1D4ED8;background:#EFF6FF;border:1px solid #DBEAFE;border-radius:999px;padding:7px 12px;white-space:nowrap}
+.rec{font-size:13px;text-align:center;color:#6B7280}.rec a{color:#1D4ED8;font-weight:700;text-decoration:underline}
+</style></head><body>
+<div class="nota"><b>L'ULTIMO PASSO QUANDO L'EMAIL È GIÀ REGISTRATA</b> · due situazioni: il cliente è già dentro (sessione aperta), oppure scrive un'email che ha già un account. In tutti e due i casi non si richiedono nome e telefono.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">1 · Cliente già dentro: "Conferma e invia"</span>
+<span onclick="vista('b',this)">2 · Email già registrata: solo email e password</span>
+</div>
+<div id="viste"></div>
+<script>
+const FR='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1B2E6B" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
+const AL='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A94444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+const INFO='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+const lista=`<div class="lista"><div class="k">A CHE PUNTO SEI</div><div class="r"><b>10</b>Invia la richiesta</div></div>`
+const avviso=`<div class="blu"><span class="q">${INFO}</span><div><div class="k">Nella tua area personale troverai la nostra risposta</div><div class="s">Demolizione gratuita oppure una cifra per il mezzo: potrai accettarla o rifiutarla da lì.</div></div></div>`
+function pc(titolo,sotto,destra){return `<div class="pc lilla"><div class="barra"><span class="ind">${FR}</span><span class="prog"><i></i></span><span class="passo">PASSO 10 DI 10</span></div><div class="cols"><div><h1>${titolo}</h1><div class="sotto">${sotto}</div>${lista}</div><div class="col">${destra}</div></div></div>`}
+function tel(titolo,sotto,destra){return `<div class="tel"><div class="testa">${FR.replace('#1B2E6B','#fff')}<div><span class="o">Passo 10 di 10</span>Invia la richiesta</div></div><div class="corpo"><h2>${titolo}</h2><div class="sotto">${sotto}</div><div class="col">${destra}</div></div></div>`}
+const coppia=(t,s,d)=>`<div class="due"><div><div class="eti">Su PC</div>${pc(t,s,d)}</div><div><div class="eti">Sul telefono</div>${tel(t,s,d)}</div></div>`
+
+const dentro=`<div class="chi"><span class="q">MR</span><div><div class="t">Mario Rossi</div><div class="s">mario@email.it · 333 1234567</div></div><a>Non sei tu? Esci</a></div>${avviso}<span class="btn">Invia la richiesta</span>`
+const giaReg=`<div><div class="lab">La tua email</div><div class="campo err">mario@email.it</div><div class="errore">${AL}<span><b>Questa email ha già un account.</b> Scrivi qui sotto la password di quell'account: la richiesta finirà nella tua area personale insieme alle altre.</span></div></div>
+<div><div class="lab">La password del tuo account</div><div class="campo ph">La tua password</div></div>
+<span class="btn">Accedi e invia la richiesta</span><div class="rec">Non la ricordi? <a>Recupera la password</a> · <a>Usa un'altra email</a></div>`
+
+const V={
+ a:{s:'<b>1. Cliente già dentro.</b> Titolo "Conferma e invia", sottotitolo "Sei già registrato: la risposta la troverai nella tua area personale". Niente campi: una <b>riga che dice a nome di chi parte la richiesta</b> (iniziali, nome, email e telefono presi dal suo account) con "Non sei tu? Esci", poi l’avviso di sempre e il bottone. Nome e telefono non si richiedono: li abbiamo già.', h:coppia('Conferma e invia','Sei già registrato: la risposta la troverai nella tua area personale.',dentro)},
+ b:{s:'<b>2. Email già registrata, ma non è dentro.</b> Ha compilato nome, telefono, email e password e ha premuto "Invia": l’email risulta già registrata e la password non è quella. La pagina <b>cambia</b>: nome e telefono spariscono, l’avviso sta <b>sul campo email</b> ("Questa email ha già un account. Scrivi qui sotto la password di quell’account…"), resta il campo password, il bottone diventa "Accedi e invia la richiesta", e sotto "Recupera la password" e "Usa un’altra email" (che riporta ai quattro campi). Se la password è giusta, entra e invia in un colpo solo.', h:coppia('Ultimo passo: <b>accedi e invia</b>','Questa email ha già un account: basta la password e la richiesta è inviata.',giaReg)},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
