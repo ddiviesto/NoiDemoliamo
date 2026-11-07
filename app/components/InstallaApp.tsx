@@ -150,7 +150,7 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
         <button onClick={onChiudi} aria-label="Chiudi" className="absolute flex items-center justify-center hover:bg-gray-200 transition-colors" style={{ top: 12, right: 12, width: 26, height: 26, borderRadius: 999, background: '#F1F3F6', border: 'none', cursor: 'pointer' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
-        <h3 className="text-[15px] font-bold text-[#0F172A]" style={{ paddingRight: 30 }}>{iphone ? 'Aggiungi NoiDemoliamo alla home' : 'Aggiungi NoiDemoliamo al computer'}</h3>
+        <h3 className="text-[15px] font-bold text-[#0F172A]" style={{ paddingRight: 30 }}>{iphone ? 'Aggiungi NoiDemoliamo alla home' : 'Aggiungi NoiDemoliamo al dispositivo'}</h3>
         <p className="text-[12px] text-gray-500" style={{ margin: '2px 0 6px' }}>{iphone ? 'Su iPhone si fa in tre tocchi:' : 'Si fa in tre passi dal tuo browser:'}</p>
         {lista(iphone ? passiIphone : passiPc)}
         <div className="flex justify-end" style={{ marginTop: 10 }}>
