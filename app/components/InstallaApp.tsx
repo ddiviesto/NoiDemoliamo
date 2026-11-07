@@ -9,7 +9,9 @@
 //      (beforeinstallprompt), che arriva PRIMA che il cliente prema
 //      qualsiasi tasto, quindi va presa al volo e tenuta da parte.
 //   2. useInstallaApp() — dice al tasto in che situazione siamo:
-//      'installata' (siamo dentro l'app) · 'pronta' (Chrome/Edge ha la
+//      'installata' (siamo dentro l'app) · 'gia' (⭐ 07/11: siamo nel
+//      browser ma l'app è già sul dispositivo, Chrome lo dice grazie a
+//      related_applications nel manifesto) · 'pronta' (Chrome/Edge ha la
 //      finestra pronta) · 'iphone' (Safari: solo le istruzioni) ·
 //      'istruzioni' (tutto il resto: si spiega dal menu del browser)
 //   3. <FoglioInstalla /> — il foglio che sale dal basso con i passi
@@ -46,7 +48,13 @@ export function RegistraApp() {
   return null
 }
 
-export type StatoInstalla = 'installata' | 'pronta' | 'iphone' | 'istruzioni'
+export type StatoInstalla = 'installata' | 'gia' | 'pronta' | 'iphone' | 'istruzioni'
+
+/** Dove il cliente trova l'icona, a seconda del dispositivo */
+export function doveStaLApp(): string {
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent : ''
+  return /Android|iPhone|iPad|iPod/.test(ua) ? 'nella schermata Home del telefono' : 'sul desktop e nel menu Start'
+}
 
 export function useInstallaApp() {
   const [stato, setStato] = useState<StatoInstalla>('istruzioni')
@@ -55,6 +63,11 @@ export function useInstallaApp() {
       const dentroApp = window.matchMedia('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true
       if (dentroApp) return setStato('installata')
       if (window.__ndInstalla) return setStato('pronta')
+      // ⭐ 07/11 (Davide): se l'app c'è già, niente istruzioni inutili.
+      // Chrome (Android e PC) risponde solo se il manifesto si cita da solo
+      // in related_applications; gli altri browser non hanno la funzione.
+      const nav = navigator as Navigator & { getInstalledRelatedApps?: () => Promise<unknown[]> }
+      nav.getInstalledRelatedApps?.().then(apps => { if (apps.length > 0) setStato('gia') }).catch(() => { /* non sa dirlo: si va avanti */ })
       const ua = navigator.userAgent
       const iphone = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
       setStato(iphone ? 'iphone' : 'istruzioni')
@@ -67,7 +80,7 @@ export function useInstallaApp() {
 
   // Premuto il tasto: su Chrome/Edge apre la finestra del browser, altrimenti dice di aprire il foglio
   async function installa(): Promise<'finestra' | 'foglio' | 'niente'> {
-    if (stato === 'installata') return 'niente'
+    if (stato === 'installata' || stato === 'gia') return 'niente'
     if (stato === 'pronta' && window.__ndInstalla) {
       const ev = window.__ndInstalla
       await ev.prompt()
@@ -88,7 +101,7 @@ const CONDIVIDI = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" st
  *  ancorata al bottone col becco, come le altre nuvolette dell'app (regola
  *  20): chi la usa la mette dentro un contenitore `relative` accanto al
  *  bottone. `lato` dice da che parte sta il becco. Clic fuori o Esc chiude. */
-export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 360 }: { stato: StatoInstalla; onChiudi: () => void; lato?: 'sinistra' | 'destra'; larghezza?: number }) {
+export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 360, verso = 'sotto' }: { stato: StatoInstalla; onChiudi: () => void; lato?: 'sinistra' | 'destra'; larghezza?: number; verso?: 'sotto' | 'fianco' }) {
   const iphone = stato === 'iphone'
   const chrome = /CriOS/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
   const tasto = (t: React.ReactNode) => <span style={{ background: '#F1F3F6', borderRadius: 6, padding: '2px 7px', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>{t}</span>
@@ -128,8 +141,12 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
       </div>
 
       {/* PC: la nuvoletta ancorata al bottone */}
-      <div ref={nuvola} className="hidden sm:block absolute z-[60] text-left" style={{ top: 'calc(100% + 14px)', [lato === 'destra' ? 'right' : 'left']: 0, width: larghezza, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 18, padding: '16px 18px', boxShadow: '0 14px 40px rgba(15,27,51,0.16)' }}>
-        <span aria-hidden="true" style={{ position: 'absolute', top: -9, [lato === 'destra' ? 'right' : 'left']: 46, width: 16, height: 16, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB', transform: 'rotate(45deg)' }} />
+      {/* ⭐ 07/11: verso="fianco" (home) la nuvoletta sta A DESTRA del bottone,
+          col becco a sinistra, così resta dentro la card e non finisce sotto
+          il piede blu; sotto i 1100px (.nuvola-fianco in globals.css) sale
+          sopra il bottone, perché di fianco non c'è posto. */}
+      <div ref={nuvola} className={`hidden sm:block absolute z-[60] text-left${verso === 'fianco' ? ' nuvola-fianco' : ''}`} style={{ ...(verso === 'fianco' ? { bottom: -56, left: 'calc(100% + 16px)' } : { top: 'calc(100% + 14px)', [lato === 'destra' ? 'right' : 'left']: 0 }), width: larghezza, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 18, padding: '16px 18px', boxShadow: '0 14px 40px rgba(15,27,51,0.16)' }}>
+        <span aria-hidden="true" className="nuvola-becco" style={{ position: 'absolute', ...(verso === 'fianco' ? { left: -9, bottom: 71, transform: 'rotate(-45deg)' } : { top: -9, [lato === 'destra' ? 'right' : 'left']: 46, transform: 'rotate(45deg)' }), width: 16, height: 16, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB' }} />
         <button onClick={onChiudi} aria-label="Chiudi" className="absolute flex items-center justify-center hover:bg-gray-200 transition-colors" style={{ top: 12, right: 12, width: 26, height: 26, borderRadius: 999, background: '#F1F3F6', border: 'none', cursor: 'pointer' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
@@ -141,6 +158,16 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
         </div>
       </div>
     </>
+  )
+}
+
+/** ⭐ 07/11: pillola verde "App installata" (stesse tinte della voce nelle impostazioni) */
+function GiaInstallata({ grande = false }: { grande?: boolean }) {
+  return (
+    <span className="inline-flex items-center flex-shrink-0 self-start sm:self-auto" style={{ gap: 7, background: '#DCF3E4', color: '#1F7A43', borderRadius: 999, padding: grande ? '11px 20px' : '8px 14px', fontSize: grande ? 14 : 12.5, fontWeight: 700, whiteSpace: 'nowrap' }}>
+      <svg width={grande ? 15 : 13} height={grande ? 15 : 13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+      App installata
+    </span>
   )
 }
 
@@ -182,15 +209,15 @@ export function StrisciaInstalla({ className = '' }: { className?: string }) {
         {/* sul telefono la pillola scende sotto il testo (in riga lo strizzava) */}
         <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-3.5">
           <div className="flex-1 min-w-0">
-            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>Hai già l&apos;app?</div>
-            <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 2, lineHeight: 1.45 }}>Quando il certificato è pronto lo scarichi direttamente da lì, e la pratica la segui con un tocco. Gratis, senza store.</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, color: '#111827' }}>{stato === 'gia' ? 'L\'app è già sul tuo dispositivo' : 'Hai già l\'app?'}</div>
+            <div style={{ fontSize: 11.5, color: '#6B7280', marginTop: 2, lineHeight: 1.45 }}>{stato === 'gia' ? `La trovi ${doveStaLApp()}: da lì segui la pratica e scarichi il certificato quando è pronto.` : 'Quando il certificato è pronto lo scarichi direttamente da lì, e la pratica la segui con un tocco. Gratis, senza store.'}</div>
           </div>
-          <span className="relative flex-shrink-0 self-start sm:self-auto">
+          {stato === 'gia' ? <GiaInstallata /> : <span className="relative flex-shrink-0 self-start sm:self-auto">
             <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="inline-flex items-center gap-1.5 transition-colors hover:bg-blue-50 active:scale-[0.98]" style={{ background: foglio ? '#EFF6FF' : '#fff', color: '#2563eb', border: `1.5px solid ${foglio ? '#2563eb' : '#BFDBFE'}`, borderRadius: 999, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
               {SCARICA} Installa l&apos;app
             </button>
             {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="destra" />}
-          </span>
+          </span>}
         </div>
       </div>
     </>
@@ -227,12 +254,19 @@ export function SezioneInstalla() {
               </span>
             ))}
           </div>
-          <div className="relative inline-block" style={{ marginTop: 20 }}>
-            <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="btn-pagina btn-pagina--auto" style={{ fontSize: 14, padding: '13px 26px' }}>
-              {SCARICA} Installa l&apos;app
-            </button>
-            {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="sinistra" />}
-          </div>
+          {stato === 'gia' ? (
+            <div className="flex flex-wrap items-center" style={{ marginTop: 20, gap: 12 }}>
+              <GiaInstallata grande />
+              <span style={{ fontSize: 13, color: '#5B6779' }}>La trovi {doveStaLApp()}.</span>
+            </div>
+          ) : (
+            <div className="relative inline-block" style={{ marginTop: 20 }}>
+              <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="btn-pagina btn-pagina--auto" style={{ fontSize: 14, padding: '13px 26px' }}>
+                {SCARICA} Installa l&apos;app
+              </button>
+              {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="sinistra" verso="fianco" />}
+            </div>
+          )}
         </div>
       </div>
     </section>

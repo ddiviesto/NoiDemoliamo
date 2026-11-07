@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { useInstallaApp, FoglioInstalla } from '../components/InstallaApp'
+import { useInstallaApp, FoglioInstalla, doveStaLApp } from '../components/InstallaApp'
 
 // ============================================================
 // PANNELLO IMPOSTAZIONI CLIENTE — variante A (restyling 22/07):
@@ -424,10 +424,14 @@ export default function PannelloImpostazioni({ aperto, onChiudi, nome, cognome, 
 
           {/* ⭐ 05/10 (mockup approvato): "Installa l'app" come prima voce.
               Dentro l'app installata diventa "App installata" con la spunta. */}
-          {installaStato === 'installata' ? (
+          {installaStato === 'installata' || installaStato === 'gia' ? (
             <div className="w-full flex items-center gap-3 px-4 py-3" style={{ borderBottom: '1px solid #F1F4F8' }}>
               <Tile bg="#DCF3E4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg></Tile>
-              <span className="text-[13.5px] font-semibold flex-1" style={{ color: '#1F7A43' }}>App installata</span>
+              <span className="flex-1 min-w-0">
+                <span className="block text-[13.5px] font-semibold" style={{ color: '#1F7A43' }}>App installata</span>
+                {/* ⭐ 07/11: dal browser, se l'app c'è già, dice dove trovarla */}
+                {installaStato === 'gia' && <span className="block text-[11.5px] text-gray-500" style={{ marginTop: 1 }}>La trovi {doveStaLApp()}</span>}
+              </span>
             </div>
           ) : (
             <div className="relative">

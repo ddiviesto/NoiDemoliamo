@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Installa l'app sulla home: dove mettere le istruzioni da PC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.lilla{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),#F5F3FE}
+.pc{width:1180px;margin:10px auto 30px;border-radius:16px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.18);border:1px solid #D8DEE9}
+.sopra{padding:26px 36px 0;display:flex;justify-content:flex-end}.sopra .riga{width:520px;background:#fff;border:1px solid #E5E7EB;border-radius:0 0 16px 16px;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;font-size:14px;font-weight:600}.sopra .z{background:#DCF3E4;color:#1F7A43;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px}
+.card{margin:26px 36px 40px;background:#fff;border:1px solid #E5E7EB;border-radius:22px;padding:30px 34px;display:flex;gap:36px;align-items:center;position:relative}
+.tel{width:148px;height:300px;border-radius:26px;background:#1A2235;flex-shrink:0;padding:30px 14px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px 8px;align-content:start}
+.tel i{display:block;height:30px;width:30px;border-radius:9px;background:#394257;margin:0 auto}.tel i.app{background:#fff;position:relative}.tel i.app:after{content:"Noi Demoliamo";position:absolute;inset:0;font-size:5px;font-weight:800;color:#0F1B33;display:flex;align-items:center;justify-content:center;text-align:center;font-style:normal;line-height:1.1}
+.testo{flex:1;min-width:0}.occ{font-size:11px;font-weight:800;letter-spacing:1.2px;color:#2563EB;text-transform:uppercase}
+h2{font-size:30px;font-weight:700;letter-spacing:-.8px;margin:8px 0 0;color:#0F1B33}h2 .m{color:#6B7280;font-weight:500}h2 .m b{color:#0F1B33;font-weight:800}
+.testo p{font-size:15px;color:#4B5563;line-height:1.6;margin:10px 0 0;max-width:520px}
+.spunte{display:flex;gap:18px;margin-top:14px;font-size:13px;color:#374151}.spunte span:before{content:"✓";display:inline-flex;width:16px;height:16px;border-radius:999px;background:#DCF3E4;color:#1F7A43;font-size:10px;font-weight:800;align-items:center;justify-content:center;margin-right:6px}
+.btn{display:inline-flex;align-items:center;gap:8px;background:#2563EB;color:#fff;font-weight:700;font-size:14px;padding:13px 26px;border-radius:999px;margin-top:20px;box-shadow:0 6px 16px rgba(37,99,235,.25)}
+.btnbox{position:relative;display:inline-block}
+.piede{background:linear-gradient(135deg,#2E53E0,#4D3FD8);color:#fff;padding:40px 36px;border-radius:60px 0 0 0;display:flex;justify-content:space-between}.piede .mk{font-size:28px;font-weight:800}.piede .mk em{font-style:normal;font-weight:500;opacity:.85}.piede p{font-size:13px;opacity:.85;max-width:330px;line-height:1.6}.piede .col{display:flex;gap:56px;font-size:13px}.piede .col b{display:block;font-size:11px;letter-spacing:1px;opacity:.7;margin-bottom:10px}.piede .col span{display:block;margin-bottom:8px}
+/* la nuvoletta */
+.nuvola{position:absolute;width:360px;background:#fff;border:1.5px solid #E5E7EB;border-radius:18px;padding:16px 18px;box-shadow:0 14px 40px rgba(15,27,51,.16);text-align:left;z-index:5}
+.nuvola h4{margin:0;font-size:15px;font-weight:700;color:#0F1B33}.nuvola small{display:block;font-size:12px;color:#6B7280;margin-top:3px}
+.nuvola ol{list-style:none;margin:12px 0 0;padding:0}.nuvola li{display:flex;gap:10px;font-size:13px;color:#374151;line-height:1.5;margin-bottom:10px}.nuvola li b{flex-shrink:0;display:inline-flex;width:24px;height:24px;border-radius:999px;background:#EFF6FF;border:1.5px solid #93C5FD;color:#1D4ED8;font-size:11px;font-weight:700;align-items:center;justify-content:center}
+.nuvola .chip{display:inline-block;background:#F1F3F6;border-radius:6px;padding:1px 7px;font-weight:700;font-size:12px}
+.nuvola .ok{display:inline-block;background:#2563EB;color:#fff;font-weight:700;font-size:13px;padding:9px 24px;border-radius:999px;margin-top:4px}
+.nuvola .x{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:999px;background:#F1F3F6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4B5563}
+.becco{position:absolute;width:16px;height:16px;background:#fff;border-left:1.5px solid #E5E7EB;border-top:1.5px solid #E5E7EB;transform:rotate(45deg)}
+/* OGGI: scende e finisce sotto il piede */
+.v0 .nuvola{top:calc(100% + 14px);left:0}.v0 .becco{top:-9px;left:46px}.v0 .piede{position:relative;z-index:6}
+/* A: sale */
+.vA .nuvola{bottom:calc(100% + 14px);left:0}.vA .becco{bottom:-9px;left:46px;transform:rotate(225deg)}
+/* B: di fianco, a destra del bottone */
+.vB .nuvola{bottom:-8px;left:calc(100% + 18px)}.vB .becco{left:-9px;bottom:30px;transform:rotate(-45deg)}
+/* C: i passi vivono nella metà vuota della card */
+.vC .passi{flex:0 0 400px;background:#F7F8FB;border:1.5px solid #E5E7EB;border-radius:18px;padding:18px 20px;align-self:stretch;position:relative}
+.vC .passi h4{margin:0;font-size:15px;font-weight:700;color:#0F1B33}.vC .passi small{display:block;font-size:12px;color:#6B7280;margin-top:3px}
+.vC .passi ol{list-style:none;margin:14px 0 0;padding:0}.vC .passi li{display:flex;gap:10px;font-size:13px;color:#374151;line-height:1.5;margin-bottom:12px}.vC .passi li b{flex-shrink:0;display:inline-flex;width:24px;height:24px;border-radius:999px;background:#EFF6FF;border:1.5px solid #93C5FD;color:#1D4ED8;font-size:11px;font-weight:700;align-items:center;justify-content:center}
+.vC .passi .chip{display:inline-block;background:#fff;border:1px solid #E5E7EB;border-radius:6px;padding:1px 7px;font-weight:700;font-size:12px}
+.vC .passi .x{position:absolute;top:12px;right:12px;width:26px;height:26px;border-radius:999px;background:#fff;border:1px solid #E5E7EB;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4B5563}
+.vC .btn{background:#fff;color:#1D4ED8;border:1.5px solid #93C5FD;box-shadow:none}
+/* D: la card si allunga sotto il bottone */
+.vD .card{flex-wrap:wrap}.vD .sotto{flex:0 0 100%;border-top:1px solid #E5E7EB;margin-top:26px;padding-top:22px;display:flex;gap:28px;align-items:flex-start}
+.vD .sotto h4{margin:0;font-size:15px;font-weight:700;color:#0F1B33;flex:0 0 220px}.vD .sotto h4 small{display:block;font-size:12px;color:#6B7280;font-weight:400;margin-top:3px}
+.vD .sotto ol{list-style:none;margin:0;padding:0;display:flex;gap:22px;flex:1}.vD .sotto li{flex:1;font-size:13px;color:#374151;line-height:1.5}.vD .sotto li b{display:inline-flex;width:24px;height:24px;border-radius:999px;background:#EFF6FF;border:1.5px solid #93C5FD;color:#1D4ED8;font-size:11px;font-weight:700;align-items:center;justify-content:center;margin-bottom:8px}
+.vD .sotto .chip{display:inline-block;background:#F1F3F6;border-radius:6px;padding:1px 7px;font-weight:700;font-size:12px}
+.vD .sotto .x{width:26px;height:26px;border-radius:999px;background:#F1F3F6;display:flex;align-items:center;justify-content:center;font-size:13px;color:#4B5563;flex-shrink:0}
+</style></head><body>
+<div class="nota"><b>INSTALLA L'APP SULLA HOME, DA PC</b> · oggi la nuvoletta scende sotto il bottone, esce dalla card e finisce sotto il piede blu. Quattro modi per tenerla dentro la pagina.</div>
+<div class="schede">
+<span class="qui" onclick="vista('0',this)">Oggi</span>
+<span onclick="vista('a',this)">A · la nuvoletta sale, sopra il bottone</span>
+<span onclick="vista('b',this)">B · la nuvoletta sta di fianco, a destra</span>
+<span onclick="vista('c',this)">C · i passi nella metà vuota della card</span>
+<span onclick="vista('d',this)">D · la card si allunga, passi in riga</span>
+</div>
+<div id="viste"></div>
+<script>
+const PASSI=['Apri il menu del browser (i tre puntini in alto a destra) oppure clicca l\'iconcina <span class="chip">⤓</span> nella barra dell\'indirizzo','Scegli <span class="chip">Installa app</span> oppure <span class="chip">Installa NoiDemoliamo</span>','Conferma: l\'icona compare sul desktop e nel menu Start']
+const li=()=>PASSI.map((p,i)=>`<li><b>${i+1}</b><span>${p}</span></li>`).join('')
+const nuvola=()=>`<div class="nuvola"><span class="becco"></span><span class="x">✕</span><h4>Aggiungi NoiDemoliamo al computer</h4><small>Si fa in tre passi dal tuo browser:</small><ol>${li()}</ol><span class="ok">Ho capito</span></div>`
+function pagina(v){
+  const testo=`<div class="testo"><div class="occ">L'app</div><h2>Porta <span class="m">Noi<b>Demoliamo</b></span> nella tua home</h2><p>Si installa dal sito, senza store: icona sul telefono o sul computer, si apre a tutto schermo e ti tiene aggiornato sulla pratica.</p><div class="spunte"><span>Gratis</span><span>iPhone, Android e PC</span><span>Stessi accessi del sito</span></div><div class="btnbox"><span class="btn">⤓ Installa l'app</span>${v==='vC'||v==='vD'?'':nuvola()}</div></div>`
+  const tel=`<div class="tel"><i></i><i></i><i class="app"></i><i></i><i></i><i></i></div>`
+  let extra=''
+  if(v==='vC')extra=`<div class="passi"><span class="x">✕</span><h4>Aggiungi NoiDemoliamo al computer</h4><small>Si fa in tre passi dal tuo browser:</small><ol>${li()}</ol></div>`
+  if(v==='vD')extra=`<div class="sotto"><h4>Aggiungi NoiDemoliamo al computer<small>Si fa in tre passi dal tuo browser</small></h4><ol>${PASSI.map((p,i)=>`<li><b>${i+1}</b><br>${p}</li>`).join('')}</ol><span class="x">✕</span></div>`
+  return `<div class="pc lilla ${v}"><div class="sopra"><div class="riga">Assistenza fino alla Chiusura <span class="z">0 €</span></div></div><div class="card">${tel}${testo}${extra}</div><div class="piede"><div><div class="mk"><em>Noi</em>Demoliamo</div><p>Ti togliamo il peso di un veicolo da demolire: ritiro a domicilio, burocrazia e certificati. Attivi in tutta Italia.</p></div><div class="col"><div><b>SERVIZIO</b><span>Richiedi la demolizione</span><span>Come funziona</span></div><div><b>CONTATTI</b><span>WhatsApp 351 828 0493</span><span>Accedi alla tua area</span></div><div><b>LEGALE</b><span>Privacy</span><span>Termini</span></div></div></div></div>`
+}
+const V={
+ '0':{s:'<b>Oggi.</b> La nuvoletta parte sotto il bottone, ma il bottone è in fondo alla card: la nuvoletta esce dal riquadro bianco e va a finire sotto il piede blu, che la copre a metà.', h:pagina('v0')},
+ a:{s:'<b>A. Sale.</b> Stessa nuvoletta, stesso becco, ma apre <b>verso l’alto</b>: copre un pezzo del titolo e della frase, non tocca mai il piede ma sporge un po’ sopra la card, sul lilla. Il cambiamento più piccolo.', h:pagina('vA')},
+ b:{s:'<b>B. Di fianco.</b> La nuvoletta apre <b>a destra del bottone</b>, col becco a sinistra, e occupa la parte vuota della card. Niente coperto, niente fuori.', h:pagina('vB')},
+ c:{s:'<b>C. Nella metà vuota.</b> Niente nuvoletta: al clic i tre passi <b>compaiono nel riquadro grigio a destra</b>, dentro la card, nello spazio che oggi è vuoto. Il bottone diventa chiaro per dire "aperto". Più ordinato, ma la card ha un riquadro in più.', h:pagina('vC')},
+ d:{s:'<b>D. La card si allunga.</b> Al clic la card si apre sotto il bottone con i <b>tre passi in riga</b>, uno di fianco all’altro, e il piede scende. Nulla si sovrappone a nulla. Sposta la pagina di un pezzo.', h:pagina('vD')},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='0'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
