@@ -19,8 +19,14 @@ import SidebarDemolitore from './_components/SidebarDemolitore'
 import TendaAzienda from './_components/TendaAzienda'
 import TendinaPratica, { prefetchPratica } from './_components/TendinaPratica'
 import IconaVeicolo from '../components/IconaVeicolo'
+import { TessereFlusso, TesseraFase } from '../components/TessereFlusso'
 
-type Filtro = 'tutte' | GruppoPratica
+type Filtro = 'tutte' | GruppoPratica | 'ritirate' | 'allerta8h'
+
+// Assegnata col termine per fissare il ritiro già passato (stessa regola del CRM admin)
+function inAllerta8h(p: Pick<PraticaDemolitore, 'stato' | 'scadenza_proposta_ritiro'>): boolean {
+  return gruppoDi(p) === 'arrivo' && !!p.scadenza_proposta_ritiro && new Date(p.scadenza_proposta_ritiro).getTime() < Date.now()
+}
 
 // L'ordine della fila (e della lista): prima le cose da fare
 const ORDINE_GRUPPO: Record<GruppoPratica, number> = { arrivo: 0, fissato: 1, rottamazione: 2, targhe: 3, completate: 4, annullate: 5 }
@@ -141,8 +147,11 @@ export default function HomeDemolitore() {
   }
 
   const conta = useMemo(() => {
-    const c: Record<GruppoPratica, number> = { arrivo: 0, fissato: 0, rottamazione: 0, targhe: 0, completate: 0, annullate: 0 }
-    for (const p of pratiche) c[gruppoDi(p)]++
+    const c: Record<GruppoPratica, number> & { allerta8h: number } = { arrivo: 0, fissato: 0, rottamazione: 0, targhe: 0, completate: 0, annullate: 0, allerta8h: 0 }
+    for (const p of pratiche) {
+      c[gruppoDi(p)]++
+      if (inAllerta8h(p)) c.allerta8h++
+    }
     return c
   }, [pratiche])
 
@@ -159,7 +168,10 @@ export default function HomeDemolitore() {
   // Filtro + ricerca (come nel CRM admin)
   const q = ricerca.trim().toLowerCase()
   const filtrate = pratiche.filter(p => {
-    if (filtro !== 'tutte' && gruppoDi(p) !== filtro) return false
+    // ⭐ 07/11: "Ritirata" somma le due attese; "Allerta 8 ore" sono le assegnate scadute
+    if (filtro === 'ritirate' && !['rottamazione', 'targhe'].includes(gruppoDi(p))) return false
+    else if (filtro === 'allerta8h' && !inAllerta8h(p)) return false
+    else if (filtro !== 'tutte' && filtro !== 'ritirate' && filtro !== 'allerta8h' && gruppoDi(p) !== filtro) return false
     if (q) {
       const blob = [p.targa, p.nome_richiedente, p.telefono, p.marca, p.modello, p.comune_ritiro].filter(Boolean).join(' ').toLowerCase()
       if (!blob.includes(q)) return false
@@ -237,24 +249,27 @@ export default function HomeDemolitore() {
           {/* FLUSSO PRATICHE — fila completa delle fasi del demolitore,
               "Non a buon fine" fuori fila con lo stacco (come le anomalie
               del CRM: bianca a zero, rossa coi casi) */}
+          {/* ⭐ 07/11 (mockup C scelto da Davide): le STESSE PAROLE del CRM
+              admin per le fasi che riguardano il demolitore, come tessere
+              tutte uguali (componente condiviso TessereFlusso): Assegnata
+              (dentro: Allerta 8 ore) › Ritiro Programmato › Ritirata (dentro:
+              Attesa Certificati, Attesa PRA) › Completata · Annullate */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
-          <div className="mb-4 overflow-x-auto">
-            <div className="flex items-start">
-              <PillolaFase nome="In arrivo · fissa il ritiro" valore={conta.arrivo} attivo={filtro === 'arrivo'} onClick={() => cambiaFiltro(filtro === 'arrivo' ? 'tutte' : 'arrivo')} />
-              <FrecciaFase />
-              <PillolaFase nome="Ritiro fissato" valore={conta.fissato} attivo={filtro === 'fissato'} onClick={() => cambiaFiltro(filtro === 'fissato' ? 'tutte' : 'fissato')} />
-              <FrecciaFase />
-              {/* ⭐ 08/08 (richiesta Davide): le caselle dei certificati dicono
-                  chiaramente che si sta ASPETTANDO il caricamento */}
-              <PillolaFase nome="Attesa Certificato di Rottamazione" valore={conta.rottamazione} attivo={filtro === 'rottamazione'} onClick={() => cambiaFiltro(filtro === 'rottamazione' ? 'tutte' : 'rottamazione')} />
-              <FrecciaFase />
-              <PillolaFase nome="Attesa Certificato cancellazione targhe" valore={conta.targhe} attivo={filtro === 'targhe'} onClick={() => cambiaFiltro(filtro === 'targhe' ? 'tutte' : 'targhe')} />
-              <FrecciaFase />
-              <PillolaFase nome="Completate" valore={conta.completate} attivo={filtro === 'completate'} onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
-              <div style={{ width: 14, flexShrink: 0 }} />
-              <PillolaFase nome="Non a buon fine" valore={conta.annullate} rossa={conta.annullate > 0} attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
-                title={conta.annullate > 0 ? 'Pratiche annullate dopo l\'assegnazione, col motivo' : 'Nessuna pratica annullata'} />
-            </div>
+          <div className="mb-1">
+          <TessereFlusso colonne={5}>
+            <TesseraFase nome="Assegnata" valore={conta.arrivo} attivo={filtro === 'arrivo'} freccia onClick={() => cambiaFiltro(filtro === 'arrivo' ? 'tutte' : 'arrivo')}
+              title="Pratiche assegnate a te: fissa giorno e ora del ritiro"
+              vocine={[{ nome: 'Allerta 8 ore', valore: conta.allerta8h, rossa: true, attivo: filtro === 'allerta8h', onClick: () => cambiaFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h'), title: conta.allerta8h > 0 ? 'Ritiri da fissare oltre le 8 ore lavorative' : 'Sei nei tempi: nessun ritiro in ritardo' }]} />
+            <TesseraFase nome="Ritiro Programmato" valore={conta.fissato} attivo={filtro === 'fissato'} freccia onClick={() => cambiaFiltro(filtro === 'fissato' ? 'tutte' : 'fissato')} />
+            <TesseraFase nome="Ritirata" valore={conta.rottamazione + conta.targhe} attivo={filtro === 'ritirate'} freccia onClick={() => cambiaFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')}
+              vocine={[
+                { nome: 'Attesa Certificati', valore: conta.rottamazione, attivo: filtro === 'rottamazione', onClick: () => cambiaFiltro(filtro === 'rottamazione' ? 'tutte' : 'rottamazione'), title: 'Aspettiamo il certificato di rottamazione' },
+                { nome: 'Attesa PRA', valore: conta.targhe, attivo: filtro === 'targhe', onClick: () => cambiaFiltro(filtro === 'targhe' ? 'tutte' : 'targhe'), title: 'Aspettiamo la radiazione al PRA' },
+              ]} />
+            <TesseraFase nome="Completata" valore={conta.completate} attivo={filtro === 'completate'} chiusa onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
+            <TesseraFase nome="Annullate" valore={conta.annullate} rossa attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
+              title={conta.annullate > 0 ? 'Pratiche annullate dopo l\'assegnazione, col motivo' : 'Nessuna pratica annullata'} />
+          </TessereFlusso>
           </div>
 
           {/* LISTA RIGHE: clic sulla riga → la TENDINA si srotola sotto
@@ -296,39 +311,7 @@ export default function HomeDemolitore() {
 // SOTTOCOMPONENTI (gemelli visivi del CRM admin)
 // ============================================================
 
-// Fase del flusso come PILLOLA TONDA: numero nel tondino, nome accanto.
-// Gemella di PillolaFase in app/admin/page.tsx.
-function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
-  nome: string
-  valore: number
-  attivo: boolean
-  rossa?: boolean
-  title?: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center gap-2 transition-all hover:shadow-md flex-shrink-0"
-      style={{
-        background: rossa ? '#FEF6F6' : attivo ? '#EFF6FF' : '#fff',
-        border: `1.5px solid ${attivo ? '#2563eb' : rossa ? '#F3C8C8' : '#E5E7EB'}`,
-        borderRadius: 999, padding: '8px 14px 8px 9px', whiteSpace: 'nowrap',
-        boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
-      }}
-    >
-      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : '#EFF4FF', color: rossa ? '#C0392B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
-      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : '#374151' }}>{nome}</span>
-    </button>
-  )
-}
 
-function FrecciaFase() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', height: 42, color: '#8B95A5', fontSize: 15, fontWeight: 700, flexShrink: 0, padding: '0 5px' }}>›</div>
-  )
-}
 
 // ---- formattazioni delle date della riga ----
 

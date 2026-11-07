@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Il flusso pratiche nell'admin, con la stessa nomenclatura del demolitore</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:14px auto 8px;max-width:1180px;padding:0 4px}
+.crm{width:1180px;margin:0 auto 10px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;display:flex;min-height:420px}
+.side{width:170px;background:linear-gradient(180deg,#2563eb 0%,#2563eb 65%,#7CA4F2 100%);color:#fff;padding:16px 14px}
+.side .m{font-family:'Segoe UI',sans-serif;font-weight:800;font-size:15px}.side .s{font-size:9px;letter-spacing:1px;opacity:.8;margin-top:1px}.side .v{font-size:12px;margin-top:22px;opacity:.9}.side .v div{padding:6px 0}
+.main{flex:1;min-width:0}
+.barra{background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+.barra b{font-size:16px}.barra small{display:block;font-size:11px;color:#6B7280;margin-top:1px}
+.cerca{background:#fff;border:1px solid #DBEAFE;border-radius:999px;padding:8px 14px;font-size:12.5px;color:#9CA3AF;width:200px}
+.corpo{padding:16px 22px}
+.k{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5B6779;margin-bottom:8px}
+.pill{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #E5E7EB;border-radius:999px;padding:7px 13px 7px 7px;font-size:12.5px;font-weight:700;color:#1E293B;white-space:nowrap}
+.pill b{width:24px;height:24px;border-radius:999px;background:#DBEAFE;color:#1D4ED8;font-size:11.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.pill.on{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}.pill.on b{background:#2563EB;color:#fff}
+.pill.rossa{background:#FCEBEB;border-color:#F3C8C8;color:#A32D2D}.pill.rossa b{background:#A32D2D;color:#fff}
+.pill.zero{color:#64748B}.pill.zero b{background:#EDF0F5;color:#64748B}
+.pill.grigia{background:#F5F7FB}
+.chip{display:inline-flex;align-items:center;gap:6px;background:#F5F7FB;border:1px solid #E5E9F0;border-radius:999px;padding:4px 10px 4px 5px;font-size:11.5px;font-weight:600;color:#4B5A72}
+.chip b{width:18px;height:18px;border-radius:999px;background:#E5E9F0;color:#4B5A72;font-size:10.5px;display:flex;align-items:center;justify-content:center}
+.chip.rossa{background:#FCEBEB;border-color:#F3C8C8;color:#A32D2D}.chip.rossa b{background:#A32D2D;color:#fff}
+.gruppo{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.fila{display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap}
+.sep{width:1px;align-self:stretch;background:#D8DEE9;margin:0 6px}
+.gk{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#8A94A3;margin:0 0 4px 4px}
+/* B: tappe con barra */
+.tappe{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
+.tappa{background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:9px 10px;position:relative}
+.tappa .n{font-size:20px;font-weight:700;color:#1D4ED8;line-height:1}.tappa .t{font-size:11.5px;font-weight:700;color:#1E293B;margin-top:4px}.tappa .s{font-size:10.5px;color:#6B7280;margin-top:2px}
+.tappa.zero .n{color:#94A3B8}.tappa.on{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.tappa.chiusa{background:#F5F7FB}.tappa.chiusa .n{color:#1F7A43}
+.tappa::after{content:'';position:absolute;right:-7px;top:50%;width:8px;height:1.5px;background:#D1D9E6}.tappa:last-child::after{display:none}
+.sotto{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap}
+.occhio{margin-top:12px;background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+.occhio .k{margin:0 6px 0 0}
+.lista{margin-top:14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:14px;padding:30px;text-align:center;font-size:13px;color:#6B7280}
+.filtri{display:flex;gap:6px;margin-top:12px}.filtri span{font-size:12px;font-weight:700;border-radius:999px;padding:6px 12px;background:#fff;border:1px solid #E5E7EB;color:#4B5563}.filtri span.on{background:#2563EB;color:#fff;border-color:#2563EB}
+/* demolitore */
+.dem{width:1180px;margin:0 auto 34px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;display:flex;min-height:200px}
+.dem .side .s{opacity:.85}
+</style></head><body>
+<div class="nota"><b>IL FLUSSO PRATICHE, RIORDINATO</b> · tre modi di mostrare le fasi nell'admin, con <b>una nomenclatura sola</b> che vale anche per il demolitore (lui vede solo le fasi che lo riguardano, dalla assegnazione in poi). Sotto ogni variante, come la vede il demolitore con lo stesso pezzo.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">A · fila pulita in tre gruppi</span>
+<span onclick="vista('b',this)">B · tappe a tessere con numero grande</span>
+<span onclick="vista('c',this)">C · due righe: le fasi, e "da tenere d'occhio"</span>
+</div>
+<div id="viste"></div>
+<script>
+// nomenclatura unica (admin = cliente = demolitore)
+const FASI=[
+ {t:'Documenti',s:'in attesa del cliente',n:4},
+ {t:'Da verificare',s:'documenti inviati',n:0},
+ {t:'Da assegnare',s:'documenti ok',n:0},
+ {t:'Assegnata',s:'il demolitore fissa il ritiro',n:0,dem:true},
+ {t:'Ritiro fissato',s:'giorno e ora decisi',n:0,dem:true},
+ {t:'Ritirata',s:'veicolo preso',n:0,dem:true},
+ {t:'Certificati',s:'rottamazione e PRA',n:0,dem:true,sotto:[{t:'Rottamazione',n:0},{t:'Radiazione PRA',n:0}]},
+ {t:'Completata',s:'radiazione PRA emessa',n:0,dem:true,chiusa:true},
+]
+const OCCHIO=[{t:'Da contattare',n:0,rossa:true},{t:'Allerta 8 ore',n:0,rossa:true},{t:'In attesa',n:0},{t:'Annullate',n:0}]
+const pill=(f,on)=>`<span class="pill ${on?'on':''} ${f.n===0?'zero':''} ${f.rossa&&f.n>0?'rossa':''}"><b>${f.n}</b>${f.t}</span>`
+const chip=(f)=>`<span class="chip ${f.rossa&&f.n>0?'rossa':''}"><b>${f.n}</b>${f.t}</span>`
+
+function guscio(dentro, dem){
+  const side = dem
+    ? `<div class="side"><div class="m">NoiDemoliamo</div><div class="s">AUTODEMOLIZIONI ROSSI</div><div class="v"><div>Le mie pratiche</div><div>Ritiri</div><div>Azienda</div></div></div>`
+    : `<div class="side"><div class="m">NoiDemoliamo</div><div class="s">ADMIN</div><div class="v"><div>Pratiche</div><div>Valutazioni</div><div>Demolitori</div></div></div>`
+  return `<div class="${dem?'dem':'crm'}">${side}<div class="main"><div class="barra"><div><b>${dem?'Le mie pratiche':'Pratiche'}</b><small>${dem?'3 totali':'4 totali'}</small></div><span class="cerca">Cerca…</span></div><div class="corpo">${dentro}</div></div></div>`
+}
+const lista=`<div class="filtri"><span class="on">Tutte 4</span><span>Annullate 0</span></div><div class="lista">Nessuna pratica in questa vista.</div>`
+
+// A: fila pulita in tre gruppi
+function A(dem){
+  const fasi = dem ? FASI.filter(f=>f.dem) : FASI
+  const g = (nome, lst, on) => `<div><div class="gk">${nome}</div><div class="fila">${lst.map((f,i)=>`<div class="gruppo">${pill(f,on&&i===0)}${f.sotto?`<div class="sotto">${f.sotto.map(chip).join('')}</div>`:''}</div>`).join('')}</div></div>`
+  const prima = dem ? '' : g('Prima del ritiro', fasi.slice(0,3), true)
+  const ritiro = g('Ritiro', fasi.filter(f=>['Assegnata','Ritiro fissato','Ritirata'].includes(f.t)), dem)
+  const dopo = g('Dopo il ritiro', fasi.filter(f=>['Certificati','Completata'].includes(f.t)))
+  const occhio = `<div><div class="gk">Da tenere d’occhio</div><div class="fila">${(dem?OCCHIO.filter(o=>o.t==='Allerta 8 ore'):OCCHIO).map(o=>pill(o)).join('')}</div></div>`
+  return `<div class="k">Flusso pratiche</div><div class="fila" style="gap:18px">${prima}${ritiro}${dopo}<span class="sep"></span>${occhio}</div>${lista}`
+}
+// B: tappe a tessere
+function B(dem){
+  const fasi = dem ? FASI.filter(f=>f.dem) : FASI
+  const tappe = `<div class="tappe" style="grid-template-columns:repeat(${fasi.length},1fr)">${fasi.map((f,i)=>`<div class="tappa ${f.n===0?'zero':''} ${i===0?'on':''} ${f.chiusa?'chiusa':''}"><div class="n">${f.n}</div><div class="t">${f.t}</div><div class="s">${f.s}</div>${f.sotto?`<div class="sotto">${f.sotto.map(chip).join('')}</div>`:''}</div>`).join('')}</div>`
+  const occhio = `<div class="occhio"><span class="k">Da tenere d’occhio</span>${(dem?OCCHIO.filter(o=>o.t==='Allerta 8 ore'):OCCHIO).map(chip).join('')}</div>`
+  return `<div class="k">Flusso pratiche</div>${tappe}${occhio}${lista}`
+}
+// C: due righe
+function C(dem){
+  const fasi = dem ? FASI.filter(f=>f.dem) : FASI
+  const riga1 = `<div class="fila">${fasi.map((f,i)=>{const extra=f.sotto?` <span style="font-weight:600;color:#6B7280">· ${f.sotto.map(s=>`${s.n} ${s.t.toLowerCase().replace('radiazione ','')}`).join(' · ')}</span>`:'';return `<span class="pill ${i===0?'on':''} ${f.n===0?'zero':''}"><b>${f.n}</b>${f.t}${extra}</span>`}).join('')}</div>`
+  const riga2 = `<div class="fila" style="margin-top:10px;align-items:center"><span class="gk" style="margin:0 4px 0 0">Da tenere d’occhio</span>${(dem?OCCHIO.filter(o=>o.t==='Allerta 8 ore'):OCCHIO).map(chip).join('')}</div>`
+  return `<div class="k">Flusso pratiche</div>${riga1}${riga2}${lista}`
+}
+const V={
+ a:{s:'<b>A. Fila pulita in tre gruppi.</b> Stesse pillole di oggi ma ordinate: <b>Prima del ritiro</b> (Documenti · Da verificare · Da assegnare), <b>Ritiro</b> (Assegnata · Ritiro fissato · Ritirata), <b>Dopo il ritiro</b> (Certificati con sotto le due vocine Rottamazione e Radiazione PRA · Completata). Via le frecce. A destra, dopo uno stacco, <b>"Da tenere d’occhio"</b>: Da contattare, Allerta 8 ore, In attesa, Annullate; rosse solo quando contano qualcosa. Le pillole a zero sono grigie, così l’occhio va dove c’è lavoro. Il demolitore vede solo Ritiro e Dopo il ritiro, con gli stessi nomi.', h:guscio(A(false))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(A(true),true)},
+ b:{s:'<b>B. Tappe a tessere col numero grande.</b> Otto tessere in fila, unite da un trattino: il numero grande sopra, il nome, e una riga piccola che spiega la fase ("in attesa del cliente", "il demolitore fissa il ritiro"). Completata su fondo grigio col numero verde. Sotto, una striscia "Da tenere d’occhio" coi casi rossi. Più leggibile da lontano, occupa un po’ più spazio in altezza. Il demolitore ha cinque tessere.', h:guscio(B(false))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(B(true),true)},
+ c:{s:'<b>C. Due righe.</b> La più compatta: prima riga le otto fasi in pillole uniformi (Certificati porta dentro di sé "0 rottamazione · 0 PRA"), seconda riga "Da tenere d’occhio" con le vocine piccole. Niente colonnine, niente frecce. Il demolitore ha la stessa riga con cinque fasi e solo l’allerta.', h:guscio(C(false))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(C(true),true)},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div><div class="eti">Admin</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>

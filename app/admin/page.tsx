@@ -10,6 +10,7 @@ import AdminSidebar from './_components/AdminSidebar'
 // Card vere del dettaglio, aperte IN LINEA dentro la tendina (26/07)
 import DocumentiApprovazione, { nomeAdmin } from './pratiche/[id]/DocumentiApprovazione'
 import IconaVeicolo from '../components/IconaVeicolo'
+import { TessereFlusso, TesseraFase } from '../components/TessereFlusso'
 import AutocompleteIndirizzo from '../inizia/steps/AutocompleteIndirizzo'
 import ChatAdmin from './pratiche/[id]/ChatAdmin'
 import CronologiaNote, { prefetchCronologia } from './pratiche/[id]/CronologiaNote'
@@ -748,48 +749,31 @@ export default function AdminDashboard() {
               (variante B scelta da Davide su mockup 23/07). Sotto "Assegnata"
               vive l'ALLERTA 8 ORE: pillola IDENTICA alla fase (simmetrica),
               sempre visibile — bianca a zero, rossa quando c'è un ritardo. */}
+          {/* ⭐ 07/11 (mockup C scelto da Davide): le stesse fasi, nello stesso
+              ordine e con le stesse parole di prima, ma come TESSERE tutte
+              uguali in una riga; "Allerta 8 ore" sta dentro Assegnata, "Attesa
+              Certificati" e "Attesa PRA" dentro Ritirata. Componente condiviso
+              con l'area demolitore (app/components/TessereFlusso.tsx). */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
-          <div className="mb-3 overflow-x-auto">
-            <div className="flex items-start">
-              {/* ⭐ 27/07 (mockup approvato): "Da contattare" è una pillola
-                  gemella delle fasi, PRIMA di "In attesa documenti" — bianca
-                  a zero, rossa coi casi. Non è una fase: niente freccia,
-                  solo uno stacco. Via il vecchio riquadro rosso. */}
-              <PillolaFase nome="Da contattare" valore={conta('contattare')} rossa={conta('contattare') > 0} attivo={filtro === 'contattare'} onClick={() => cambiaFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
-                title={conta('contattare') > 0 ? 'Da chiamare: libretto, certificato o fermo da chiarire' : 'Nessun cliente da chiamare per i documenti'} />
-              <div style={{ width: 14, flexShrink: 0 }} />
-              <PillolaFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => cambiaFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
-              {/* ⭐ 27/07 sera (richiesta Davide): le pratiche IN PAUSA hanno la
-                  loro pillola QUI (via il riquadro giallo) — identica alle
-                  altre; non è una fase del flusso: niente freccia, solo uno
-                  stacco */}
-              <div style={{ width: 14, flexShrink: 0 }} />
-              <PillolaFase nome="In attesa" valore={conta('attesa')} attivo={filtro === 'attesa'} onClick={() => cambiaFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
-                title={conta('attesa') > 0 ? 'In pausa, fuori dal flusso finché non riprendono' : 'Nessuna pratica in pausa'} />
-              <FrecciaFase />
-              <PillolaFase nome="Documenti da verificare" valore={conta('approvare')} attivo={filtro === 'approvare'} onClick={() => cambiaFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
-              <FrecciaFase />
-              <PillolaFase nome="Da assegnare" valore={conta('assegnare')} attivo={filtro === 'assegnare'} onClick={() => cambiaFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} />
-              <FrecciaFase />
-              <div className="flex flex-col items-stretch gap-1.5">
-                <PillolaFase nome="Assegnata" valore={conta('assegnate')} attivo={filtro === 'assegnate'} onClick={() => cambiaFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')} />
-                <PillolaFase nome="Allerta 8 ore" valore={nAllerta8h} rossa={nAllerta8h > 0} attivo={filtro === 'allerta8h'} onClick={() => cambiaFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h')}
-                  title={nAllerta8h > 0 ? 'Il demolitore non ha fissato il ritiro nei tempi' : 'Demolitori nei tempi: nessun ritiro in ritardo'} />
-              </div>
-              <FrecciaFase />
-              {/* ⭐ 27/07 (variante B su mockup): Ritiro Programmato in fila e
-                  colonnina "Ritirata" = somma di Attesa Certificati + Attesa PRA */}
-              <PillolaFase nome="Ritiro Programmato" valore={conta('programmato')} attivo={filtro === 'programmato'} onClick={() => cambiaFiltro(filtro === 'programmato' ? 'tutte' : 'programmato')} />
-              <FrecciaFase />
-              <div className="flex flex-col items-stretch gap-1.5">
-                <PillolaFase nome="Ritirata" valore={conta('certificati') + conta('pra')} attivo={filtro === 'ritirate'} onClick={() => cambiaFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')} />
-                <PillolaFase nome="Attesa Certificati" valore={conta('certificati')} attivo={filtro === 'certificati'} onClick={() => cambiaFiltro(filtro === 'certificati' ? 'tutte' : 'certificati')} />
-                <PillolaFase nome="Attesa PRA" valore={conta('pra')} attivo={filtro === 'pra'} onClick={() => cambiaFiltro(filtro === 'pra' ? 'tutte' : 'pra')} />
-              </div>
-              <FrecciaFase />
-              <PillolaFase nome="Completata" valore={conta('completate')} attivo={filtro === 'completate'} onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
-            </div>
-          </div>
+          <TessereFlusso colonne={9}>
+            {/* "Da contattare" e "In attesa" non sono fasi (anomalie e pause): niente freccia */}
+            <TesseraFase nome="Da contattare" valore={conta('contattare')} rossa attivo={filtro === 'contattare'} onClick={() => cambiaFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
+              title={conta('contattare') > 0 ? 'Da chiamare: libretto, certificato o fermo da chiarire' : 'Nessun cliente da chiamare per i documenti'} />
+            <TesseraFase nome="In attesa documenti" valore={conta('moduli')} attivo={filtro === 'moduli'} onClick={() => cambiaFiltro(filtro === 'moduli' ? 'tutte' : 'moduli')} />
+            <TesseraFase nome="In attesa" valore={conta('attesa')} attivo={filtro === 'attesa'} freccia onClick={() => cambiaFiltro(filtro === 'attesa' ? 'tutte' : 'attesa')}
+              title={conta('attesa') > 0 ? 'In pausa, fuori dal flusso finché non riprendono' : 'Nessuna pratica in pausa'} />
+            <TesseraFase nome="Documenti da verificare" valore={conta('approvare')} attivo={filtro === 'approvare'} freccia onClick={() => cambiaFiltro(filtro === 'approvare' ? 'tutte' : 'approvare')} />
+            <TesseraFase nome="Da assegnare" valore={conta('assegnare')} attivo={filtro === 'assegnare'} freccia onClick={() => cambiaFiltro(filtro === 'assegnare' ? 'tutte' : 'assegnare')} />
+            <TesseraFase nome="Assegnata" valore={conta('assegnate')} attivo={filtro === 'assegnate'} freccia onClick={() => cambiaFiltro(filtro === 'assegnate' ? 'tutte' : 'assegnate')}
+              vocine={[{ nome: 'Allerta 8 ore', valore: nAllerta8h, rossa: true, attivo: filtro === 'allerta8h', onClick: () => cambiaFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h'), title: nAllerta8h > 0 ? 'Il demolitore non ha fissato il ritiro nei tempi' : 'Demolitori nei tempi: nessun ritiro in ritardo' }]} />
+            <TesseraFase nome="Ritiro Programmato" valore={conta('programmato')} attivo={filtro === 'programmato'} freccia onClick={() => cambiaFiltro(filtro === 'programmato' ? 'tutte' : 'programmato')} />
+            <TesseraFase nome="Ritirata" valore={conta('certificati') + conta('pra')} attivo={filtro === 'ritirate'} freccia onClick={() => cambiaFiltro(filtro === 'ritirate' ? 'tutte' : 'ritirate')}
+              vocine={[
+                { nome: 'Attesa Certificati', valore: conta('certificati'), attivo: filtro === 'certificati', onClick: () => cambiaFiltro(filtro === 'certificati' ? 'tutte' : 'certificati') },
+                { nome: 'Attesa PRA', valore: conta('pra'), attivo: filtro === 'pra', onClick: () => cambiaFiltro(filtro === 'pra' ? 'tutte' : 'pra') },
+              ]} />
+            <TesseraFase nome="Completata" valore={conta('completate')} attivo={filtro === 'completate'} chiusa onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
+          </TessereFlusso>
 
           {/* Nota 27/07 sera: il riquadro giallo "In attesa" è stato TOLTO —
               le pratiche in pausa hanno la pillola quieta nella fila del
@@ -1887,39 +1871,7 @@ function PannelloAssegnazioneTendina({ pratica, demolitoreNome, onFatto, onChiud
   )
 }
 
-function PillolaFase({ nome, valore, attivo, rossa, title, onClick }: {
-  nome: string
-  valore: number
-  attivo: boolean
-  rossa?: boolean
-  title?: string
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className="flex items-center gap-2 transition-all hover:shadow-md flex-shrink-0"
-      style={{
-        // ⭐ 27/07 sera (richiesta Davide): la pillola ATTIVA si tinge dello
-        // stesso azzurro dell'apertura — si vede subito dove sei
-        background: rossa ? '#FEF6F6' : attivo ? '#EFF6FF' : '#fff',
-        border: `1.5px solid ${attivo ? '#2563eb' : rossa ? '#F3C8C8' : '#E5E7EB'}`,
-        borderRadius: 999, padding: '8px 14px 8px 9px', whiteSpace: 'nowrap',
-        boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)',
-      }}
-    >
-      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: rossa ? '#FBDADA' : '#EFF4FF', color: rossa ? '#C0392B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
-      <span className="text-[12px] font-bold" style={{ color: rossa ? '#9B1C1C' : '#374151' }}>{nome}</span>
-    </button>
-  )
-}
 
-function FrecciaFase() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', height: 42, color: '#8B95A5', fontSize: 15, fontWeight: 700, flexShrink: 0, padding: '0 5px' }}>›</div>
-  )
-}
 
 function ChipFiltro({ attivo, onClick, children }: { attivo: boolean; onClick: () => void; children: React.ReactNode }) {
   return (

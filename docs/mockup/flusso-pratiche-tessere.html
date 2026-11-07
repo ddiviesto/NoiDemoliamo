@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Flusso pratiche: tessere tutte uguali, le vocine dentro</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:14px auto 8px;max-width:1180px;padding:0 4px}
+.crm{width:1180px;margin:0 auto 10px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;display:flex;min-height:400px}
+.side{width:170px;background:linear-gradient(180deg,#2563eb 0%,#2563eb 65%,#7CA4F2 100%);color:#fff;padding:16px 14px}
+.side .m{font-weight:800;font-size:15px}.side .s{font-size:9px;letter-spacing:1px;opacity:.8;margin-top:1px}.side .v{font-size:12px;margin-top:22px;opacity:.9}.side .v div{padding:6px 0}
+.main{flex:1;min-width:0}
+.barra{background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+.barra b{font-size:16px}.barra small{display:block;font-size:11px;color:#6B7280;margin-top:1px}
+.cerca{background:#fff;border:1px solid #DBEAFE;border-radius:999px;padding:8px 14px;font-size:12.5px;color:#9CA3AF;width:200px}
+.corpo{padding:16px 22px}
+.k{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5B6779;margin-bottom:8px}
+.fila{display:flex;gap:6px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.stacco{width:10px;flex:none}
+.tappa{background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:9px 10px;position:relative;min-height:62px}
+.tappa .n{font-size:20px;font-weight:700;color:#1D4ED8;line-height:1}.tappa .t{font-size:11.5px;font-weight:700;color:#1E293B;margin-top:4px;line-height:1.2}.tappa .s{font-size:10.5px;color:#6B7280;margin-top:2px;line-height:1.3}
+.tappa.zero .n{color:#94A3B8}
+.tappa.on{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.tappa.chiusa{background:#F5F7FB}.tappa.chiusa .n{color:#1F7A43}
+.tappa.fuori{background:#F5F7FB;border-style:dashed}
+.tappa.rossa{background:#FCEBEB;border-color:#F3C8C8}.tappa.rossa .n,.tappa.rossa .t{color:#A32D2D}
+.tappa.piccola{min-height:0;padding:7px 10px}.tappa.piccola .n{font-size:15px}.tappa.piccola .t{font-size:11px;margin-top:2px}
+.freccia{position:absolute;right:-9px;top:26px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:6px solid #C3CBD9}
+.lista{margin-top:14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:14px;padding:30px;text-align:center;font-size:13px;color:#6B7280}
+.filtri{display:flex;gap:6px;margin-top:12px}.filtri span{font-size:12px;font-weight:700;border-radius:999px;padding:6px 12px;background:#fff;border:1px solid #E5E7EB;color:#4B5563}.filtri span.on{background:#2563EB;color:#fff;border-color:#2563EB}
+.griglia{display:grid;gap:6px;align-items:stretch}.griglia>*{min-width:0}
+.tappa.ug{min-height:112px;display:flex;flex-direction:column}
+.tappa.ug .vocine{margin-top:auto;display:flex;flex-direction:column;gap:4px;padding-top:8px}
+.voc{display:inline-flex;max-width:100%;overflow:hidden;text-overflow:ellipsis;align-items:center;gap:6px;background:#F5F7FB;border:1px solid #E5E9F0;border-radius:999px;padding:3px 8px 3px 4px;font-size:10.5px;font-weight:600;color:#4B5A72;white-space:nowrap}
+.voc b{width:16px;height:16px;border-radius:999px;background:#E5E9F0;color:#4B5A72;font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.voc.rossa{background:#FCEBEB;border-color:#F3C8C8;color:#A32D2D}.voc.rossa b{background:#A32D2D;color:#fff}
+.riga{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:#4B5A72;border-top:1px solid #EEF1F5;padding-top:4px}.riga b{color:#1E293B;font-weight:700}
+.riga.rossa{color:#A32D2D}.riga.rossa b{color:#A32D2D}
+.dem{width:1180px;margin:0 auto 34px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;display:flex;min-height:230px}
+</style></head><body>
+<div class="nota"><b>TESSERE TUTTE UGUALI, LE VOCINE DENTRO</b> · la B1 con tutte le tessere della stessa misura e allineate, e "Allerta 8 ore", "Attesa Certificati" e "Attesa PRA" <b>dentro la tessera</b> di Assegnata e di Ritirata. Parole e ordine di oggi. Sotto, il demolitore con le stesse tessere.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">A · tessere uguali, vocine a pillola dentro, con gli stacchi di oggi</span>
+<span onclick="vista('b',this)">B · tessere uguali senza stacchi, tutte in fila</span>
+<span onclick="vista('c',this)">C · come la B, vocine come righe di testo</span>
+</div>
+<div id="viste"></div>
+<script>
+// LE PAROLE DI OGGI, NELL'ORDINE DI OGGI (da app/admin/page.tsx)
+const FILA=[
+ {t:'Da contattare',n:0,fuori:true,rossaSe:true,s:'libretto, certificato o fermo da chiarire'},
+ {t:'In attesa documenti',n:4,s:'il cliente deve caricarli',freccia:false},
+ {t:'In attesa',n:0,fuori:true,s:'pratiche in pausa',freccia:true},
+ {t:'Documenti da verificare',n:0,s:'inviati, li controlli tu',freccia:true},
+ {t:'Da assegnare',n:0,s:'documenti ok, scegli il demolitore',freccia:true},
+ {t:'Assegnata',n:0,s:'il demolitore fissa il ritiro',freccia:true,dem:true,sotto:[{t:'Allerta 8 ore',n:0,rossaSe:true}]},
+ {t:'Ritiro Programmato',n:0,s:'giorno e ora fissati',freccia:true,dem:true},
+ {t:'Ritirata',n:0,s:'veicolo preso in carico',freccia:true,dem:true,sotto:[{t:'Attesa Certificati',n:0},{t:'Attesa PRA',n:0}]},
+ {t:'Completata',n:0,s:'radiazione PRA emessa',chiusa:true,dem:true},
+]
+function tessera(f,i,opz){
+  const cls=['tappa','ug',f.n===0?'zero':'',i===1?'on':'',f.chiusa?'chiusa':'',(f.rossaSe&&f.n>0)?'rossa':''].filter(Boolean).join(' ')
+  const voc=(f.sotto||[]).map(s=> opz.righe
+    ? `<div class="riga ${(s.rossaSe&&s.n>0)?'rossa':''}"><span>${s.t}</span><b>${s.n}</b></div>`
+    : `<span class="voc ${(s.rossaSe&&s.n>0)?'rossa':''}"><b>${s.n}</b>${s.t}</span>`).join('')
+  return `<div class="${cls}"><div class="n">${f.n}</div><div class="t">${f.t}</div>${voc?`<div class="vocine">${voc}</div>`:''}${(f.freccia&&!opz.senzaFrecce)?'<span class="freccia"></span>':''}</div>`
+}
+function flusso(opz,dem){
+  const fasi = dem ? FILA.filter(f=>f.dem) : FILA
+  if(opz.stacchi && !dem){
+    // griglia a 9 colonne uguali, con due colonnine di stacco tra le prime tre
+    const cols="minmax(0,1fr) 10px minmax(0,1fr) 10px "+"minmax(0,1fr) ".repeat(7)
+    const celle=fasi.map((f,i)=>tessera(f,i,opz)+((i===0||i===1)?'<span></span>':'')).join('')
+    return `<div class="k">Flusso pratiche</div><div class="griglia" style="grid-template-columns:${cols}">${celle}</div>`
+  }
+  return `<div class="k">Flusso pratiche</div><div class="griglia" style="grid-template-columns:repeat(${fasi.length},minmax(0,1fr))">${fasi.map((f,i)=>tessera(f,dem?i+1:i,opz)).join('')}</div>`
+}
+function guscio(dentro, dem){
+  const side = dem
+    ? `<div class="side"><div class="m">NoiDemoliamo</div><div class="s">AUTODEMOLIZIONI ROSSI</div><div class="v"><div>Le mie pratiche</div><div>Ritiri</div><div>Azienda</div></div></div>`
+    : `<div class="side"><div class="m">NoiDemoliamo</div><div class="s">ADMIN</div><div class="v"><div>Pratiche</div><div>Valutazioni</div><div>Demolitori</div></div></div>`
+  const lista=`<div class="filtri"><span class="on">Tutte 4</span><span>Annullate 0</span></div><div class="lista">Nessuna pratica in questa vista.</div>`
+  return `<div class="${dem?'dem':'crm'}">${side}<div class="main"><div class="barra"><div><b>${dem?'Le mie pratiche':'Pratiche'}</b><small>${dem?'3 totali':'4 totali'}</small></div><span class="cerca">Cerca…</span></div><div class="corpo">${dentro}${dem?'':lista}</div></div></div>`
+}
+const V={
+ a:{s:'<b>A.</b> Nove tessere <b>della stessa larghezza e della stessa altezza</b>, allineate su una riga. "Allerta 8 ore" sta <b>dentro</b> la tessera Assegnata, "Attesa Certificati" e "Attesa PRA" dentro Ritirata, come pillole piccole in fondo alla tessera. Restano i due stacchi di oggi (dopo "Da contattare" e dopo "In attesa documenti") e le frecce da "In attesa" in poi. Il demolitore ha quattro tessere uguali con le stesse parole.', h:guscio(flusso({stacchi:true}))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(flusso({stacchi:true},true),true)},
+ b:{s:'<b>B.</b> Come la A ma <b>senza stacchi</b>: nove tessere tutte in fila con lo stesso spazio tra loro, perfettamente in linea. L’ordine è lo stesso; a dire che "Da contattare" e "In attesa" non sono tappe ci pensano le frecce, che partono solo da "In attesa".', h:guscio(flusso({stacchi:false}))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(flusso({stacchi:false},true),true)},
+ c:{s:'<b>C.</b> Come la B, ma le vocine dentro la tessera sono <b>righe di testo</b> col numero a destra ("Allerta 8 ore · 0"), separate da un filo: più sobrie delle pillole, la tessera resta più pulita.', h:guscio(flusso({stacchi:false,righe:true}))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(flusso({stacchi:false,righe:true},true),true)},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div><div class="eti">Admin</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
