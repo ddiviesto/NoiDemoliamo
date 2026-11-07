@@ -407,7 +407,7 @@ annullata
 
 ## 4.6 PIPELINE CRM — il flusso in caselle
 
-Il "Flusso pratiche" è una **riga di TESSERE tutte uguali** (⭐ 07/11, mockup C; componente condiviso `app/components/TessereFlusso.tsx`): numero grande, nome della fase, e **dentro la tessera** le vocine "Allerta 8 ore" (in Assegnata) e "Attesa Certificati" / "Attesa PRA" (in Ritirata) come righe col **numero a sinistra** prima del nome (mockup B, 07/11); **tutta la tessera è cliccabile**; le frecce partono da "In attesa"; quella attiva ha l'anello blu; a zero il numero è grigio; "Da contattare" e "Allerta 8 ore" rosse coi casi. ⚠️ **Le parole e l'ordine delle fasi NON si cambiano** (Davide, 07/11). Ogni pillola è anche un filtro. Ogni pratica appartiene a UNA fase (funzione `bucketDi` in `/admin`):
+Il "Flusso pratiche" è una **riga di TESSERE tutte uguali** (⭐ 07/11, mockup C; componente condiviso `app/components/TessereFlusso.tsx`): numero grande, nome della fase, e **dentro la tessera** le vocine "Allerta 8 ore" (in Assegnata) e "Attesa Certificati" / "Attesa PRA" (in Ritirata) con **lo stesso disegno della fase** (numero grande e nome, separate da un filo; 07/11); **tutta la tessera è cliccabile**; le frecce partono da "In attesa"; quella attiva ha l'anello blu; a zero il numero è grigio; "Da contattare" e "Allerta 8 ore" rosse coi casi. ⚠️ **Le parole e l'ordine delle fasi NON si cambiano** (Davide, 07/11). Ogni pillola è anche un filtro. Ogni pratica appartiene a UNA fase (funzione `bucketDi` in `/admin`):
 
 1. **In attesa documenti** = `in_attesa_documenti` + `documenti_parzialmente_approvati` → il cliente vede "In attesa dei tuoi documenti"
 2. **Documenti da verificare** = `in_attesa_approvazione_admin` → "Stiamo verificando i tuoi documenti"

@@ -70,22 +70,23 @@ export function TesseraFase({ nome, valore, attivo, rossa, chiusa, freccia, titl
         <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2, marginTop: 4, color: rossaViva ? '#A32D2D' : '#1E293B' }}>{nome}</div>
       </div>
 
-      {/* le vocine, subito sotto il nome (non in fondo: in "Assegnata" ce n'è una sola) */}
+      {/* le vocine, subito sotto il nome, con LO STESSO DISEGNO della fase
+          (⭐ 07/11, Davide): numero grande e nome, separate da un filo */}
       {vocine && vocine.length > 0 && (
         <div className="flex flex-col" style={{ padding: '0 10px 8px' }}>
           {vocine.map(v => {
             const viva = !!v.rossa && v.valore > 0
+            const colN = viva ? '#A32D2D' : v.valore === 0 ? '#94A3B8' : '#1D4ED8'
             return (
               <button
                 key={v.nome}
                 onClick={e => { e.stopPropagation(); v.onClick() }}
                 title={v.title}
-                className="flex items-baseline gap-1.5 text-left transition-colors hover:bg-black/[0.02]"
-                style={{ fontSize: 10.5, padding: '4px 0', background: 'none', border: 'none', borderTop: '1px solid #EEF1F5', cursor: 'pointer', color: viva ? '#A32D2D' : v.attivo ? '#1D4ED8' : '#4B5A72', fontWeight: v.attivo ? 700 : 500 }}
+                className="text-left transition-colors hover:bg-black/[0.02]"
+                style={{ padding: '8px 0 6px', background: v.attivo ? '#EFF6FF' : 'none', border: 'none', borderTop: '1px solid #EEF1F5', borderRadius: 6, cursor: 'pointer' }}
               >
-                {/* ⭐ 07/11 (mockup B): il numero STA A SINISTRA, prima del nome, come nella tessera grande */}
-                <span style={{ fontSize: 12, fontWeight: 700, minWidth: 10, color: viva ? '#A32D2D' : v.attivo ? '#1D4ED8' : v.valore === 0 ? '#94A3B8' : '#1D4ED8' }}>{v.valore}</span>
-                <span className="truncate">{v.nome}</span>
+                <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, color: colN }}>{v.valore}</div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2, marginTop: 4, color: viva ? '#A32D2D' : v.attivo ? '#1D4ED8' : '#1E293B' }}>{v.nome}</div>
               </button>
             )
           })}
