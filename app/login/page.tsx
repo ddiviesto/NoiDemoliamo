@@ -157,7 +157,7 @@ export default function Login() {
       {/* su PC la striscia è di vetro sul lilla, sotto la scatola */}
       <StrisciaInstalla className="hidden sm:flex w-full sm:max-w-md mt-4" />
 
-      <AiutoWhatsApp />
+      <AiutoWhatsApp soloPc />
       </div>
     </main>
   )

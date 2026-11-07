@@ -522,3 +522,17 @@ body {
 
 
 
+
+/* ⭐ 07/11: il foglio "Installa l'app" sul telefono sale dal basso e il velo
+   sfuma; la nuvoletta su PC entra con una dissolvenza breve. Chi ha "riduci
+   il movimento" vede tutto fermo. */
+@keyframes foglio-velo { from { opacity: 0; } to { opacity: 1; } }
+@keyframes foglio-sale { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes nuvola-entra { from { opacity: 0; } to { opacity: 1; } }
+.foglio-velo { animation: foglio-velo .22s ease-out both; }
+.foglio-sale { animation: foglio-sale .32s cubic-bezier(.2,.8,.2,1) both; }
+.nuvola-entra { animation: nuvola-entra .16s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .foglio-velo, .foglio-sale, .nuvola-entra { animation: none; }
+}
+

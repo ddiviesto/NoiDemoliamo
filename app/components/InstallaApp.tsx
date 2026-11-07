@@ -19,6 +19,7 @@
 // ============================================================
 
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import Marchio from './Marchio'
 
 interface EventoInstalla extends Event {
@@ -138,14 +139,22 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
   return (
     <>
       {/* TELEFONO: il foglio dal basso */}
-      <div className="sm:hidden fixed inset-0 z-[90] flex items-end justify-center" style={{ background: 'rgba(15,23,42,0.45)' }} onClick={onChiudi}>
-        <div className="w-full bg-white" style={{ borderRadius: '20px 20px 0 0', padding: '18px 18px 22px', boxShadow: '0 -10px 30px rgba(15,27,51,0.18)' }} onClick={e => e.stopPropagation()}>
+      {/* ⭐ 07/11 (Davide, iPhone): il foglio SALE dal basso con il velo che
+          sfuma (.foglio-velo / .foglio-sale in globals.css), non compare di
+          colpo. Va messo DIRETTAMENTE nel body (createPortal): dentro la card
+          di vetro della home, l'effetto sfocato (backdrop-filter) tiene i
+          "fixed" dentro la card, e il foglio si fermava a metà schermo col
+          lilla sotto. Il foglio esiste solo dopo il clic, quindi `document`
+          c'è sempre. */}
+      {typeof document !== 'undefined' && createPortal(
+      <div className="sm:hidden fixed inset-0 z-[90] flex items-end justify-center foglio-velo" style={{ background: 'rgba(15,23,42,0.45)' }} onClick={onChiudi}>
+        <div className="w-full bg-white foglio-sale" style={{ borderRadius: '20px 20px 0 0', padding: '18px 18px calc(22px + env(safe-area-inset-bottom))', boxShadow: '0 -10px 30px rgba(15,27,51,0.18)' }} onClick={e => e.stopPropagation()}>
           <h3 className="text-[16px] font-bold tracking-[-0.3px] text-[#0F172A]">Aggiungi NoiDemoliamo alla home</h3>
           <p className="text-[12.5px] text-gray-500 mt-0.5">{iphone ? 'Su iPhone si fa in tre tocchi:' : 'Si fa in tre passi dal tuo browser:'}</p>
           <div className="mt-2">{lista(iphone ? passiIphone : passiTelefono)}</div>
           <button onClick={onChiudi} className="btn-pagina mt-3">Ho capito</button>
         </div>
-      </div>
+      </div>, document.body)}
 
       {/* PC: la nuvoletta ancorata al bottone */}
       {/* ⭐ 07/11: verso="fianco" (home e striscia dell'accesso) la nuvoletta
@@ -154,7 +163,7 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
           la nuvoletta usciva dalla card e finiva sotto il piede blu, o oltre
           il fondo della pagina. Sotto i 1100px (.nuvola-fianco in
           globals.css) sale sopra il bottone, perché di fianco non c'è posto. */}
-      <div ref={nuvola} className={`hidden sm:block absolute z-[60] text-left${verso === 'fianco' ? ' nuvola-fianco' : ''}`} style={{ ...(verso === 'fianco' ? { top: '50%', transform: `translateY(calc(-50% - ${alzaDi}px))`, left: 'calc(100% + 16px)' } : { top: 'calc(100% + 14px)', [lato === 'destra' ? 'right' : 'left']: 0 }), width: larghezza, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 18, padding: '16px 18px', boxShadow: '0 14px 40px rgba(15,27,51,0.16)' }}>
+      <div ref={nuvola} className={`hidden sm:block absolute z-[60] text-left nuvola-entra${verso === 'fianco' ? ' nuvola-fianco' : ''}`} style={{ ...(verso === 'fianco' ? { top: '50%', transform: `translateY(calc(-50% - ${alzaDi}px))`, left: 'calc(100% + 16px)' } : { top: 'calc(100% + 14px)', [lato === 'destra' ? 'right' : 'left']: 0 }), width: larghezza, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 18, padding: '16px 18px', boxShadow: '0 14px 40px rgba(15,27,51,0.16)' }}>
         <span aria-hidden="true" className="nuvola-becco" style={{ position: 'absolute', ...(verso === 'fianco' ? { left: -9, top: `calc(50% - 8px + ${alzaDi}px)`, transform: 'rotate(-45deg)' } : { top: -9, [lato === 'destra' ? 'right' : 'left']: 46, transform: 'rotate(45deg)' }), width: 16, height: 16, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB' }} />
         <button onClick={onChiudi} aria-label="Chiudi" className="absolute flex items-center justify-center hover:bg-gray-200 transition-colors" style={{ top: 12, right: 12, width: 26, height: 26, borderRadius: 999, background: '#F1F3F6', border: 'none', cursor: 'pointer' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>

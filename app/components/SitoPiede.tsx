@@ -10,7 +10,6 @@
 // ============================================================
 
 import Link from 'next/link'
-import { WHATSAPP_NUMERO } from './SitoPezzi'
 import Marchio from './Marchio'
 
 function Colonna({ titolo, children }: { titolo: string; children: React.ReactNode }) {
@@ -64,7 +63,7 @@ export default function SitoPiede() {
             </Colonna>
             <Colonna titolo="Contatti">
               <a href="https://wa.me/393518280493" target="_blank" rel="noopener" style={stileVoce} className={classeVoce}>
-                WhatsApp {WHATSAPP_NUMERO}
+                WhatsApp
               </a>
               <Link href="/login" style={stileVoce} className={classeVoce}>Accedi alla tua area</Link>
             </Colonna>
