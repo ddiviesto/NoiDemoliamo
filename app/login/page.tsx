@@ -60,19 +60,11 @@ export default function Login() {
 
         {/* TESTATA BLU ALTA col benvenuto e il logo a cavallo (mockup approvato) */}
         <div className="relative text-white px-4 pt-3.5 pb-12" style={{ background: 'linear-gradient(120deg, #1d4ed8 0%, #2563eb 55%, #3b82f6 100%)' }}>
-          <div className="flex items-center gap-3">
-            <Link
-              href="/"
-              className="w-[38px] h-[38px] rounded-full flex items-center justify-center flex-shrink-0 transition-colors hover:bg-white/30"
-              style={{ background: 'rgba(255,255,255,0.18)' }}
-              aria-label="Torna alla home"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
-              </svg>
-            </Link>
+          {/* ⭐ 07/11 (Davide): via la freccia indietro, è il marchio che riporta al sito
+              (su PC c'è anche la pillola "Torna al sito" nell'isola) */}
+          <Link href="/" aria-label="Torna al sito" className="inline-flex items-center" style={{ minHeight: 38 }}>
             <Marchio misura={17} chiaro />
-          </div>
+          </Link>
           <h1 className="text-[22px] font-bold mt-4 leading-tight">Bentornato</h1>
           <p className="text-[13px] mt-1" style={{ color: '#DBEAFE' }}>Entra nella tua area personale</p>
           <div className="absolute left-6 -bottom-[37px] w-[74px] h-[74px] bg-white rounded-[20px] flex items-center justify-center" style={{ boxShadow: '0 8px 20px rgba(16,24,40,0.18)' }}>
