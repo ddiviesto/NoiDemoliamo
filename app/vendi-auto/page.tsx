@@ -288,10 +288,12 @@ export default function VendiAuto() {
 
       router.push('/dashboard')
     } catch (e: unknown) {
-      console.error('Errore invio richiesta valutazione:', e)
+      // nel registro vanno TUTTE le proprietà (gli errori di Supabase non si vedono con un semplice console.error)
+      const tutto = e && typeof e === 'object' ? Object.fromEntries(Object.getOwnPropertyNames(e).map(k => [k, (e as Record<string, unknown>)[k]])) : e
+      console.error('Errore invio richiesta valutazione:', JSON.stringify(tutto, null, 2))
       // ⭐ 07/11: anche gli errori del database (non sono Error) hanno un
       // messaggio: va mostrato, altrimenti non si capisce mai il perché
-      const msg = (e as { message?: string } | null)?.message || ''
+      const msg = (e as { message?: string } | null)?.message || (e as { code?: string } | null)?.code || (typeof e === 'string' ? e : '')
       const dettaglio = [(e as { details?: string } | null)?.details, (e as { hint?: string } | null)?.hint].filter(Boolean).join(' · ')
       setErrore(
         /already registered|already exists/i.test(msg)
