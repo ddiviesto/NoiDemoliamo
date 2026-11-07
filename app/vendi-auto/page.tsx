@@ -290,11 +290,18 @@ export default function VendiAuto() {
       router.push('/dashboard')
     } catch (e: unknown) {
       console.error('Errore invio richiesta valutazione:', e)
-      const msg = e instanceof Error ? e.message : ''
+      // ⭐ 07/11: anche gli errori del database (non sono Error) hanno un
+      // messaggio: va mostrato, altrimenti non si capisce mai il perché
+      const msg = (e as { message?: string } | null)?.message || ''
+      const dettaglio = [(e as { details?: string } | null)?.details, (e as { hint?: string } | null)?.hint].filter(Boolean).join(' · ')
       setErrore(
         /already registered|already exists/i.test(msg)
           ? 'Questa email ha già un account: accedi e la richiesta la colleghiamo lì.'
-          : msg ? `Non siamo riusciti a inviare la richiesta: ${msg}` : 'Non siamo riusciti a inviare la richiesta. Riprova tra un attimo.'
+          : /rate limit/i.test(msg)
+            ? 'Troppi tentativi in poco tempo: aspetta qualche minuto e riprova.'
+            : /row-level security/i.test(msg)
+              ? 'Non abbiamo il permesso di salvare la richiesta: scrivici in chat, è un problema nostro.'
+              : msg ? `Non siamo riusciti a inviare la richiesta: ${msg}${dettaglio ? ` (${dettaglio})` : ''}` : 'Non siamo riusciti a inviare la richiesta. Riprova tra un attimo.'
       )
       setInvio(false)
     }
