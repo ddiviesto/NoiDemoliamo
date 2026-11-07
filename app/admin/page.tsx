@@ -755,7 +755,7 @@ export default function AdminDashboard() {
               Certificati" e "Attesa PRA" dentro Ritirata. Componente condiviso
               con l'area demolitore (app/components/TessereFlusso.tsx). */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
-          <TessereFlusso colonne={9}>
+          <TessereFlusso colonne={9} filtroAttivo={filtro !== 'tutte'}>
             {/* "Da contattare" e "In attesa" non sono fasi (anomalie e pause): niente freccia */}
             <TesseraFase nome="Da contattare" valore={conta('contattare')} rossa attivo={filtro === 'contattare'} onClick={() => cambiaFiltro(filtro === 'contattare' ? 'tutte' : 'contattare')}
               title={conta('contattare') > 0 ? 'Da chiamare: libretto, certificato o fermo da chiarire' : 'Nessun cliente da chiamare per i documenti'} />

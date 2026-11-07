@@ -1,5 +1,7 @@
 'use client'
 
+import { createContext, useContext } from 'react'
+
 // ============================================================
 // IL FLUSSO PRATICHE A TESSERE (⭐ 07/11, mockup C scelto da Davide)
 // Una riga di tessere TUTTE UGUALI (stessa larghezza, stessa altezza):
@@ -24,28 +26,41 @@ export type Vocina = {
 // quindi una fila più corta occupa solo la sua parte di riga.
 const COLONNE_RIFERIMENTO = 9
 
-export function TessereFlusso({ children, colonne }: { children: React.ReactNode; colonne: number }) {
+// ⭐ 07/11 (Davide): quando un filtro è acceso, le altre tessere si
+// affievoliscono; la fila lo dice alle tessere con questo contesto
+const FiltroAcceso = createContext(false)
+
+export function TessereFlusso({ children, colonne, filtroAttivo = false }: { children: React.ReactNode; colonne: number; filtroAttivo?: boolean }) {
   const quota = Math.min(1, colonne / COLONNE_RIFERIMENTO)
   return (
-    <div className="mb-3" style={{ display: 'grid', gridTemplateColumns: `repeat(${colonne}, minmax(0, 1fr))`, gap: 6, alignItems: 'stretch', width: `calc(${quota * 100}% - ${(1 - quota) * 6}px)` }}>
-      {children}
-    </div>
+    <FiltroAcceso.Provider value={filtroAttivo}>
+      <div className="mb-3" style={{ display: 'grid', gridTemplateColumns: `repeat(${colonne}, minmax(0, 1fr))`, gap: 6, alignItems: 'stretch', width: `calc(${quota * 100}% - ${(1 - quota) * 6}px)` }}>
+        {children}
+      </div>
+    </FiltroAcceso.Provider>
   )
 }
 
-export function TesseraFase({ nome, valore, attivo, rossa, chiusa, freccia, title, onClick, vocine }: {
+export function TesseraFase({ nome, valore, attivo, rossa, chiusa, grigia, freccia, title, onClick, vocine }: {
   nome: string
   valore: number
   attivo: boolean
   rossa?: boolean     // "Da contattare" e simili: rossa quando conta qualcosa
   chiusa?: boolean    // "Completata": fondo grigio chiaro e numero verde
+  grigia?: boolean    // "Annullate", "Chiuse": numero grigio sempre, non chiedono attenzione
   freccia?: boolean   // il trattino verso la tessera dopo (solo tra le fasi vere)
   title?: string
   onClick: () => void
   vocine?: Vocina[]
 }) {
   const rossaViva = !!rossa && valore > 0
-  const colNumero = rossaViva ? '#A32D2D' : valore === 0 ? '#94A3B8' : chiusa ? '#1F7A43' : '#1D4ED8'
+  // ⭐ 07/11 (Davide): i contatori sono SEMPRE colorati, anche a zero; solo
+  // Annullate e Chiuse restano grigie perché non chiedono attenzione
+  const colNumero = rossaViva ? '#A32D2D' : grigia ? '#94A3B8' : chiusa ? '#1F7A43' : '#1D4ED8'
+  const filtroAcceso = useContext(FiltroAcceso)
+  const inFiltro = attivo || !!vocine?.some(v => v.attivo)
+  // con un filtro acceso altrove, questa tessera si affievolisce (le grigie no, sono già spente)
+  const smorzata = filtroAcceso && !inFiltro && !grigia
   return (
     // ⭐ 07/11 (Davide): TUTTA la tessera è cliccabile, non solo il numero e
     // il nome; le vocine dentro fermano il clic per conto loro
@@ -66,11 +81,13 @@ export function TesseraFase({ nome, valore, attivo, rossa, chiusa, freccia, titl
         minHeight: 96,
         cursor: 'pointer',
         overflow: 'hidden',
+        opacity: smorzata ? 0.45 : 1,
+        transition: 'opacity .18s ease, box-shadow .18s ease',
       }}
     >
       <div className="text-left" style={{ padding: '9px 10px 7px', background: attivo ? '#EFF6FF' : 'transparent', flex: vocine && vocine.length > 0 ? 'none' : 1 }}>
         <div style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, color: colNumero }}>{valore}</div>
-        <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2, marginTop: 4, color: rossaViva ? '#A32D2D' : attivo ? '#1D4ED8' : '#1E293B' }}>{nome}</div>
+        <div style={{ fontSize: 11.5, fontWeight: 700, lineHeight: 1.2, marginTop: 4, color: rossaViva ? '#A32D2D' : attivo ? '#1D4ED8' : grigia ? '#64748B' : '#1E293B' }}>{nome}</div>
       </div>
 
       {/* le vocine, subito sotto il nome, con LO STESSO DISEGNO della fase
@@ -80,7 +97,7 @@ export function TesseraFase({ nome, valore, attivo, rossa, chiusa, freccia, titl
         <div className="flex flex-col">
           {vocine.map(v => {
             const viva = !!v.rossa && v.valore > 0
-            const colN = viva ? '#A32D2D' : v.valore === 0 ? '#94A3B8' : '#1D4ED8'
+            const colN = viva ? '#A32D2D' : '#1D4ED8'
             return (
               <button
                 key={v.nome}

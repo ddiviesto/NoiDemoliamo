@@ -193,7 +193,7 @@ export default function Valutazioni() {
               "come in demolizione"): tre fasi in fila con le frecce, poi
               Rifiutata e Chiusa senza freccia. Parole e ordine invariati. */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso valutazioni</div>
-          <TessereFlusso colonne={5}>
+          <TessereFlusso colonne={5} filtroAttivo={filtro !== 'tutte'}>
             {STATI_VALUTAZIONE.map((s, i, tutti) => (
               <TesseraFase
                 key={s.chiave}
@@ -202,6 +202,7 @@ export default function Valutazioni() {
                 attivo={filtro === s.chiave}
                 freccia={s.inFila && !!tutti[i + 1]?.inFila}
                 chiusa={s.chiave === 'passata_demolizione'}
+                grigia={s.chiave === 'chiusa'}
                 rossa={s.chiave === 'rifiutata'}
                 onClick={() => cambiaFiltro(s.chiave)}
               />

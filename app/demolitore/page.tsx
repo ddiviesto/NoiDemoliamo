@@ -256,7 +256,7 @@ export default function HomeDemolitore() {
               Attesa Certificati, Attesa PRA) › Completata · Annullate */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso pratiche</div>
           <div className="mb-1">
-          <TessereFlusso colonne={5}>
+          <TessereFlusso colonne={5} filtroAttivo={filtro !== 'tutte'}>
             <TesseraFase nome="Assegnata" valore={conta.arrivo} attivo={filtro === 'arrivo'} freccia onClick={() => cambiaFiltro(filtro === 'arrivo' ? 'tutte' : 'arrivo')}
               title="Pratiche assegnate a te: fissa giorno e ora del ritiro"
               vocine={[{ nome: 'Allerta 8 ore', valore: conta.allerta8h, rossa: true, attivo: filtro === 'allerta8h', onClick: () => cambiaFiltro(filtro === 'allerta8h' ? 'tutte' : 'allerta8h'), title: conta.allerta8h > 0 ? 'Ritiri da fissare oltre le 8 ore lavorative' : 'Sei nei tempi: nessun ritiro in ritardo' }]} />
@@ -267,7 +267,7 @@ export default function HomeDemolitore() {
                 { nome: 'Attesa PRA', valore: conta.targhe, attivo: filtro === 'targhe', onClick: () => cambiaFiltro(filtro === 'targhe' ? 'tutte' : 'targhe'), title: 'Aspettiamo la radiazione al PRA' },
               ]} />
             <TesseraFase nome="Completata" valore={conta.completate} attivo={filtro === 'completate'} chiusa onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
-            <TesseraFase nome="Annullate" valore={conta.annullate} rossa attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
+            <TesseraFase nome="Annullate" valore={conta.annullate} grigia attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
               title={conta.annullate > 0 ? 'Pratiche annullate dopo l\'assegnazione, col motivo' : 'Nessuna pratica annullata'} />
           </TessereFlusso>
           </div>
