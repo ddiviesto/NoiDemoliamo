@@ -98,6 +98,18 @@ export default function Valutazioni() {
   const [ricerca, setRicerca] = useState('')
   const [selId, setSelId] = useState<string | null>(null)
   const [hoverId, setHoverId] = useState<string | null>(null)
+  // ⭐ 07/11 ("super fluido", Davide): la tendina resta montata finché si
+  // riavvolge (320 ms), così la chiusura è morbida come l'apertura
+  const [renderId, setRenderId] = useState<string | null>(null)
+  function chiudi() {
+    const id = selId
+    setSelId(null)
+    if (id) setTimeout(() => setRenderId(r => (r === id ? null : r)), 320)
+  }
+  function apriChiudi(id: string) {
+    if (selId === id) chiudi()
+    else { setRenderId(id); setSelId(id) }
+  }
   const [errore, setErrore] = useState<string | null>(null)
 
   const chiama = useCallback(async (body: Record<string, unknown>) => {
@@ -133,7 +145,7 @@ export default function Valutazioni() {
 
   // Esc chiude la tendina, come nelle pratiche
   useEffect(() => {
-    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') setSelId(null) }
+    function onKey(e: KeyboardEvent) { if (e.key === 'Escape') chiudi() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [])
@@ -144,7 +156,7 @@ export default function Valutazioni() {
     .filter(r => filtro === 'tutte' || r.stato === filtro)
     .filter(r => !q || [r.targa, r.marca, r.modello, r.nome_richiedente, r.comune, r.telefono].some(v => (v || '').toLowerCase().includes(q)))
 
-  function cambiaFiltro(f: string) { setFiltro(prev => prev === f ? 'tutte' : f); setSelId(null) }
+  function cambiaFiltro(f: string) { setFiltro(prev => prev === f ? 'tutte' : f); chiudi() }
 
   if (loading) {
     return (
@@ -214,7 +226,7 @@ export default function Valutazioni() {
                     <div key={r.id} style={{ border: `2px solid ${aperta ? '#2563EB' : 'transparent'}`, borderRadius: 16, background: aperta ? '#F7F8FB' : 'transparent', boxShadow: aperta ? '0 4px 16px rgba(37,99,235,0.16)' : 'none', transition: 'all .28s ease' }}>
                       {/* LA RIGA (testata quando è aperta) */}
                       <div
-                        onClick={() => setSelId(aperta ? null : r.id)}
+                        onClick={() => apriChiudi(r.id)}
                         onMouseEnter={() => setHoverId(r.id)}
                         onMouseLeave={() => setHoverId(null)}
                         className={`cursor-pointer transition-all ${aperta ? '' : 'hover:!bg-[#EFF6FF] hover:!border-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]'}`}
@@ -270,10 +282,14 @@ export default function Valutazioni() {
                         </div>
                       </div>
 
-                      {/* LA TENDINA */}
-                      {aperta && (
-                        <Tendina r={r} chiama={chiama} ricarica={ricarica} />
-                      )}
+                      {/* LA TENDINA: si srotola e si riavvolge morbida (grid 0fr↔1fr, come le pratiche) */}
+                      <div style={{ display: 'grid', gridTemplateRows: aperta ? '1fr' : '0fr', transition: 'grid-template-rows .28s ease' }}>
+                        <div style={{ overflow: 'hidden' }}>
+                          {(aperta || r.id === renderId) && (
+                            <Tendina r={r} chiama={chiama} ricarica={ricarica} />
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )
                 })}
