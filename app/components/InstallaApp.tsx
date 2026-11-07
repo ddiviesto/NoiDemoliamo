@@ -101,7 +101,7 @@ const CONDIVIDI = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" st
  *  ancorata al bottone col becco, come le altre nuvolette dell'app (regola
  *  20): chi la usa la mette dentro un contenitore `relative` accanto al
  *  bottone. `lato` dice da che parte sta il becco. Clic fuori o Esc chiude. */
-export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 360, verso = 'sotto' }: { stato: StatoInstalla; onChiudi: () => void; lato?: 'sinistra' | 'destra'; larghezza?: number; verso?: 'sotto' | 'fianco' }) {
+export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 360, verso = 'sotto', alzaDi = 0 }: { stato: StatoInstalla; onChiudi: () => void; lato?: 'sinistra' | 'destra'; larghezza?: number; verso?: 'sotto' | 'fianco'; alzaDi?: number }) {
   const iphone = stato === 'iphone'
   const chrome = /CriOS/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
   const tasto = (t: React.ReactNode) => <span style={{ background: '#F1F3F6', borderRadius: 6, padding: '2px 7px', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>{t}</span>
@@ -141,12 +141,14 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
       </div>
 
       {/* PC: la nuvoletta ancorata al bottone */}
-      {/* ⭐ 07/11: verso="fianco" (home) la nuvoletta sta A DESTRA del bottone,
-          col becco a sinistra, così resta dentro la card e non finisce sotto
-          il piede blu; sotto i 1100px (.nuvola-fianco in globals.css) sale
-          sopra il bottone, perché di fianco non c'è posto. */}
-      <div ref={nuvola} className={`hidden sm:block absolute z-[60] text-left${verso === 'fianco' ? ' nuvola-fianco' : ''}`} style={{ ...(verso === 'fianco' ? { bottom: -56, left: 'calc(100% + 16px)' } : { top: 'calc(100% + 14px)', [lato === 'destra' ? 'right' : 'left']: 0 }), width: larghezza, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 18, padding: '16px 18px', boxShadow: '0 14px 40px rgba(15,27,51,0.16)' }}>
-        <span aria-hidden="true" className="nuvola-becco" style={{ position: 'absolute', ...(verso === 'fianco' ? { left: -9, bottom: 71, transform: 'rotate(-45deg)' } : { top: -9, [lato === 'destra' ? 'right' : 'left']: 46, transform: 'rotate(45deg)' }), width: 16, height: 16, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB' }} />
+      {/* ⭐ 07/11: verso="fianco" (home e striscia dell'accesso) la nuvoletta
+          sta A DESTRA del bottone, centrata su di lui col becco a sinistra
+          (`alzaDi` la sposta in su: la home la tiene dentro la card); sotto
+          la nuvoletta usciva dalla card e finiva sotto il piede blu, o oltre
+          il fondo della pagina. Sotto i 1100px (.nuvola-fianco in
+          globals.css) sale sopra il bottone, perché di fianco non c'è posto. */}
+      <div ref={nuvola} className={`hidden sm:block absolute z-[60] text-left${verso === 'fianco' ? ' nuvola-fianco' : ''}`} style={{ ...(verso === 'fianco' ? { top: '50%', transform: `translateY(calc(-50% - ${alzaDi}px))`, left: 'calc(100% + 16px)' } : { top: 'calc(100% + 14px)', [lato === 'destra' ? 'right' : 'left']: 0 }), width: larghezza, maxWidth: 'calc(100vw - 32px)', background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 18, padding: '16px 18px', boxShadow: '0 14px 40px rgba(15,27,51,0.16)' }}>
+        <span aria-hidden="true" className="nuvola-becco" style={{ position: 'absolute', ...(verso === 'fianco' ? { left: -9, top: `calc(50% - 8px + ${alzaDi}px)`, transform: 'rotate(-45deg)' } : { top: -9, [lato === 'destra' ? 'right' : 'left']: 46, transform: 'rotate(45deg)' }), width: 16, height: 16, background: '#fff', borderLeft: '1.5px solid #E5E7EB', borderTop: '1.5px solid #E5E7EB' }} />
         <button onClick={onChiudi} aria-label="Chiudi" className="absolute flex items-center justify-center hover:bg-gray-200 transition-colors" style={{ top: 12, right: 12, width: 26, height: 26, borderRadius: 999, background: '#F1F3F6', border: 'none', cursor: 'pointer' }}>
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4B5563" strokeWidth="2.4" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
         </button>
@@ -216,7 +218,7 @@ export function StrisciaInstalla({ className = '' }: { className?: string }) {
             <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="inline-flex items-center gap-1.5 transition-colors hover:bg-blue-50 active:scale-[0.98]" style={{ background: foglio ? '#EFF6FF' : '#fff', color: '#2563eb', border: `1.5px solid ${foglio ? '#2563eb' : '#BFDBFE'}`, borderRadius: 999, padding: '9px 14px', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', cursor: 'pointer' }}>
               {SCARICA} Installa l&apos;app
             </button>
-            {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="destra" />}
+            {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} verso="fianco" />}
           </span>}
         </div>
       </div>
@@ -264,7 +266,7 @@ export function SezioneInstalla() {
               <button onClick={async () => { if (await installa() === 'foglio') setFoglio(true) }} className="btn-pagina btn-pagina--auto" style={{ fontSize: 14, padding: '13px 26px' }}>
                 {SCARICA} Installa l&apos;app
               </button>
-              {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="sinistra" verso="fianco" />}
+              {foglio && <FoglioInstalla stato={stato} onChiudi={() => setFoglio(false)} lato="sinistra" verso="fianco" alzaDi={85} />}
             </div>
           )}
         </div>

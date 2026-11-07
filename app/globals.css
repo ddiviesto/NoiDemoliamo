@@ -523,6 +523,6 @@ body {
 /* ⭐ 07/11: la nuvoletta "Installa l'app" della home sta di fianco al bottone;
    quando la card è stretta non c'è posto a destra e sale sopra il bottone */
 @media (max-width: 1099px) {
-  .nuvola-fianco { left: 0 !important; bottom: calc(100% + 14px) !important; }
-  .nuvola-fianco .nuvola-becco { left: 46px !important; bottom: -9px !important; transform: rotate(225deg) !important; }
+  .nuvola-fianco { left: 0 !important; top: auto !important; bottom: calc(100% + 14px) !important; transform: none !important; }
+  .nuvola-fianco .nuvola-becco { left: 46px !important; top: auto !important; bottom: -9px !important; transform: rotate(225deg) !important; }
 }
