@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Le scelte del modulo al passaggio del mouse</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.lilla{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),#F5F3FE}
+.pc{width:1180px;margin:10px auto 30px;border-radius:16px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.18);border:1px solid #D8DEE9;padding:26px 36px 30px}
+.tre{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:0 0 8px 4px}
+.op{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #D7DCE5;border-radius:13px;padding:14px;cursor:pointer;transition:all .15s}
+.op .i{width:42px;height:42px;border-radius:12px;background:#DBEAFE;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.op .t{font-size:15px;font-weight:700;color:#0F172A;line-height:1.3}.op .s{font-size:12.5px;color:#4B5563;margin-top:2px}
+.op .o{width:24px;height:24px;border-radius:999px;border:2px solid #D1D5DB;background:#fff;margin-left:auto;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.op.sel{background:#EFF6FF;border-color:#1D4ED8;box-shadow:0 2px 8px rgba(37,99,235,.12)}.op.sel .i{background:#2563eb;color:#fff}.op.sel .s{color:#1E4E8C}.op.sel .o{border-color:#2563eb;background:#2563eb}
+.col{display:flex;flex-direction:column;gap:10px}
+/* oggi */
+.v0 .op.hov,.v0 .op:hover:not(.sel){background:rgba(239,246,255,.4)}
+/* A: solo il bordo si accende */
+.vA .op.hov,.vA .op:hover:not(.sel){border-color:#93C5FD;box-shadow:0 4px 14px rgba(37,99,235,.10);transform:translateY(-1px)}
+/* B: l'azzurro della selezione, senza il bordo blu e senza spunta */
+.vB .op.hov,.vB .op:hover:not(.sel){background:#EFF6FF;border-color:#BFDBFE}
+/* C: grigio chiarissimo, neutro */
+.vC .op.hov,.vC .op:hover:not(.sel){background:#F8FAFC;border-color:#C3CBD9}
+</style></head><body>
+<div class="nota"><b>LE SCELTE AL PASSAGGIO DEL MOUSE</b> · oggi la casella sotto il mouse prende un velo azzurro al 40% che sul lilla sembra lilla. Tre modi; in ogni colonna: com'è ferma, col mouse sopra (fissa, per vederla), e selezionata. Passaci sopra davvero per provare.</div>
+<div class="schede">
+<span class="qui" onclick="vista('0',this)">Oggi</span>
+<span onclick="vista('a',this)">A · si accende solo il bordo (celeste) e si alza</span>
+<span onclick="vista('b',this)">B · l'azzurro della selezione, senza bordo blu</span>
+<span onclick="vista('c',this)">C · grigio chiarissimo, neutro</span>
+</div>
+<div id="viste"></div>
+<script>
+const ICO='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
+const OK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+const op=(cls,t,s)=>`<div class="op ${cls}"><span class="i">${ICO}</span><div><div class="t">${t}</div><div class="s">${s}</div></div><span class="o">${cls.includes('sel')?OK:''}</span></div>`
+function pagina(v){
+  const lista=(stato)=>`<div class="col">${op(stato==='hov'?'hov':'', 'A un privato cittadino', "Il proprietario è una persona, non un'azienda")}${op(stato==='sel'?'sel':'', 'A una società o azienda', 'Mezzo intestato a una ditta con partita IVA')}${op('', 'A una persona deceduta', 'Il proprietario è venuto a mancare')}</div>`
+  return `<div class="pc lilla ${v}"><div class="tre"><div><div class="eti">Ferma</div>${lista('')}</div><div><div class="eti">Col mouse sopra (prima scelta)</div>${lista('hov')}</div><div><div class="eti">Selezionata (seconda scelta)</div>${lista('sel')}</div></div></div>`
+}
+const V={
+ '0':{s:'<b>Oggi.</b> Al passaggio la casella prende un velo azzurro leggerissimo che, sopra il lilla della pagina, si legge come lilla. La selezionata invece ha fondo azzurro pieno, bordo blu e spunta.', h:pagina('v0')},
+ a:{s:'<b>A. Si accende solo il bordo.</b> Il fondo resta bianco, il bordo diventa celeste, la casella si alza di un pelo con un’ombra morbida. Niente colore di fondo: la sola cosa azzurra della lista resta quella scelta.', h:pagina('vA')},
+ b:{s:'<b>B. L’azzurro della selezione, senza il bordo blu.</b> Al passaggio il fondo diventa lo stesso azzurro della scelta (#EFF6FF) col bordo celeste chiaro, ma senza bordo blu pieno né spunta: "sta per diventare così". Al clic si completa con bordo e spunta.', h:pagina('vB')},
+ c:{s:'<b>C. Grigio chiarissimo.</b> Al passaggio il fondo si scurisce appena (grigio neutro) e il bordo pure: nessun colore, non si confonde con la selezione. La più discreta.', h:pagina('vC')},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='0'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>

@@ -14,7 +14,11 @@
 export function RuoloButton({ iconSvg, label, sub, selected, onClick, errorBorder, uniforme }: { iconSvg: React.ReactNode; label: string; sub: string; selected: boolean; onClick: () => void; errorBorder?: boolean; uniforme?: boolean }) {
   // Opzione più "solida" e leggibile: bordo netto, icona grande, titolo scuro protagonista.
   // La selezionata è inconfondibile: bordo blu pieno, sfondo azzurro, icona blu piena.
-  const baseBg = selected ? 'bg-[#EFF6FF]' : errorBorder ? 'bg-white' : 'bg-white hover:bg-blue-50/40'
+  // ⭐ 07/11 (mockup B1, Davide): al passaggio del mouse la casella prende il
+  // fondo azzurro della selezione e il bordo celeste pieno (il blu pieno e la
+  // spunta restano solo della scelta); prima era un velo azzurro al 40% che sul
+  // lilla della pagina sembrava lilla
+  const baseBg = selected ? 'bg-[#EFF6FF]' : errorBorder ? 'bg-white' : 'bg-white hover:bg-[#EFF6FF] hover:!border-[#93C5FD]'
   const borderStyle: React.CSSProperties = selected
     ? { border: '2px solid #1D4ED8', boxShadow: '0 2px 8px rgba(37,99,235,0.12)' }
     : errorBorder
