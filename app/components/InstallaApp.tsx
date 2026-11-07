@@ -105,10 +105,15 @@ const CONDIVIDI = <svg width="14" height="14" viewBox="0 0 24 24" fill="none" st
  *  bottone. `lato` dice da che parte sta il becco. Clic fuori o Esc chiude. */
 export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 360, verso = 'sotto', alzaDi = 0 }: { stato: StatoInstalla; onChiudi: () => void; lato?: 'sinistra' | 'destra'; larghezza?: number; verso?: 'sotto' | 'fianco'; alzaDi?: number }) {
   const iphone = stato === 'iphone'
-  const chrome = /CriOS/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
+  // ⭐ 07/11 (Davide, dall'app di Google su iPhone): su iPhone si installa SOLO
+  // da Safari. Prima si riconosceva solo Chrome (CriOS); ora tutti i browser
+  // "non Safari": app di Google (GSA), Chrome, Firefox, Edge, Opera, DuckDuckGo
+  // e i browser interni di Facebook e Instagram. A loro il primo passo dice
+  // di aprire la pagina in Safari.
+  const nonSafari = /CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|GSA\/|DuckDuckGo|FBAN|FBAV|Instagram/.test(typeof navigator !== 'undefined' ? navigator.userAgent : '')
   const tasto = (t: React.ReactNode) => <span style={{ background: '#F1F3F6', borderRadius: 6, padding: '2px 7px', fontWeight: 600, color: '#111827', whiteSpace: 'nowrap' }}>{t}</span>
-  const passiIphone: React.ReactNode[] = chrome
-    ? [<>Apri questa pagina in <b>Safari</b> (da Chrome non si può)</>, <>Tocca {tasto(<>{CONDIVIDI} Condividi</>)} in basso</>, <>Scegli {tasto('Aggiungi alla schermata Home')} e poi {tasto('Aggiungi')}</>]
+  const passiIphone: React.ReactNode[] = nonSafari
+    ? [<>Apri questa pagina in <b>Safari</b>: da qui non si può. Cerca {tasto('Apri in Safari')} nel menu in alto, oppure copia l&apos;indirizzo e incollalo in Safari</>, <>Tocca {tasto(<>{CONDIVIDI} Condividi</>)} in basso</>, <>Scegli {tasto('Aggiungi alla schermata Home')} e poi {tasto('Aggiungi')}</>]
     : [<>Tocca {tasto(<>{CONDIVIDI} Condividi</>)} in basso in Safari</>, <>Scegli {tasto('Aggiungi alla schermata Home')}</>, <>Tocca {tasto('Aggiungi')} in alto a destra</>]
   const passiTelefono: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra)</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare nella home o sul desktop</>]
   const passiPc: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra) oppure clicca l&apos;iconcina {tasto(<span style={{ display: 'inline-flex', verticalAlign: '-2px' }}>{SCARICA}</span>)} nella barra dell&apos;indirizzo</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare sul desktop e nel menu Start</>]
