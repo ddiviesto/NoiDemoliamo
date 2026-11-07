@@ -3,12 +3,17 @@
   "short_name": "NoiDemoliamo",
   "description": "Demolizione auto gratuita: segui la pratica, carica i documenti, ricevi gli aggiornamenti.",
   "lang": "it",
+  "id": "/dashboard?da=app",
   "start_url": "/dashboard?da=app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#F5F3FE",
   "theme_color": "#1d4ed8",
-  "related_applications": [{ "platform": "webapp", "url": "/manifest.webmanifest" }],
+  "related_applications": [
+    { "platform": "webapp", "url": "/manifest.webmanifest", "id": "https://noidemoliamo.it/dashboard?da=app" },
+    { "platform": "webapp", "url": "/manifest.webmanifest", "id": "https://noi-demoliamo.vercel.app/dashboard?da=app" },
+    { "platform": "webapp", "url": "/manifest.webmanifest", "id": "http://localhost:3000/dashboard?da=app" }
+  ],
   "icons": [
     { "src": "/icone/icona-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/icone/icona-512.png", "sizes": "512x512", "type": "image/png" },
