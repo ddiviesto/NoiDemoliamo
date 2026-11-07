@@ -581,6 +581,7 @@ Usa gli **stessi componenti** della demolizione (`StepTipoVeicolo`, `StepIntesta
 
 ### Regole del flusso
 - **Bozza persistente**: dati e passo corrente salvati in sessionStorage a ogni modifica → ricaricare o uscire non fa perdere il modulo. La password non viene MAI salvata; le foto vivono solo in memoria. Bozza cancellata a invio riuscito.
+- ⭐ **Email già registrata all'ultimo passo** (07/11, `lib/registraOAccedi.ts`, condiviso da `/inizia` e `/vendi-auto`): se la registrazione dice "già registrata", si prova a **entrare con la password scritta**; se è giusta la richiesta si aggancia a quell'account (la scheda `utenti` resta quella che c'è), se no il messaggio dice di accedere o recuperare la password.
 - **Seconda pratica per cliente registrato**: `/inizia` rileva la sessione (solo tipo 'cliente'); se loggato lo step finale diventa "Conferma e invia" (niente email/password), nome e telefono precompilati, la pratica si aggancia al `user_id` esistente.
 - **`traduciErrore()`**: gli errori Supabase escono in italiano semplice ("Failed to fetch" → "Errore di connessione…"); l'originale va in console.
 - **Personalizzazione per tipo veicolo ovunque**: banner, titoli, articoli, generi (isFemminile: autovettura/minicar/imbarcazione), `tipoAltro`, ICONE_VEICOLO, `getStepMeta`.
@@ -661,7 +662,7 @@ Pannello che **scivola da destra a tutta altezza**. ⭐ I pezzi del palco (`Zoom
 - **`/api/elimina-pratica`** — eliminazione definitiva (storage + righe collegate + pratica; opzione account cliente).
 - **`/api/profilo`** — dati del cliente (service role, ognuno solo la propria riga).
 - **`/api/email-cliente`** — l'email vera di login (il browser admin non può leggere `utenti` per RLS).
-- **`/api/pulisci-utenti`** — cancella account clienti senza pratiche **né richieste di valutazione** (07/11; mai admin/operatori, ma il testo del pannello non li nomina).
+- **`/api/pulisci-utenti`** — cancella account clienti senza pratiche **né richieste di valutazione**, compresi gli **accessi senza scheda in `utenti`** (prove interrotte a metà: la lista li mostra come "email (solo accesso, senza scheda)"; 07/11; mai admin/operatori, ma il testo del pannello non li nomina).
 - **`/api/invita-demolitore`** · **`/api/accesso-demolitore`** · **`/api/elimina-demolitore`**
 - **Area demolitore** (il ruolo demolitore non tocca MAI il DB direttamente, RLS): `/api/demolitore-pratiche` (il dettaglio RIFIRMA sempre gli URL dei documenti del bucket privato, e manda `documenti_ritiro` — lista completa consegna/caricato — e `viaggio` km · minuti via Distance Matrix con la cache in memoria per pratica), `/api/demolitore-azioni` (fissa/sposta ritiro — **spostare richiede il motivo, il server rifiuta senza** —, segna ritirata, rottamazione a mano), `/api/demolitore-certificato`, `/api/demolitore-chat`, `/api/demolitore-rapidi` (frasi rapide SUE della chat, semina + gestione), `/api/demolitore-impegni` (impegni personali della pagina Ritiri), `/api/demolitore-note`, `/api/demolitore-profilo`. Auth condivisa in `lib/demolitoreAuth.ts`.
 - **`lib/googleMaps.ts`** — carica lo script UNA volta per pagina (autocomplete e mappa convivono senza conflitto).

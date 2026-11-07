@@ -29,6 +29,7 @@ import { StepCondizioniVeicolo } from '../inizia/steps/StepCondizioniVeicolo'
 import { StepFoto } from '../inizia/steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from '../inizia/steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
+import { registraOAccedi } from '@/lib/registraOAccedi'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import { CampoModulo, ErrorBadge, InfoBadge, RuoloButton, SceltaPillola, classeCampo } from '../inizia/steps/PezziFlusso'
 import { GuscioFlusso } from '../inizia/steps/GuscioFlusso'
@@ -220,13 +221,11 @@ export default function VendiAuto() {
       let userId = utenteLoggato?.id
       if (!userId) {
         setMessaggioInvio('Creo il tuo account...')
-        const { data: reg, error: errReg } = await supabase.auth.signUp({ email: email.trim(), password })
-        if (errReg) throw errReg
-        userId = reg.user?.id
-        if (!userId) throw new Error('Utente non creato')
-        await supabase.from('utenti').insert({
+        // ⭐ 07/11: se l'email ha già un account si entra con la password scritta
+        userId = await registraOAccedi(email.trim(), password)
+        await supabase.from('utenti').upsert({
           id: userId, nome: nome.trim(), email: email.trim(), telefono: telefono.trim(), tipo: 'cliente', stato: 'attivo',
-        })
+        }, { onConflict: 'id', ignoreDuplicates: true })
       }
 
       // 2. la richiesta di valutazione (stessi nomi di colonna delle pratiche,

@@ -8,6 +8,7 @@ import { StepCondizioniVeicolo } from './steps/StepCondizioniVeicolo'
 import { StepFoto } from './steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
+import { registraOAccedi } from '@/lib/registraOAccedi'
 import { useRouter } from 'next/navigation'
 import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import { RuoloButton, InfoBadge, ErrorBadge, CampoModulo, SceltaPillola, classeCampo } from './steps/PezziFlusso'
@@ -827,14 +828,8 @@ export default function IniziaPage() {
         setLoadingMessage('Salvo la richiesta di demolizione...')
       } else {
         setLoadingMessage('Creo il tuo account...')
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: dati.email,
-          password: dati.password,
-        })
-        if (authError) throw authError
-        const nuovoId = authData.user?.id
-        if (!nuovoId) throw new Error('Utente non creato')
-        userId = nuovoId
+        // ⭐ 07/11: se l'email ha già un account si entra con la password scritta
+        userId = await registraOAccedi(dati.email, dati.password)
       }
 
       const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
@@ -908,14 +903,15 @@ export default function IniziaPage() {
 
       if (!utenteLoggato) {
         setLoadingMessage('Finalizzo la registrazione...')
-        await supabase.from('utenti').insert({
+        // (upsert: se l'account esisteva già, la scheda resta quella che c'è)
+        await supabase.from('utenti').upsert({
           id: userId,
           nome: dati.nome,
           email: dati.email,
           telefono: dati.telefono,
           tipo: 'cliente',
           stato: 'attivo',
-        })
+        }, { onConflict: 'id', ignoreDuplicates: true })
       }
 
       // Pratica inviata: la bozza del modulo non serve più

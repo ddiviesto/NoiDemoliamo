@@ -60,11 +60,22 @@ export async function POST(req: NextRequest) {
     const { data: utenti } = await supabase.from('utenti').select('id, nome, tipo')
 
     // Candidati: senza pratiche, non protetti
-    const candidati = (utenti || []).filter(u => {
+    const candidati: { id: string; nome: string | null; tipo: string | null }[] = (utenti || []).filter(u => {
       if (conPratiche.has(u.id)) return false
       if (u.tipo && RUOLI_PROTETTI.includes(u.tipo)) return false
       return true
     })
+
+    // ⭐ 07/11 (Davide: "l'email risulta già registrata ma ho cancellato
+    // tutto"): ci sono anche ACCOUNT DI LOGIN SENZA SCHEDA in `utenti`
+    // (una prova interrotta a metà): la pulizia li vede e li toglie
+    const idUtenti = new Set((utenti || []).map(u => u.id))
+    const { data: lista } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 })
+    for (const au of lista?.users || []) {
+      if (idUtenti.has(au.id) || conPratiche.has(au.id)) continue
+      if (au.email === ADMIN_EMAIL) continue
+      candidati.push({ id: au.id, nome: au.email ? `${au.email} (solo accesso, senza scheda)` : 'Accesso senza scheda', tipo: 'cliente' })
+    }
 
     if (dryRun) {
       return NextResponse.json({
