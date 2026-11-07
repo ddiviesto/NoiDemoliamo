@@ -495,3 +495,9 @@ body {
 
 
 
+
+/* ⭐ 07/11: le schede vere della tendina demolitore SFUMANO dentro al posto
+   delle filigrane, senza salti (l'altezza è la stessa) */
+@keyframes schede-sfumano { from { opacity: 0 } to { opacity: 1 } }
+.schede-sfumano { animation: schede-sfumano .22s ease; }
+.schede-sfumano > div { min-height: 210px; }

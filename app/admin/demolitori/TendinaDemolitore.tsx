@@ -724,14 +724,29 @@ export default function TendinaDemolitore({ demolitoreId, base, onChiudi, onDati
         </div>
 
       {/* ===== FASCIA SCHEDE ===== */}
+      {/* ⭐ 07/11 ("a scatto" bocciato da Davide): mentre i dati arrivano,
+          al posto della rotellina ci sono le CINQUE SCHEDE in filigrana,
+          con le stesse testate e la stessa altezza di quelle vere: così la
+          tendina si srotola una volta sola e quando i dati arrivano non
+          cambia altezza, cambia solo il contenuto (che sfuma dentro) */}
       {loading || !dem ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '26px 0' }}>
-          <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+        <div style={{ display: 'flex', gap: 12, padding: '12px 14px 14px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+          {['Cronologia e Note', 'Azienda', 'Contatti', 'Persone', 'Tariffa'].map((titolo, i) => (
+            <div key={titolo} style={{ ...stileScheda, minWidth: i === 0 ? 240 : 215, minHeight: 186, display: 'flex', flexDirection: 'column' }}>
+              <TestataScheda titolo={titolo} />
+              {[0, 1, 2].map(r => (
+                <div key={r} style={{ display: 'flex', justifyContent: 'space-between', gap: 10, padding: '7px 0', borderBottom: '1px solid #F1F4F8' }}>
+                  <span style={{ width: 70 + (r % 2) * 24, height: 9, borderRadius: 999, background: '#EEF1F5' }} />
+                  <span style={{ width: 54, height: 9, borderRadius: 999, background: '#F4F6F9' }} />
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       ) : (
         // ⭐ 28/07 (mockup approvato): riquadri TUTTI alla stessa altezza
         // (stretch), bordi in riga sopra e sotto
-        <div style={{ display: 'flex', gap: 12, padding: '12px 14px 14px', alignItems: 'stretch', flexWrap: 'wrap' }}>
+        <div className="schede-sfumano" style={{ display: 'flex', gap: 12, padding: '12px 14px 14px', alignItems: 'stretch', flexWrap: 'wrap' }}>
 
           {/* CRONOLOGIA E NOTE (usa lo spazio in più per le note, campo in fondo) */}
           <div style={{ ...stileScheda, minWidth: 240, display: 'flex', flexDirection: 'column' }}>
