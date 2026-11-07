@@ -14,7 +14,6 @@
 import Link from 'next/link'
 import RipresaBozza from './components/RipresaBozza'
 import type { Metadata } from 'next'
-import AiutoWhatsApp from './components/AiutoWhatsApp'
 import SitoBarra from './components/SitoBarra'
 import SitoPiede from './components/SitoPiede'
 import { Spunta } from './components/SitoPezzi'
@@ -281,7 +280,6 @@ export default function Home() {
       <SezioneInstalla />
 
       <SitoPiede />
-      <AiutoWhatsApp soloPc />
     </main>
   )
 }

@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { pillolaStato } from '@/lib/statiCliente'
 import IconaVeicolo from '../components/IconaVeicolo'
-import AiutoWhatsApp, { WhatsAppTestata } from '../components/AiutoWhatsApp'
+import { WhatsAppTestata } from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
 import CardValutazione, { RichiestaValutazione } from './CardValutazione'
 import Marchio from '../components/Marchio'
@@ -431,7 +431,6 @@ export default function DashboardCliente() {
         </div>
       </div>
 
-      <AiutoWhatsApp soloPc />
 
       <PannelloImpostazioni
         aperto={impostazioniAperte}

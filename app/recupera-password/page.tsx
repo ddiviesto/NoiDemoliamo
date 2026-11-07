@@ -3,7 +3,6 @@ import Marchio from '../components/Marchio'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
-import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import IsolaSito from '../components/IsolaSito'
 
 // Campo a pillola condiviso con la pagina di login
@@ -185,7 +184,6 @@ export default function RecuperaPassword() {
         </div>
       </div>
 
-      <AiutoWhatsApp />
       </div>
     </main>
   )

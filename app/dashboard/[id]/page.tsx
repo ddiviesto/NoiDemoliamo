@@ -9,7 +9,7 @@ import TabDocumenti from './TabDocumenti'
 import TabRitiro from './TabRitiro'
 import TabStato from './TabStato'
 import TabChat from './TabChat'
-import AiutoWhatsApp, { WhatsAppTestata } from '../../components/AiutoWhatsApp'
+import { WhatsAppTestata } from '../../components/AiutoWhatsApp'
 import IsolaSito, { PillolaIsola } from '../../components/IsolaSito'
 
 export interface Pratica {
@@ -557,7 +557,6 @@ export default function DettaglioPraticaCliente() {
 
       {/* ⭐ 29/07 (mockup approvato): sulla tab CHAT niente bottone WhatsApp
           — lì si parla già con NoiDemoliamo, e copriva il tasto d'invio */}
-      {tab !== 'chat' && <AiutoWhatsApp soloPc />}
     </main>
   )
 }

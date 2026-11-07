@@ -39,8 +39,8 @@ export default function SitoBarra() {
       </Link>
 
       <div className="flex items-center gap-0.5">
-        {/* ⭐ 07/11 (Davide): sul telefono l'aiuto WhatsApp sta qui, a sinistra di Accedi */}
-        <WhatsAppBarra />
+        {/* ⭐ 07/11 (Davide): l'aiuto WhatsApp sta qui, a sinistra di Accedi (telefono e PC) */}
+        <WhatsAppBarra className="mr-1.5" />
         <Link
           href="/login"
           className="transition-colors hover:bg-blue-600/[0.08] py-2 sm:py-[9px] px-2.5 min-[400px]:px-3 sm:px-3.5 bg-white sm:bg-transparent border-[1.5px] border-[#BFDBFE] sm:border-0 text-[#1D4ED8] sm:text-[#4A5670]"

@@ -18,7 +18,6 @@ import { GuscioFlusso } from '../../../inizia/steps/GuscioFlusso'
 import { CampoModulo, ErrorBadge, InfoBadge, RuoloButton, SceltaPillola, classeCampo } from '../../../inizia/steps/PezziFlusso'
 import { Casistica, CdcStato, ConsegnaMezzo, LibrettoStato, SpazioCarroAttrezzi, TipoMezzo, delegaAmmessa } from '../../../../types/pratica'
 import { articolo, articoloDel, nomeVeicolo } from '@/lib/nomiVeicolo'
-import AiutoWhatsApp from '../../../components/AiutoWhatsApp'
 
 type Passo = 'spazio' | 'consegna' | 'libretto' | 'cdc'
 
@@ -281,7 +280,6 @@ export default function CompletaPratica() {
       <button onClick={avanti} disabled={invio} className="btn-pagina mt-4 disabled:opacity-70">
         {invio ? 'Creo la tua pratica…' : ultimo ? 'Crea la pratica' : 'Continua'}
       </button>
-      <AiutoWhatsApp soloPc />
     </GuscioFlusso>
   )
 }

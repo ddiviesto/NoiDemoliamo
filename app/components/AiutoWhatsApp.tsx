@@ -1,21 +1,20 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-
 // ============================================================
-// PULSANTE AIUTO WHATSAPP
-// Cerchio verde fisso in basso a destra, presente su tutte le
-// pagine del cliente. L'etichetta "Serve aiuto?" appare per
-// qualche secondo e poi RIAPPARE ciclicamente ogni 15 secondi,
-// per richiamare l'attenzione senza essere invadente.
-// ⭐ 07/11 (Davide, mockup B "whatsapp-telefono"): nei moduli e
-// nell'area del cliente SUL TELEFONO il tondo non c'è più (stava tra
-// i piedi, copriva Continua e "Aggiungi un altro veicolo"): lì l'aiuto
-// è il tondino <WhatsAppTestata /> nella testata blu, e il tondo verde
-// resta solo su PC (`soloPc`). Sul sito e sull'accesso resta com'era.
+// AIUTO WHATSAPP (+39 351 828 0493)
+// ⭐ 07/11 (Davide): il tondo verde che galleggiava in basso a destra
+// (con la nuvoletta "Serve aiuto?" a intermittenza) NON C'È PIÙ, né sul
+// telefono né su PC: stava tra i piedi e copriva i bottoni. L'aiuto sta
+// nelle barre:
+//   - <WhatsAppTestata />  nella testata blu del telefono (flussi, area
+//     del cliente): tondino traslucido, stessa quadra della freccia;
+//   - <WhatsAppBarra />    nelle isole di vetro (sito, flussi, area del
+//     cliente, accesso) su telefono e PC: tondino verde chiaro con
+//     l'icona verde, le tinte delle spunte e della voce WhatsApp delle
+//     impostazioni.
 // ============================================================
 
-const WHATSAPP_URL = 'https://wa.me/393518280493'
+export const WHATSAPP_URL = 'https://wa.me/393518280493'
 
 const ICONA = (misura: number, colore = '#fff') => (
   <svg width={misura} height={misura} viewBox="0 0 24 24" fill={colore}>
@@ -24,7 +23,7 @@ const ICONA = (misura: number, colore = '#fff') => (
 )
 
 /** Il tondino traslucido nella testata blu del telefono (stessa quadra della
- *  freccia indietro): solo sul telefono, su PC c'è il tondo verde in basso. */
+ *  freccia indietro). Solo telefono: su PC c'è l'isola con <WhatsAppBarra />. */
 export function WhatsAppTestata() {
   return (
     <a
@@ -40,94 +39,19 @@ export function WhatsAppTestata() {
   )
 }
 
-/** ⭐ 07/11 (Davide): nella BARRA DEL SITO sul telefono, a sinistra di "Accedi":
- *  tondino verde chiaro con l'icona verde (le tinte delle spunte e della
- *  voce WhatsApp delle impostazioni). Solo telefono: su PC resta il tondo. */
-export function WhatsAppBarra() {
+/** Il tondino verde chiaro nelle isole di vetro, telefono e PC. */
+export function WhatsAppBarra({ className = '' }: { className?: string }) {
   return (
     <a
       href={WHATSAPP_URL}
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chiedi aiuto su WhatsApp"
-      className="sm:hidden flex items-center justify-center flex-shrink-0 transition-colors active:scale-95 mr-1.5"
+      title="Chiedi aiuto su WhatsApp"
+      className={`flex items-center justify-center flex-shrink-0 transition-colors hover:bg-[#C5EBD2] active:scale-95 ${className}`}
       style={{ width: 34, height: 34, borderRadius: 999, background: '#DCF3E4' }}
     >
       {ICONA(19, '#1F7A43')}
     </a>
-  )
-}
-
-export default function AiutoWhatsApp({ soloPc }: { soloPc?: boolean } = {}) {
-  const [mostraEtichetta, setMostraEtichetta] = useState(true)
-  // ⭐ 29/07 (mockup approvato, giro iPhone): mentre il cliente SCRIVE il
-  // bottone si fa da parte — con la tastiera aperta copriva Salva e i campi
-  const [scrivendo, setScrivendo] = useState(false)
-
-  useEffect(() => {
-    let nascondi: ReturnType<typeof setTimeout>
-    const mostra = () => {
-      setMostraEtichetta(true)
-      nascondi = setTimeout(() => setMostraEtichetta(false), 4000)
-    }
-    mostra() // subito all'apertura della pagina
-    const ciclo = setInterval(mostra, 15000) // e poi ogni 15 secondi
-    return () => { clearInterval(ciclo); clearTimeout(nascondi) }
-  }, [])
-
-  // ⭐ 29/07 (mockup B approvato): quando SCENDI il bottone sparisce (in
-  // fondo pagina i bottoni blu restano liberi), quando RISALI ricompare
-  const [inDiscesa, setInDiscesa] = useState(false)
-  useEffect(() => {
-    let ultimo = window.scrollY
-    const onScroll = () => {
-      const y = window.scrollY
-      if (y <= 0) setInDiscesa(false)
-      else if (y > ultimo + 4) setInDiscesa(true)
-      else if (y < ultimo - 4) setInDiscesa(false)
-      ultimo = y
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-
-  // Campo di scrittura a fuoco (input, textarea, contenteditable) = nascosto;
-  // ricompare da solo quando la tastiera si chiude
-  useEffect(() => {
-    const eCampo = (el: Element | null) => {
-      if (!el) return false
-      const tag = el.tagName?.toLowerCase()
-      return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable
-    }
-    const aggiorna = () => setScrivendo(eCampo(document.activeElement))
-    // Piccolo respiro sull'uscita: al passaggio da un campo all'altro
-    // il bottone non deve lampeggiare
-    const aggiornaDopo = () => { setTimeout(aggiorna, 80) }
-    document.addEventListener('focusin', aggiorna)
-    document.addEventListener('focusout', aggiornaDopo)
-    aggiorna()
-    return () => {
-      document.removeEventListener('focusin', aggiorna)
-      document.removeEventListener('focusout', aggiornaDopo)
-    }
-  }, [])
-
-  return (
-    <div className={soloPc ? 'hidden sm:flex' : 'flex'} style={{ position: 'fixed', right: 16, bottom: 16, zIndex: 50, alignItems: 'center', gap: 8, opacity: scrivendo || inDiscesa ? 0 : 1, transform: scrivendo || inDiscesa ? 'scale(0.6)' : 'scale(1)', pointerEvents: scrivendo || inDiscesa ? 'none' : 'auto', transition: 'opacity 0.25s ease, transform 0.25s ease' }}>
-      {mostraEtichetta && (
-        <span style={{ background: '#fff', border: '1px solid #E5E7EB', borderRadius: 20, padding: '6px 12px', fontSize: 11.5, fontWeight: 600, color: '#374151', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>
-          Serve aiuto?
-        </span>
-      )}
-      <a
-        href={WHATSAPP_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Chiedi aiuto su WhatsApp"
-        style={{ width: 52, height: 52, borderRadius: '50%', background: '#25D366', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 14px rgba(37,211,102,0.4)' }}
-      >
-        {ICONA(26)}
-      </a>
-    </div>
   )
 }

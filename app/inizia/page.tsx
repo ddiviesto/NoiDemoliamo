@@ -11,7 +11,6 @@ import { supabase } from '@/lib/supabase'
 import { registraOAccedi, EmailGiaRegistrata } from '@/lib/registraOAccedi'
 import { SchedaChi, CampiAccesso } from './steps/PassoAccount'
 import { useRouter } from 'next/navigation'
-import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import { RuoloButton, InfoBadge, ErrorBadge, CampoModulo, SceltaPillola, classeCampo } from './steps/PezziFlusso'
 import { GuscioFlusso } from './steps/GuscioFlusso'
 import { StepIntestazione } from './steps/StepIntestazione'
@@ -1643,7 +1642,6 @@ export default function IniziaPage() {
           </>
         )}
 
-      <AiutoWhatsApp soloPc />
     </GuscioFlusso>
   )
 }

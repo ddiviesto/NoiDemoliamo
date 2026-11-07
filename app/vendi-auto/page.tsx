@@ -31,7 +31,6 @@ import AutocompleteIndirizzo, { DatiIndirizzo } from '../inizia/steps/Autocomple
 import { supabase } from '@/lib/supabase'
 import { registraOAccedi, EmailGiaRegistrata } from '@/lib/registraOAccedi'
 import { SchedaChi, CampiAccesso } from '../inizia/steps/PassoAccount'
-import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import { CampoModulo, ErrorBadge, InfoBadge, RuoloButton, SceltaPillola, classeCampo } from '../inizia/steps/PezziFlusso'
 import { GuscioFlusso } from '../inizia/steps/GuscioFlusso'
 import { articolo, articoloDel, articoloSul, nomeVeicolo, veicoloHaCambio, isFemminile } from '@/lib/nomiVeicolo'
@@ -624,7 +623,6 @@ export default function VendiAuto() {
             {invio ? (messaggioInvio || 'Invio in corso...') : passo === 'account' ? (giaRegistrata ? 'Accedi e invia la richiesta' : 'Invia la richiesta') : 'Continua'}
           </button>
         )}
-      <AiutoWhatsApp soloPc />
     </GuscioFlusso>
   )
 }

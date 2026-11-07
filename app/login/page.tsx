@@ -5,7 +5,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import IsolaSito from '../components/IsolaSito'
 import { StrisciaInstalla } from '../components/InstallaApp'
 
@@ -157,7 +156,6 @@ export default function Login() {
       {/* su PC la striscia è di vetro sul lilla, sotto la scatola */}
       <StrisciaInstalla className="hidden sm:flex w-full sm:max-w-md mt-4" />
 
-      <AiutoWhatsApp soloPc />
       </div>
     </main>
   )

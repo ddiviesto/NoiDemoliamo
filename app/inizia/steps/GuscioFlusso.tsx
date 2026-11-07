@@ -18,7 +18,7 @@
 import { TitoloPasso } from './PezziFlusso'
 import Link from 'next/link'
 import Marchio from '../../components/Marchio'
-import { WhatsAppTestata } from '../../components/AiutoWhatsApp'
+import { WhatsAppTestata, WhatsAppBarra } from '../../components/AiutoWhatsApp'
 
 export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, titolo, sotto, icona, onIndietro, lato, passiEtichette, children }: {
   servizio: string
@@ -65,6 +65,8 @@ export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, tit
               {servizio}
             </span>
             <span style={{ fontSize: 12, fontWeight: 600, color: '#3E4C63' }}>{mezzo}</span>
+            {/* ⭐ 07/11 (Davide): l'aiuto WhatsApp nell'isola anche su PC, via il tondo che galleggiava */}
+            <WhatsAppBarra className="ml-1" />
           </span>
         </div>
 

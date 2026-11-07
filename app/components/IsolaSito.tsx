@@ -9,6 +9,7 @@
 // ============================================================
 
 import Marchio from './Marchio'
+import { WhatsAppBarra } from './AiutoWhatsApp'
 
 export default function IsolaSito({ destra, className = '' }: { destra?: React.ReactNode; className?: string }) {
   return (
@@ -17,7 +18,8 @@ export default function IsolaSito({ destra, className = '' }: { destra?: React.R
       style={{ background: 'rgba(255,255,255,0.72)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: '1px solid rgba(255,255,255,0.9)', boxShadow: '0 10px 30px rgba(15,27,51,0.10)', borderRadius: 999, padding: '8px 8px 8px 20px' }}
     >
       <Marchio misura={20} />
-      <span className="flex items-center gap-2.5">{destra}</span>
+      {/* ⭐ 07/11 (Davide): l'aiuto WhatsApp sta nell'isola, prima di quello che vuole la pagina */}
+      <span className="flex items-center gap-2.5"><WhatsAppBarra />{destra}</span>
     </div>
   )
 }

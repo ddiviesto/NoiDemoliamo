@@ -13,7 +13,6 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import AiutoWhatsApp from '../components/AiutoWhatsApp'
 import IsolaSito from '../components/IsolaSito'
 
 type Fase = 'verifica' | 'pronta' | 'link_non_valido'
@@ -209,7 +208,6 @@ export default function NuovaPassword() {
         </div>
       </div>
 
-      <AiutoWhatsApp />
       </div>
     </main>
   )
