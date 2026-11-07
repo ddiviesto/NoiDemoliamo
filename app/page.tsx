@@ -281,7 +281,7 @@ export default function Home() {
       <SezioneInstalla />
 
       <SitoPiede />
-      <AiutoWhatsApp />
+      <AiutoWhatsApp soloPc />
     </main>
   )
 }
