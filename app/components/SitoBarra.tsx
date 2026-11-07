@@ -16,7 +16,7 @@ import { WhatsAppBarra } from './AiutoWhatsApp'
 
 export default function SitoBarra() {
   return (
-    <div className="sticky z-50 -mx-2.5 sm:mx-auto flex items-center justify-between gap-1.5 sm:gap-3 py-2 pl-3 pr-2 sm:py-[9px] sm:pl-4 sm:pr-[9px]" style={{
+    <div className="sticky z-50 -mx-3.5 sm:mx-auto flex items-center justify-between gap-1.5 sm:gap-3 py-2 pl-3 pr-2 sm:py-[9px] sm:pl-4 sm:pr-[9px]" style={{
       top: 14, marginTop: 18, maxWidth: 1000,
       background: 'rgba(255,255,255,0.72)',
       backdropFilter: 'blur(18px) saturate(1.4)',
@@ -27,7 +27,10 @@ export default function SitoBarra() {
     }}>
       {/* ⭐ 27/08: niente tondino accanto al nome — il marchio è la scritta,
           e il suo segno è la fogliolina sulla "i" */}
-      {/* ⭐ 07/11: sul telefono tutto un po' più stretto (marchio 18, meno aria nei
+      {/* ⭐ 07/11 (mockup B "barra-telefono", Davide): sul telefono "Accedi" è una
+          PILLOLA BIANCA COL BORDO CELESTE (come "Torna al sito") e il tondino
+          WhatsApp sta staccato a sinistra, così i tre tasti non si confondono
+          sotto il pollice. Tutto un po' più stretto (marchio 17, meno aria nei
           bottoni, "Richiedi" senza "ora" sotto i 430px) così la barra regge anche
           col tondino WhatsApp: prima "Richiedi ora" andava a capo e usciva dall'isola */}
       <Link href="/" className="flex items-center">
@@ -40,14 +43,14 @@ export default function SitoBarra() {
         <WhatsAppBarra />
         <Link
           href="/login"
-          className="transition-colors hover:bg-blue-600/[0.08] py-[9px] px-2 sm:px-3.5"
-          style={{ fontSize: 13.5, fontWeight: 600, color: '#4A5670', borderRadius: 999 }}
+          className="transition-colors hover:bg-blue-600/[0.08] py-2 sm:py-[9px] px-2.5 min-[400px]:px-3 sm:px-3.5 bg-white sm:bg-transparent border-[1.5px] border-[#BFDBFE] sm:border-0 text-[#1D4ED8] sm:text-[#4A5670]"
+          style={{ fontSize: 13.5, fontWeight: 600, borderRadius: 999 }}
         >
           Accedi
         </Link>
         <Link
           href="/inizia"
-          className="transition-all hover:brightness-105 active:scale-[0.98] whitespace-nowrap py-[11px] px-3.5 sm:px-5"
+          className="transition-all hover:brightness-105 active:scale-[0.98] whitespace-nowrap py-[11px] px-3 min-[400px]:px-3.5 sm:px-5"
           style={{
             fontSize: 13.5, fontWeight: 700, color: '#fff',
             background: 'linear-gradient(135deg, #2563eb, #4f46e5)',

@@ -50,7 +50,7 @@ export function WhatsAppBarra() {
       target="_blank"
       rel="noopener noreferrer"
       aria-label="Chiedi aiuto su WhatsApp"
-      className="sm:hidden flex items-center justify-center flex-shrink-0 transition-colors active:scale-95"
+      className="sm:hidden flex items-center justify-center flex-shrink-0 transition-colors active:scale-95 mr-1.5"
       style={{ width: 34, height: 34, borderRadius: 999, background: '#DCF3E4' }}
     >
       {ICONA(19, '#1F7A43')}
