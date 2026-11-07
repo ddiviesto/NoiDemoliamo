@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AdminSidebar from '../_components/AdminSidebar'
 import IconaVeicolo from '../../components/IconaVeicolo'
+import { TessereFlusso, TesseraFase } from '../../components/TessereFlusso'
 import { nomeAlimentazione } from '@/types/pratica'
 import { STATI_VALUTAZIONE, metaValutazione, NOMI_INTESTAZIONE, NOMI_CASISTICHE, OffertaTipo } from '@/lib/statiValutazione'
 
@@ -188,28 +189,24 @@ export default function Valutazioni() {
         </div>
 
         <div className="px-6 pt-6 flex-1 min-h-0 flex flex-col">
-          {/* FLUSSO: tre fasi in fila con le frecce, poi le due caselle staccate */}
+          {/* FLUSSO: le stesse tessere del flusso pratiche (⭐ 07/11, Davide:
+              "come in demolizione"): tre fasi in fila con le frecce, poi
+              Rifiutata e Chiusa senza freccia. Parole e ordine invariati. */}
           <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">Flusso valutazioni</div>
-          <div className="mb-3 overflow-x-auto">
-            <div className="flex items-center">
-              {STATI_VALUTAZIONE.filter(s => s.inFila).map((s, i) => (
-                <div key={s.chiave} className="flex items-center">
-                  {i > 0 && (
-                    <span style={{ width: 22, display: 'flex', justifyContent: 'center', color: '#C0C7D1' }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                    </span>
-                  )}
-                  <PillolaFase nome={s.label} valore={conta(s.chiave)} attivo={filtro === s.chiave} onClick={() => cambiaFiltro(s.chiave)} />
-                </div>
-              ))}
-              <div style={{ width: 14, flexShrink: 0 }} />
-              {STATI_VALUTAZIONE.filter(s => !s.inFila).map(s => (
-                <div key={s.chiave} className="flex items-center" style={{ marginRight: 14 }}>
-                  <PillolaFase nome={s.label} valore={conta(s.chiave)} attivo={filtro === s.chiave} grigia onClick={() => cambiaFiltro(s.chiave)} />
-                </div>
-              ))}
-            </div>
-          </div>
+          <TessereFlusso colonne={5}>
+            {STATI_VALUTAZIONE.map((s, i, tutti) => (
+              <TesseraFase
+                key={s.chiave}
+                nome={s.label}
+                valore={conta(s.chiave)}
+                attivo={filtro === s.chiave}
+                freccia={s.inFila && !!tutti[i + 1]?.inFila}
+                chiusa={s.chiave === 'passata_demolizione'}
+                rossa={s.chiave === 'rifiutata'}
+                onClick={() => cambiaFiltro(s.chiave)}
+              />
+            ))}
+          </TessereFlusso>
 
           {errore && <div className="mb-3 text-sm rounded-xl p-3" style={{ background: '#FEF6F6', border: '1.5px solid #F3C8C8', color: '#9B1C1C' }}>{errore}</div>}
 
@@ -557,15 +554,3 @@ function SchedaRisposta({ r, chiama, ricarica, pieno }: { r: Richiesta; chiama: 
   )
 }
 
-function PillolaFase({ nome, valore, attivo, grigia, onClick }: { nome: string; valore: number; attivo: boolean; grigia?: boolean; onClick: () => void }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex items-center gap-2 transition-all hover:shadow-md flex-shrink-0"
-      style={{ background: attivo ? '#EFF6FF' : '#fff', border: `1.5px solid ${attivo ? '#2563eb' : '#E5E7EB'}`, borderRadius: 999, padding: '8px 14px 8px 9px', whiteSpace: 'nowrap', boxShadow: attivo ? '0 0 0 3px rgba(37,99,235,0.12)' : '0 1px 3px rgba(16,24,40,0.07)' }}
-    >
-      <span className="flex items-center justify-center rounded-full" style={{ minWidth: 26, height: 26, padding: '0 6px', background: grigia ? '#EDF0F5' : '#EFF4FF', color: grigia ? '#64748B' : '#1D4ED8', fontSize: 13, fontWeight: 800 }}>{valore}</span>
-      <span className="text-[13px] font-bold" style={{ color: '#1F2937' }}>{nome}</span>
-    </button>
-  )
-}
