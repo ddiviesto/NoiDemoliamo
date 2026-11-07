@@ -95,8 +95,8 @@ function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intesta
       if (intestazione === 'altra_persona') return { banner: 'Codice fiscale', titolo: '*Codice fiscale* di chi risulta intestatario al PRA', sotto: 'Lo trovi sul libretto di circolazione o sul certificato di proprietà.' }
       return { banner: 'Codice fiscale', titolo: 'Il tuo *codice fiscale*', sotto: 'Ci serve per verificare eventuali fermi amministrativi al PRA.' }
     case 'foto':
-      // in valutazione le foto sono OBBLIGATORIE (almeno quattro): senza non si valuta
-      return { banner: 'Foto', titolo: `*Foto* ${artDel}`, sotto: 'Ne servono almeno quattro: più sono chiare, più la risposta sarà precisa.' }
+      // ⭐ 07/11 (Davide): le foto NON sono più obbligatorie, come in demolizione
+      return { banner: 'Foto', titolo: `*Foto* ${artDel}`, sotto: 'Più sono chiare, più la risposta sarà precisa. Puoi aggiungerle anche dopo dalla tua area personale.' }
     case 'fermo':
       return { banner: 'Fermo amministrativo', titolo: 'Ci sono *fermi amministrativi* sul mezzo?', sotto: 'Il fermo amministrativo non blocca la demolizione: possiamo aiutarti a svincolare il mezzo dal fermo solo per demolizione. Troverai i moduli da compilare nella tua area personale.' }
     case 'account':
@@ -106,7 +106,6 @@ function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intesta
   }
 }
 
-const FOTO_MINIME = 4
 
 // ============================================================
 export default function VendiAuto() {
@@ -162,7 +161,6 @@ export default function VendiAuto() {
 
   const cfAccetta11 = intestazione === 'societa' || intestazione === 'associazione'
   const cfValido = cfAccetta11 ? (cf.length === 11 || cf.length === 16) : cf.length === 16
-  const numeroFoto = foto.length
 
   // ---- navigazione ----
   function avanti() {
@@ -199,7 +197,6 @@ export default function VendiAuto() {
       if (intestazione !== 'targhe_straniere' && !targhePresenti) return setErrore('Indica se le targhe sono presenti sul mezzo')
     }
     if (passo === 'cf' && !cfValido) return setErrore(cfAccetta11 ? 'Inserisci una partita IVA (11 cifre) o un codice fiscale valido (16 caratteri)' : 'Inserisci un codice fiscale valido di 16 caratteri')
-    if (passo === 'foto' && numeroFoto < FOTO_MINIME) return setErrore(`Aggiungi almeno ${FOTO_MINIME} foto: frontale, posteriore e i due lati. Senza non riusciamo a valutare`)
     if (passo === 'fermo' && !fermo) return setErrore("Seleziona un'opzione per continuare")
     avanti()
   }
@@ -452,7 +449,6 @@ export default function VendiAuto() {
             onAggiungi={nuove => { setFoto(prev => [...prev, ...nuove]); setErrore('') }}
             onRimuovi={i => setFoto(prev => prev.filter((_, j) => j !== i))}
             onContinua={avantiControllato}
-            minime={FOTO_MINIME}
             perChi="chi valuta"
           />
         )}
