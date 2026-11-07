@@ -175,7 +175,9 @@ body {
    pagina non attraversano più tutta la colonna, diventano pillole. */
 @media (min-width: 640px) {
   .flusso-scena .aspect-square { aspect-ratio: auto; min-height: 84px; }
-  .flusso-scena .btn-pagina { width: auto; align-self: flex-start; padding-left: 40px; padding-right: 40px; }
+  /* ⭐ 07/11 (Davide): su PC il bottone di pagina sta AL CENTRO della colonna,
+     in tutti i passi di demolizione e valutazione */
+  .flusso-scena .btn-pagina { width: auto; align-self: center; margin-left: auto; margin-right: auto; padding-left: 40px; padding-right: 40px; }
 }
 
 /* ⭐ 19/08 (Davide: "i testi piccoli non si leggono"): su PC il flusso alza
@@ -489,6 +491,7 @@ body {
   .doc-tessera--drag { border-color: #2563EB; background: #EFF6FF; box-shadow: 0 0 0 3px rgba(37, 99, 235, .15); }
   .doc-tessera--drag .doc-tessera-cap { background: #E4EEFF; border-color: #BFD3F5; color: #1D4ED8; }
 }
+
 
 
 
