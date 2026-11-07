@@ -12,6 +12,7 @@
 // ============================================================
 
 import Link from 'next/link'
+import RipresaBozza from './components/RipresaBozza'
 import type { Metadata } from 'next'
 import AiutoWhatsApp from './components/AiutoWhatsApp'
 import SitoBarra from './components/SitoBarra'
@@ -73,6 +74,8 @@ function Porta({ href, esterno, forte, icona, titolo, pillola, testo, punti, bot
         background: forte ? 'rgba(255,255,255,0.92)' : '#DCF3E4', color: forte ? '#16653C' : '#1F7A43',
       }}>{pillola}</span>
       <p style={{ fontSize: 15, lineHeight: 1.62, margin: '14px 0 16px', color: forte ? '#CFDDFF' : '#5B6779' }}>{testo}</p>
+      {/* ⭐ 07/11: se c'è una richiesta lasciata a metà, lo dice qui */}
+      {meta === 'demolizione' || meta === 'valutazione' ? <RipresaBozza modulo={meta} chiaro={!!forte} /> : null}
 
       <ul style={{ marginBottom: 22 }}>
         {punti.map((p) => (

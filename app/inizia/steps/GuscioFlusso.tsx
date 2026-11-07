@@ -16,6 +16,7 @@
 // ============================================================
 
 import { TitoloPasso } from './PezziFlusso'
+import Link from 'next/link'
 import Marchio from '../../components/Marchio'
 
 export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, titolo, sotto, icona, onIndietro, lato, passiEtichette, children }: {
@@ -54,10 +55,10 @@ export function GuscioFlusso({ servizio, mezzo, passo, totale, titoloBanner, tit
             borderRadius: 999, padding: '8px 8px 8px 16px',
           }}
         >
-          <span className="flex items-center gap-2.5">
-            
+          {/* ⭐ 07/11 (Davide): il marchio riporta al sito; la bozza del modulo resta nel browser finché la scheda è aperta */}
+          <Link href="/" aria-label="Torna al sito" className="flex items-center gap-2.5">
             <Marchio misura={20} />
-          </span>
+          </Link>
           <span className="flex items-center gap-2.5">
             <span style={{ fontSize: 12, fontWeight: 700, color: '#1D4ED8', background: '#EFF6FF', border: '1px solid #DBEAFE', borderRadius: 999, padding: '7px 14px' }}>
               {servizio}

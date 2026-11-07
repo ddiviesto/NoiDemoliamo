@@ -20,7 +20,7 @@
 // cambiano anche qui.
 // ============================================================
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { DatiVeicolo, Intestazione, TipoMezzo, FermoAmministrativo, derivaCasistica, fermoApplicabile } from '../../types/pratica'
 import { StepTipoVeicolo } from '../inizia/steps/StepTipoVeicolo'
@@ -67,6 +67,10 @@ const ETICHETTE: Record<Passo, string> = {
 // I titoli sono GEMELLI di quelli del flusso demolizione (stesse parole,
 // stesso nome del mezzo scelto). Dove il testo è diverso c'è un motivo
 // scritto accanto.
+// ⭐ 07/11 (Davide, stessa regola della demolizione): la BOZZA del modulo
+// vive in sessionStorage finché la scheda è aperta; mai la password, mai le foto.
+const BOZZA_KEY = 'noidemoliamo-bozza-valutazione'
+
 function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intestazione: Intestazione | null, loggato: boolean, giaRegistrata = false): { banner: string; titolo: string; sotto: string } {
   const art = articolo(tipo, tipoAltro)
   const artDel = articoloDel(tipo, tipoAltro)
@@ -171,6 +175,44 @@ export default function VendiAuto() {
   // ---- i passi (cambiano con l'intestazione) e dove siamo ----
   const passi = calcolaPassi(intestazione, erediRinuncia, societaFallita)
   const [idx, setIdx] = useState(0)
+
+  // ---- bozza persistente (vedi BOZZA_KEY) ----
+  const bozzaRipristinata = useRef(false)
+  useEffect(() => {
+    if (bozzaRipristinata.current) return
+    try {
+      const raw = sessionStorage.getItem(BOZZA_KEY)
+      if (raw) {
+        const b = JSON.parse(raw)
+        if (b?.veicolo) setVeicolo(v => ({ ...v, ...b.veicolo }))
+        if (b?.intestazione !== undefined) setIntestazione(b.intestazione)
+        if (b?.erediRinuncia !== undefined) setErediRinuncia(b.erediRinuncia)
+        if (b?.societaFallita !== undefined) setSocietaFallita(b.societaFallita)
+        if (typeof b?.indirizzo === 'string') setIndirizzo(b.indirizzo)
+        if (b?.datiIndirizzo !== undefined) setDatiIndirizzo(b.datiIndirizzo)
+        if (b?.testoIndirizzo) setTestoIndirizzo(b.testoIndirizzo)
+        if (typeof b?.targa === 'string') setTarga(b.targa)
+        if (b?.targhePresenti !== undefined) setTarghePresenti(b.targhePresenti)
+        if (typeof b?.cf === 'string') setCf(b.cf)
+        if (b?.fermo !== undefined) setFermo(b.fermo)
+        if (typeof b?.nome === 'string') setNome(b.nome)
+        if (typeof b?.email === 'string') setEmail(b.email)
+        if (typeof b?.telefono === 'string') setTelefono(b.telefono)
+        if (typeof b?.idx === 'number' && b.idx >= 0) setIdx(b.idx)
+      }
+    } catch {
+      // bozza corrotta o storage bloccato: si riparte da capo
+    }
+    bozzaRipristinata.current = true
+  }, [])
+  useEffect(() => {
+    if (!bozzaRipristinata.current) return
+    try {
+      sessionStorage.setItem(BOZZA_KEY, JSON.stringify({ veicolo, intestazione, erediRinuncia, societaFallita, indirizzo, datiIndirizzo, testoIndirizzo, targa, targhePresenti, cf, fermo, nome, email, telefono, idx }))
+    } catch {
+      // storage pieno o bloccato: il modulo continua senza bozza
+    }
+  }, [veicolo, intestazione, erediRinuncia, societaFallita, indirizzo, datiIndirizzo, testoIndirizzo, targa, targhePresenti, cf, fermo, nome, email, telefono, idx])
   const passo: Passo = passi[Math.min(idx, passi.length - 1)]
   const meta = metaDi(passo, veicolo.tipo, veicolo.tipoAltro, intestazione, !!utenteLoggato, giaRegistrata)
 
@@ -305,6 +347,7 @@ export default function VendiAuto() {
         }
       }
 
+      try { sessionStorage.removeItem(BOZZA_KEY) } catch { /* non bloccante */ }
       router.push('/dashboard')
     } catch (e: unknown) {
       if (e instanceof EmailGiaRegistrata) {
