@@ -267,7 +267,7 @@ export default function HomeDemolitore() {
                 { nome: 'Attesa PRA', valore: conta.targhe, attivo: filtro === 'targhe', onClick: () => cambiaFiltro(filtro === 'targhe' ? 'tutte' : 'targhe'), title: 'Aspettiamo la radiazione al PRA' },
               ]} />
             <TesseraFase nome="Completata" valore={conta.completate} attivo={filtro === 'completate'} chiusa onClick={() => cambiaFiltro(filtro === 'completate' ? 'tutte' : 'completate')} />
-            <TesseraFase nome="Annullate" valore={conta.annullate} grigia attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
+            <TesseraFase nome="Annullate" valore={conta.annullate} rossa attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}
               title={conta.annullate > 0 ? 'Pratiche annullate dopo l\'assegnazione, col motivo' : 'Nessuna pratica annullata'} />
           </TessereFlusso>
           </div>
