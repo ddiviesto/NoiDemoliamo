@@ -119,6 +119,23 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
   const passiTelefono: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra)</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare nella home o sul desktop</>]
   const passiPc: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra) oppure clicca l&apos;iconcina {tasto(<span style={{ display: 'inline-flex', verticalAlign: '-2px' }}>{SCARICA}</span>)} nella barra dell&apos;indirizzo</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare sul desktop e nel menu Start</>]
 
+  // ⭐ 07/11 (Davide, iPhone): col foglio aperto la PAGINA SOTTO NON SCORRE.
+  // Strisciando col dito sul foglio, l'iPhone scorreva la pagina dietro e
+  // faceva l'effetto molla ("sobbalza"). Solo sul telefono (su PC c'è la
+  // nuvoletta e la pagina deve restare libera): il body si inchioda dove sta
+  // e torna al suo posto alla chiusura.
+  useEffect(() => {
+    if (!window.matchMedia('(max-width: 639px)').matches) return
+    const y = window.scrollY
+    const b = document.body.style
+    const prima = { position: b.position, top: b.top, left: b.left, right: b.right, width: b.width, overflow: b.overflow }
+    b.position = 'fixed'; b.top = `-${y}px`; b.left = '0'; b.right = '0'; b.width = '100%'; b.overflow = 'hidden'
+    return () => {
+      b.position = prima.position; b.top = prima.top; b.left = prima.left; b.right = prima.right; b.width = prima.width; b.overflow = prima.overflow
+      window.scrollTo(0, y)
+    }
+  }, [])
+
   // la nuvoletta si chiude cliccando fuori o con Esc
   const nuvola = useRef<HTMLDivElement>(null)
   useEffect(() => {
@@ -147,7 +164,7 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
           lilla sotto. Il foglio esiste solo dopo il clic, quindi `document`
           c'è sempre. */}
       {typeof document !== 'undefined' && createPortal(
-      <div className="sm:hidden fixed inset-0 z-[90] flex items-end justify-center foglio-velo" style={{ background: 'rgba(15,23,42,0.45)' }} onClick={onChiudi}>
+      <div className="sm:hidden fixed inset-0 z-[90] flex items-end justify-center foglio-velo" style={{ background: 'rgba(15,23,42,0.45)', overscrollBehavior: 'contain', touchAction: 'none' }} onClick={onChiudi}>
         <div className="w-full bg-white foglio-sale" style={{ borderRadius: '20px 20px 0 0', padding: '18px 18px calc(22px + env(safe-area-inset-bottom))', boxShadow: '0 -10px 30px rgba(15,27,51,0.18)' }} onClick={e => e.stopPropagation()}>
           <h3 className="text-[16px] font-bold tracking-[-0.3px] text-[#0F172A]">Aggiungi NoiDemoliamo alla home</h3>
           <p className="text-[12.5px] text-gray-500 mt-0.5">{iphone ? 'Su iPhone si fa in tre tocchi:' : 'Si fa in tre passi dal tuo browser:'}</p>
