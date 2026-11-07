@@ -272,6 +272,12 @@ export default function HomeDemolitore() {
           </TessereFlusso>
           </div>
 
+          {/* FILTRI RAPIDI, come nel CRM admin (⭐ 07/11, mockup B) */}
+          <div className="flex gap-1.5 mb-3 flex-wrap text-xs">
+            <ChipFiltro attivo={filtro === 'tutte'} onClick={() => cambiaFiltro('tutte')}>Tutte {pratiche.filter(p => gruppoDi(p) !== 'annullate').length}</ChipFiltro>
+            <ChipFiltro attivo={filtro === 'annullate'} onClick={() => cambiaFiltro(filtro === 'annullate' ? 'tutte' : 'annullate')}>Annullate {conta.annullate}</ChipFiltro>
+          </div>
+
           {/* LISTA RIGHE: clic sulla riga → la TENDINA si srotola sotto
               (blocco unico con la cornice blu, IDENTICO al CRM admin);
               riclic o Esc chiude, cambiare casella chiude */}
@@ -384,6 +390,15 @@ function pillolaStato(p: PraticaDemolitore, gruppo: GruppoPratica): { label: str
 // divisori), hover che tinge di celeste, icona verde con la spunta per le
 // completate, casistica sotto il nome del cliente. Sotto la pillola di
 // stato NIENTE ragione sociale (07/08: era il nome del demolitore stesso)
+// I filtri rapidi sotto le tessere (gemelli di quelli del CRM admin)
+function ChipFiltro({ attivo, onClick, children }: { attivo: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className={`px-3 py-1.5 rounded-full font-medium transition-all ${attivo ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'}`}>
+      {children}
+    </button>
+  )
+}
+
 function RigaPratica({ p, aperta, onOpen }: { p: PraticaDemolitore; aperta: boolean; onOpen: () => void }) {
   const gruppo = gruppoDi(p)
   const chiusa = gruppo === 'completate' || gruppo === 'annullate'

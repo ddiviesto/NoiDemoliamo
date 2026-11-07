@@ -208,6 +208,12 @@ export default function Valutazioni() {
             ))}
           </TessereFlusso>
 
+          {/* FILTRI RAPIDI, come nelle pratiche (⭐ 07/11, mockup B) */}
+          <div className="flex gap-1.5 mb-3 flex-wrap text-xs">
+            <ChipFiltro attivo={filtro === 'tutte'} onClick={() => setFiltro('tutte')}>Tutte {richieste.filter(r => r.stato !== 'chiusa').length}</ChipFiltro>
+            <ChipFiltro attivo={filtro === 'chiusa'} onClick={() => cambiaFiltro('chiusa')}>Chiuse {conta('chiusa')}</ChipFiltro>
+          </div>
+
           {errore && <div className="mb-3 text-sm rounded-xl p-3" style={{ background: '#FEF6F6', border: '1.5px solid #F3C8C8', color: '#9B1C1C' }}>{errore}</div>}
 
           <div className="overflow-auto flex-1 min-h-0 pb-6">
@@ -277,6 +283,10 @@ export default function Valutazioni() {
                             <button onClick={e => { e.stopPropagation(); router.push('/admin') }} className="text-[11px] font-semibold hover:underline" style={{ color: '#1D4ED8', marginTop: 2 }}>Apri la pratica →</button>
                           )}
                         </div>
+
+                        {/* RIQUADRO A DESTRA, come nelle pratiche (⭐ 07/11, mockup B):
+                            prima della risposta i giorni, dopo la cifra offerta */}
+                        <MetricaValutazione r={r} />
                       </div>
 
                       {/* LA TENDINA: si srotola e si riavvolge morbida (grid 0fr↔1fr, come le pratiche) */}
@@ -302,6 +312,44 @@ export default function Valutazioni() {
 // ============================================================
 // LA TENDINA: cinque schede in fila
 // ============================================================
+// I filtri rapidi sotto le tessere (gemelli di quelli delle pratiche)
+function ChipFiltro({ attivo, onClick, children }: { attivo: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button onClick={onClick} className={`px-3 py-1.5 rounded-full font-medium transition-all ${attivo ? 'bg-blue-600 text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'}`}>
+      {children}
+    </button>
+  )
+}
+
+// Il riquadro a destra della riga (⭐ 07/11, mockup B): giorni da quando è
+// arrivata finché non rispondi, poi la cifra offerta (o "Gratis" se hai
+// proposto la demolizione gratuita); rifiutate e chiuse: spazio vuoto come
+// le pratiche chiuse, così le righe restano allineate
+function giorniDa(iso: string): number { return Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)) }
+
+function MetricaValutazione({ r }: { r: Richiesta }) {
+  const giorni = giorniDa(r.creato_il)
+  if (r.stato === 'da_valutare') {
+    const tardi = giorni >= 2
+    return (
+      <div style={{ flexShrink: 0, textAlign: 'center', background: tardi ? '#FCEBEB' : '#F3F5F9', borderRadius: 10, padding: '6px 12px', minWidth: 74 }}>
+        <div className="text-[14px] font-bold" style={{ color: tardi ? '#A32D2D' : '#374151' }}>{giorni}g</div>
+        <div className="text-[10px] font-semibold uppercase" style={{ color: tardi ? '#A32D2D' : '#6B7280' }}>da valutare</div>
+      </div>
+    )
+  }
+  if (r.stato === 'risposta_inviata' || r.stato === 'passata_demolizione') {
+    const cifra = r.offerta_tipo === 'acquisto' && r.offerta_importo ? euro(r.offerta_importo) : 'Gratis'
+    return (
+      <div style={{ flexShrink: 0, textAlign: 'center', background: '#EFF6FF', borderRadius: 10, padding: '6px 12px', minWidth: 74 }}>
+        <div className="text-[14px] font-bold" style={{ color: '#1D4ED8' }}>{cifra}</div>
+        <div className="text-[10px] font-semibold uppercase" style={{ color: '#1D4ED8' }}>offerta</div>
+      </div>
+    )
+  }
+  return <div style={{ flexShrink: 0, minWidth: 74 }} />
+}
+
 function Tendina({ r, chiama, ricarica }: { r: Richiesta; chiama: (b: Record<string, unknown>) => Promise<unknown>; ricarica: () => Promise<void> }) {
   const pieno = r.stato === 'da_valutare' || r.stato === 'chiusa'
   const condizioni = [

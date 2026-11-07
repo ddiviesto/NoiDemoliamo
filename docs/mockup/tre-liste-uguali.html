@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Pratiche, Valutazioni e Demolitore: la stessa pagina</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:14px auto 8px;max-width:1180px;padding:0 4px}
+.crm{width:1180px;margin:0 auto 10px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;display:flex}
+.side{width:150px;background:linear-gradient(180deg,#2563eb 0%,#2563eb 65%,#7CA4F2 100%);color:#fff;padding:14px 12px;flex-shrink:0}
+.side .m{font-weight:800;font-size:14px}.side .s{font-size:9px;letter-spacing:1px;opacity:.8}.side .v{font-size:12px;margin-top:18px;opacity:.9}.side .v div{padding:5px 0}.side .v div.on{font-weight:700;opacity:1}
+.main{flex:1;min-width:0}
+.barra{background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:12px 18px;display:flex;align-items:center;justify-content:space-between}
+.barra b{font-size:15px}.barra small{display:block;font-size:11px;color:#6B7280}
+.cerca{background:#fff;border:1px solid #DBEAFE;border-radius:999px;padding:7px 12px;font-size:12px;color:#9CA3AF;width:170px}
+.corpo{padding:14px 18px 18px}
+.k{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5B6779;margin-bottom:8px}
+.griglia{display:grid;gap:6px;align-items:stretch}.griglia>*{min-width:0}
+.tappa{background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:8px 9px 6px;position:relative;min-height:72px;box-shadow:0 1px 3px rgba(16,24,40,.07)}
+.tappa .n{font-size:18px;font-weight:700;color:#94A3B8;line-height:1}.tappa .n.viva{color:#1D4ED8}.tappa .t{font-size:10.5px;font-weight:700;color:#1E293B;margin-top:3px;line-height:1.2}
+.tappa.on{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15);background:#EFF6FF}.tappa.chiusa{background:#F5F7FB}.tappa.chiusa .n{color:#1F7A43}
+.tappa .sub{border-top:1px solid #EEF1F5;margin-top:6px;padding-top:5px}
+.freccia{position:absolute;right:-9px;top:22px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:6px solid #C3CBD9}
+.chips{display:flex;gap:6px;margin:12px 0}.chips span{font-size:11.5px;font-weight:600;border-radius:999px;padding:5px 11px;background:#fff;border:1px solid #E5E7EB;color:#6B7280}.chips span.on{background:#2563EB;color:#fff;border-color:#2563EB}
+.riga{display:flex;align-items:center;gap:14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:14px;padding:12px 14px;margin-bottom:8px;box-shadow:0 1px 3px rgba(16,24,40,.07)}
+.riga .q{width:44px;height:44px;border-radius:12px;background:#DBEAFE;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.riga .z{min-width:0}.riga .z+.z{border-left:1px solid #EEF1F5;padding-left:14px}
+.riga .t1{font-size:14px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.riga .t2{font-size:12px;color:#4B5563;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.riga .n1{font-size:13px;font-weight:600;color:#111827}
+.pill{display:inline-block;font-size:11px;font-weight:700;border-radius:999px;padding:4px 11px;background:#EFF6FF;color:#1D4ED8}.pill.v{background:#DCF3E4;color:#1F7A43}.pill.r{background:#F3D9D9;color:#A94444}
+.met{flex-shrink:0;text-align:center;background:#F3F5F9;border-radius:10px;padding:6px 12px;min-width:74px}.met b{display:block;font-size:14px;font-weight:700;color:#374151}.met small{display:block;font-size:9.5px;font-weight:600;text-transform:uppercase;color:#6B7280}
+.met.r{background:#FCEBEB}.met.r b,.met.r small{color:#A32D2D}.met.b{background:#EFF6FF}.met.b b,.met.b small{color:#1D4ED8}
+.met.vuota{background:none;min-width:74px}
+</style></head><body>
+<div class="nota"><b>LE TRE LISTE, UNA PAGINA SOLA</b> · Pratiche, Valutazioni e Demolitore oggi hanno già la stessa riga (quadratino, veicolo, cliente, stato). Quello che differisce: la riga dei filtri "Tutte · Annullate" c'è solo nelle Pratiche, e il riquadro a destra con i giorni manca nelle Valutazioni. Tre modi di uniformare.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">A · tutto come Pratiche: filtri e riquadro a destra ovunque</span>
+<span onclick="vista('b',this)">B · come A, nel riquadro delle valutazioni anche la cifra offerta</span>
+<span onclick="vista('c',this)">C · solo la riga dei filtri, il resto com'è</span>
+</div>
+<div id="viste"></div>
+<script>
+const AUTO='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h-2v-5l2-5h12l3 5v5h-2"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/></svg>'
+const OK='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+function tessere(fasi){return `<div class="k">Flusso</div><div class="griglia" style="grid-template-columns:repeat(${fasi.length},minmax(0,1fr));width:calc(${Math.min(1,fasi.length/9)*100}%)">${fasi.map((f,i)=>`<div class="tappa ${f.on?'on':''} ${f.chiusa?'chiusa':''}"><div class="n ${f.n>0?'viva':''}">${f.n}</div><div class="t">${f.t}</div>${(f.sotto||[]).map(s=>`<div class="sub"><div class="n" style="font-size:16px">${s.n}</div><div class="t">${s.t}</div></div>`).join('')}${f.f?'<span class="freccia"></span>':''}</div>`).join('')}</div>`}
+function riga(r,met){return `<div class="riga"><span class="q" ${r.ok?'style="background:#DCF3E4"':''}>${r.ok?OK:AUTO}</span><div class="z" style="flex:1.6"><div class="t1">${r.v}</div><div class="t2">${r.v2}</div></div><div class="z" style="flex:1.3"><div class="n1">${r.c}</div><div class="t2">${r.c2}</div></div><div class="z" style="flex:1.4"><span class="pill ${r.pc||''}">${r.p}</span>${r.p2?`<div class="t2" style="font-size:11px">${r.p2}</div>`:''}</div>${met?`<div class="met ${met.cls||''}"><b>${met.b}</b><small>${met.s}</small></div>`:'<div class="met vuota"></div>'}</div>`}
+function guscio(area, titolo, sotto, dentro){const voci=area==='dem'?['Le mie pratiche','Ritiri','Azienda']:['Pratiche','Valutazioni','Demolitori'];const on=area==='prat'?0:area==='val'?1:0
+  return `<div class="crm"><div class="side"><div class="m">NoiDemoliamo</div><div class="s">${area==='dem'?'AUTODEMOLIZIONI ROSSI':'ADMIN'}</div><div class="v">${voci.map((v,i)=>`<div class="${i===on?'on':''}">${v}</div>`).join('')}</div></div><div class="main"><div class="barra"><div><b>${titolo}</b><small>${sotto}</small></div><span class="cerca">Cerca…</span></div><div class="corpo">${dentro}</div></div></div>`}
+
+const PRAT=[{t:'Da contattare',n:1},{t:'In attesa documenti',n:4,on:true},{t:'In attesa',n:0,f:true},{t:'Documenti da verificare',n:1,f:true},{t:'Da assegnare',n:0,f:true},{t:'Assegnata',n:2,f:true,sotto:[{t:'Allerta 8 ore',n:1}]},{t:'Ritiro Programmato',n:1,f:true},{t:'Ritirata',n:3,f:true,sotto:[{t:'Attesa Certificati',n:2},{t:'Attesa PRA',n:1}]},{t:'Completata',n:12,chiusa:true}]
+const VAL=[{t:'Da valutare',n:2,on:true,f:true},{t:'Risposta inviata',n:1,f:true},{t:'Passata a demolizione',n:3,chiusa:true},{t:'Rifiutata',n:1},{t:'Chiusa',n:0}]
+const DEM=[{t:'Assegnata',n:2,on:true,f:true,sotto:[{t:'Allerta 8 ore',n:1}]},{t:'Ritiro Programmato',n:1,f:true},{t:'Ritirata',n:3,f:true,sotto:[{t:'Attesa Certificati',n:2},{t:'Attesa PRA',n:1}]},{t:'Completata',n:12,chiusa:true},{t:'Annullate',n:0}]
+
+const righePrat=[riga({v:'CK456ZY · Fiat Panda · 2008 · 95.000 km',v2:'Milano (MI)',c:'Mario Rossi',c2:'Persona fisica',p:'In attesa documenti'},{b:'3g',s:'in corso'}),riga({v:'AB123CD · Ford Fiesta · 2011',v2:'Monza (MB)',c:'Lucia Bianchi',c2:'Erede',p:'Da contattare',pc:'r'},{b:'12g',s:'in attesa',cls:'r'})]
+function righeVal(modo){
+  const m1 = modo==='c'?null:{b:'3g',s:'da valutare'}
+  const m2 = modo==='b'?{b:'350 €',s:'offerta',cls:'b'}:modo==='c'?null:{b:'2g',s:'in attesa risposta'}
+  return riga({v:'EF789GH · Fiat Panda · 2008 · 25.000 km',v2:'Milano (MI) · benzina, manuale',c:'Pino Gang',c2:'Persona fisica',p:'Da valutare',p2:'arrivata 3 giorni fa'},m1)+riga({v:'XY321ZW · Toyota Yaris · 2015 · 80.000 km',v2:'Sesto San Giovanni (MI) · ibrida',c:'Anna Verdi',c2:'Persona fisica · targhe smarrite',p:'Risposta inviata',p2:'inviata 2 giorni fa'},m2)
+}
+const righeDem=riga({v:'CK456ZY · Fiat Panda · 2008 · 95.000 km',v2:'Milano (MI)',c:'Mario Rossi',c2:'Persona fisica',p:'Assegnata · fissa il ritiro'},{b:'5h 20m',s:'per fissare',cls:'r'})+riga({v:'JK654LM · Opel Corsa · 2009',v2:'Cinisello Balsamo (MI)',c:'Paolo Neri',c2:'Erede',p:'Ritiro Programmato'},{b:'gio 13',s:'ore 09:00',cls:'b'})
+const chips=(a,b)=>`<div class="chips"><span class="on">${a}</span><span>${b}</span></div>`
+
+function blocco(modo){
+  const prat = guscio('prat','Pratiche','23 totali', tessere(PRAT)+chips('Tutte 23','Annullate 2')+righePrat)
+  const val = guscio('val','Valutazioni','7 totali · 2 da valutare', tessere(VAL)+(modo==='c'||modo==='a'||modo==='b'?chips('Tutte 7','Chiuse 0'):'')+righeVal(modo))
+  const dem = guscio('dem','Le mie pratiche','18 totali', tessere(DEM)+chips('Tutte 18','Annullate 0')+righeDem)
+  return `<div class="eti">Pratiche (riferimento)</div>${prat}<div class="eti">Valutazioni</div>${val}<div class="eti">Area demolitore</div>${dem}`
+}
+const V={
+ a:{s:'<b>A. Tutto come Pratiche.</b> Valutazioni e Demolitore prendono i due pezzi che mancano: la riga dei filtri sotto le tessere ("Tutte · Chiuse" nelle valutazioni, "Tutte · Annullate" dal demolitore) e il <b>riquadro a destra</b> della riga con i giorni ("3g · da valutare", "2g · in attesa risposta"; il demolitore ha già il suo coi tempi del ritiro). Le tre pagine diventano la stessa pagina.', h:blocco('a')},
+ b:{s:'<b>B. Come la A, ma nel riquadro delle valutazioni, dopo la risposta, c’è la cifra offerta</b> ("350 € · offerta", azzurro), così a colpo d’occhio vedi quanto hai proposto. Prima della risposta restano i giorni.', h:blocco('b')},
+ c:{s:'<b>C. Solo la riga dei filtri.</b> Valutazioni e Demolitore prendono i filtri "Tutte · …" sotto le tessere e basta: il riquadro a destra nelle valutazioni non c’è (al suo posto lo spazio vuoto, come le pratiche chiuse), il demolitore tiene il suo. Il minimo per sentirle uguali.', h:blocco('c')},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
