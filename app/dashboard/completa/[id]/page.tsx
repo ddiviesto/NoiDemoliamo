@@ -281,7 +281,7 @@ export default function CompletaPratica() {
       <button onClick={avanti} disabled={invio} className="btn-pagina mt-4 disabled:opacity-70">
         {invio ? 'Creo la tua pratica…' : ultimo ? 'Crea la pratica' : 'Continua'}
       </button>
-      <AiutoWhatsApp />
+      <AiutoWhatsApp soloPc />
     </GuscioFlusso>
   )
 }

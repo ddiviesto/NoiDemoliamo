@@ -9,7 +9,7 @@ import TabDocumenti from './TabDocumenti'
 import TabRitiro from './TabRitiro'
 import TabStato from './TabStato'
 import TabChat from './TabChat'
-import AiutoWhatsApp from '../../components/AiutoWhatsApp'
+import AiutoWhatsApp, { WhatsAppTestata } from '../../components/AiutoWhatsApp'
 import IsolaSito, { PillolaIsola } from '../../components/IsolaSito'
 
 export interface Pratica {
@@ -446,6 +446,8 @@ export default function DettaglioPraticaCliente() {
           <span className="flex-shrink-0 text-[10px] font-medium px-2.5 py-1 rounded-full" style={{ background: badge.bg, color: badge.text }}>
             {badge.label}
           </span>
+          {/* ⭐ 07/11 (mockup B): l'aiuto WhatsApp nella testata */}
+          <WhatsAppTestata />
         </div>
 
         <div className="p-4 sm:p-0 flex flex-col gap-3 spazio-linguette">
@@ -555,7 +557,7 @@ export default function DettaglioPraticaCliente() {
 
       {/* ⭐ 29/07 (mockup approvato): sulla tab CHAT niente bottone WhatsApp
           — lì si parla già con NoiDemoliamo, e copriva il tasto d'invio */}
-      {tab !== 'chat' && <AiutoWhatsApp alzato />}
+      {tab !== 'chat' && <AiutoWhatsApp soloPc />}
     </main>
   )
 }

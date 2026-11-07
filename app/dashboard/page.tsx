@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { pillolaStato } from '@/lib/statiCliente'
 import IconaVeicolo from '../components/IconaVeicolo'
-import AiutoWhatsApp from '../components/AiutoWhatsApp'
+import AiutoWhatsApp, { WhatsAppTestata } from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
 import CardValutazione, { RichiestaValutazione } from './CardValutazione'
 import Marchio from '../components/Marchio'
@@ -242,6 +242,8 @@ export default function DashboardCliente() {
             <Marchio misura={17} chiaro />
             <span className="text-[13.5px] font-medium leading-tight truncate" style={{ opacity: 0.92 }}>{nomeUtente ? `Ciao, ${nomeUtente}!` : 'La tua area personale'}</span>
           </div>
+          {/* ⭐ 07/11 (mockup B): l'aiuto WhatsApp nella testata, accanto all'ingranaggio */}
+          <WhatsAppTestata />
           {/* Ingranaggio: apre il pannello impostazioni (Esci ora vive lì) */}
           <button
             onClick={() => setImpostazioniAperte(true)}
@@ -429,7 +431,7 @@ export default function DashboardCliente() {
         </div>
       </div>
 
-      <AiutoWhatsApp />
+      <AiutoWhatsApp soloPc />
 
       <PannelloImpostazioni
         aperto={impostazioniAperte}

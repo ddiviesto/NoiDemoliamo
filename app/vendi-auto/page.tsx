@@ -624,7 +624,7 @@ export default function VendiAuto() {
             {invio ? (messaggioInvio || 'Invio in corso...') : passo === 'account' ? (giaRegistrata ? 'Accedi e invia la richiesta' : 'Invia la richiesta') : 'Continua'}
           </button>
         )}
-      <AiutoWhatsApp />
+      <AiutoWhatsApp soloPc />
     </GuscioFlusso>
   )
 }

@@ -1083,7 +1083,7 @@ Il flusso `/vendi-auto` (10 passi, vedi 5.2) c'è e salva; **manca tutto il lato
 - **Il telefono del profilo aggiorna le pratiche in corso** (è il recapito operativo per il ritiro); il **nome** sulle pratiche resta quello dichiarato (è l'identità sui documenti, lo corregge l'admin)
 - **Il delegato è DELLA PRATICA**, non dell'account: pratiche diverse possono avere delegati diversi. Il cliente può modificarlo solo prima dell'assegnazione
 - **Il cliente può correggersi da solo** (eliminare foto e file finché la pratica è modificabile): meno chat di supporto per "ho caricato la foto sbagliata"
-- ⭐ **Assistenza WhatsApp sempre a un tocco**: pulsante fisso su tutte le pagine cliente (**+39 351 828 0493**), etichetta "Serve aiuto?" ciclica
+- ⭐ **Assistenza WhatsApp sempre a un tocco** (**+39 351 828 0493**): su PC il tondo verde fisso in basso a destra con l'etichetta "Serve aiuto?" ciclica. ⭐ 07/11 (Davide, mockup B `whatsapp-telefono`): **sul telefono, nei moduli e nell'area del cliente, il tondo non c'è più** (stava tra i piedi: copriva Continua e "Aggiungi un altro veicolo"); l'aiuto è il **tondino traslucido nella testata blu** (`WhatsAppTestata`, stessa quadra della freccia indietro): nei flussi a destra, nell'area del cliente accanto all'ingranaggio, nella pratica dopo il cartellino dello stato. Sul sito e sull'accesso il tondo resta anche sul telefono
 - **Il ritiro ha una tab sua** (Documenti · Ritiro · Stato · Chat): la tab Documenti serve SOLO a caricare; data fissata e originali da consegnare vivono nella tab Ritiro, col pallino rosso di novità sulla linguetta finché il ritiro non è avvenuto
 
 ## 9.2 Operative e workflow

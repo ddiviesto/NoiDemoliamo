@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Il tasto WhatsApp sul telefono</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:900px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.due{display:flex;gap:40px;justify-content:center;padding:14px 20px 40px}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:0 0 10px 4px;text-align:center}
+.tel{width:390px;height:780px;border-radius:38px;border:8px solid #0F172A;background:#fff;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(15,27,51,.25)}
+.testata{background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:12px;height:62px}
+.tondo{width:38px;height:38px;border-radius:999px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.passo{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#DBEAFE}.tit{font-size:14px;font-weight:600}
+.fascetta{background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:9px 16px;font-size:11.5px;display:flex;align-items:center}.fascetta b{color:#1D4ED8}.fascetta span{color:#3E4C63;font-weight:600;margin-left:6px}
+.corpo{padding:22px 24px}
+h2{font-size:24px;font-weight:800;letter-spacing:-.5px;line-height:1.2;margin:0 0 6px}h2 i{font-style:normal;background:linear-gradient(90deg,#2563EB,#7C3AED);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sotto{font-size:13.5px;color:#4B5563;margin:0 0 16px;line-height:1.5}
+.op{display:flex;align-items:center;gap:12px;background:#fff;border:2px solid #D7DCE5;border-radius:13px;padding:12px;margin-bottom:9px}
+.op .i{width:38px;height:38px;border-radius:11px;background:#DBEAFE;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.op .t{font-size:14px;font-weight:700}.op .s{font-size:12px;color:#4B5563;margin-top:2px}
+.op .o{width:22px;height:22px;border-radius:999px;border:2px solid #D1D5DB;margin-left:auto;flex-shrink:0}
+.op.sel{background:#EFF6FF;border-color:#1D4ED8}.op.sel .i{background:#2563eb;color:#fff}.op.sel .o{border-color:#2563eb;background:#2563eb}
+.btn{display:block;background:#2563EB;color:#fff;font-weight:700;font-size:15px;text-align:center;padding:15px;border-radius:999px;margin-top:14px;box-shadow:0 6px 16px rgba(37,99,235,.25)}
+.marchio{font-size:17px;font-weight:800}.marchio em{font-style:normal;font-weight:400}
+.ingr{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.85);color:#1D4ED8;display:flex;align-items:center;justify-content:center;margin-left:auto}
+.area{padding:16px}.area h1{font-size:15px;font-weight:700;margin:0 0 10px}
+.card{background:#fff;border:1px solid #E5E7EB;border-radius:16px;margin-bottom:12px;overflow:hidden;box-shadow:0 2px 10px rgba(15,27,51,.05)}
+.card .r{display:flex;align-items:center;gap:11px;padding:14px 13px 14px 16px}.card .targa{font-size:15px;font-weight:800;letter-spacing:.5px}.card .mezzo{font-size:12px;color:#6B7280;margin-top:2px}
+.pill{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:#FEF3C7;color:#92400E;margin-left:auto}.pill.b{background:#DBEAFE;color:#1E40AF}
+.card .f{display:flex;align-items:center;justify-content:space-between;background:#F8FAFC;border-top:1px solid #F1F3F6;padding:8px 13px 8px 16px;font-size:12px;color:#1D4ED8;font-weight:600}
+.add{display:flex;align-items:center;gap:12px;background:#fff;border:1px dashed #C7CEDB;border-radius:16px;padding:14px 16px}.add .q{width:34px;height:34px;border-radius:10px;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700}.add .t{font-size:13.5px;font-weight:600}.add .s{font-size:11.5px;color:#6B7280}
+/* il tondo verde di oggi */
+.wa{position:absolute;right:16px;bottom:16px;display:flex;align-items:center;gap:8px}
+.wa .et{background:#fff;border:1px solid #E5E7EB;border-radius:20px;padding:6px 12px;font-size:11.5px;font-weight:600;color:#374151;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.wa .v{width:52px;height:52px;border-radius:50%;background:#25D366;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(37,211,102,.4)}
+/* A: rigo in fondo al passo */
+.rigo{margin-top:18px;text-align:center;font-size:12.5px;color:#6B7280}.rigo a{color:#1F7A43;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;gap:5px}
+/* B: nella testata */
+.wa-testata{width:34px;height:34px;border-radius:999px;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+/* C: nella fascetta / sotto il titolo */
+.wa-fascetta{margin-left:auto;display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:#1F7A43}
+.wa-titolo{display:flex;align-items:center;justify-content:space-between}.wa-titolo a{font-size:12px;font-weight:700;color:#1F7A43;display:inline-flex;align-items:center;gap:5px}
+/* D: tondo piccolo e sobrio */
+.wa-mini{position:absolute;right:14px;bottom:14px;width:42px;height:42px;border-radius:50%;background:#fff;border:1px solid #E5E7EB;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(15,27,51,.12)}
+</style></head><body>
+<div class="nota"><b>IL TASTO WHATSAPP SUL TELEFONO</b> · oggi è un tondo verde grande che galleggia in basso a destra, con la nuvoletta "Serve aiuto?" che lampeggia: sta tra i piedi sia nei moduli che nell'area del cliente. Quattro modi. A sinistra un passo del modulo, a destra l'area del cliente.</div>
+<div class="schede">
+<span class="qui" onclick="vista('0',this)">Oggi</span>
+<span onclick="vista('a',this)">A · via il tondo, un rigo in fondo al passo</span>
+<span onclick="vista('b',this)">B · nella testata blu, accanto all'ingranaggio</span>
+<span onclick="vista('c',this)">C · nella fascetta e sotto il titolo</span>
+<span onclick="vista('d',this)">D · tondo piccolo e sobrio, senza nuvoletta</span>
+</div>
+<div id="viste"></div>
+<script>
+const WA=(c,w)=>`<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="${c}"><path d="M12 2a10 10 0 0 0-8.58 15.13L2 22l4.97-1.38A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.19-1.19l-.3-.18-2.95.82.8-2.87-.2-.31A8 8 0 1 1 12 20zm4.42-5.9c-.24-.12-1.43-.7-1.65-.78s-.38-.12-.54.12-.62.78-.76.94-.28.18-.52.06a6.55 6.55 0 0 1-1.93-1.19 7.24 7.24 0 0 1-1.33-1.66c-.14-.24 0-.37.1-.49s.24-.28.36-.42a1.64 1.64 0 0 0 .24-.4.44.44 0 0 0-.02-.42c-.06-.12-.54-1.3-.74-1.78s-.39-.4-.54-.41h-.46a.88.88 0 0 0-.64.3 2.68 2.68 0 0 0-.84 2 4.65 4.65 0 0 0 .98 2.47 10.66 10.66 0 0 0 4.08 3.6 13.68 13.68 0 0 0 1.36.5 3.27 3.27 0 0 0 1.5.1 2.46 2.46 0 0 0 1.61-1.14 2 2 0 0 0 .14-1.14c-.06-.1-.22-.16-.46-.28z"/></svg>`
+const FRECCIA='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>'
+const AUTO='<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l1-6-2-5H6L4 11z"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></svg>'
+const PERSONA='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
+const ING='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>'
+const tondoOggi=`<div class="wa"><span class="et">Serve aiuto?</span><span class="v">${WA('#fff',26)}</span></div>`
+const mini=`<span class="wa-mini">${WA('#25D366',22)}</span>`
+function flusso(v){
+  const destra = v==='b' ? `<span class="wa-testata">${WA('#fff',19)}</span>` : '<span style="width:38px"></span>'
+  const fascettaExtra = v==='c' ? `<span class="wa-fascetta">${WA('#1F7A43',15)} Aiuto</span>` : ''
+  const rigo = v==='a' ? `<div class="rigo">Hai un dubbio? <a>${WA('#1F7A43',14)} Scrivici su WhatsApp</a></div>` : ''
+  const galleggia = v==='0' ? tondoOggi : v==='d' ? mini : ''
+  return `<div class="tel">
+    <div class="testata"><span class="tondo">${FRECCIA}</span><div style="flex:1;display:flex;align-items:center;justify-content:center;gap:10px"><span class="tondo" style="border-radius:12px;background:rgba(255,255,255,.2)">${AUTO}</span><div><div class="passo">Passo 3 di 10</div><div class="tit">A chi è intestato</div></div></div>${destra}</div>
+    <div class="fascetta"><b>Richiesta demolizione gratuita</b><span>Autovettura</span>${fascettaExtra}</div>
+    <div class="corpo">
+      <h2>A chi è <i>intestato</i> il veicolo?</h2>
+      <p class="sotto">Serve per capire quali documenti preparare.</p>
+      <div class="op sel"><span class="i">${PERSONA}</span><div><div class="t">A un privato cittadino</div><div class="s">Il proprietario è una persona</div></div><span class="o"></span></div>
+      <div class="op"><span class="i">${PERSONA}</span><div><div class="t">A una società o azienda</div><div class="s">Mezzo intestato a una ditta</div></div><span class="o"></span></div>
+      <div class="op"><span class="i">${PERSONA}</span><div><div class="t">A una persona deceduta</div><div class="s">Il proprietario è venuto a mancare</div></div><span class="o"></span></div>
+      <div class="op"><span class="i">${PERSONA}</span><div><div class="t">A un'associazione</div><div class="s">Mezzo intestato a un ente</div></div><span class="o"></span></div>
+      <span class="btn">Continua</span>
+      ${rigo}
+    </div>
+    ${galleggia}
+  </div>`
+}
+function area(v){
+  const testataExtra = v==='b' ? `<span class="wa-testata" style="margin-left:auto">${WA('#fff',19)}</span><span class="ingr" style="margin-left:0">${ING}</span>` : `<span class="ingr">${ING}</span>`
+  const titolo = v==='c' ? `<div class="wa-titolo"><h1>Le tue pratiche</h1><a>${WA('#1F7A43',15)} Serve aiuto?</a></div>` : '<h1>Le tue pratiche</h1>'
+  const galleggia = v==='0' ? tondoOggi : v==='d' ? mini : ''
+  return `<div class="tel">
+    <div class="testata"><span class="marchio"><em>Noi</em>Demoliamo</span><span style="font-size:13.5px;opacity:.92;margin-left:auto">Ciao, Davide!</span>${testataExtra}</div>
+    <div class="area">
+      ${titolo}
+      <div class="card"><div class="r"><div><div class="targa">FG 123 KL</div><div class="mezzo">Fiat Panda · Napoli</div></div><span class="pill">In attesa documenti</span></div><div class="f"><span>Carica i documenti</span><span>›</span></div></div>
+      <div class="card"><div class="r"><div><div class="targa">EX 456 ZT</div><div class="mezzo">Ford Fiesta · Caserta</div></div><span class="pill b">Ritiro programmato</span></div><div class="f"><span>Guarda giorno e ora del ritiro</span><span>›</span></div></div>
+      <div class="add"><span class="q">+</span><div><div class="t">Aggiungi un altro veicolo</div><div class="s">Sempre gratis, come la prima</div></div></div>
+    </div>
+    ${galleggia}
+  </div>`
+}
+const pagina=v=>`<div class="due"><div><div class="eti">Un passo del modulo</div>${flusso(v)}</div><div><div class="eti">L'area del cliente</div>${area(v)}</div></div>`
+const V={
+ '0':{s:'<b>Oggi.</b> Tondo verde da 52px che galleggia in basso a destra, con la nuvoletta "Serve aiuto?" che compare e scompare ogni 15 secondi. Copre il bottone Continua a fine pagina e la riga "Aggiungi un altro veicolo"; sparisce quando scorri in giù e quando scrivi, ma resta ingombrante.', h:pagina('0')},
+ a:{s:'<b>A. Via il tondo.</b> Niente che galleggia. Nel modulo, sotto Continua, un rigo discreto: "Hai un dubbio? Scrivici su WhatsApp". Nell’area del cliente niente: l’assistenza WhatsApp sta già nelle Impostazioni (ingranaggio) e dentro la pratica c’è la Chat. Il più pulito.', h:pagina('a')},
+ b:{s:'<b>B. Nella testata blu.</b> Un tondino bianco trasparente col simbolo WhatsApp, nella testata: nel modulo a destra (dove oggi c’è lo spazio vuoto della freccia), nell’area del cliente accanto all’ingranaggio. Sempre a portata di pollice, mai sopra il contenuto.', h:pagina('b')},
+ c:{s:'<b>C. Nella fascetta e sotto il titolo.</b> Nel modulo la parola "Aiuto" col simbolo verde a destra nella fascetta azzurra; nell’area del cliente "Serve aiuto?" a destra di "Le tue pratiche". Resta in pagina, non galleggia, ma si legge sempre.', h:pagina('c')},
+ d:{s:'<b>D. Tondo piccolo e sobrio.</b> Resta in basso a destra ma diventa un tondino bianco da 42px col simbolo verde, senza ombra verde e <b>senza la nuvoletta "Serve aiuto?"</b>. Sparisce quando scorri in giù e quando scrivi, come oggi. Il cambiamento più piccolo.', h:pagina('d')},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='0'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>

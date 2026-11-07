@@ -1643,7 +1643,7 @@ export default function IniziaPage() {
           </>
         )}
 
-      <AiutoWhatsApp />
+      <AiutoWhatsApp soloPc />
     </GuscioFlusso>
   )
 }

@@ -371,13 +371,6 @@ body {
   .spazio-linguette { padding-bottom: 16px; }
 }
 
-/* il tondo verde di WhatsApp sale sopra la barra delle linguette (solo
-   telefono: su PC la barra sta nel flusso e non copre niente) */
-.whatsapp-alzato { bottom: calc(92px + env(safe-area-inset-bottom)) !important; }
-@media (min-width: 640px) {
-  .whatsapp-alzato { bottom: 16px !important; }
-}
-
 
 /* ============================================================
    LA SCENA DELLA HOME — "la 500 va dove scegli"
