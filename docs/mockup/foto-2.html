@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il passo delle foto, rifinito</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; color: #0F172A; background: #E9ECF3; }
+  .nota { background: #05070F; color: #9AA7C4; padding: 12px 16px; text-align: center; font-size: 12.5px; line-height: 1.6; }
+  .nota b { color: #fff; }
+  .schede { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 12px; background: #05070F; position: sticky; top: 0; z-index: 60; }
+  .schede span { font-size: 12px; font-weight: 700; padding: 7px 14px; border-radius: 999px; border: 1.5px solid #232B44; color: #9AA7C4; cursor: pointer; }
+  .schede span.qui { background: #fff; color: #05070F; border-color: #fff; }
+  .vista { display: none; } .vista.viva { display: block; }
+  .spiega { max-width: 1120px; margin: 0 auto; padding: 18px 20px 0; font-size: 14px; color: #4C4A70; line-height: 1.7; }
+  .spiega b { color: #1E1B4B; }
+  .momenti { max-width: 1180px; margin: 14px auto 36px; padding: 0 20px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; }
+  .momento h4 { font-size: 12px; font-weight: 700; color: #7C8AA5; text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+  .colonna { background: linear-gradient(160deg,#F5F3FE,#EDE9FE); border: 1px solid #D8DEE9; border-radius: 16px; padding: 18px; min-height: 420px; }
+  .sottotit { font-size: 13px; color: #4B5A72; line-height: 1.55; margin-bottom: 10px; }
+  .avviso { display: flex; gap: 8px; align-items: center; background: #EFF6FF; border-left: 3px solid #2563eb; border-radius: 0 8px 8px 0; padding: 8px 10px; font-size: 12px; color: #1E40AF; margin-bottom: 12px; }
+  .riga { display: flex; align-items: center; gap: 12px; background: #fff; border: 1.5px solid #E5E7EB; border-radius: 14px; padding: 13px 14px; margin-bottom: 8px; }
+  .riga i { width: 38px; height: 38px; border-radius: 11px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .riga b { display: block; font-size: 13.5px; color: #111827; } .riga small { font-size: 11.5px; color: #6B7280; }
+  .riga .fr { margin-left: auto; color: #9CA3AF; }
+  .pillole { display: flex; gap: 8px; margin: 10px 0; }
+  .pillole span { flex: 1; display: flex; align-items: center; justify-content: center; gap: 7px; background: #fff; border: 1.5px solid #E2E8F0; border-radius: 999px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: #1D4ED8; }
+  .conta { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: #4B5563; margin: 12px 0 8px; }
+  .conta .ok { color: #16A34A; font-weight: 600; }
+  .conta .q { color: #6B7280; font-weight: 500; }
+  .griglia { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .griglia.quattro { grid-template-columns: repeat(4, 1fr); }
+  .foto { position: relative; aspect-ratio: 1; border-radius: 12px; background: linear-gradient(135deg,#C9D2E3,#9FB0CA); overflow: hidden; }
+  .foto .x { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; border-radius: 999px; background: rgba(15,23,42,.6); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .posto { aspect-ratio: 1; border-radius: 12px; border: 1.5px dashed #C7D0DE; background: rgba(255,255,255,.6); display: flex; align-items: center; justify-content: center; color: #B8C2D1; font-size: 13px; font-weight: 700; }
+  .piu { aspect-ratio: 1; border-radius: 12px; border: 2px dashed #93C5FD; background: #EFF6FF; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #1D4ED8; font-size: 10.5px; font-weight: 700; text-align: center; line-height: 1.2; }
+  .piu b { width: 28px; height: 28px; border-radius: 999px; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+  .incoraggia { display: flex; gap: 10px; align-items: flex-start; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 12px; padding: 11px 12px; font-size: 12.5px; color: #1E3A8A; line-height: 1.5; margin-top: 12px; }
+  .incoraggia.verde { background: #DCF3E4; border-color: #B7E4C7; color: #1F7A43; }
+  .incoraggia i { width: 30px; height: 30px; border-radius: 9px; background: #DBEAFE; flex-shrink: 0; }
+  .incoraggia.verde i { background: #B7E4C7; }
+  .btn { margin-top: 12px; text-align: center; border-radius: 999px; padding: 13px; font-size: 14px; font-weight: 600; }
+  .btn.bianco { background: #fff; border: 1.5px solid #BFDBFE; color: #1D4ED8; }
+  .btn.blu { background: linear-gradient(90deg,#1d4ed8,#2563eb); color: #fff; box-shadow: 0 6px 18px rgba(37,99,235,.35); }
+  .btn.spento { background: #E5E7EB; color: #9CA3AF; }
+  .barra4 { display: flex; gap: 5px; margin-top: 6px; }
+  .barra4 i { flex: 1; height: 5px; border-radius: 999px; background: #E2E8F0; } .barra4 i.on { background: #2563eb; }
+</style>
+</head>
+<body>
+
+<div class="nota"><b>IL PASSO DELLE FOTO, RIFINITO</b> &middot; senza stravolgere: resta scatta/galleria, la griglia con la ✕ e l&rsquo;incoraggiamento. Il problema: dopo la prima foto le due righe grandi &ldquo;Scatta&rdquo; e &ldquo;Carica&rdquo; restano l&igrave; e il cliente non capisce cosa deve fare. Tre modi, ognuno visto in tre momenti: nessuna foto, una foto, quattro foto. Vale per demolizione e valutazione.</div>
+<div class="schede">
+  <span class="qui" onclick="vista('a',this)">A &middot; le righe spariscono, resta il +</span>
+  <span onclick="vista('b',this)">B &middot; le righe diventano due pillole sotto la griglia</span>
+  <span onclick="vista('c',this)">C &middot; quattro posti da riempire</span>
+</div>
+<div id="viste"></div>
+
+<script>
+  const CAM = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>'
+  const GAL = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>'
+  const INFO = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>'
+  const testa = `<div class="sottotit">Aiutano il demolitore a capire le condizioni dell&rsquo;autovettura e a scegliere il mezzo di trasporto corretto.</div><div class="avviso">${INFO} Frontale, posteriore, laterali e abitacolo. Non serve che siano perfette.</div>`
+  const righe = `<div class="riga"><i>${CAM}</i><div><b>Scatta una foto</b><small>Apre la fotocamera</small></div><span class="fr">›</span></div><div class="riga"><i>${GAL}</i><div><b>Carica dalla galleria</b><small>Da telefono o PC</small></div><span class="fr">›</span></div>`
+  const pillole = `<div class="pillole"><span>${CAM} Scatta</span><span>${GAL} Galleria</span></div>`
+  const foto = (n) => Array.from({ length: n }, () => '<div class="foto"><span class="x">✕</span></div>').join('')
+  const piu = '<div class="piu"><b>+</b>Aggiungi<br>altra foto</div>'
+  const inc1 = `<div class="incoraggia"><i></i><span><b>Ottimo inizio!</b><br>Aggiungi <b>almeno 3 altre foto</b> (frontale, posteriore, laterali, abitacolo) per aiutare il demolitore a preventivare meglio.</span></div>`
+  const inc4 = `<div class="incoraggia verde"><i></i><span><b>Perfetto!</b> Hai caricato un buon numero di foto. Puoi continuare o aggiungerne ancora.</span></div>`
+  const conta = (n, pronte) => `<div class="conta"><span>${n} ${n === 1 ? 'foto caricata' : 'foto caricate'}</span>${pronte ? '<span class="ok">✓ Pronte</span>' : `<span class="q">consigliate 4</span>`}</div>`
+  const colonna = (titolo, dentro) => `<div class="momento"><h4>${titolo}</h4><div class="colonna">${dentro}</div></div>`
+
+  // A · dopo la prima foto le due righe spariscono: resta la griglia col +, che apre il foglietto scatta/galleria (c'è già)
+  const A = [
+    colonna('Nessuna foto', `${testa}${righe}<div class="btn bianco">Continua senza foto, le aggiungo dopo</div>`),
+    colonna('Una foto', `${testa}${conta(1, false)}<div class="griglia">${foto(1)}${piu}</div>${inc1}<div class="btn bianco">Continua comunque con 1 foto</div>`),
+    colonna('Quattro foto', `${testa}${conta(4, true)}<div class="griglia">${foto(4)}${piu}</div>${inc4}<div class="btn blu">Continua con 4 foto</div>`),
+  ].join('')
+  // B · le righe diventano due pillole piccole sotto la griglia
+  const B = [
+    colonna('Nessuna foto', `${testa}${righe}<div class="btn bianco">Continua senza foto, le aggiungo dopo</div>`),
+    colonna('Una foto', `${testa}${conta(1, false)}<div class="griglia">${foto(1)}</div>${pillole}${inc1}<div class="btn bianco">Continua comunque con 1 foto</div>`),
+    colonna('Quattro foto', `${testa}${conta(4, true)}<div class="griglia">${foto(4)}</div>${pillole}${inc4}<div class="btn blu">Continua con 4 foto</div>`),
+  ].join('')
+  // C · quattro posti da riempire, senza nomi: si vede quante ne mancano a colpo d'occhio
+  const posti = (n) => `<div class="griglia quattro">${foto(n)}${Array.from({ length: Math.max(0, 4 - n) }, (_, i) => i === 0 ? piu.replace('Aggiungi<br>altra foto', 'Aggiungi') : `<div class="posto">${n + i + 1}</div>`).join('')}${n >= 4 ? piu.replace('Aggiungi<br>altra foto', 'Altra') : ''}</div><div class="barra4">${[0,1,2,3].map(i => `<i class="${i < n ? 'on' : ''}"></i>`).join('')}</div>`
+  const C = [
+    colonna('Nessuna foto', `${testa}${righe}<div class="conta"><span>0 di 4 foto consigliate</span></div>${posti(0)}<div class="btn bianco">Continua senza foto, le aggiungo dopo</div>`),
+    colonna('Una foto', `${testa}<div class="conta"><span>1 di 4 foto consigliate</span></div>${posti(1)}${inc1}<div class="btn bianco">Continua comunque con 1 foto</div>`),
+    colonna('Quattro foto', `${testa}<div class="conta"><span>4 di 4 foto</span><span class="ok">✓ Pronte</span></div>${posti(4)}${inc4}<div class="btn blu">Continua con 4 foto</div>`),
+  ].join('')
+
+  const V = {
+    a: { spiega: 'Prima foto fatta, <b>le due righe grandi spariscono</b>: resta la griglia con le foto, la ✕ e il riquadro <b>&ldquo;+ Aggiungi altra foto&rdquo;</b>, che apre il foglietto scatta/galleria (c&rsquo;&egrave; gi&agrave;). Una sola cosa da fare per volta: all&rsquo;inizio scegli come, poi aggiungi. Tutto il resto &egrave; come oggi.', html: A },
+    b: { spiega: 'Come la A, ma invece di sparire del tutto le due righe <b>si rimpiccioliscono in due pillole</b> sotto la griglia (&ldquo;Scatta&rdquo; e &ldquo;Galleria&rdquo;): la scelta resta a vista, senza i due scatoloni. Il + non serve pi&ugrave;.', html: B },
+    c: { spiega: 'Come la A, ma la griglia mostra <b>quattro posti</b> numerati da riempire (senza dire &ldquo;davanti&rdquo; o &ldquo;lato destro&rdquo;: solo 1 2 3 4) e una barretta che si colora. Si vede a colpo d&rsquo;occhio quante ne mancano. Dopo la quarta compare &ldquo;Altra&rdquo; per chi vuole aggiungerne.', html: C },
+  }
+  const viste = document.getElementById('viste')
+  for (const k of Object.keys(V)) viste.insertAdjacentHTML('beforeend', `<div class="vista ${k === 'a' ? 'viva' : ''}" id="vista-${k}"><div class="spiega">${V[k].spiega}</div><div class="momenti">${V[k].html}</div></div>`)
+  function vista(k, el) {
+    document.querySelectorAll('.vista').forEach(x => x.classList.toggle('viva', x.id === 'vista-' + k))
+    document.querySelectorAll('.schede span').forEach(x => x.classList.remove('qui'))
+    el.classList.add('qui')
+  }
+</script>
+</body>
+</html>

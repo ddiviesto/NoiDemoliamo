@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>Flusso pratiche a tessere, parole e ordine di oggi</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:14px auto 8px;max-width:1180px;padding:0 4px}
+.crm{width:1180px;margin:0 auto 10px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;display:flex;min-height:400px}
+.side{width:170px;background:linear-gradient(180deg,#2563eb 0%,#2563eb 65%,#7CA4F2 100%);color:#fff;padding:16px 14px}
+.side .m{font-weight:800;font-size:15px}.side .s{font-size:9px;letter-spacing:1px;opacity:.8;margin-top:1px}.side .v{font-size:12px;margin-top:22px;opacity:.9}.side .v div{padding:6px 0}
+.main{flex:1;min-width:0}
+.barra{background:#EFF6FF;border-bottom:1px solid #DBEAFE;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+.barra b{font-size:16px}.barra small{display:block;font-size:11px;color:#6B7280;margin-top:1px}
+.cerca{background:#fff;border:1px solid #DBEAFE;border-radius:999px;padding:8px 14px;font-size:12.5px;color:#9CA3AF;width:200px}
+.corpo{padding:16px 22px}
+.k{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#5B6779;margin-bottom:8px}
+.fila{display:flex;gap:6px;align-items:flex-start}
+.col{display:flex;flex-direction:column;gap:6px;flex:1;min-width:0}
+.stacco{width:10px;flex:none}
+.tappa{background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:9px 10px;position:relative;min-height:62px}
+.tappa .n{font-size:20px;font-weight:700;color:#1D4ED8;line-height:1}.tappa .t{font-size:11.5px;font-weight:700;color:#1E293B;margin-top:4px;line-height:1.2}.tappa .s{font-size:10.5px;color:#6B7280;margin-top:2px;line-height:1.3}
+.tappa.zero .n{color:#94A3B8}
+.tappa.on{border-color:#2563EB;box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+.tappa.chiusa{background:#F5F7FB}.tappa.chiusa .n{color:#1F7A43}
+.tappa.fuori{background:#F5F7FB;border-style:dashed}
+.tappa.rossa{background:#FCEBEB;border-color:#F3C8C8}.tappa.rossa .n,.tappa.rossa .t{color:#A32D2D}
+.tappa.piccola{min-height:0;padding:7px 10px}.tappa.piccola .n{font-size:15px}.tappa.piccola .t{font-size:11px;margin-top:2px}
+.freccia{position:absolute;right:-9px;top:26px;width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:6px solid #C3CBD9}
+.lista{margin-top:14px;background:#fff;border:1.5px solid #E5E7EB;border-radius:14px;padding:30px;text-align:center;font-size:13px;color:#6B7280}
+.filtri{display:flex;gap:6px;margin-top:12px}.filtri span{font-size:12px;font-weight:700;border-radius:999px;padding:6px 12px;background:#fff;border:1px solid #E5E7EB;color:#4B5563}.filtri span.on{background:#2563EB;color:#fff;border-color:#2563EB}
+.dem{width:1180px;margin:0 auto 34px;border-radius:14px;overflow:hidden;box-shadow:0 16px 44px rgba(15,27,51,.14);border:1px solid #D8DEE9;background:#ECEEF2;display:flex;min-height:230px}
+</style></head><body>
+<div class="nota"><b>FLUSSO PRATICHE A TESSERE</b> · la veste B con <b>le parole di oggi, nell'ordine di oggi</b>: Da contattare · In attesa documenti · In attesa › Documenti da verificare › Da assegnare › Assegnata (sotto: Allerta 8 ore) › Ritiro Programmato › Ritirata (sotto: Attesa Certificati, Attesa PRA) › Completata. Niente è rinominato, niente è spostato. Sotto, il demolitore con le stesse tessere che lo riguardano.</div>
+<div class="schede">
+<span class="qui" onclick="vista('a',this)">B1 · tessere con numero e nome</span>
+<span onclick="vista('b',this)">B2 · come B1, più una riga che spiega la fase</span>
+<span onclick="vista('c',this)">B3 · come B2, "Da contattare" e "In attesa" tratteggiate (fuori fila)</span>
+</div>
+<div id="viste"></div>
+<script>
+// LE PAROLE DI OGGI, NELL'ORDINE DI OGGI (da app/admin/page.tsx)
+const FILA=[
+ {t:'Da contattare',n:0,fuori:true,rossaSe:true,s:'libretto, certificato o fermo da chiarire'},
+ {t:'In attesa documenti',n:4,s:'il cliente deve caricarli',freccia:false},
+ {t:'In attesa',n:0,fuori:true,s:'pratiche in pausa',freccia:true},
+ {t:'Documenti da verificare',n:0,s:'inviati, li controlli tu',freccia:true},
+ {t:'Da assegnare',n:0,s:'documenti ok, scegli il demolitore',freccia:true},
+ {t:'Assegnata',n:0,s:'il demolitore fissa il ritiro',freccia:true,dem:true,sotto:[{t:'Allerta 8 ore',n:0,rossaSe:true}]},
+ {t:'Ritiro Programmato',n:0,s:'giorno e ora fissati',freccia:true,dem:true},
+ {t:'Ritirata',n:0,s:'veicolo preso in carico',freccia:true,dem:true,sotto:[{t:'Attesa Certificati',n:0},{t:'Attesa PRA',n:0}]},
+ {t:'Completata',n:0,s:'radiazione PRA emessa',chiusa:true,dem:true},
+]
+function tessera(f,i,opz){
+  const cls=['tappa',f.n===0?'zero':'',i===1?'on':'',f.chiusa?'chiusa':'',(opz.tratteggio&&f.fuori)?'fuori':'',(f.rossaSe&&f.n>0)?'rossa':''].filter(Boolean).join(' ')
+  return `<div class="${cls}"><div class="n">${f.n}</div><div class="t">${f.t}</div>${opz.spiega?`<div class="s">${f.s}</div>`:''}${f.freccia?'<span class="freccia"></span>':''}</div>`
+}
+function sotto(f){ return (f.sotto||[]).map(s=>`<div class="tappa piccola ${s.n===0?'zero':''} ${(s.rossaSe&&s.n>0)?'rossa':''}"><div class="n">${s.n}</div><div class="t">${s.t}</div></div>`).join('') }
+function flusso(opz,dem){
+  const fasi = dem ? FILA.filter(f=>f.dem) : FILA
+  return `<div class="k">Flusso pratiche</div><div class="fila">${fasi.map((f,i)=>{
+    const col=`<div class="col">${tessera(f,dem?i+1:i,opz)}${sotto(f)}</div>`
+    // gli stacchi di oggi: dopo "Da contattare" e dopo "In attesa documenti"
+    const stacco = (!dem && (i===0||i===1)) ? '<span class="stacco"></span>' : ''
+    return col+stacco
+  }).join('')}</div>`
+}
+function guscio(dentro, dem){
+  const side = dem
+    ? `<div class="side"><div class="m">NoiDemoliamo</div><div class="s">AUTODEMOLIZIONI ROSSI</div><div class="v"><div>Le mie pratiche</div><div>Ritiri</div><div>Azienda</div></div></div>`
+    : `<div class="side"><div class="m">NoiDemoliamo</div><div class="s">ADMIN</div><div class="v"><div>Pratiche</div><div>Valutazioni</div><div>Demolitori</div></div></div>`
+  const lista=`<div class="filtri"><span class="on">Tutte 4</span><span>Annullate 0</span></div><div class="lista">Nessuna pratica in questa vista.</div>`
+  return `<div class="${dem?'dem':'crm'}">${side}<div class="main"><div class="barra"><div><b>${dem?'Le mie pratiche':'Pratiche'}</b><small>${dem?'3 totali':'4 totali'}</small></div><span class="cerca">Cerca…</span></div><div class="corpo">${dentro}${dem?'':lista}</div></div></div>`
+}
+const V={
+ a:{s:'<b>B1.</b> Ogni pillola di oggi diventa una tessera: numero grande e nome, <b>identici a oggi</b>. Gli stacchi restano dove sono (dopo "Da contattare" e dopo "In attesa documenti"), le frecce restano dove sono (da "In attesa" in poi), "Allerta 8 ore" sta sotto Assegnata e "Attesa Certificati" e "Attesa PRA" sotto Ritirata, come oggi. Le tessere a zero hanno il numero grigio; "Da contattare" e "Allerta 8 ore" diventano rosse quando contano qualcosa, come oggi. Il demolitore ha Assegnata (con Allerta 8 ore), Ritiro Programmato, Ritirata (con Attesa Certificati e Attesa PRA), Completata: le stesse parole.', h:guscio(flusso({spiega:false,tratteggio:false}))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(flusso({spiega:false,tratteggio:false},true),true)},
+ b:{s:'<b>B2.</b> Come la B1, più <b>una riga piccola sotto ogni nome</b> che spiega cosa vuol dire la fase ("il cliente deve caricarli", "inviati, li controlli tu", "il demolitore fissa il ritiro"). I nomi non cambiano: la riga aiuta chi guarda la pagina per la prima volta, e per il demolitore spiega cosa tocca a lui.', h:guscio(flusso({spiega:true,tratteggio:false}))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(flusso({spiega:true,tratteggio:false},true),true)},
+ c:{s:'<b>B3.</b> Come la B2, ma "Da contattare" e "In attesa", che oggi sono già fuori dalla fila (anomalie e pause, non fasi), hanno il <b>bordo tratteggiato e il fondo grigio chiaro</b>: si vede che non sono tappe del percorso, pur restando esattamente dove stanno oggi.', h:guscio(flusso({spiega:true,tratteggio:true}))+`<div class="eti">Così lo vede il demolitore</div>`+guscio(flusso({spiega:true,tratteggio:true},true),true)},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='a'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div><div class="eti">Admin</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+</script></body></html>
