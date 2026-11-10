@@ -29,7 +29,7 @@ import { StepCondizioniVeicolo } from '../inizia/steps/StepCondizioniVeicolo'
 import { StepFoto } from '../inizia/steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from '../inizia/steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
-import { registraOAccedi, EmailGiaRegistrata } from '@/lib/registraOAccedi'
+import { registraOAccedi, annullaRegistrazione, EmailGiaRegistrata } from '@/lib/registraOAccedi'
 import { SchedaChi, CampiAccesso } from '../inizia/steps/PassoAccount'
 import { CampoModulo, ErrorBadge, InfoBadge, RuoloButton, SceltaPillola, classeCampo } from '../inizia/steps/PezziFlusso'
 import { GuscioFlusso } from '../inizia/steps/GuscioFlusso'
@@ -276,13 +276,17 @@ export default function VendiAuto() {
     }
 
     setInvio(true)
+    // ⭐ 08/11: l'account è nato in QUESTO invio? Se poi il salvataggio fallisce va tolto
+    let accountNuovo = false
     try {
       // 1. account (o sessione già aperta)
       let userId = utenteLoggato?.id
       if (!userId) {
         setMessaggioInvio('Creo il tuo account...')
         // ⭐ 07/11: se l'email ha già un account si entra con la password scritta
-        userId = await registraOAccedi(email.trim(), password)
+        const acc = await registraOAccedi(email.trim(), password)
+        userId = acc.id
+        accountNuovo = acc.nuovo
         await supabase.from('utenti').upsert({
           id: userId, nome: nome.trim(), email: email.trim(), telefono: telefono.trim(), tipo: 'cliente', stato: 'attivo',
         }, { onConflict: 'id', ignoreDuplicates: true })
@@ -356,6 +360,9 @@ export default function VendiAuto() {
         setInvio(false)
         return
       }
+      // ⭐ 08/11 (Davide): salvataggio fallito con l'account appena creato: l'account
+      // si toglie subito, così riprovando l'email non risulta "già registrata"
+      if (accountNuovo) await annullaRegistrazione()
       // nel registro vanno TUTTE le proprietà (gli errori di Supabase non si vedono con un semplice console.error)
       const tutto = e && typeof e === 'object' ? Object.fromEntries(Object.getOwnPropertyNames(e).map(k => [k, (e as Record<string, unknown>)[k]])) : e
       console.error('Errore invio richiesta valutazione:', JSON.stringify(tutto, null, 2))

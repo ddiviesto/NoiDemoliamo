@@ -17,12 +17,14 @@ export class EmailGiaRegistrata extends Error {
   }
 }
 
-export async function registraOAccedi(email: string, password: string): Promise<string> {
+/** `nuovo` = l'account è nato adesso (non era un cliente che è rientrato):
+ *  serve a sapere se, a salvataggio fallito, va tolto (annullaRegistrazione). */
+export async function registraOAccedi(email: string, password: string): Promise<{ id: string; nuovo: boolean }> {
   const { data: reg, error: errReg } = await supabase.auth.signUp({ email, password })
   if (!errReg) {
     const id = reg.user?.id
     if (!id) throw new Error('Utente non creato')
-    return id
+    return { id, nuovo: true }
   }
   const m = (errReg.message || '').toLowerCase()
   const giaRegistrata = m.includes('already registered') || m.includes('already been registered') || m.includes('user already exists')
@@ -31,5 +33,23 @@ export async function registraOAccedi(email: string, password: string): Promise<
   // già registrata: proviamo ad entrare con la password scritta
   const { data: acc, error: errAcc } = await supabase.auth.signInWithPassword({ email, password })
   if (errAcc || !acc.user) throw new EmailGiaRegistrata()
-  return acc.user.id
+  return { id: acc.user.id, nuovo: false }
+}
+
+// ⭐ 08/11 (Davide): l'account nasce PRIMA del salvataggio della richiesta.
+// Se il salvataggio fallisce, l'account appena creato va tolto subito, se no
+// resta orfano e al tentativo dopo il sito dice "email già registrata".
+// Il server (/api/annulla-registrazione) cancella solo chi chiama, solo se
+// è nato da pochi minuti e non ha né pratiche né valutazioni. Non lancia mai:
+// è una pulizia, l'errore vero resta quello del salvataggio.
+export async function annullaRegistrazione(): Promise<void> {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    const res = await fetch('/api/annulla-registrazione', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` } })
+    const esito = await res.json().catch(() => null)
+    if (esito?.eliminato) await supabase.auth.signOut({ scope: 'local' })
+  } catch {
+    // pulizia non riuscita: l'account resta, lo toglie l'admin con "Pulisci account senza pratiche"
+  }
 }

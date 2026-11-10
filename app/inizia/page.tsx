@@ -8,7 +8,7 @@ import { StepCondizioniVeicolo } from './steps/StepCondizioniVeicolo'
 import { StepFoto } from './steps/StepFoto'
 import AutocompleteIndirizzo, { DatiIndirizzo } from './steps/AutocompleteIndirizzo'
 import { supabase } from '@/lib/supabase'
-import { registraOAccedi, EmailGiaRegistrata } from '@/lib/registraOAccedi'
+import { registraOAccedi, annullaRegistrazione, EmailGiaRegistrata } from '@/lib/registraOAccedi'
 import { SchedaChi, CampiAccesso } from './steps/PassoAccount'
 import { useRouter } from 'next/navigation'
 import { RuoloButton, InfoBadge, ErrorBadge, CampoModulo, SceltaPillola, classeCampo } from './steps/PezziFlusso'
@@ -826,6 +826,8 @@ export default function IniziaPage() {
   async function handleSubmit() {
     setLoading(true)
     setError('')
+    // ⭐ 08/11: l'account è nato in QUESTO invio? Se poi il salvataggio fallisce va tolto
+    let accountNuovo = false
     try {
       let userId: string
       if (utenteLoggato) {
@@ -835,7 +837,9 @@ export default function IniziaPage() {
       } else {
         setLoadingMessage('Creo il tuo account...')
         // ⭐ 07/11: se l'email ha già un account si entra con la password scritta
-        userId = await registraOAccedi(dati.email, dati.password)
+        const acc = await registraOAccedi(dati.email, dati.password)
+        userId = acc.id
+        accountNuovo = acc.nuovo
       }
 
       const cas = derivaCasistica(dati.intestazione, dati.erediRinuncia, dati.societaFallita)
@@ -931,6 +935,9 @@ export default function IniziaPage() {
         else { setGiaRegistrata(true); update({ password: '' }) }
         return
       }
+      // ⭐ 08/11 (Davide): salvataggio fallito con l'account appena creato: l'account
+      // si toglie subito, così riprovando l'email non risulta "già registrata"
+      if (accountNuovo) await annullaRegistrazione()
       console.error('Errore invio pratica:', e)
       setError(traduciErrore(e))
     } finally {
