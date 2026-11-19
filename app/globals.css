@@ -12,12 +12,49 @@
 html {
   scrollbar-gutter: stable;
   background: #e0e7ff;
+  /* ⭐ 19/11 (Davide, home del sito: "a destra c'è ancora questa barra"): la
+     barra di scorrimento della pagina è SOTTILE e SENZA FONDO in tutto il
+     sito (bastoncino grigio, niente binario bianco con le freccette di
+     Windows): sotto si vede il colore della pagina. */
+  scrollbar-width: thin;
+  scrollbar-color: #C3CBD9 transparent;
 }
+/* sulla home il colore dietro la barra è il lilla di base della pagina */
+html:has(main.sito-home) { background: #F5F3FE; }
 /* ⭐ 07/11 (Davide): sulle pagine con la scena lilla (flussi, accesso, area
    cliente) lo spazio riservato alla barra di scorrimento prendeva il lavanda
    di sopra e si vedeva come una striscia a destra: qui prende il lilla
    della scena, così sparisce nell'insieme */
 html:has(main.flusso-scena) { background: #F5F3FE; }
+/* ⭐ 19/11 (Davide: "a destra si vede ancora quel rettangolo", provato con
+   le foto di Chrome vero): col lilla piatto la striscia si vedeva lo stesso,
+   perché tagliava GLI ALONI della scena, e Chrome nello spazio riservato
+   alla barra di scorrimento dipinge solo un colore, mai una sfumatura.
+   Quindi su PC, nelle pagine con la scena:
+   - lo spazio riservato NON C'È (scrollbar-gutter: auto): se la pagina non
+     scorre, a destra non c'è niente, gli aloni arrivano al bordo;
+   - se la pagina scorre compare una barra SOTTILE col fondo trasparente, e
+     il contenuto NON si sposta: il margine a sinistra vale quanto la barra
+     (100vw - 100%), così il centro resta dov'era;
+   - gli aloni li dipinge la pagina intera (html), `main` e `body` sono
+     trasparenti. Sono gli stessi di .flusso-scena più sotto: se cambiano
+     lì, cambiano anche qui. */
+@media (min-width: 640px) {
+  html:has(main.flusso-scena) {
+    scrollbar-gutter: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #C3CBD9 transparent;
+    padding-left: calc(100vw - 100%);
+    background-color: #F5F3FE;
+    background-image:
+      radial-gradient(900px 460px at 12% -6%, #E4ECFF 0%, rgba(228, 236, 255, 0) 62%),
+      radial-gradient(820px 480px at 92% 24%, #E9E3FF 0%, rgba(233, 227, 255, 0) 62%),
+      radial-gradient(900px 520px at 30% 104%, #DED6FB 0%, rgba(222, 214, 251, 0) 66%);
+    background-repeat: no-repeat;
+  }
+  html:has(main.flusso-scena) body,
+  html:has(main.flusso-scena) main.flusso-scena { background: transparent; }
+}
 
 /* ⭐ 05/08 (mockup A approvato): nelle AREE DI LAVORO (admin e demolitore,
    la classe la mettono le sidebar) lo spazio riservato si SPEGNE — quelle
@@ -535,5 +572,8 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .foglio-velo, .foglio-sale, .nuvola-entra { animation: none; }
 }
+
+
+
 
 

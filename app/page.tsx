@@ -136,7 +136,7 @@ function Passo({ numero, titolo, testo, tempo }: { numero: number; titolo: strin
 
 export default function Home() {
   return (
-    <main className="flex-1" style={{
+    <main className="flex-1 sito-home" style={{
       // ⭐ 18/08 (tinta 3 scelta da Davide): base LILLA CHIARA come l'aria del
       // flusso /inizia, con tre aloni sopra (azzurro in alto, viola a destra,
       // lilla più carico in basso). Prima era quasi bianca e il fondo pagina
