@@ -6,8 +6,9 @@ import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { pillolaStato } from '@/lib/statiCliente'
 import IconaVeicolo from '../components/IconaVeicolo'
-import { WhatsAppTestata } from '../components/AiutoWhatsApp'
+import { WhatsAppTestata, WhatsAppBarra } from '../components/AiutoWhatsApp'
 import PannelloImpostazioni from './PannelloImpostazioni'
+import AggiungiVeicolo from './AggiungiVeicolo'
 import CardValutazione, { RichiestaValutazione } from './CardValutazione'
 import Marchio from '../components/Marchio'
 
@@ -220,6 +221,8 @@ export default function DashboardCliente() {
         >
           <Marchio misura={20} />
           <span className="flex items-center gap-2.5">
+            {/* ⭐ 19/11: l'aiuto WhatsApp anche in questa isola (mancava da quando il tondo galleggiante è stato tolto) */}
+            <WhatsAppBarra />
             <span style={{ fontSize: 13, fontWeight: 600, color: '#3E4C63' }}>{nomeUtente ? `Ciao, ${nomeUtente}` : 'La tua area personale'}</span>
             <button
               onClick={() => setImpostazioniAperte(true)}
@@ -403,28 +406,10 @@ export default function DashboardCliente() {
                 <CardValutazione key={v.id} r={v} onCambiata={ricaricaValutazioni} />
               ))}
 
-              {/* Nuova richiesta: card in fila con le pratiche (variante B su
-                  mockup 22/07 — via il riquadro tratteggiato col +) */}
-              <button
-                onClick={() => router.push('/inizia')}
-                className="w-full text-left hover:!border-[#BFDBFE] active:scale-[0.995]"
-                style={{ background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 16, padding: '12px 13px', transition: 'border-color 0.15s' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-                  {/* ⭐ 28/07 (mockup approvato): quadratino blu pieno col + */}
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 3px 9px rgba(37,99,235,0.25)' }}>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 600, fontSize: 13.5, color: '#111827' }}>Aggiungi un altro veicolo</div>
-                    <div style={{ fontSize: 11, color: '#6B7280', marginTop: 1 }}>Sempre gratis, come la prima</div>
-                  </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="9 18 15 12 9 6" /></svg>
-                </div>
-              </button>
-
-              {/* ⭐ 08/10 (Davide, mockup 6): anche su PC è la stessa riga del
-                  telefono (la pillola blu centrata del 05/10 è stata tolta) */}
+              {/* ⭐ 19/11 (Davide, mockup A "aggiungi-veicolo"): una PILLOLA affusolata e
+                  centrata che chiede se il veicolo è da rottamare o da far valutare
+                  (prima era la riga larga quanto le pratiche e portava solo a /inizia) */}
+              <AggiungiVeicolo />
             </div>
           )}
 

@@ -12,12 +12,28 @@
 html {
   scrollbar-gutter: stable;
   background: #e0e7ff;
-  /* ⭐ 19/11 (Davide, home del sito: "a destra c'è ancora questa barra"): la
-     barra di scorrimento della pagina è SOTTILE e SENZA FONDO in tutto il
-     sito (bastoncino grigio, niente binario bianco con le freccette di
-     Windows): sotto si vede il colore della pagina. */
-  scrollbar-width: thin;
-  scrollbar-color: #C3CBD9 transparent;
+}
+/* ⭐ 19/11 (Davide, home del sito: "a destra c'è ancora questa barra", poi
+   "le freccette non si possono levare?"): la barra di scorrimento della
+   pagina è SOLO UN BASTONCINO grigio in tutto il sito: niente binario
+   bianco e niente freccette di Windows, sotto si vede il colore della
+   pagina. La disegniamo noi (::-webkit-scrollbar, Chrome, Edge, Safari).
+   ⚠️ Su Chrome le proprietà standard scrollbar-width / scrollbar-color
+   SPENGONO il disegno nostro e fanno tornare le freccette: per questo
+   stanno solo dentro @supports, per Firefox che non ha l'altro modo. */
+html::-webkit-scrollbar { width: 10px; height: 10px; }
+html::-webkit-scrollbar-track { background: transparent; }
+html::-webkit-scrollbar-corner { background: transparent; }
+html::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+html::-webkit-scrollbar-thumb {
+  background-color: #C3CBD9;
+  border-radius: 999px;
+  border: 2px solid transparent;   /* aria attorno: il bastoncino sembra più sottile */
+  background-clip: content-box;
+}
+html::-webkit-scrollbar-thumb:hover { background-color: #A8B2C1; }
+@supports not selector(::-webkit-scrollbar) {
+  html { scrollbar-width: thin; scrollbar-color: #C3CBD9 transparent; }
 }
 /* sulla home il colore dietro la barra è il lilla di base della pagina */
 html:has(main.sito-home) { background: #F5F3FE; }
@@ -33,7 +49,7 @@ html:has(main.flusso-scena) { background: #F5F3FE; }
    Quindi su PC, nelle pagine con la scena:
    - lo spazio riservato NON C'È (scrollbar-gutter: auto): se la pagina non
      scorre, a destra non c'è niente, gli aloni arrivano al bordo;
-   - se la pagina scorre compare una barra SOTTILE col fondo trasparente, e
+   - se la pagina scorre compare il bastoncino del sito (vedi sopra), e
      il contenuto NON si sposta: il margine a sinistra vale quanto la barra
      (100vw - 100%), così il centro resta dov'era;
    - gli aloni li dipinge la pagina intera (html), `main` e `body` sono
@@ -42,8 +58,6 @@ html:has(main.flusso-scena) { background: #F5F3FE; }
 @media (min-width: 640px) {
   html:has(main.flusso-scena) {
     scrollbar-gutter: auto;
-    scrollbar-width: thin;
-    scrollbar-color: #C3CBD9 transparent;
     padding-left: calc(100vw - 100%);
     background-color: #F5F3FE;
     background-image:
@@ -572,6 +586,11 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .foglio-velo, .foglio-sale, .nuvola-entra { animation: none; }
 }
+
+
+
+
+
 
 
 

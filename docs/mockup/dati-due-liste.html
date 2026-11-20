@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>I dati nelle due liste: demolizione e valutazione</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#ECEEF2;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none;max-width:1560px;margin:0 auto;padding:6px 22px 50px}.vista.viva{display:block}
+.spiega{padding:16px 2px 4px;font-size:14px;color:#3E4C63;line-height:1.7}.spiega b{color:#0F1B33}
+h2{font-size:13px;letter-spacing:1px;text-transform:uppercase;color:#1D4ED8;margin:26px 0 10px;display:flex;align-items:center;gap:10px}h2 small{font-size:11.5px;letter-spacing:0;text-transform:none;color:#6B7280;font-weight:500}
+.blocco{border:2px solid #2563EB;border-radius:16px;background:#F7F8FB;box-shadow:0 4px 16px rgba(37,99,235,.14)}
+.riga{background:#EFF6FF;border-radius:13px 13px 0 0;padding:13px 16px;display:flex;align-items:center;gap:14px}
+.ico{width:46px;height:46px;border-radius:12px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#2563EB}.ico.verde{background:#DCF3E4;color:#1F7A43}
+.col{min-width:0}.col+.col{border-left:1px solid #DCE6F5;padding-left:14px}
+.t1{font-size:15px;font-weight:700;color:#111827;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.t2{font-size:12.5px;color:#4B5563;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.n1{font-size:13.5px;font-weight:600;color:#111827}
+.pill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 12px;background:#fff;border:1px solid #BFDBFE;color:#1D4ED8}.pill.v{color:#1F7A43;border-color:#A7DDBA}
+.sotto{font-size:11px;color:#6B7280;margin-top:4px}
+.box{flex-shrink:0;text-align:center;background:#F3F5F9;border-radius:10px;padding:6px 12px;min-width:74px}.box b{display:block;font-size:14px;color:#374151}.box i{font-style:normal;font-size:10px;font-weight:600;text-transform:uppercase;color:#6B7280}.box.blu{background:#EFF6FF}.box.blu b,.box.blu i{color:#1D4ED8}
+.azioni{background:#EFF6FF;padding:0 16px 12px;display:flex;gap:8px;flex-wrap:wrap}
+.az{background:#fff;border:1.5px solid #BFDBFE;color:#1D4ED8;font-size:11.5px;font-weight:700;border-radius:999px;padding:6px 12px}.az.r{border-color:#F0C4C4;color:#A94444}
+.niente{font-size:11.5px;color:#9CA3AF;font-style:italic;padding:4px 0}
+.fila{padding:14px;display:flex;gap:10px;align-items:stretch;flex-wrap:wrap}
+.sch{flex:1;min-width:200px;background:#fff;border:1.5px solid #E5E7EB;border-radius:12px;padding:11px 13px;position:relative}.sch.l{flex:1.25;min-width:250px}.sch.cel{border-color:#BFDBFE}
+.tit{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:700;color:#0F1B33;margin-bottom:7px}.tit:before{content:"";width:3px;height:13px;background:#2563eb;border-radius:2px}
+.mat{margin-left:auto;width:22px;height:22px;border-radius:7px;border:1.5px solid #E5E7EB;display:flex;align-items:center;justify-content:center;color:#2563EB;font-size:11px}
+.r{display:flex;justify-content:space-between;gap:8px;min-height:27px;padding:5px 0;border-bottom:1px solid #F5F7FA;font-size:11.5px;align-items:baseline}.r:last-child{border-bottom:none}
+.r b{font-weight:600;color:#1E293B;white-space:nowrap}.r span{color:#6B7280;text-align:right}.r .p{background:#EFF6FF;color:#1D4ED8;font-weight:700;border-radius:999px;padding:1px 8px;font-size:11px}
+.cond{display:flex;gap:5px;flex-wrap:wrap;padding-top:7px}.cond span{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 9px;background:#FBE2E2;color:#A94444}.cond span.ok{background:#DCF3E4;color:#1F7A43}
+.voce{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid #F1F4F8;font-size:12px;color:#3E4C63}.voce:last-of-type{border-bottom:none}.voce .q{width:60px;flex-shrink:0;font-size:9.5px;font-weight:700;color:#94A3B8;text-transform:uppercase;line-height:1.4}
+.voce .e{display:inline-block;font-size:10px;font-weight:700;border-radius:20px;padding:2px 9px;background:#EEF1F5;color:#5B6779}.voce .e.b{background:#DBEAFE;color:#1D4ED8}.voce .e.g{background:#DCF3E4;color:#1F7A43}
+.campo{display:flex;gap:6px;margin-top:8px;align-items:center}.campo i{flex:1;font-style:normal;border:1.5px solid #E5E7EB;border-radius:999px;padding:6px 12px;font-size:11.5px;color:#9CA3AF}.campo u{width:30px;height:30px;border-radius:999px;background:#2563eb;display:block}
+.foto{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.foto i{aspect-ratio:1;border-radius:8px;background:#DDE3EC;display:block}
+.risp{background:#DCF3E4;border:1px solid #A7DDBA;border-radius:10px;padding:9px 11px;font-size:11.5px;color:#1F7A43;line-height:1.5}
+.num{display:inline-flex;width:19px;height:19px;border-radius:999px;background:#F59E0B;color:#fff;font-size:10.5px;font-weight:800;align-items:center;justify-content:center;flex-shrink:0;margin-left:5px;vertical-align:middle}
+.sch>.num{position:absolute;top:-8px;right:-8px}
+.elenco{background:#fff;border:1.5px solid #E5E7EB;border-radius:14px;padding:14px 18px;margin-top:22px}.elenco h3{margin:0 0 8px;font-size:14px}.elenco ol{margin:0;padding:0;list-style:none}.elenco li{display:flex;gap:10px;font-size:13px;color:#3E4C63;line-height:1.55;padding:6px 0;border-bottom:1px solid #F1F4F8}.elenco li:last-child{border-bottom:none}.elenco li .num{margin:1px 0 0}
+.nuovo{outline:2px dashed #22A559;outline-offset:2px}
+.leg{font-size:12px;color:#6B7280;margin:8px 2px 0}.leg b{color:#1F7A43}
+</style></head><body>
+<div class="nota"><b>I DATI NELLE DUE LISTE DELL'ADMIN</b> · come sono messi oggi in demolizione e in valutazione (riga e tendina aperta), con le differenze numerate in arancione. Nella seconda scheda, una proposta di valutazione riordinata come la demolizione. I dati sono di esempio, presi dalla tua pratica di prova.</div>
+<div class="schede">
+<span class="qui" onclick="vista('oggi',this)">Com'è oggi</span>
+<span onclick="vista('prop',this)">Proposta · valutazione riordinata come la demolizione</span>
+</div>
+<div id="viste"></div>
+<script>
+const AUTO='<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l1-6-2-5H6L4 11z"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></svg>'
+const n=x=>`<span class="num">${x}</span>`
+const r=(k,v,p)=>`<div class="r"><b>${k}</b><span${p?' class="p"':''}>${v}</span></div>`
+const sch=(tit,corpo,o={})=>`<div class="sch ${o.cls||''}">${o.num?n(o.num):''}<div class="tit">${tit}${o.matita?'<span class="mat">✎</span>':''}</div>${corpo}</div>`
+const crono=(voci,ultima)=>voci.map(v=>`<div class="voce"><span class="q">${v[0]}</span><span><span class="e ${v[2]||''}">${v[1]}</span>${v[3]?`<br>${v[3]}`:''}</span></div>`).join('')+`<div class="voce"><span class="q">08 nov<br>10:17</span><span style="color:#94A3B8"><span class="e">+ Creata</span> ${ultima}</span></div><div class="campo"><i>Scrivi una nota privata…</i><u></u></div>`
+
+// ---------------- DEMOLIZIONE, com'è ----------------
+const demRiga=`<div class="riga">
+  <div class="ico">${AUTO}</div>
+  <div class="col" style="flex:1.6"><div class="t1">EEEEEE · fiat panda · 2008 · 25.000 km</div><div class="t2">autovettura <i style="color:#9CA3AF;font-style:normal">(il comune del ritiro, se c'è; se no il tipo di mezzo)</i></div></div>
+  <div class="col" style="flex:1.3"><div class="n1">mario</div><div class="t2">Persona fisica <i style="color:#9CA3AF;font-style:normal">(+ "delega a…" se c'è)</i></div></div>
+  <div class="col" style="flex:1.4"><span class="pill">In attesa documenti</span><div class="sotto">sotto: motivo dell'attesa o dell'annullo, nome del demolitore</div></div>
+  <div class="box"><b>11g</b><i>in corso</i></div>
+</div>`
+const demAzioni=`<div class="azioni"><span class="az">Documenti e Foto 0/3</span><span class="az">Chat</span><span class="az">Stato pratica</span><span class="az">Trattativa</span><span class="az">Assegnazione</span><span class="az r">Elimina</span></div>`
+const demSchede=`<div class="fila">
+ ${sch('Cronologia e Note',crono([['19 nov<br>18:02','Nota privata','','Chiamato, richiama domani']],'Pratica creata dal cliente'),{cls:'l'})}
+ ${sch('Cliente',r('Nome','mario')+r('Telefono','556654')+r('CF','EEEEEEEEEEEEEEEE')+r('Email','1test@1test.com')+r('Delegato per la consegna','Consegna in prima persona',1)+r('Tel. delegato','—'),{matita:1})}
+ ${sch('Casistiche',r('Casistica','Persona fisica')+r('Libretto','Ce l\'ho')+r('Cert. proprietà','Digitale')+r('Fermo Amministrativo','No',1)+r('Targhe','Presenti sul mezzo',1),{matita:1})}
+ ${sch('Veicolo',r('Targa','EEEEEE')+r('Marca','fiat')+r('Modello','panda')+r('Anno','2008')+r('Km','25.000')+r('Cambio','Manuale')+r('Alimentazione','Benzina')+`<div class="cond"><span>Non va in moto</span><span>Non marciante</span><span class="ok">Non incidentato</span><span class="ok">Completo</span></div>`,{matita:1})}
+ ${sch('Ritiro',r('Indirizzo','Viale Leona')+r('Spazio carro','Sì, c\'è spazio',1),{matita:1})}
+</div>`
+
+// ---------------- VALUTAZIONE, com'è ----------------
+const valRiga=`<div class="riga">
+  <div class="ico">${AUTO}</div>
+  <div class="col" style="flex:1.6"><div class="t1">EEEEEE · fiat panda · 2008 · 25.000 km</div><div class="t2">Viale Leona · benzina, manuale ${n(1)}</div></div>
+  <div class="col" style="flex:1.3"><div class="n1">mario</div><div class="t2">Persona fisica <i style="color:#9CA3AF;font-style:normal">(+ "targhe smarrite", "fermo")</i> ${n(2)}</div></div>
+  <div class="col" style="flex:1.4"><span class="pill v">Passata a demolizione</span><div class="sotto">accettata il 08/11</div></div>
+  <div class="col" style="flex:1"><div class="t2" style="font-weight:600;color:#3E4C63;margin:0">Demolizione gratuita</div><div class="sotto" style="color:#1D4ED8;font-weight:600">Apri la pratica →</div></div>
+  <div class="box blu"><b>Gratis</b><i>offerta</i></div>
+</div>`
+const valAzioni=`<div class="azioni"><span class="niente">nessuna fila di azioni: niente Chat, niente Elimina ${n(3)}</span></div>`
+const valSchede=`<div class="fila">
+ ${sch('Cronologia e Note',crono([['08 nov<br>10:22','Accettata dal cliente','g'],['08 nov<br>10:21','Risposta inviata','b','Demolizione gratuita']],'Richiesta creata dal cliente'),{cls:'l'})}
+ ${sch('Cliente',r('Nome','mario')+r('Telefono','556654')+r('Codice fiscale','EEEEEEEEEEEEEEEE')+r('Casistica','Persona fisica',1),{num:4})}
+ ${sch('Veicolo',r('Targa','EEEEEE')+r('Mezzo','autovettura · fiat panda')+r('Anno · km','2008 · 25.000')+r('Cambio · alim.','Manuale · Benzina')+r('Condizioni','non va in moto, non cammina, non i…')+r('Targhe','Presenti',1)+r('Fermo','No',1)+r('Dove si trova','Viale Leona'),{num:5})}
+ ${sch('Foto','<div class="niente">Nessuna foto</div>',{num:6})}
+ ${sch('Risposta al cliente','<div class="risp"><b>Demolizione gratuita</b> · il cliente ha accettato il 08/11.<br>La richiesta è diventata una pratica di demolizione.</div>',{cls:'cel'})}
+</div>`
+const differenze=`<div class="elenco"><h3>Le differenze, una per una</h3><ol>
+<li>${n(1)}<span><b>Seconda riga del veicolo.</b> In demolizione c'è il comune del ritiro (o il tipo di mezzo). In valutazione c'è l'indirizzo, poi alimentazione e cambio.</span></li>
+<li>${n(2)}<span><b>Sotto il nome del cliente.</b> In demolizione casistica ed eventuale delega. In valutazione casistica più "targhe smarrite" e "fermo" scritti a parole.</span></li>
+<li>${n(3)}<span><b>Fila delle azioni.</b> In demolizione ci sono Documenti e Foto, Chat, Stato pratica, Trattativa, Assegnazione, Elimina. In valutazione non c'è nessuna fila: non puoi scrivere al cliente né eliminare la richiesta.</span></li>
+<li>${n(4)}<span><b>Scheda Cliente.</b> In valutazione manca l'Email, e la Casistica sta qui invece che in una scheda "Casistiche". Nessuna matita: non si può correggere niente.</span></li>
+<li>${n(5)}<span><b>Scheda Veicolo.</b> In valutazione i dati sono accorpati ("Anno · km", "Cambio · alim.") e le condizioni sono una frase tagliata, mentre in demolizione sono righe separate e pillole colorate. In più ci sono dentro Targhe, Fermo e "Dove si trova", che in demolizione stanno in Casistiche e in Ritiro.</span></li>
+<li>${n(6)}<span><b>Foto.</b> In valutazione sono una scheda nella fila. In demolizione si aprono dalla pillola "Documenti e Foto".</span></li>
+</ol></div>`
+
+// ---------------- PROPOSTA ----------------
+const propRiga=`<div class="riga">
+  <div class="ico">${AUTO}</div>
+  <div class="col" style="flex:1.6"><div class="t1">EEEEEE · fiat panda · 2008 · 25.000 km</div><div class="t2 nuovo" style="display:inline-block">autovettura <i style="color:#9CA3AF;font-style:normal">(il comune, se c'è; se no il tipo di mezzo)</i></div></div>
+  <div class="col" style="flex:1.3"><div class="n1">mario</div><div class="t2 nuovo" style="display:inline-block">Persona fisica</div></div>
+  <div class="col" style="flex:1.4"><span class="pill">Risposta inviata</span><div class="sotto">inviata 2 ore fa · il cliente non ha ancora risposto</div></div>
+  <div class="col" style="flex:1"><div class="t2" style="font-weight:600;color:#3E4C63;margin:0">Demolizione gratuita</div></div>
+  <div class="box blu"><b>Gratis</b><i>offerta</i></div>
+</div>`
+const propAzioni=`<div class="azioni"><span class="az nuovo">Foto 0</span><span class="az nuovo">Chat</span><span class="az r nuovo">Elimina</span></div>`
+const propSchede=`<div class="fila">
+ ${sch('Cronologia e Note',crono([['08 nov<br>10:21','Risposta inviata','b','Demolizione gratuita']],'Richiesta creata dal cliente'),{cls:'l'})}
+ ${sch('Cliente',r('Nome','mario')+r('Telefono','556654')+r('CF','EEEEEEEEEEEEEEEE')+`<div class="nuovo">${r('Email','1test@1test.com')}</div>`,{matita:1})}
+ ${sch('Casistiche',r('Casistica','Persona fisica')+r('Fermo Amministrativo','No',1)+r('Targhe','Presenti sul mezzo',1)+`<div class="niente" style="padding-top:8px">Libretto e certificato di proprietà il cliente li dice dopo, quando completa la pratica.</div>`,{matita:1,cls:'nuovo'})}
+ ${sch('Veicolo',r('Targa','EEEEEE')+r('Marca','fiat')+r('Modello','panda')+r('Anno','2008')+r('Km','25.000')+r('Cambio','Manuale')+r('Alimentazione','Benzina')+`<div class="cond"><span>Non va in moto</span><span>Non marciante</span><span class="ok">Non incidentato</span><span class="ok">Completo</span></div>`,{matita:1,cls:'nuovo'})}
+ ${sch('Dove si trova',r('Indirizzo','Viale Leona'),{matita:1,cls:'nuovo'})}
+ ${sch('Risposta al cliente','<div style="font-size:11.5px;color:#6B7280;line-height:1.6">Le due tessere "Non la paghiamo" / "Riconosciamo una cifra", il campo e "Invia la risposta": <b style="color:#0F1B33">resta com\'è</b>, è il pezzo proprio della valutazione.</div>',{cls:'cel'})}
+</div>`
+const cosaCambia=`<div class="elenco"><h3>Cosa cambierebbe in valutazione</h3><ol>
+<li><span>• <b>Riga</b>: seconda riga del veicolo e riga sotto il nome scritte come in demolizione. Targhe smarrite e fermo si leggono nella scheda Casistiche.</span></li>
+<li><span>• <b>Fila delle azioni</b>: compare anche qui, con le sole pillole che servono: <b>Foto</b> (apre il visore, come in demolizione), <b>Chat</b> col cliente, <b>Elimina</b> la richiesta.</span></li>
+<li><span>• <b>Schede nello stesso ordine</b>: Cronologia e Note · Cliente · Casistiche · Veicolo · Dove si trova, con gli stessi nomi dei campi, le stesse righe separate, le pillole colorate delle condizioni e la <b>matita</b> per correggere.</span></li>
+<li><span>• <b>Email</b> del cliente nella scheda Cliente.</span></li>
+<li><span>• <b>Risposta al cliente</b> resta l'ultima scheda col bordo celeste: è l'unico pezzo che la demolizione non ha.</span></li>
+<li><span>• Quando la pratica nasce, i dati sono già negli stessi posti: passando da una lista all'altra non devi più "ricercarli".</span></li>
+</ol></div>`
+
+const V={
+ oggi:`<div class="spiega">Sopra la <b>demolizione</b>, sotto la <b>valutazione</b>, tutte e due con la tendina aperta. I pallini arancioni segnano i punti in cui la valutazione è messa diversamente; in fondo c'è l'elenco.</div>
+  <h2>Demolizione <small>la pratica com'è oggi in /admin</small></h2><div class="blocco">${demRiga}${demAzioni}${demSchede}</div>
+  <h2>Valutazione <small>la richiesta com'è oggi in /admin/valutazioni</small></h2><div class="blocco">${valRiga}${valAzioni}${valSchede}</div>${differenze}`,
+ prop:`<div class="spiega">La <b>valutazione</b> riordinata con gli stessi posti, gli stessi nomi e le stesse schede della demolizione. Sopra la demolizione per confronto (non cambia), sotto la proposta.</div>
+  <p class="leg">Il tratteggio <b>verde</b> segna ciò che è nuovo o spostato rispetto a oggi.</p>
+  <h2>Demolizione <small>resta com'è</small></h2><div class="blocco">${demRiga}${demAzioni}${demSchede}</div>
+  <h2>Valutazione <small>proposta</small></h2><div class="blocco">${propRiga}${propAzioni}${propSchede}</div>${cosaCambia}`,
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='oggi'?'viva':''}" id="vista-${k}">${V[k]}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui');window.scrollTo(0,0)}
+</script></body></html>

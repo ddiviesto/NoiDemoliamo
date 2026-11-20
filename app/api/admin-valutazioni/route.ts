@@ -14,7 +14,6 @@
  *                                    tipo 'acquisto' = "Riconosciamo X €")
  *   chiudi { id }                 → "chiusa" (senza seguito)
  *   riapri { id }                 → torna "da_valutare" (anche per cambiare la risposta)
- *   nota { id, testo }            → note_admin
  *
  * ⚠️ Le email al cliente si faranno col lavoro Resend: qui va ricordato
  * che "rispondi" è il momento dell'email "risposta pronta".
@@ -25,7 +24,7 @@ import { createClient } from '@supabase/supabase-js'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
-const CAMPI = 'id, user_id, stato, tipo_mezzo, tipo_mezzo_altro, marca, modello, anno, km, tipo_cambio, alimentazione, incidentato, va_in_moto, marciante, parti_mancanti, note_veicolo, indirizzo, comune, provincia, cap, targa, targhe_presenti, codice_fiscale, intestazione, eredi_rinuncia, societa_fallita, casistica, fermo_amministrativo, nome_richiedente, telefono, offerta_tipo, offerta_importo, offerta_messaggio, offerta_inviata_il, risposta_cliente, risposta_il, pratica_id, note_admin, creato_il, aggiornato_il'
+const CAMPI = 'id, user_id, stato, aggiornato_il, tipo_mezzo, tipo_mezzo_altro, marca, modello, anno, km, tipo_cambio, alimentazione, incidentato, va_in_moto, marciante, parti_mancanti, note_veicolo, indirizzo, comune, provincia, cap, targa, targhe_presenti, codice_fiscale, intestazione, eredi_rinuncia, societa_fallita, casistica, fermo_amministrativo, nome_richiedente, telefono, offerta_tipo, offerta_importo, offerta_messaggio, offerta_inviata_il, risposta_cliente, risposta_il, pratica_id, note_admin, creato_il, aggiornato_il'
 
 export async function POST(req: NextRequest) {
   try {
@@ -51,7 +50,15 @@ export async function POST(req: NextRequest) {
         : { data: [] }
       const perRichiesta: Record<string, { url: string; posizione: string | null }[]> = {}
       for (const f of foto || []) (perRichiesta[f.veicolo_vendita_id] ||= []).push({ url: f.url, posizione: f.posizione })
-      return NextResponse.json({ richieste: (righe || []).map(r => ({ ...r, foto: perRichiesta[r.id] || [] })) })
+      // ⭐ 19/11: l'email dell'account, come nella scheda Cliente delle pratiche
+      // (dal browser l'admin non può leggere `utenti`: ognuno vede solo sé)
+      const idUtenti = [...new Set((righe || []).map(r => r.user_id).filter(Boolean))]
+      const { data: utenti } = idUtenti.length
+        ? await supabase.from('utenti').select('id, email').in('id', idUtenti)
+        : { data: [] }
+      const emailDi: Record<string, string | null> = {}
+      for (const u of utenti || []) emailDi[u.id] = u.email || null
+      return NextResponse.json({ richieste: (righe || []).map(r => ({ ...r, email: emailDi[r.user_id] || null, foto: perRichiesta[r.id] || [] })) })
     }
 
     const id: string | undefined = body.id
@@ -97,13 +104,6 @@ export async function POST(req: NextRequest) {
         stato: 'da_valutare', offerta_tipo: null, offerta_importo: null, offerta_messaggio: null, offerta_inviata_il: null,
         risposta_cliente: null, risposta_il: null, aggiornato_il: adesso,
       }).eq('id', id)
-      if (error) throw error
-      return NextResponse.json({ ok: true })
-    }
-
-    if (azione === 'nota') {
-      const testo = typeof body.testo === 'string' ? body.testo.trim() : ''
-      const { error } = await supabase.from('veicoli_vendita').update({ note_admin: testo || null, aggiornato_il: adesso }).eq('id', id)
       if (error) throw error
       return NextResponse.json({ ok: true })
     }

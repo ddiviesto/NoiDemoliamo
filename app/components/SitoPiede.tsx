@@ -59,6 +59,7 @@ export default function SitoPiede() {
           <div className="flex flex-wrap" style={{ gap: '38px 58px' }}>
             <Colonna titolo="Servizio">
               <Link href="/inizia" style={stileVoce} className={classeVoce}>Richiedi la demolizione</Link>
+              <Link href="/vendi-auto" style={stileVoce} className={classeVoce}>Vendi o fai valutare la tua auto</Link>
               <Link href="/#come-funziona" style={stileVoce} className={classeVoce}>Come funziona</Link>
             </Colonna>
             <Colonna titolo="Contatti">

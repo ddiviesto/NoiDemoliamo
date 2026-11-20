@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAggiornaLive } from '@/lib/aggiornaLive'
 import { metaStato } from '@/lib/statiCrm'
+import { EVENTI_VALUTAZIONE, vocePropostaDaTesto } from '@/lib/statiValutazione'
+import { VoceCronologia, DettaglioVoce, CampoNota, fmtGiorno, fmtOra, ICONA_NOTA, PILLOLA_CREATA } from '../../_components/VoceCronologia'
 
 // ============================================================
 // CRONOLOGIA E NOTE DELLA PRATICA — SOLO ADMIN (17/07/2026)
@@ -48,6 +50,8 @@ const EVENTI_META: Record<string, { label: string; bg: string; col: string }> = 
   cert_rottamazione: { label: 'Certificato rottamazione', bg: '#DBEAFE', col: '#1D4ED8' },
   cert_pra: { label: 'Radiazione PRA', bg: '#DBEAFE', col: '#1D4ED8' },
   trattativa: { label: 'Trattativa', bg: '#DBEAFE', col: '#1D4ED8' },
+  // ⭐ 19/11: la storia della richiesta di valutazione da cui è nata la pratica
+  ...EVENTI_VALUTAZIONE,
 }
 
 const PREFISSO_ATTESA = 'Messa in attesa'
@@ -55,12 +59,8 @@ const PREFISSO_RIPRESA = 'Pratica ripresa'
 const PREFISSO_ANNULLATA = 'Pratica annullata'
 const PREFISSO_RIATTIVATA = 'Pratica riattivata'
 
-function fmtGiorno(x: string) {
-  return new Date(x).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' }).toUpperCase().replace('.', '')
-}
-function fmtOra(x: string) {
-  return new Date(x).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-}
+// ⭐ 19/11: la veste della riga, le date e il campo nota stanno in un posto
+// solo (VoceCronologia), condiviso con la scheda delle richieste di valutazione
 
 // ⭐ 07/08 (sobbalzo segnalato da Davide): CACHE delle note + PRECARICO
 // al passaggio del mouse sulla riga del CRM — la scheda Cronologia della
@@ -164,6 +164,20 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
   const inCanaleDemolitore = (n: Nota) =>
     (n.visibile_demolitore || n.autore === 'demolitore') && (!n.demolitore_id || n.demolitore_id === demolitoreId)
   const noteMostrate = canale === 'demolitore' ? note.filter(inCanaleDemolitore) : note
+  // ⭐ 19/11: le voci più vecchie della pratica stessa sono la storia della valutazione
+  const nascita = new Date(praticaCreataIl).getTime()
+  // ⭐ 19/11 (Davide: "io leggevo dall'alto verso il basso"): la cronologia si
+  // legge COME UNA CHAT, la prima cosa in alto e L'ULTIMA IN BASSO, appena sopra
+  // il campo dove si scrive la nota. Le note arrivano dalla più recente, quindi
+  // qui si girano; e il riquadro, quando si apre o arriva una voce, scende da
+  // solo in fondo (se no l'ultima resterebbe nascosta sotto).
+  const dopoLaNascita = noteMostrate.filter(n => new Date(n.creato_il).getTime() >= nascita).reverse()
+  const primaDellaNascita = noteMostrate.filter(n => new Date(n.creato_il).getTime() < nascita).reverse()
+  const fondoRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = fondoRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [noteMostrate.length, canale, aperta])
 
   // ⭐ 12/08 (mockup approvato): SPIA ROSSA delle note non lette — conta
   // solo le NOTE SCRITTE dal demolitore (eventi esclusi). Aprire la
@@ -207,16 +221,33 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
           )}
           {/* Riquadro a altezza FISSA: si scorre dentro (mouse/dito), la
               pagina non si allunga (richiesta Davide 21/07) */}
-          <div className="overflow-y-auto" style={finestra ? { flex: 1, minHeight: 0, overscrollBehavior: 'contain' } : scheda ? { maxHeight: 150, overscrollBehavior: 'contain' } : { maxHeight: 300 }}>
-          {noteMostrate.map(n => {
+          <div ref={fondoRef} className="overflow-y-auto" style={finestra ? { flex: 1, minHeight: 0, overscrollBehavior: 'contain' } : scheda ? { maxHeight: 150, overscrollBehavior: 'contain' } : { maxHeight: 300 }}>
+          {/* ⭐ 19/11 (Davide): in ordine di tempo dall'alto verso il basso. Se la
+              pratica è nata da una richiesta di valutazione, quello che è successo
+              PRIMA (richiesta, proposta, accettazione, note) sta SOPRA la voce
+              "Creata"; quello che succede dopo sta sotto, fino all'ultima in fondo */}
+          {[primaDellaNascita, dopoLaNascita].map((gruppo, gi) => (
+            <Fragment key={gi}>
+            {gi === 1 && canale === 'tutte' && (
+              <VoceCronologia quando={praticaCreataIl} pillola={PILLOLA_CREATA} ultima={dopoLaNascita.length === 0} spenta>
+                Pratica creata dal cliente
+              </VoceCronologia>
+            )}
+            {gruppo.map((n, i) => {
+            const ultimaVoce = gi === 1 && i === gruppo.length - 1
             // ⭐ 28/07 sera: EVENTI AUTOMATICI — pillolina parlante; per il
             // cambio stato la pillola è quella VERA (lib/statiCliente, il
             // testo della riga contiene il codice stato)
             if (n.evento) {
               // ⭐ 28/07 sera (richiesta Davide): il cambio stato usa la pillola
               // ESATTA del CRM (lib/statiCrm), stessa lingua della riga in alto
+              // ⭐ 20/11 (Davide): la proposta ha la pillola che dice QUALE
+              // ("Proposta demolizione gratuita", senza niente sotto; per la
+              // cifra "Proposta inviata" con la cifra sotto)
+              const proposta = n.evento === 'val_risposta' ? vocePropostaDaTesto(n.testo) : null
               const meta = n.evento === 'stato'
                 ? (() => { const s = metaStato(n.testo); return { label: s.label, bg: s.bg, col: s.text } })()
+                : proposta ? proposta.pillola
                 : (EVENTI_META[n.evento] || { label: n.evento, bg: '#F1F4F8', col: '#64748B' })
               // ⭐ 28/07 sera (richiesta Davide): "Documento rifiutato" mostra
               // SOLO il nome del documento (senza il motivo), su UNA riga
@@ -225,23 +256,17 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               const dettaglio = n.evento === 'stato' ? ''
                 : n.evento === 'doc_rifiutato' ? n.testo.split(': "')[0]
                 : n.evento === 'assegnata' || n.evento === 'riassegnata' ? n.testo.replace(/\s*\((dalla classifica|scelto a mano)\)\s*$/, '')
+                // ⭐ 19/11: la storia della valutazione. Solo la proposta di una
+                // cifra ha una frase sotto; le altre pillole parlano da sole
+                : proposta ? proposta.frase
+                : n.evento in EVENTI_VALUTAZIONE ? ''
                 : n.testo
               return (
-                <div key={n.id} style={{ display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
-                  <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                    {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
-                  </div>
-                  <div style={{ flex: 1, fontSize: 12.5, color: '#3E4C63', lineHeight: 1.5, minWidth: 0 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', background: meta.bg, color: meta.col, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>
-                      {meta.label}
-                    </span>
-                    {/* ⭐ 07/08 (mockup approvato): il dettaglio va SEMPRE a capo,
-                        allineato al bordo sinistro della pillola */}
-                    {dettaglio && (
-                      <span style={{ display: 'block', marginTop: 4, ...(n.evento === 'doc_rifiutato' ? { whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' } : {}) }}>{dettaglio}</span>
-                    )}
-                  </div>
-                </div>
+                <VoceCronologia key={n.id} quando={n.creato_il} pillola={meta} ultima={ultimaVoce}>
+                  {/* ⭐ 07/08 (mockup approvato): il dettaglio va SEMPRE a capo,
+                      allineato al bordo sinistro della pillola */}
+                  {dettaglio && <DettaglioVoce unaRiga={n.evento === 'doc_rifiutato'}>{dettaglio}</DettaglioVoce>}
+                </VoceCronologia>
               )
             }
 
@@ -280,68 +305,32 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
             // ⭐ 12/08: la nota del demolitore ancora "fresca" resta
             // evidenziata durante la visita (la spia intanto si è azzerata)
             const nuova = n.autore === 'demolitore' && n.letta === false
+            const iconaTipo = tipo === 'attesa' ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+              : tipo === 'ripresa' ? <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
+              : tipo === 'riattivata' ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+              : tipo === 'annullata' ? <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+              // ⭐ 12/08 (richiesta Davide): niente iconcina sulla pillola "Nota demolitore", parla il testo
+              : tipo === null ? ICONA_NOTA : null
             return (
-              <div key={n.id} style={nuova
-                ? { display: 'flex', gap: 10, padding: '9px 10px', background: '#F7FAFF', border: '1px solid #DBEAFE', borderRadius: 10, marginBottom: 4 }
-                : { display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
-                <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-                  {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
-                </div>
-                <div style={{ flex: 1, fontSize: 12.5, color: '#3E4C63', lineHeight: 1.5, minWidth: 0 }}>
-                  {stilePillola && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: stilePillola.bg, color: stilePillola.col, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
-                      {tipo === 'attesa' && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
-                      )}
-                      {tipo === 'ripresa' && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="6 3 20 12 6 21 6 3" /></svg>
-                      )}
-                      {tipo === 'riattivata' && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                      )}
-                      {tipo === 'annullata' && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
-                      )}
-                      {/* ⭐ 12/08 (richiesta Davide): niente iconcina sulla
-                          pillola "Nota demolitore", parla il testo */}
-                      {tipo === null && (
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-                      )}
-                      {stilePillola.label}
-                    </span>
-                  )}
-                  {nuova && <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: 999, background: '#DC2626', marginLeft: 6, verticalAlign: 'middle' }} />}
-                  {/* ⭐ 07/08 (richiesta Davide): anche per le NOTE il testo va
-                      SOTTO la pillola, allineato — niente più a capo storti */}
-                  {(firma || testoMostrato || statoRipresa) && (
-                    <span style={{ display: 'block', marginTop: 4 }}>
-                      {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}
-                      {statoRipresa ? (
-                        <span style={{ display: 'inline-flex', alignItems: 'center', background: statoRipresa.bg, color: statoRipresa.text, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>{statoRipresa.label}</span>
-                      ) : testoMostrato}
-                    </span>
-                  )}
-                </div>
-              </div>
+              <VoceCronologia key={n.id} quando={n.creato_il} pillola={stilePillola} icona={iconaTipo} pallino={nuova} evidenza={nuova} ultima={ultimaVoce}>
+                {/* ⭐ 07/08 (richiesta Davide): anche per le NOTE il testo va
+                    SOTTO la pillola, allineato — niente più a capo storti */}
+                {(firma || testoMostrato || statoRipresa) && (
+                  <DettaglioVoce>
+                    {firma && <span style={{ fontWeight: 700, color: '#1D4ED8' }}>{firma}: </span>}
+                    {statoRipresa ? (
+                      <span style={{ display: 'inline-flex', alignItems: 'center', background: statoRipresa.bg, color: statoRipresa.text, fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', verticalAlign: 'middle' }}>{statoRipresa.label}</span>
+                    ) : testoMostrato}
+                  </DettaglioVoce>
+                )}
+              </VoceCronologia>
             )
           })}
-
-          {/* Prima voce fissa: la nascita della pratica (solo nel registro
-              completo: il demolitore non vede la fase pre-assegnazione) */}
-          {canale === 'tutte' && (
-          <div style={{ display: 'flex', gap: 10, padding: '9px 0' }}>
-            <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
-              {fmtGiorno(praticaCreataIl)}<br />{fmtOra(praticaCreataIl)}
-            </div>
-            <div style={{ flex: 1, fontSize: 12.5, color: '#94A3B8', lineHeight: 1.5 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#EEF1F5', color: '#5B6779', fontSize: 10.5, fontWeight: 700, borderRadius: 20, padding: '2px 9px', marginRight: 6, verticalAlign: 'middle' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                Creata
-              </span>
-              Pratica creata dal cliente
-            </div>
-          </div>
-          )}
+            </Fragment>
+          ))}
+          {/* La voce fissa "Creata" (la nascita della pratica) sta nel giro qui
+              sopra, tra la storia della valutazione e il resto: solo nel registro
+              completo, il demolitore non vede la fase pre-assegnazione */}
           </div>
 
           {/* Aggiungi nota — ⭐ 27/07 sera (opzione B su mockup): placeholder
@@ -349,24 +338,7 @@ export default function CronologiaNote({ praticaId, praticaCreataIl, refreshKey,
               (richiama la pillola "Nota"), gemello del tondo della chat.
               ⭐ 28/07 sera: sul canale Demolitore la nota è CONDIVISA e il
               placeholder lo dice chiaro */}
-          <div className="flex gap-1.5 mt-2 items-center">
-            <input
-              value={nuova}
-              onChange={e => setNuova(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') aggiungi() }}
-              placeholder={canale === 'demolitore' ? 'Scrivi al demolitore…' : 'Scrivi una nota privata…'}
-              className="flex-1 min-w-0 border-[1.5px] border-gray-200 rounded-full px-3.5 py-[7px] text-[12.5px] text-gray-900 bg-white outline-none focus:border-blue-400 transition-all placeholder:text-gray-400"
-            />
-            <button
-              onClick={aggiungi}
-              disabled={salvando || !nuova.trim()}
-              className="flex-shrink-0 flex items-center justify-center transition-all disabled:opacity-40 hover:bg-blue-700"
-              style={{ background: '#2563eb', width: 32, height: 32, borderRadius: 999, border: 'none', cursor: 'pointer' }}
-              aria-label="Aggiungi nota"
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-            </button>
-          </div>
+          <CampoNota valore={nuova} onValore={setNuova} onInvia={aggiungi} occupato={salvando} placeholder={canale === 'demolitore' ? 'Scrivi al demolitore…' : 'Scrivi una nota privata…'} />
         </div>
   )
 

@@ -23,7 +23,7 @@ import { SezioneInstalla } from './components/InstallaApp'
 export const metadata: Metadata = {
   title: 'NoiDemoliamo - Demolizione auto gratuita in tutta Italia',
   description:
-    'Demolizione auto gratuita con ritiro a domicilio, certificato di rottamazione e radiazione PRA inclusi. Oppure scopri gratis quanto vale la tua auto prima di rottamarla.',
+    'Demolizione auto gratuita con ritiro a domicilio, certificato di rottamazione e radiazione PRA inclusi. Oppure vendila: valutazione gratuita e proposta senza impegno.',
 }
 
 // ---------- una delle due porte ----------
@@ -159,8 +159,8 @@ export default function Home() {
             }}>ritirata e demolita gratis</span>
           </h1>
           <p className="mx-auto" style={{ fontSize: 17, color: '#5B6779', lineHeight: 1.6, maxWidth: 560, margin: '18px auto 0' }}>
-            Pensiamo a tutto Noi: documenti, carro attrezzi e certificati. Oppure, se preferisci,
-            prima ti diciamo quanto vale.
+            Pensiamo a tutto Noi: documenti, carro attrezzi e certificati. E se la tua auto vale
+            ancora qualcosa, ti facciamo una proposta.
           </p>
         </div>
 
@@ -190,11 +190,11 @@ export default function Home() {
           <Porta
             href="/vendi-auto"
             meta="valutazione"
-            titolo="Voglio sapere quanto vale"
+            titolo="Voglio venderla o sapere quanto vale"
             pillola="Valutazione gratuita"
-            testo="Prima di rottamarla, scopri se vale qualcosa: la risposta la trovi nella tua area personale."
+            testo="Usata o a fine vita: ci dici com'è e ti facciamo una proposta. La risposta la trovi nella tua area personale."
             punti={[
-              'Ricevi la nostra proposta con la cifra',
+              'Se vale qualcosa, ti proponiamo una cifra',
               'Nessun impegno: accetti o rifiuti quando vuoi',
               'Se non conviene, la demoliamo gratis',
             ]}

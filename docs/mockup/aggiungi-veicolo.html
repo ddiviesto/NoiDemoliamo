@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>"Aggiungi un altro veicolo": demolire o far valutare</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1180px;margin:0 auto;padding:18px 20px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.banco{display:flex;gap:30px;justify-content:center;align-items:flex-start;padding:14px 20px 44px;flex-wrap:wrap}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:0 0 10px 4px}
+.lilla{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),#F5F3FE}
+.pc{width:760px;border-radius:16px;border:1px solid #D8DEE9;box-shadow:0 16px 44px rgba(15,27,51,.18);padding:22px 30px 30px;min-height:430px}
+.tel{width:330px;height:610px;border-radius:36px;border:8px solid #0F172A;background:#fff;overflow:hidden;position:relative;box-shadow:0 20px 50px rgba(15,27,51,.25)}
+.isola{background:rgba(255,255,255,.78);border:1px solid rgba(255,255,255,.95);box-shadow:0 10px 30px rgba(15,27,51,.10);border-radius:999px;padding:8px 10px 8px 18px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#3E4C63;font-weight:600}
+.mk{font-size:17px;font-weight:800;color:#0F1B33}.mk em{font-style:normal;font-weight:500;color:#46536B}
+h1{font-size:30px;font-weight:800;letter-spacing:-1px;margin:22px 0 2px}h1 i{font-style:normal;color:#1D4ED8}.sot{font-size:12.5px;color:#4B5563;margin-bottom:16px}
+.riga{background:#fff;border:1.5px solid #E5E7EB;border-radius:16px;box-shadow:0 5px 14px rgba(16,24,40,.07);display:flex;align-items:center;gap:14px;padding:14px 18px}
+.ico{width:46px;height:46px;border-radius:13px;background:#DBEAFE;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.z{min-width:0;flex:1}.z+.z{border-left:1px solid #EEF1F5;padding-left:14px}
+.targa{font-weight:700;font-size:15.5px;letter-spacing:.03em}.mezzo,.sub{font-size:12.5px;color:#6B7280;margin-top:2px}.lab{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6B7280}.val{font-size:12.5px;font-weight:600;color:#374151;margin-top:2px}
+.pill{display:inline-block;font-size:10.5px;font-weight:700;padding:4px 11px;border-radius:999px;background:#EFF6FF;color:#1D4ED8}
+/* oggi: la riga larga */
+.addOggi{margin-top:12px;background:#fff;border:1.5px solid #E5E7EB;border-radius:16px;display:flex;align-items:center;gap:12px;padding:12px 14px}.addOggi .q{width:38px;height:38px;border-radius:11px;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:22px}.addOggi .t{font-size:13.5px;font-weight:600}.addOggi .s{font-size:11px;color:#6B7280}.addOggi .f{margin-left:auto;color:#2563eb;font-size:18px}
+/* la pillola affusolata */
+.centro{display:flex;justify-content:center;margin-top:18px;position:relative}
+.pillola{display:inline-flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #BFDBFE;color:#1D4ED8;font-weight:700;font-size:14px;border-radius:999px;padding:6px 20px 6px 7px;box-shadow:0 4px 14px rgba(37,99,235,.10)}
+.pillola .piu{width:30px;height:30px;border-radius:999px;background:#2563EB;color:#fff;display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:600;line-height:1}
+.pillola.acc{background:#EFF6FF;border-color:#2563EB}
+/* A: nuvoletta con le due scelte */
+.nuv{position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);width:400px;background:#fff;border:1.5px solid #E5E7EB;border-radius:18px;padding:12px;box-shadow:0 14px 40px rgba(15,27,51,.16)}
+.nuv:before{content:"";position:absolute;top:-9px;left:calc(50% - 8px);width:16px;height:16px;background:#fff;border-left:1.5px solid #E5E7EB;border-top:1.5px solid #E5E7EB;transform:rotate(45deg)}
+.dom{font-size:13px;font-weight:700;color:#0F1B33;padding:4px 6px 10px}
+.sc{display:flex;align-items:center;gap:12px;border:1.5px solid #E5E7EB;border-radius:13px;padding:11px 12px;margin-bottom:8px}.sc:last-child{margin-bottom:0}
+.sc .i{width:38px;height:38px;border-radius:11px;background:#DBEAFE;color:#2563eb;display:flex;align-items:center;justify-content:center;flex-shrink:0}.sc .t{font-size:14px;font-weight:700}.sc .s{font-size:11.5px;color:#6B7280;margin-top:1px}.sc .f{margin-left:auto;color:#2563eb;font-size:17px}
+.sc.hov{background:#EFF6FF;border-color:#93C5FD}
+/* B: due pillole */
+.dueP{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.cap{text-align:center;font-size:12px;color:#6B7280;font-weight:600;margin-top:20px}
+/* C: la pillola si allarga in due metà */
+.seg{display:inline-flex;align-items:stretch;background:#fff;border:1.5px solid #2563EB;border-radius:999px;overflow:hidden;box-shadow:0 4px 14px rgba(37,99,235,.14)}
+.seg .x{width:44px;display:flex;align-items:center;justify-content:center;color:#6B7280;font-size:15px;border-right:1px solid #DBEAFE}
+.seg .m{padding:9px 20px;font-size:13.5px;font-weight:700;color:#1D4ED8;display:flex;flex-direction:column}.seg .m small{font-size:10.5px;font-weight:600;color:#6B7280;margin-top:1px}
+.seg .m+.m{border-left:1px solid #DBEAFE}.seg .m.hov{background:#EFF6FF}
+/* telefono */
+.tt{background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:12.5px}.tt b{font-size:16px}
+.tc{padding:14px}.tc h2{font-size:14px;margin:0 0 10px}
+.tcard{border:1.5px solid #E5E7EB;border-radius:15px;box-shadow:0 5px 14px rgba(16,24,40,.07);overflow:hidden;position:relative}.tcard:before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:#2563eb}
+.tcard .r1{display:flex;align-items:center;gap:10px;padding:12px 11px 12px 15px}.tcard .pd{background:#F8FAFC;border-top:1px solid #F1F3F6;padding:6px 11px 6px 15px;font-size:11.5px;color:#6B7280}
+.velo{position:absolute;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:flex-end}
+.foglio{background:#fff;border-radius:20px 20px 0 0;width:100%;padding:16px 14px 20px}
+.foglio h3{font-size:15px;margin:0 0 10px}
+.tel .pillola{font-size:13px}.tel .dueP{flex-direction:column;align-items:center}
+.tel .seg{flex-direction:column;border-radius:20px;width:100%}.tel .seg .x{display:none}.tel .seg .m+.m{border-left:none;border-top:1px solid #DBEAFE}
+</style></head><body>
+<div class="nota"><b>"AGGIUNGI UN ALTRO VEICOLO"</b> · oggi è una riga larga quanto le pratiche e porta sempre alla demolizione. Tre modi per farla corta, affusolata, e per chiedere se il veicolo è da <b>demolire</b> o da <b>far valutare</b>. In ogni scheda: PC chiuso, PC dopo il clic, telefono.</div>
+<div class="schede">
+<span class="qui" onclick="vista('0',this)">Oggi</span>
+<span onclick="vista('a',this)">A · una pillola, al clic due scelte</span>
+<span onclick="vista('b',this)">B · due pillole, già divise</span>
+<span onclick="vista('c',this)">C · la pillola si apre in due metà</span>
+</div>
+<div id="viste"></div>
+<script>
+const AUTO='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l1-6-2-5H6L4 11z"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></svg>'
+const TAG='<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/></svg>'
+const testa=`<div class="isola"><span class="mk"><em>Noi</em>Demoliamo</span><span>Ciao, piooo &nbsp;⚙&nbsp; Esci</span></div><h1>Le tue <i>pratiche</i></h1><div class="sot">1 richiesta, 0 pratiche attive</div>
+<div class="riga"><div class="ico">${AUTO}</div><div class="z"><div class="targa">DDSSSD</div><div class="mezzo">aaa aaa · Autovettura</div></div><div class="z"><div class="lab">Richiesta di valutazione</div><div class="val">Inviata il 19 nov 2026</div></div><div class="z"><span class="pill">In valutazione</span><div class="sub">A breve riceverai la tua risposta</div></div></div>`
+const pillola=(acc)=>`<span class="pillola ${acc?'acc':''}"><span class="piu">+</span>Aggiungi un altro veicolo</span>`
+const scelte=(h)=>`<div class="sc ${h===1?'hov':''}"><span class="i">${AUTO}</span><div><div class="t">Voglio rottamarlo</div><div class="s">Demolizione gratuita, anche il ritiro</div></div><span class="f">›</span></div><div class="sc ${h===2?'hov':''}"><span class="i">${TAG}</span><div><div class="t">Voglio sapere quanto vale</div><div class="s">Valutazione gratuita</div></div><span class="f">›</span></div>`
+const pc=(corpo)=>`<div class="pc lilla">${testa}${corpo}</div>`
+const telBase=(corpo,sopra='')=>`<div class="tel"><div class="tt"><b>NoiDemoliamo</b><span>Ciao, piooo!</span></div><div class="tc"><h2>Le tue pratiche</h2><div class="tcard"><div class="r1"><div class="ico" style="width:42px;height:42px">${TAG}</div><div style="flex:1"><div class="targa" style="font-size:15px">DDSSSD</div><div class="mezzo">Richiesta di valutazione</div></div><span class="pill">In valutazione</span></div><div class="pd">A breve riceverai la tua risposta</div></div>${corpo}</div>${sopra}</div>`
+const blocco=(t,x)=>`<div><div class="eti">${t}</div>${x}</div>`
+
+const V={
+ '0':{s:'<b>Oggi.</b> Una riga bianca larga quanto le pratiche, col quadratino blu e il "+". Porta dritta alla demolizione: non chiede se il veicolo è da demolire o da far valutare.',
+   h:blocco('PC',pc(`<div class="addOggi"><span class="q">+</span><div><div class="t">Aggiungi un altro veicolo</div><div class="s">Sempre gratis, come la prima</div></div><span class="f">›</span></div>`))+blocco('Telefono',telBase(`<div class="addOggi"><span class="q">+</span><div><div class="t">Aggiungi un altro veicolo</div><div class="s">Sempre gratis, come la prima</div></div><span class="f">›</span></div>`))},
+ a:{s:'<b>A. Una pillola, al clic due scelte.</b> Sotto le pratiche c’è una sola pillola affusolata, corta e centrata. Al clic, su PC si apre una nuvoletta col becco con la domanda e le due scelte; sul telefono sale il foglio dal basso, come quello di "Installa l’app". Le parole sono quelle delle due porte della home.',
+   h:blocco('PC · chiusa',pc(`<div class="centro">${pillola(false)}</div>`))+blocco('PC · dopo il clic',pc(`<div class="centro">${pillola(true)}<div class="nuv"><div class="dom">Cosa vuoi fare con questo veicolo?</div>${scelte(1)}</div></div>`))+blocco('Telefono · dopo il tocco',telBase(`<div class="centro">${pillola(true)}</div>`,`<div class="velo"><div class="foglio"><h3>Cosa vuoi fare con questo veicolo?</h3>${scelte(0)}</div></div>`))},
+ b:{s:'<b>B. Due pillole, già divise.</b> Niente domanda e niente secondo clic: sotto le pratiche ci sono subito due pillole affusolate, una per demolire e una per far valutare. Più veloce, ma i bottoni diventano due.',
+   h:blocco('PC',pc(`<div class="cap">Hai un altro veicolo?</div><div class="dueP" style="margin-top:10px"><span class="pillola"><span class="piu">+</span>Voglio rottamarlo</span><span class="pillola"><span class="piu">+</span>Voglio sapere quanto vale</span></div>`))+blocco('Telefono',telBase(`<div class="cap">Hai un altro veicolo?</div><div class="dueP" style="margin-top:10px"><span class="pillola"><span class="piu">+</span>Voglio rottamarlo</span><span class="pillola"><span class="piu">+</span>Voglio sapere quanto vale</span></div>`))},
+ c:{s:'<b>C. La pillola si apre in due metà.</b> Chiusa è la stessa pillola della A. Al clic non compare niente sopra: la pillola stessa si allarga sul posto e diventa due metà da scegliere, con la ✕ per richiuderla. Sul telefono le due metà stanno una sopra l’altra.',
+   h:blocco('PC · chiusa',pc(`<div class="centro">${pillola(false)}</div>`))+blocco('PC · dopo il clic',pc(`<div class="centro"><span class="seg"><span class="x">✕</span><span class="m hov">Voglio rottamarlo<small>Demolizione gratuita, anche il ritiro</small></span><span class="m">Voglio sapere quanto vale<small>Valutazione gratuita</small></span></span></div>`))+blocco('Telefono · dopo il tocco',telBase(`<div class="centro"><span class="seg"><span class="m">Voglio rottamarlo<small>Demolizione gratuita, anche il ritiro</small></span><span class="m">Voglio sapere quanto vale<small>Valutazione gratuita</small></span></span></div>`))},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='0'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div><div class="banco">${V[k].h}</div></div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+const h=location.hash.slice(1);if(V[h]){const sp=[...document.querySelectorAll('.schede span')];vista(h,sp[Object.keys(V).indexOf(h)])}
+</script></body></html>

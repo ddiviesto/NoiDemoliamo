@@ -11,7 +11,7 @@
  * Va montato DENTRO una scheda della tendina: qui c'è solo il corpo.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { chiamataDemolitore } from '../_lib/api'
 
 interface VoceCronologia { id: string; testo: string; creato_il: string; autore?: string; evento?: string | null; nuova?: boolean }
@@ -89,15 +89,26 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
     setSalvando(false)
   }
 
+  // ⭐ 19/11 (Davide): la cronologia si legge COME UNA CHAT, la prima cosa in
+  // alto e L'ULTIMA IN BASSO, sopra il campo della nota, come nel CRM. Il
+  // server le manda dalla più recente: qui si girano, e il riquadro scende da
+  // solo sull'ultima quando si apre o ne arriva una.
+  const inOrdine = [...voci].reverse()
+  const fondoRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const el = fondoRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [voci.length, caricate])
+
   return (
     // Riempie la scheda in altezza: la lista scorre DENTRO e il campo
     // della nota resta INCHIODATO IN FONDO (come nel CRM)
     <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
-      <div className="overflow-y-auto" style={{ flex: 1, minHeight: 60, maxHeight: 280, overscrollBehavior: 'contain' }}>
+      <div ref={fondoRef} className="overflow-y-auto" style={{ flex: 1, minHeight: 60, maxHeight: 280, overscrollBehavior: 'contain' }}>
         {caricate && voci.length === 0 && (
           <p style={{ fontSize: 11.5, color: '#9AA7B5', padding: '10px 0' }}>Nessuna voce per ora.</p>
         )}
-        {voci.map(n => {
+        {inOrdine.map((n, i) => {
           const meta = n.evento ? (EVENTI_META[n.evento] || { label: n.evento, bg: '#F1F4F8', col: '#64748B' }) : null
           // Nota a due voci: pillola "Nota" + firma di chi l'ha scritta
           const firma = n.evento ? null : (n.autore === 'demolitore' ? 'Tu' : 'NoiDemoliamo')
@@ -111,7 +122,7 @@ export default function NoteDemolitore({ praticaId, bloccata }: { praticaId: str
             // evidenziata durante la visita (spia già azzerata dal server)
             <div key={n.id} style={n.nuova
               ? { display: 'flex', gap: 10, padding: '9px 10px', background: '#F7FAFF', border: '1px solid #DBEAFE', borderRadius: 10, marginBottom: 4 }
-              : { display: 'flex', gap: 10, padding: '9px 0', borderBottom: '1px solid #F1F4F8' }}>
+              : { display: 'flex', gap: 10, padding: '9px 0', borderBottom: i === inOrdine.length - 1 ? undefined : '1px solid #F1F4F8' }}>
               <div style={{ flexShrink: 0, width: 66, fontSize: 10, fontWeight: 700, color: '#94A3B8', lineHeight: 1.4, textTransform: 'uppercase', letterSpacing: 0.3 }}>
                 {fmtGiorno(n.creato_il)}<br />{fmtOra(n.creato_il)}
               </div>

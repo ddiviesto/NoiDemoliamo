@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>La proposta arrivata, nell'area del cliente su PC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1000px;margin:0 auto;padding:18px 4px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.scena{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),#F5F3FE;padding:22px 0 40px;margin-top:8px}
+.col{width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:10px 0 -6px 4px}
+.card{position:relative;background:#fff;border:1.5px solid #BFDBFE;border-radius:16px;overflow:hidden;box-shadow:0 4px 16px rgba(37,99,235,.14)}
+.riga{display:flex;align-items:center;gap:16px;padding:16px 18px 16px 22px}
+.ico{width:50px;height:50px;border-radius:14px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#2563eb}
+.z{min-width:0}.z+.z{border-left:1px solid #EEF1F5;padding-left:16px}
+.targa{font-weight:700;font-size:17px;letter-spacing:.03em;color:#111827}.mezzo{font-size:13.5px;color:#6B7280;margin-top:2px}
+.lab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6B7280}.val{font-size:13.5px;color:#374151;font-weight:600;margin-top:2px}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:#EFF6FF;color:#1D4ED8;white-space:nowrap}
+.fai{font-size:12.5px;font-weight:600;margin-top:5px;color:#6B7280}
+.pt{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#1D4ED8}
+.pc{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-top:2px;color:#0F172A}.pc.euro{font-size:30px;letter-spacing:-1px}
+.pm{font-size:13px;color:#374151;line-height:1.55}
+.pn{font-size:12px;color:#6B7280;line-height:1.5}
+.b{display:inline-block;text-align:center;border-radius:999px;padding:11px 26px;font-size:14px;font-weight:600;border:1.5px solid #E5E7EB;color:#374151;background:#fff;white-space:nowrap}.b.blu{background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;border-color:transparent;box-shadow:0 6px 18px rgba(37,99,235,.35)}
+/* oggi (dopo la riga A): proposta sotto, bottoni larghi */
+.v0 .prop{padding:0 18px 18px 22px}.v0 .pm{margin-top:8px;background:#F8FAFC;border:1px solid #EEF1F5;border-radius:10px;padding:9px 11px}.v0 .pn{margin-top:8px}.v0 .bb{display:flex;gap:8px;margin-top:12px}.v0 .b{flex:1}
+/* P1: nelle stesse tre zone della riga */
+.v1 .zone{display:flex;gap:16px;border-top:1px solid #EEF1F5;padding:16px 18px 18px 22px;align-items:flex-start}
+.v1 .sp{width:50px;flex-shrink:0}.v1 .q{min-width:0}.v1 .q+.q{border-left:1px solid #EEF1F5;padding-left:16px}
+.v1 .bb{display:flex;flex-direction:column;gap:8px}.v1 .b{padding:10px 0;width:100%}
+.v1 .pn{margin-top:8px}.v1 .coda{width:18px;flex-shrink:0}
+/* P2: riquadro celeste */
+.v2 .box{margin:0 18px 18px 22px;background:#EFF6FF;border:1.5px solid #BFDBFE;border-radius:14px;padding:16px 18px;display:flex;gap:24px;align-items:center}
+.v2 .sx{flex:1;min-width:0}.v2 .pm{margin-top:6px;color:#1E3A8A}.v2 .pn{margin-top:6px;color:#3E4C63}.v2 .bb{display:flex;gap:8px;flex-shrink:0}
+/* P3: una riga sola, il resto a richiesta */
+.v3 .linea{display:flex;align-items:center;gap:16px;border-top:1px solid #EEF1F5;padding:14px 18px 14px 88px}
+.v3 .sx{flex:1;min-width:0;display:flex;align-items:baseline;gap:12px}.v3 .pc{margin:0}.v3 .perche{font-size:12.5px;font-weight:600;color:#1D4ED8}
+.v3 .bb{display:flex;gap:8px}.v3 .b{padding:10px 22px}
+.v3 .aperto{border-top:1px dashed #E5E7EB;padding:12px 18px 14px 88px}.v3 .aperto .pn{margin-top:6px}
+</style></head><body>
+<div class="nota"><b>LA PROPOSTA ARRIVATA, NELL'AREA DEL CLIENTE SU PC</b> · la riga sopra è la A appena scelta. Qui si decide come mostrare la proposta e i due bottoni. In ogni scheda due esempi: la demolizione gratuita e una cifra.</div>
+<div class="schede">
+<span class="qui" onclick="vista('0',this)">Com'è adesso</span>
+<span onclick="vista('1',this)">P1 · nelle stesse zone della riga</span>
+<span onclick="vista('2',this)">P2 · in un riquadro celeste</span>
+<span onclick="vista('3',this)">P3 · una riga sola, il perché a richiesta</span>
+</div>
+<div id="viste"></div>
+<script>
+const AUTO='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l1-6-2-5H6L4 11z"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></svg>'
+const riga=`<div class="riga"><div class="ico">${AUTO}</div>
+  <div class="z" style="flex:1.4"><div class="targa">DDSSSD</div><div class="mezzo">aaa aaa · Autovettura</div></div>
+  <div class="z" style="flex:1.3"><div class="lab">Richiesta di valutazione</div><div class="val">Inviata il 19 nov 2026</div></div>
+  <div class="z" style="flex:1.2"><span class="pill">Proposta arrivata</span><div class="fai">Leggi la proposta qui sotto</div></div>
+  <span style="width:18px;flex-shrink:0"></span></div>`
+const D={cifra:'Demolizione gratuita',euro:false,msg:'Anno e chilometri: il valore di mercato non copre i costi di ritiro e pratica.',nota:'Se accetti, ti chiediamo quattro cose in più e la richiesta diventa una pratica di demolizione.'}
+const E={cifra:'300 €',euro:true,msg:'Ritiro a domicilio gratuito, pagamento al ritiro.',nota:'Se accetti, ti chiediamo quattro cose in più e fissiamo il ritiro.'}
+const bb='<span class="b">No, grazie</span><span class="b blu">Accetto</span>'
+const v0=x=>`<div class="card">${riga}<div class="prop"><div class="pt">La nostra proposta</div><div class="pc ${x.euro?'euro':''}">${x.cifra}</div><div class="pm">${x.msg}</div><div class="pn">${x.nota}</div><div class="bb">${bb}</div></div></div>`
+const v1=x=>`<div class="card">${riga}<div class="zone"><span class="sp"></span>
+  <div class="q" style="flex:1.4"><div class="pt">La nostra proposta</div><div class="pc ${x.euro?'euro':''}">${x.cifra}</div></div>
+  <div class="q" style="flex:1.3"><div class="pm">${x.msg}</div><div class="pn">${x.nota}</div></div>
+  <div class="q" style="flex:1.2"><div class="bb"><span class="b blu">Accetto</span><span class="b">No, grazie</span></div></div>
+  <span class="coda"></span></div></div>`
+const v2=x=>`<div class="card">${riga}<div class="box"><div class="sx"><div class="pt">La nostra proposta</div><div class="pc ${x.euro?'euro':''}">${x.cifra}</div><div class="pm">${x.msg}</div><div class="pn">${x.nota}</div></div><div class="bb">${bb}</div></div></div>`
+const v3=(x,aperto)=>`<div class="card">${riga}<div class="linea"><div class="sx"><div><div class="pt">La nostra proposta</div><div class="pc ${x.euro?'euro':''}">${x.cifra}</div></div><span class="perche">${aperto?'Chiudi ▴':'Perché? ▾'}</span></div><div class="bb">${bb}</div></div>${aperto?`<div class="aperto"><div class="pm">${x.msg}</div><div class="pn">${x.nota}</div></div>`:''}</div>`
+const pagina=(cls,a,b)=>`<div class="scena ${cls}"><div class="col"><div class="eti">Proposta: demolizione gratuita</div>${a}<div class="eti">Proposta: una cifra</div>${b}</div></div>`
+const V={
+ '0':{s:'<b>Com’è adesso.</b> Sotto la riga: "La nostra proposta", la risposta in grande, il motivo in un riquadrino grigio, una riga di spiegazione e i due bottoni larghi quanto tutta la card.', h:pagina('v0',v0(D),v0(E))},
+ '1':{s:'<b>P1. Nelle stesse zone della riga.</b> La proposta continua le colonne di sopra: sotto targa e mezzo c’è <b>cosa proponiamo</b>, sotto "Richiesta di valutazione" il <b>perché</b> e cosa succede dopo, sotto la pillola i <b>due bottoni</b> uno sopra l’altro, con "Accetto" per primo. Tutto allineato, niente riquadri.', h:pagina('v1',v1(D),v1(E))},
+ '2':{s:'<b>P2. In un riquadro celeste.</b> La proposta sta dentro la scheda celeste dei riquadri informativi (la stessa di "Cosa succede dopo"): a sinistra cosa proponiamo, il perché e cosa succede dopo; a destra i due bottoni della misura giusta. Si capisce subito che è "la cosa da leggere e decidere".', h:pagina('v2',v2(D),v2(E))},
+ '3':{s:'<b>P3. Una riga sola.</b> Si vede solo l’essenziale: cosa proponiamo e i due bottoni. Il motivo e la spiegazione si aprono cliccando <b>"Perché?"</b> (sotto, il secondo esempio lo mostra aperto). La più asciutta, ma il motivo non si legge se non lo cerchi.', h:pagina('v3',v3(D,false),v3(E,true))},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='0'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+const h=location.hash.slice(1);if(V[h]){const sp=[...document.querySelectorAll('.schede span')];vista(h,sp[Object.keys(V).indexOf(h)])}
+</script></body></html>

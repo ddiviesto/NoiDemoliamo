@@ -109,7 +109,7 @@ function metaDi(passo: Passo, tipo: TipoMezzo | null, tipoAltro: string, intesta
         ? { banner: 'Conferma e invia', titolo: 'Conferma e invia', sotto: 'Sei già registrato: la risposta la troverai nella tua area personale.' }
         : giaRegistrata
           ? { banner: 'Invia la richiesta', titolo: 'Ultimo passo: *accedi e invia*', sotto: 'Questa email ha già un account: basta la password e la richiesta è inviata.' }
-          : { banner: 'Invia la richiesta', titolo: '*Ultimo passo!*', sotto: 'Crea il tuo account gratuito: lì troverai la nostra risposta e potrai accettarla.' }
+          : { banner: 'Invia la richiesta', titolo: '*Ultimo passo!*', sotto: 'Crea il tuo account gratuito: lì troverai la nostra proposta e potrai accettarla o rifiutarla.' }
   }
 }
 
@@ -616,7 +616,6 @@ export default function VendiAuto() {
                 </CampoModulo>
               </>
             )}
-            <InfoBadge>Nella tua area personale troverai la nostra risposta: demolizione gratuita oppure una cifra per il mezzo. Potrai accettarla o rifiutarla da lì.</InfoBadge>
           </div>
         )}
 

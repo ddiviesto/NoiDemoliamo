@@ -10,14 +10,17 @@
 // veicoli_vendita è visibile solo al proprietario.
 // ============================================================
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AdminSidebar from '../_components/AdminSidebar'
 import IconaVeicolo from '../../components/IconaVeicolo'
+import VisoreDocumenti from '../../components/VisoreDocumenti'
 import { TessereFlusso, TesseraFase } from '../../components/TessereFlusso'
 import { nomeAlimentazione } from '@/types/pratica'
-import { STATI_VALUTAZIONE, metaValutazione, NOMI_INTESTAZIONE, NOMI_CASISTICHE, OffertaTipo } from '@/lib/statiValutazione'
+import { STATI_VALUTAZIONE, metaValutazione, NOMI_CASISTICHE, OffertaTipo, EVENTI_VALUTAZIONE, testoOfferta, voceProposta } from '@/lib/statiValutazione'
+import { SezTendinaMod, PillCondizioni, NotaClienteVeicolo, FERMO_LABEL, etichettaTarghe, etichettaCambio, indirizzoRitiroCompleto } from '../_components/PezziTendina'
+import { VoceCronologia, DettaglioVoce, CampoNota, PillolaCronologia, ICONA_NOTA, PILLOLA_NOTA_PRIVATA } from '../_components/VoceCronologia'
 
 const ADMIN_EMAIL = 'ddiviesto@gmail.com'
 
@@ -50,6 +53,7 @@ interface Richiesta {
   fermo_amministrativo: string | null
   nome_richiedente: string | null
   telefono: string | null
+  email?: string | null
   offerta_tipo: string | null
   offerta_importo: number | null
   offerta_messaggio: string | null
@@ -59,10 +63,9 @@ interface Richiesta {
   pratica_id: string | null
   note_admin: string | null
   creato_il: string
+  aggiornato_il?: string | null
   foto: Foto[]
 }
-
-const NOMI_POSIZIONE: Record<string, string> = { davanti: 'Davanti', dietro: 'Dietro', destro: 'Lato destro', sinistro: 'Lato sinistro', interni: 'Interni', cruscotto: 'Cruscotto' }
 
 // "2 ore fa", "ieri", "il 15/09"
 function daQuanto(iso: string | null): string {
@@ -86,9 +89,7 @@ function euro(n: number | null): string { return n == null ? '—' : `${n.toLoca
 
 // Com'è scritta la risposta data, in lista e nella scheda
 function testoRisposta(r: Richiesta): string {
-  if (r.offerta_tipo === 'acquisto') return `Riconosciamo ${euro(r.offerta_importo)}`
-  if (r.offerta_tipo === 'demolizione') return 'Demolizione gratuita'
-  return '—'
+  return testoOfferta(r.offerta_tipo, r.offerta_importo)
 }
 
 export default function Valutazioni() {
@@ -236,10 +237,9 @@ export default function Valutazioni() {
                         className={`cursor-pointer transition-all ${aperta ? '' : 'hover:!bg-[#EFF6FF] hover:!border-[#BFDBFE] hover:shadow-[0_2px_8px_rgba(37,99,235,0.10)] hover:-translate-y-[1px]'}`}
                         style={{ background: aperta ? '#EFF6FF' : '#fff', border: `1.5px solid ${aperta ? 'transparent' : '#E5E7EB'}`, borderRadius: aperta ? '13px 13px 0 0' : 14, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: aperta ? 'none' : '0 1px 3px rgba(16,24,40,0.07)', opacity: (r.stato === 'chiusa' || r.stato === 'rifiutata') && !aperta ? 0.82 : 1 }}
                       >
-                        <div style={{ width: 46, height: 46, borderRadius: 12, background: r.stato === 'passata_demolizione' ? '#DCF3E4' : '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {r.stato === 'passata_demolizione'
-                            ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1F7A43" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
-                            : <IconaVeicolo tipo={r.tipo_mezzo} />}
+                        {/* ⭐ 19/11 (Davide): sempre l'icona del MEZZO, come nelle pratiche (prima, se passata a demolizione, c'era una spunta verde: lo stato lo dice già la pillola) */}
+                        <div style={{ width: 46, height: 46, borderRadius: 12, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <IconaVeicolo tipo={r.tipo_mezzo} />
                         </div>
 
                         {/* Veicolo */}
@@ -248,42 +248,28 @@ export default function Valutazioni() {
                             {r.targa || 'Targa mancante'}{r.marca && ` · ${r.marca} ${r.modello || ''}`}{r.anno ? ` · ${r.anno}` : ''}{r.km != null ? ` · ${Number(r.km).toLocaleString('it-IT')} km` : ''}
                           </div>
                           <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
-                            {r.comune ? `${r.comune}${r.provincia ? ` (${r.provincia})` : ''}` : (r.indirizzo || '—')}
-                            {r.alimentazione && ` · ${nomeAlimentazione(r.alimentazione).toLowerCase()}`}
-                            {r.tipo_cambio && r.tipo_cambio !== 'non_so' && `, ${r.tipo_cambio}`}
+                            {/* ⭐ 19/11 (Davide): come nelle pratiche, il comune; se manca, il tipo di mezzo */}
+                            {r.comune ? `${r.comune}${r.provincia ? ` (${r.provincia})` : ''}` : (r.tipo_mezzo_altro || r.tipo_mezzo || '—')}
                           </div>
                         </div>
 
-                        {/* Cliente: intestazione, targhe e fermo già in vista */}
+                        {/* Cliente: sotto il nome la casistica, come nelle pratiche (targhe e fermo stanno nella scheda Casistiche) */}
                         <div style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
                           <div className="text-[13.5px] font-semibold text-gray-900 truncate">{r.nome_richiedente || '—'}</div>
                           <div className="text-[12.5px] truncate" style={{ color: '#4B5563', marginTop: 2 }}>
-                            {r.intestazione ? (NOMI_INTESTAZIONE[r.intestazione] || r.intestazione) : '—'}
-                            {r.targhe_presenti === false && ' · targhe smarrite'}
-                            {r.fermo_amministrativo === 'si' && ' · fermo'}
-                            {r.fermo_amministrativo === 'non_so' && ' · fermo: non lo sa'}
+                            {r.casistica ? (NOMI_CASISTICHE[r.casistica] || r.casistica) : (r.tipo_mezzo || '—')}
                           </div>
                         </div>
 
-                        {/* Stato + da quanto */}
+                        {/* Stato: SOLO la pillola, come nelle pratiche (⭐ 19/11, Davide: via "accettata il…"
+                            e "Apri la pratica", così spazi e misure sono quelli della lista pratiche).
+                            Quello che è successo si legge nella Cronologia. */}
                         <div style={{ flex: 1.4, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
                           <span className="inline-block text-[11.5px] font-bold rounded-full transition-colors" style={{ background: evidenzia && m.chiave !== 'rifiutata' ? '#fff' : m.bg, color: m.text, border: `1px solid ${evidenzia && m.chiave !== 'rifiutata' ? `${m.text}55` : 'transparent'}`, padding: '3px 11px' }}>{m.label}</span>
-                          <div className="text-[11px] mt-1 truncate" style={{ color: '#6B7280' }}>
-                            {r.stato === 'da_valutare' && `arrivata ${daQuanto(r.creato_il)}`}
-                            {r.stato === 'risposta_inviata' && (r.risposta_cliente === 'accettata' ? `accettata ${daQuanto(r.risposta_il)} · sta completando la pratica` : `inviata ${daQuanto(r.offerta_inviata_il)} · il cliente non ha ancora risposto`)}
-                            {r.stato === 'passata_demolizione' && `accettata ${daQuanto(r.risposta_il)}`}
-                            {r.stato === 'rifiutata' && `rifiutata ${daQuanto(r.risposta_il)}`}
-                            {r.stato === 'chiusa' && 'chiusa senza seguito'}
-                          </div>
                         </div>
 
-                        {/* La risposta data */}
-                        <div style={{ flex: 1, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 14 }}>
-                          <div className="text-[12.5px] font-semibold truncate" style={{ color: '#3E4C63' }}>{testoRisposta(r)}</div>
-                          {r.stato === 'passata_demolizione' && r.pratica_id && (
-                            <button onClick={e => { e.stopPropagation(); router.push('/admin') }} className="text-[11px] font-semibold hover:underline" style={{ color: '#1D4ED8', marginTop: 2 }}>Apri la pratica →</button>
-                          )}
-                        </div>
+                        {/* ⭐ 19/11 (Davide): la pillola dello stato sta a destra come nelle pratiche;
+                            la colonna con "Demolizione gratuita" è tolta, l'offerta la dice già il riquadro */}
 
                         {/* RIQUADRO A DESTRA, come nelle pratiche (⭐ 07/11, mockup B):
                             prima della risposta i giorni, dopo la cifra offerta */}
@@ -353,59 +339,91 @@ function MetricaValutazione({ r }: { r: Richiesta }) {
 
 function Tendina({ r, chiama, ricarica }: { r: Richiesta; chiama: (b: Record<string, unknown>) => Promise<unknown>; ricarica: () => Promise<void> }) {
   const pieno = r.stato === 'da_valutare' || r.stato === 'chiusa'
-  const condizioni = [
-    r.va_in_moto === true ? 'va in moto' : r.va_in_moto === false ? 'non va in moto' : null,
-    r.marciante === true ? 'cammina' : r.marciante === false ? 'non cammina' : null,
-    r.incidentato === true ? 'incidentata' : r.incidentato === false ? 'non incidentata' : null,
-    r.parti_mancanti === true ? 'parti mancanti' : null,
-  ].filter(Boolean).join(', ')
-
+  // ⭐ 19/11 (Davide): le foto si aprono dalla pillola "Documenti e Foto",
+  // nel visore, come nelle pratiche (il riquadro "Foto" nella fila è tolto)
+  const [triggerDoc, setTriggerDoc] = useState(0)
+  const [docAperti, setDocAperti] = useState(false)
+  const nFoto = r.foto.length
   return (
+    <>
+    {/* FILA AZIONI: seconda riga della testata azzurra, come nelle pratiche.
+        Per ora una pillola sola; Chat ed Elimina arrivano dopo. */}
+    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', background: '#EFF6FF', padding: '0 16px 12px' }}>
+      <button
+        onClick={() => { if (nFoto > 0) setTriggerDoc(x => x + 1) }}
+        disabled={nFoto === 0}
+        title={nFoto === 0 ? 'Il cliente non ha caricato foto' : undefined}
+        className={`flex items-center gap-1.5 transition-all ${nFoto > 0 ? 'hover:bg-blue-100' : ''}`}
+        style={{ position: 'relative', background: docAperti ? '#DBEAFE' : '#fff', border: '1.5px solid #BFDBFE', color: '#1D4ED8', fontSize: 11.5, fontWeight: 700, borderRadius: 999, padding: '6px 12px', whiteSpace: 'nowrap', cursor: nFoto > 0 ? 'pointer' : 'default', opacity: nFoto > 0 ? 1 : 0.6 }}
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><polyline points="14 2 14 8 20 8" /></svg>
+        Documenti e Foto
+        <span style={{ background: '#EFF6FF', borderRadius: 999, fontSize: 10, padding: '1px 7px' }}>{nFoto}</span>
+      </button>
+    </div>
+    <VisoreDocumenti
+      apriTrigger={triggerDoc}
+      documenti={[]}
+      foto={r.foto.map(x => x.url)}
+      targa={r.targa}
+      veicolo={[[r.marca, r.modello].filter(Boolean).join(' '), r.anno].filter(Boolean).join(' · ') || null}
+      cliente={r.nome_richiedente}
+      onStatoAperto={setDocAperti}
+    />
     <div style={{ padding: '14px 14px 16px' }}>
       <div style={{ display: 'flex', gap: 10, alignItems: 'stretch', flexWrap: 'wrap' }}>
-        <SchedaNote key={r.id} r={r} chiama={chiama} ricarica={ricarica} />
+        <SchedaNote key={r.id} r={r} />
 
-        <Scheda titolo="Cliente" righe={[
-          { k: 'Nome', v: r.nome_richiedente || '—' },
-          { k: 'Telefono', v: r.telefono || '—' },
-          { k: 'Intestazione', v: r.intestazione ? (NOMI_INTESTAZIONE[r.intestazione] || r.intestazione) : '—' },
-          { k: r.intestazione === 'societa' ? 'Partita IVA / CF' : 'Codice fiscale', v: r.codice_fiscale || '—' },
-          { k: 'Casistica', v: r.casistica ? (NOMI_CASISTICHE[r.casistica] || r.casistica) : '—', pillola: !!r.casistica },
+        {/* ⭐ 19/11 (Davide, mockup "dati-due-liste"): I DATI NEGLI STESSI POSTI
+            della tendina delle pratiche, con le stesse schede (SezTendinaMod),
+            gli stessi nomi dei campi e lo stesso ordine: Cliente · Casistiche ·
+            Veicolo · Dove si trova. Mancano solo i dati che il cliente dice
+            dopo, completando la pratica (libretto, certificato di proprietà,
+            delegato, spazio per il carro). Per ora in sola lettura. */}
+        <SezTendinaMod soloLettura titolo="Cliente" righe={[
+          { k: 'Nome', vista: r.nome_richiedente || '—' },
+          { k: 'Telefono', vista: r.telefono || '—' },
+          { k: r.casistica === 'societa' || r.casistica === 'societa_fallita' ? 'P.IVA' : 'CF', vista: r.codice_fiscale || '—' },
+          { k: 'Email', vista: r.email || '—' },
         ]} />
 
-        <Scheda titolo="Veicolo" righe={[
-          { k: 'Targa', v: r.targa || '—' },
-          { k: 'Mezzo', v: `${r.tipo_mezzo_altro || r.tipo_mezzo || '—'}${r.marca ? ` · ${r.marca} ${r.modello || ''}` : ''}` },
-          { k: 'Anno · km', v: `${r.anno ?? '—'} · ${r.km != null ? Number(r.km).toLocaleString('it-IT') : '—'}` },
-          { k: 'Cambio · alim.', v: `${r.tipo_cambio === 'manuale' ? 'Manuale' : r.tipo_cambio === 'automatico' ? 'Automatico' : '—'} · ${nomeAlimentazione(r.alimentazione)}` },
-          { k: 'Condizioni', v: condizioni || '—' },
-          { k: 'Targhe', v: r.targhe_presenti == null ? '—' : r.targhe_presenti ? 'Presenti' : 'Smarrite o rubate', pillola: r.targhe_presenti != null },
-          { k: 'Fermo', v: r.fermo_amministrativo === 'si' ? 'Sì' : r.fermo_amministrativo === 'no' ? 'No' : r.fermo_amministrativo === 'non_so' ? 'Non lo sa' : '—', pillola: !!r.fermo_amministrativo },
-          { k: 'Dove si trova', v: r.indirizzo || '—', multiriga: true },
-        ]} extra={r.note_veicolo ? <div style={{ fontSize: 11.5, color: '#6B7280', paddingTop: 6, lineHeight: 1.5 }}><b style={{ color: '#1E293B', fontWeight: 600 }}>Note del cliente:</b> {r.note_veicolo}</div> : undefined} />
+        <SezTendinaMod soloLettura titolo="Casistiche" righe={[
+          { k: 'Casistica', vista: r.casistica ? (NOMI_CASISTICHE[r.casistica] || r.casistica) : '—' },
+          { k: 'Fermo Amministrativo', vista: r.fermo_amministrativo ? (FERMO_LABEL[r.fermo_amministrativo] || r.fermo_amministrativo) : '—', pillola: true },
+          { k: 'Targhe', vista: etichettaTarghe(r.targhe_presenti), pillola: true },
+        ]} />
 
-        <SchedaFoto foto={r.foto} />
+        <SezTendinaMod soloLettura titolo="Veicolo" righe={[
+          { k: 'Targa', vista: r.targa || '—' },
+          { k: 'Marca', vista: r.marca || '—' },
+          { k: 'Modello', vista: r.modello || '—' },
+          { k: 'Anno', vista: r.anno ? String(r.anno) : '—' },
+          { k: 'Km', vista: r.km ? Number(r.km).toLocaleString('it-IT') : '—' },
+          { k: 'Cambio', vista: etichettaCambio(r.tipo_cambio) },
+          { k: 'Alimentazione', vista: nomeAlimentazione(r.alimentazione) },
+        ]} extra={
+          <>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, paddingTop: 5 }}>
+              <PillCondizioni v={r} />
+            </div>
+            <NotaClienteVeicolo testo={r.note_veicolo} />
+          </>
+        } />
 
-        <SchedaRisposta key={`${r.id}-${r.stato}`} r={r} chiama={chiama} ricarica={ricarica} pieno={pieno} />
+        <SezTendinaMod soloLettura titolo="Dove si trova" righe={[
+          { k: 'Indirizzo', vista: indirizzoRitiroCompleto({ indirizzo_ritiro: r.indirizzo, comune_ritiro: r.comune, provincia_ritiro: r.provincia, cap_ritiro: r.cap }) || '—', multiriga: true },
+        ]} />
+
+        {/* ⭐ 19/11 (Davide): quando la richiesta è passata a demolizione la scheda era
+            solo un riassunto, e quello lo dice già la Cronologia: non si mostra.
+            Negli altri stati resta, perché è lì che si scrive la risposta, la si
+            cambia o si chiude la richiesta. */}
+        {r.stato !== 'passata_demolizione' && (
+          <SchedaRisposta key={`${r.id}-${r.stato}`} r={r} chiama={chiama} ricarica={ricarica} pieno={pieno} />
+        )}
       </div>
     </div>
-  )
-}
-
-function Scheda({ titolo, righe, extra, larga }: { titolo: string; righe: { k: string; v: string; pillola?: boolean; multiriga?: boolean }[]; extra?: React.ReactNode; larga?: boolean }) {
-  return (
-    <div style={{ flex: larga ? 1.5 : 1, minWidth: 200, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
-      <TitoloScheda titolo={titolo} />
-      {righe.map((x, i) => (
-        <div key={x.k} style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8, minHeight: 27, padding: '5px 0', borderBottom: i === righe.length - 1 && !extra ? 'none' : '1px solid #F5F7FA', fontSize: 11.5 }}>
-          <span style={{ fontWeight: 600, color: '#1E293B', whiteSpace: 'nowrap', flexShrink: 0 }}>{x.k}</span>
-          {x.pillola && x.v !== '—'
-            ? <span style={{ background: '#EFF6FF', color: '#1D4ED8', fontWeight: 700, borderRadius: 999, padding: '1px 8px', fontSize: 11 }}>{x.v}</span>
-            : <span style={{ flex: 1, minWidth: 0, color: '#6B7280', textAlign: 'right', lineHeight: 1.5, whiteSpace: x.multiriga ? 'normal' : 'nowrap', overflow: x.multiriga ? 'visible' : 'hidden', textOverflow: 'ellipsis' }}>{x.v}</span>}
-        </div>
-      ))}
-      {extra}
-    </div>
+    </>
   )
 }
 
@@ -421,69 +439,103 @@ function TitoloScheda({ titolo, destra }: { titolo: string; destra?: React.React
   )
 }
 
-// Cronologia (gli eventi che si ricavano dalle date) + la nota dell'admin con la matita
-function SchedaNote({ r, chiama, ricarica }: { r: Richiesta; chiama: (b: Record<string, unknown>) => Promise<unknown>; ricarica: () => Promise<void> }) {
-  const [inEdit, setInEdit] = useState(false)
-  const [testo, setTesto] = useState(r.note_admin || '')
-  const [salvando, setSalvando] = useState(false)
+// ⭐ 19/11 (Davide): la scheda "Cronologia e Note" si vede UGUALE a quella delle
+// pratiche di demolizione, perché è fatta con gli stessi pezzi (VoceCronologia):
+// giorno e ora a sinistra, pillola, dettaglio sotto, e in fondo il campo per
+// le note private (tante, ognuna con la sua data; prima era una nota sola con
+// la matita). Gli eventi si ricavano dalle date della richiesta; le note stanno
+// in `pratiche_note` con `veicolo_vendita_id` (SQL del 19/11).
+interface NotaValutazione { id: string; testo: string; creato_il: string }
 
-  async function salva() {
+function SchedaNote({ r }: { r: Richiesta }) {
+  const [note, setNote] = useState<NotaValutazione[]>([])
+  const [sqlMancante, setSqlMancante] = useState(false)
+  const [nuova, setNuova] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [errore, setErrore] = useState('')
+
+  useEffect(() => {
+    let vivo = true
+    supabase.from('pratiche_note').select('id, testo, creato_il').eq('veicolo_vendita_id', r.id).order('creato_il', { ascending: false })
+      .then(({ data, error }) => {
+        if (!vivo) return
+        if (error) setSqlMancante(true)
+        else { setSqlMancante(false); setNote((data as NotaValutazione[]) || []) }
+      })
+    return () => { vivo = false }
+  }, [r.id])
+
+  async function aggiungi() {
+    const testo = nuova.trim()
+    if (!testo) return
     setSalvando(true)
-    try { await chiama({ azione: 'nota', id: r.id, testo }); await ricarica(); setInEdit(false) } finally { setSalvando(false) }
+    setErrore('')
+    const { data, error } = await supabase.from('pratiche_note').insert({ veicolo_vendita_id: r.id, testo }).select('id, testo, creato_il').single()
+    if (!error && data) { setNote(prev => [data as NotaValutazione, ...prev]); setNuova('') }
+    else setErrore('Nota non salvata. Riprova.')
+    setSalvando(false)
   }
 
-  const eventi: { quando: string; cosa: string }[] = [{ quando: dataOra(r.creato_il), cosa: 'Richiesta arrivata' }]
-  if (r.offerta_inviata_il) eventi.push({ quando: dataOra(r.offerta_inviata_il), cosa: `Risposta inviata: ${testoRisposta(r)}` })
-  if (r.risposta_il) eventi.push({ quando: dataOra(r.risposta_il), cosa: r.risposta_cliente === 'accettata' ? 'Il cliente ha accettato' : 'Il cliente ha rifiutato' })
-  if (r.stato === 'chiusa') eventi.push({ quando: '', cosa: 'Chiusa senza seguito' })
+  // tutto in una lista sola, dal più recente; le voci senza data stanno in cima
+  // ⭐ 19/11 (Davide): la storia della richiesta, con le pillole di
+  // lib/statiValutazione. La frase sotto c'è SOLO dove aggiunge qualcosa: nella
+  // proposta di una cifra (quanto, e le due righe scritte al cliente) e nelle
+  // note. Le altre pillole dicono già cosa è successo, compresa "Proposta
+  // demolizione gratuita" (20/11, Davide: sotto non ci va niente).
+  const voci: { chiave: string; quando: string | null; pillola: PillolaCronologia; icona?: React.ReactNode; righe?: string[] }[] =
+    note.map(n => ({ chiave: n.id, quando: n.creato_il, pillola: PILLOLA_NOTA_PRIVATA, icona: ICONA_NOTA, righe: [n.testo] }))
+  // la nota unica di prima (finché l'SQL del 19/11 non la sposta tra le note)
+  if (r.note_admin && r.note_admin.trim()) voci.push({ chiave: 'nota-di-prima', quando: null, pillola: PILLOLA_NOTA_PRIVATA, icona: ICONA_NOTA, righe: [r.note_admin] })
+  if (r.offerta_inviata_il) {
+    const proposta = voceProposta(r.offerta_tipo, r.offerta_importo)
+    const righe = proposta.demolizione ? [] : [proposta.frase]
+    if (!proposta.demolizione && r.offerta_messaggio) righe.push(`Scritto al cliente: “${r.offerta_messaggio}”`)
+    voci.push({ chiave: 'risposta', quando: r.offerta_inviata_il, pillola: proposta.pillola, righe: righe.length ? righe : undefined })
+  }
+  if (r.risposta_il) voci.push({ chiave: 'cliente', quando: r.risposta_il, pillola: r.risposta_cliente === 'accettata' ? EVENTI_VALUTAZIONE.val_accettata : EVENTI_VALUTAZIONE.val_rifiutata })
+  if (r.stato === 'passata_demolizione') voci.push({ chiave: 'passata', quando: r.aggiornato_il || null, pillola: EVENTI_VALUTAZIONE.val_passata })
+  if (r.stato === 'chiusa') voci.push({ chiave: 'chiusa', quando: r.aggiornato_il || null, pillola: EVENTI_VALUTAZIONE.val_chiusa })
+  // ⭐ 19/11 (Davide): si legge COME UNA CHAT, la prima cosa in alto e l'ultima in
+  // basso, sopra il campo della nota (le voci senza data vanno in fondo); il
+  // riquadro scende da solo sull'ultima, come nella cronologia delle pratiche
+  voci.sort((x, y) => {
+    if (!x.quando && !y.quando) return 0
+    if (!x.quando) return 1
+    if (!y.quando) return -1
+    return new Date(x.quando).getTime() - new Date(y.quando).getTime()
+  })
+  const fondoRef = useRef<HTMLDivElement>(null)
+  const quanteVoci = voci.length
+  useEffect(() => {
+    const el = fondoRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [quanteVoci])
 
   return (
-    <div style={{ flex: 1, minWidth: 200, background: '#fff', border: `1.5px solid ${inEdit ? '#93C5FD' : '#E5E7EB'}`, borderRadius: 12, padding: '11px 13px' }}>
-      <TitoloScheda titolo="Cronologia e Note" destra={
-        inEdit ? (
-          <span style={{ display: 'flex', gap: 4 }}>
-            <button onClick={() => { setTesto(r.note_admin || ''); setInEdit(false) }} disabled={salvando} style={{ background: '#fff', border: '1.5px solid #E5E7EB', color: '#4B5563', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 10px', cursor: 'pointer' }}>Annulla</button>
-            <button onClick={salva} disabled={salvando} style={{ background: '#2563EB', border: 'none', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 999, padding: '3px 11px', cursor: 'pointer' }}>{salvando ? '…' : 'Salva'}</button>
-          </span>
-        ) : (
-          <button onClick={() => setInEdit(true)} aria-label="Modifica note" className="flex items-center justify-center transition-colors hover:bg-blue-50 hover:border-blue-200" style={{ width: 22, height: 22, borderRadius: 7, border: '1.5px solid #E5E7EB', background: '#fff', color: '#1D4ED8', cursor: 'pointer' }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /></svg>
-          </button>
-        )
-      } />
-      {eventi.map((e, i) => (
-        <div key={i} style={{ display: 'flex', gap: 8, padding: '5px 0', borderBottom: '1px solid #F5F7FA', fontSize: 11.5 }}>
-          <span style={{ color: '#6B7280', whiteSpace: 'nowrap', flexShrink: 0, minWidth: 108 }}>{e.quando}</span>
-          <span style={{ color: '#1E293B', fontWeight: 600 }}>{e.cosa}</span>
-        </div>
-      ))}
-      <div style={{ paddingTop: 7 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, color: '#5B6779', textTransform: 'uppercase', marginBottom: 4 }}>Note</div>
-        {inEdit
-          ? <textarea value={testo} onChange={e => setTesto(e.target.value)} rows={3} className="w-full text-[12px] text-gray-900 placeholder:text-gray-400 outline-none" style={{ border: '1.5px solid #93C5FD', borderRadius: 8, padding: '6px 8px', resize: 'vertical' }} placeholder="Appunti solo per noi" />
-          : <div style={{ fontSize: 11.5, color: r.note_admin ? '#3E4C63' : '#9CA3AF', lineHeight: 1.5, whiteSpace: 'pre-line' }}>{r.note_admin || '—'}</div>}
+    <div style={{ flex: 1.25, minWidth: 250, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+        <span style={{ width: 3, height: 13, background: '#2563eb', borderRadius: 2, flexShrink: 0 }} />
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#0F1B33' }}>Cronologia e Note</span>
       </div>
-    </div>
-  )
-}
-
-function SchedaFoto({ foto }: { foto: Foto[] }) {
-  return (
-    <div style={{ flex: 1, minWidth: 200, background: '#fff', border: '1.5px solid #E5E7EB', borderRadius: 12, padding: '11px 13px' }}>
-      <TitoloScheda titolo={`Foto${foto.length ? ` · ${foto.length}` : ''}`} />
-      {foto.length === 0 ? (
-        <div style={{ fontSize: 11.5, color: '#9CA3AF' }}>Nessuna foto</div>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-          {foto.map((f, i) => (
-            <a key={i} href={f.url} target="_blank" rel="noreferrer" title="Apri la foto" style={{ position: 'relative', aspectRatio: '4 / 3', borderRadius: 8, overflow: 'hidden', background: '#E5E9F0', display: 'block' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={f.url} alt={f.posizione || `foto ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-              {f.posizione && <span style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '2px 6px', fontSize: 9.5, fontWeight: 700, color: '#fff', background: 'rgba(15,23,42,0.55)' }}>{NOMI_POSIZIONE[f.posizione] || f.posizione}</span>}
-            </a>
+      <div className="mt-2">
+        <div ref={fondoRef} className="overflow-y-auto" style={{ maxHeight: 150, overscrollBehavior: 'contain' }}>
+          {/* la prima voce: la stessa pillola che la pratica mostra in cima alla sua storia */}
+          <VoceCronologia quando={r.creato_il} pillola={EVENTI_VALUTAZIONE.val_arrivata} ultima={voci.length === 0} />
+          {voci.map((v, i) => (
+            <VoceCronologia key={v.chiave} quando={v.quando} pillola={v.pillola} icona={v.icona} ultima={i === voci.length - 1}>
+              {v.righe && v.righe.length > 0 && <DettaglioVoce>{v.righe.map((riga, n) => <span key={n} style={{ display: 'block' }}>{riga}</span>)}</DettaglioVoce>}
+            </VoceCronologia>
           ))}
         </div>
-      )}
+        {sqlMancante ? (
+          <p className="text-xs mt-2" style={{ color: '#854F0B', background: '#FDF7EA', border: '1px solid #F0DFB8', borderRadius: 10, padding: '8px 12px' }}>
+            Per scrivere le note esegui su Supabase l&apos;SQL <b>docs/sql/2026-11-19-note-valutazioni.sql</b>
+          </p>
+        ) : (
+          <CampoNota valore={nuova} onValore={setNuova} onInvia={aggiungi} occupato={salvando} placeholder="Scrivi una nota privata…" />
+        )}
+        {errore && <p className="text-[11.5px] mt-1.5" style={{ color: '#A32D2D' }}>{errore}</p>}
+      </div>
     </div>
   )
 }
@@ -525,12 +577,6 @@ function SchedaRisposta({ r, chiama, ricarica, pieno }: { r: Richiesta; chiama: 
   return (
     <div style={{ flex: 1.5, minWidth: 260, background: '#fff', border: '1.5px solid #93C5FD', borderRadius: 12, padding: '11px 13px' }}>
       <TitoloScheda titolo="Risposta al cliente" />
-
-      {r.stato === 'passata_demolizione' && (
-        <div style={{ fontSize: 12, color: '#1F7A43', background: '#DCF3E4', border: '1.5px solid #B7E4C7', borderRadius: 9, padding: '9px 11px', lineHeight: 1.55 }}>
-          <b>{testoRisposta(r)}</b> · il cliente ha accettato {daQuanto(r.risposta_il)}.<br />La richiesta è diventata una pratica di demolizione.
-        </div>
-      )}
 
       {r.stato === 'rifiutata' && (
         <>

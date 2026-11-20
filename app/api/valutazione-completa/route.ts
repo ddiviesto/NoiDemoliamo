@@ -18,6 +18,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Casistica, delegaAmmessa } from '../../../types/pratica'
+import { fraseProposta } from '@/lib/statiValutazione'
 
 const SPAZI = ['libero', 'stretto', 'no']
 const LIBRETTI = ['si', 'denuncia', 'no']
@@ -109,6 +110,21 @@ export async function POST(req: NextRequest) {
     const adesso = new Date().toISOString()
     const { error: errUpd } = await supabase.from('veicoli_vendita').update({ stato: 'passata_demolizione', pratica_id: pratica.id, aggiornato_il: adesso }).eq('id', id)
     if (errUpd) throw errUpd
+
+    // ⭐ 19/11 (Davide: "quando passa a demolizione deve apparire cosa è successo
+    // prima"): LA STORIA DELLA VALUTAZIONE ENTRA NELLA CRONOLOGIA DELLA PRATICA,
+    // con le date vere: richiesta arrivata, risposta inviata, accettata. E le note
+    // private scritte sulla richiesta passano alla pratica (non restano di là).
+    // Non blocca: se qualcosa va storto la pratica è nata comunque.
+    const storia: { pratica_id: string; evento: string; testo: string; creato_il: string }[] = [
+      { pratica_id: pratica.id, evento: 'val_arrivata', testo: '', creato_il: r.creato_il },
+    ]
+    if (r.offerta_inviata_il) storia.push({ pratica_id: pratica.id, evento: 'val_risposta', testo: fraseProposta(r.offerta_tipo, r.offerta_importo), creato_il: r.offerta_inviata_il })
+    if (r.risposta_il) storia.push({ pratica_id: pratica.id, evento: 'val_accettata', testo: '', creato_il: r.risposta_il })
+    const { error: errStoria } = await supabase.from('pratiche_note').insert(storia)
+    if (errStoria) console.error('Errore storia della valutazione in cronologia:', errStoria)
+    const { error: errNote } = await supabase.from('pratiche_note').update({ pratica_id: pratica.id, veicolo_vendita_id: null }).eq('veicolo_vendita_id', id)
+    if (errNote) console.error('Errore passaggio note della valutazione alla pratica:', errNote)
 
     // TODO Resend: email "pratica aperta" al cliente (la stessa della demolizione)
     return NextResponse.json({ ok: true, pratica_id: pratica.id })

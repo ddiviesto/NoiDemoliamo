@@ -14,7 +14,7 @@ export const LINK_DEMOLIZIONE = '/inizia'
 // arrivano lo stesso. Quando il flusso ci sarà, si cambia SOLO questa riga.
 export const LINK_VALUTAZIONE =
   'https://wa.me/393518280493?text=' +
-  encodeURIComponent('Ciao, vorrei sapere quanto vale la mia auto prima di rottamarla.')
+  encodeURIComponent('Ciao, vorrei vendere la mia auto o sapere quanto vale.')
 
 export const WHATSAPP_NUMERO = '351 828 0493'
 

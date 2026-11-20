@@ -21,6 +21,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Marchio from './Marchio'
+import { useBloccaPaginaSuTelefono } from '@/lib/bloccaPagina'
 
 interface EventoInstalla extends Event {
   prompt: () => Promise<void>
@@ -119,22 +120,9 @@ export function FoglioInstalla({ stato, onChiudi, lato = 'destra', larghezza = 3
   const passiTelefono: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra)</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare nella home o sul desktop</>]
   const passiPc: React.ReactNode[] = [<>Apri il menu del browser (i tre puntini in alto a destra) oppure clicca l&apos;iconcina {tasto(<span style={{ display: 'inline-flex', verticalAlign: '-2px' }}>{SCARICA}</span>)} nella barra dell&apos;indirizzo</>, <>Scegli {tasto('Installa app')} oppure {tasto('Aggiungi alla schermata Home')}</>, <>Conferma: l&apos;icona compare sul desktop e nel menu Start</>]
 
-  // ⭐ 07/11 (Davide, iPhone): col foglio aperto la PAGINA SOTTO NON SCORRE.
-  // Strisciando col dito sul foglio, l'iPhone scorreva la pagina dietro e
-  // faceva l'effetto molla ("sobbalza"). Solo sul telefono (su PC c'è la
-  // nuvoletta e la pagina deve restare libera): il body si inchioda dove sta
-  // e torna al suo posto alla chiusura.
-  useEffect(() => {
-    if (!window.matchMedia('(max-width: 639px)').matches) return
-    const y = window.scrollY
-    const b = document.body.style
-    const prima = { position: b.position, top: b.top, left: b.left, right: b.right, width: b.width, overflow: b.overflow }
-    b.position = 'fixed'; b.top = `-${y}px`; b.left = '0'; b.right = '0'; b.width = '100%'; b.overflow = 'hidden'
-    return () => {
-      b.position = prima.position; b.top = prima.top; b.left = prima.left; b.right = prima.right; b.width = prima.width; b.overflow = prima.overflow
-      window.scrollTo(0, y)
-    }
-  }, [])
+  // ⭐ 07/11 (Davide, iPhone): col foglio aperto la PAGINA SOTTO NON SCORRE
+  // (lib/bloccaPagina, lo stesso del foglio "Aggiungi un altro veicolo")
+  useBloccaPaginaSuTelefono()
 
   // la nuvoletta si chiude cliccando fuori o con Esc
   const nuvola = useRef<HTMLDivElement>(null)

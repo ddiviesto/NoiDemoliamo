@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<title>La richiesta di valutazione nell'area del cliente, su PC</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9ECF3;color:#0F172A}
+.nota{background:#05070F;color:#9AA7C4;padding:12px 16px;text-align:center;font-size:12.5px;line-height:1.6}.nota b{color:#fff}
+.schede{display:flex;gap:7px;justify-content:center;padding:12px;background:#05070F;position:sticky;top:0;z-index:60;flex-wrap:wrap}
+.schede span{font-size:12px;font-weight:700;padding:7px 14px;border-radius:999px;border:1.5px solid #232B44;color:#9AA7C4;cursor:pointer}.schede span.qui{background:#fff;color:#05070F;border-color:#fff}
+.vista{display:none}.vista.viva{display:block}.spiega{max-width:1000px;margin:0 auto;padding:18px 4px 6px;font-size:14px;color:#4C4A70;line-height:1.7}.spiega b{color:#1E1B4B}
+.scena{background:radial-gradient(900px 460px at 12% -6%,#E4ECFF 0%,rgba(228,236,255,0) 62%),radial-gradient(820px 480px at 92% 24%,#E9E3FF 0%,rgba(233,227,255,0) 62%),#F5F3FE;padding:26px 0 40px;margin-top:8px}
+.col{width:1000px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.eti{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#6B7280;margin:10px 0 -6px 4px}
+.card{position:relative;background:#fff;border:1.5px solid #E5E7EB;border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(16,24,40,.06),0 5px 14px rgba(16,24,40,.07)}
+.card.cel{border-color:#BFDBFE;box-shadow:0 4px 16px rgba(37,99,235,.14)}
+.barra{position:absolute;left:0;top:0;bottom:0;width:4px;background:#2563eb}
+/* riga larga (com'è la pratica su PC) */
+.riga{display:flex;align-items:center;gap:16px;padding:16px 18px 16px 22px}
+.ico{width:50px;height:50px;border-radius:14px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#2563eb}
+.z{min-width:0}.z+.z{border-left:1px solid #EEF1F5;padding-left:16px}
+.targa{font-weight:700;font-size:17px;letter-spacing:.03em;color:#111827}.mezzo{font-size:13.5px;color:#6B7280;margin-top:2px}
+.lab{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:#6B7280}.val{font-size:13.5px;color:#374151;font-weight:600;margin-top:2px}.sub{font-size:12.5px;color:#6B7280;margin-top:2px}
+.pill{display:inline-block;font-size:11px;font-weight:700;padding:5px 12px;border-radius:999px;background:#EFF6FF;color:#1D4ED8;white-space:nowrap}.pill.g{background:#FEF3C7;color:#92400E}
+.fai{font-size:12.5px;font-weight:600;margin-top:5px;color:#6B7280}.fai.l{color:#1D4ED8}
+.fr{color:#2563eb;flex-shrink:0;font-size:20px;line-height:1}
+/* com'è oggi */
+.oggi .r1{display:flex;align-items:center;gap:11px;padding:14px 13px 14px 16px}.oggi .ico{width:46px;height:46px;border-radius:13px}
+.oggi .piede{display:flex;justify-content:space-between;background:#F8FAFC;border-top:1px solid #F1F3F6;padding:7px 13px 7px 16px;font-size:12.5px;color:#6B7280}
+.oggi .pill{font-size:10px;font-weight:600;padding:4px 10px}
+/* la proposta */
+.prop{padding:0 18px 18px 22px}.prop.o{padding:0 14px 14px 16px}
+.pt{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#1D4ED8}.pc{font-size:20px;font-weight:800;letter-spacing:-.4px;margin-top:2px}
+.pm{margin-top:8px;font-size:13px;color:#374151;line-height:1.55;background:#F8FAFC;border:1px solid #EEF1F5;border-radius:10px;padding:9px 11px}
+.pn{margin-top:8px;font-size:12px;color:#6B7280}
+.bb{display:flex;gap:8px;margin-top:12px}.b{flex:1;text-align:center;border-radius:999px;padding:12px 0;font-size:14px;font-weight:600;border:1.5px solid #E5E7EB;color:#374151;background:#fff}.b.blu{background:linear-gradient(90deg,#1d4ed8,#2563eb);color:#fff;border:none;box-shadow:0 6px 18px rgba(37,99,235,.35)}
+.fila{display:flex;gap:22px;align-items:flex-end;border-top:1px solid #EEF1F5;padding:14px 18px 16px 88px}.fila .sx{flex:1;min-width:0}.fila .bb{margin:0;flex-shrink:0}.fila .b{flex:none;padding:11px 26px}
+.striscia{display:flex;align-items:center;gap:8px;background:#EFF6FF;border-top:1px solid #DBEAFE;padding:9px 18px 9px 22px;font-size:12.5px;color:#1E3A8A;font-weight:600}
+</style></head><body>
+<div class="nota"><b>LA RICHIESTA DI VALUTAZIONE NELL'AREA DEL CLIENTE, SU PC</b> · oggi è una card diversa dalle pratiche, con un piede grigio. Due modi per farla diventare una riga come le pratiche. In ogni scheda: una pratica (per confronto, non cambia), la richiesta "in valutazione" e la richiesta con la proposta arrivata.</div>
+<div class="schede">
+<span class="qui" onclick="vista('0',this)">Oggi</span>
+<span onclick="vista('a',this)">A · riga gemella delle pratiche</span>
+<span onclick="vista('b',this)">B · riga gemella, col cartellino e la striscia celeste</span>
+</div>
+<div id="viste"></div>
+<script>
+const AUTO='<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14l1-6-2-5H6L4 11z"/><circle cx="7.5" cy="17" r="1.8"/><circle cx="16.5" cy="17" r="1.8"/></svg>'
+const TAG='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><path d="M7 7h.01"/></svg>'
+const OROL='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
+const pratica=`<div class="card"><div class="riga">
+  <div class="ico">${AUTO}</div>
+  <div class="z" style="flex:1.4"><div class="targa">FG123KL</div><div class="mezzo">Fiat Panda · Autovettura</div></div>
+  <div class="z" style="flex:1.3"><div class="lab">Dove si trova</div><div class="val">Via Roma 12, Napoli</div><div class="sub">Richiesta del 12 nov 2026</div></div>
+  <div class="z" style="flex:1.2"><span class="pill g">In attesa documenti</span><div class="fai l">Carica i documenti →</div></div>
+  <span class="fr">›</span></div></div>`
+
+// ---- OGGI ----
+const oggi1=`<div class="card oggi"><span class="barra"></span><div class="r1"><div class="ico">${TAG}</div><div style="flex:1"><div class="targa" style="font-size:16.5px">DDSSSD</div><div class="mezzo" style="margin-top:1px">aaa aaa · 111</div><div class="mezzo" style="margin-top:1px">Richiesta di valutazione</div></div><span class="pill">In valutazione</span></div><div class="piede"><span>Ti rispondiamo entro un giorno lavorativo</span><span style="color:#9AA7B5">19/11</span></div></div>`
+const oggi2=`<div class="card cel oggi"><span class="barra"></span><div class="r1"><div class="ico">${TAG}</div><div style="flex:1"><div class="targa" style="font-size:16.5px">DDSSSD</div><div class="mezzo" style="margin-top:1px">aaa aaa · 111</div><div class="mezzo" style="margin-top:1px">Richiesta di valutazione</div></div><span class="pill">Proposta arrivata</span></div><div class="prop o"><div class="pt">La nostra proposta</div><div class="pc">Demolizione gratuita</div><div class="pm">Anno e chilometri: il valore di mercato non copre i costi di ritiro e pratica.</div><div class="pn">Se accetti, ti chiediamo quattro cose in più e la richiesta diventa una pratica di demolizione.</div><div class="bb"><span class="b">No, grazie</span><span class="b blu">Accetto</span></div></div></div>`
+
+// ---- A ----
+const rigaVal=(icona,stato,frase,barra)=>`<div class="riga">
+  <div class="ico">${icona}</div>
+  <div class="z" style="flex:1.4"><div class="targa">DDSSSD</div><div class="mezzo">aaa aaa · Autovettura</div></div>
+  <div class="z" style="flex:1.3"><div class="lab">Richiesta di valutazione</div><div class="val">Inviata il 19 nov 2026</div></div>
+  <div class="z" style="flex:1.2"><span class="pill">${stato}</span>${frase?`<div class="fai">${frase}</div>`:''}</div>
+  <span class="fr" style="visibility:hidden">›</span></div>`
+const propFila=`<div class="fila"><div class="sx"><div class="pt">La nostra proposta</div><div class="pc">Demolizione gratuita</div><div class="pm">Anno e chilometri: il valore di mercato non copre i costi di ritiro e pratica.</div><div class="pn">Se accetti, ti chiediamo quattro cose in più e la richiesta diventa una pratica di demolizione.</div></div><div class="bb"><span class="b">No, grazie</span><span class="b blu">Accetto</span></div></div>`
+const a1=`<div class="card">${rigaVal(AUTO,'In valutazione','A breve riceverai la tua risposta')}</div>`
+const a2=`<div class="card cel">${rigaVal(AUTO,'Proposta arrivata','Leggi la proposta qui sotto')}${propFila}</div>`
+// ---- B ----
+const b1=`<div class="card"><span class="barra"></span>${rigaVal(TAG,'In valutazione','')}<div class="striscia">${OROL} A breve riceverai la tua risposta</div></div>`
+const b2=`<div class="card cel"><span class="barra"></span>${rigaVal(TAG,'Proposta arrivata','')}${propFila}</div>`
+
+const pagina=(x1,x2)=>`<div class="scena"><div class="col"><div class="eti">Una pratica (per confronto)</div>${pratica}<div class="eti">Richiesta in valutazione</div>${x1}<div class="eti">Richiesta con la proposta arrivata</div>${x2}</div></div>`
+const V={
+ '0':{s:'<b>Oggi.</b> La richiesta è una card fatta in un altro modo rispetto alla riga delle pratiche: tre righe di testo a sinistra, pillola piccola a destra, piede grigio con la frase e la data. La proposta sta sotto con i due bottoni larghi quanto tutta la card.', h:pagina(oggi1,oggi2)},
+ a:{s:'<b>A. Riga gemella delle pratiche.</b> Stesse quattro zone e stesse misure: icona del mezzo, targa e mezzo, poi "Richiesta di valutazione" con la data, poi la pillola con sotto <b>"A breve riceverai la tua risposta"</b>. Niente piede grigio e niente barretta blu. Quando arriva la proposta, si apre sotto nella stessa card, col testo a sinistra e i due bottoni a destra, della misura giusta.', h:pagina(a1,a2)},
+ b:{s:'<b>B. Riga gemella, ma riconoscibile.</b> Come la A, ma tiene il <b>cartellino</b> come icona e la barretta blu a sinistra, così si distingue a colpo d’occhio dalle pratiche. La frase <b>"A breve riceverai la tua risposta"</b> sta in una striscia celeste sotto la riga, con l’orologino, al posto del piede grigio.', h:pagina(b1,b2)},
+}
+const viste=document.getElementById('viste');for(const k of Object.keys(V))viste.insertAdjacentHTML('beforeend',`<div class="vista ${k==='0'?'viva':''}" id="vista-${k}"><div class="spiega">${V[k].s}</div>${V[k].h}</div>`)
+function vista(k,el){document.querySelectorAll('.vista').forEach(x=>x.classList.toggle('viva',x.id==='vista-'+k));document.querySelectorAll('.schede span').forEach(x=>x.classList.remove('qui'));el.classList.add('qui')}
+const h=location.hash.slice(1);if(V[h]){const sp=[...document.querySelectorAll('.schede span')];vista(h,sp[Object.keys(V).indexOf(h)])}
+</script></body></html>

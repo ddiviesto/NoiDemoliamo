@@ -14,6 +14,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import IconaVeicolo from '../components/IconaVeicolo'
+import { INCLUSO_DEMOLIZIONE } from '@/lib/statiValutazione'
 
 export interface RichiestaValutazione {
   id: string
@@ -97,15 +99,57 @@ export default function CardValutazione({ r, onCambiata }: { r: RichiestaValutaz
     >{testo}</button>
   )
 
+  // su PC i bottoni stanno nella terza zona, uno sopra l'altro
+  const bottonePc = (testo: string, onClick: () => void, blu?: boolean) => (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={lavoro}
+      className="disabled:opacity-60 active:scale-[0.99] transition-all"
+      style={{ width: '100%', textAlign: 'center', borderRadius: 999, padding: '10px 0', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+        background: blu ? 'linear-gradient(90deg, #1d4ed8, #2563eb)' : '#fff', color: blu ? '#fff' : '#374151',
+        border: blu ? '1.5px solid transparent' : '1.5px solid #E5E7EB', boxShadow: blu ? '0 6px 18px rgba(37,99,235,0.35)' : 'none' }}
+    >{testo}</button>
+  )
+
   return (
     <div
       style={{ position: 'relative', background: '#fff', border: `1.5px solid ${proposta ? '#BFDBFE' : '#E5E7EB'}`, borderRadius: 16, overflow: 'hidden', opacity: rifiutata ? 0.85 : 1,
         boxShadow: proposta ? '0 4px 16px rgba(37,99,235,0.14)' : '0 1px 2px rgba(16,24,40,0.06), 0 5px 14px rgba(16,24,40,0.07)' }}
     >
-      <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: rifiutata ? '#C0C7D1' : '#2563eb' }} />
+      <div className="sm:hidden" style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: rifiutata ? '#C0C7D1' : '#2563eb' }} />
 
-      {/* La riga, come quella delle pratiche */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '14px 13px 14px 16px' }}>
+      {/* ⭐ 19/11 (Davide, mockup A "card-valutazione-pc"): SU PC la richiesta è una
+          RIGA GEMELLA di quella delle pratiche, stesse quattro zone e stesse misure:
+          icona del mezzo · targa e mezzo · "Richiesta di valutazione" e la data ·
+          pillola dello stato e cosa succede adesso. Niente barretta blu né piede
+          grigio. Sul telefono resta la card di prima. */}
+      <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 16, padding: '16px 18px 16px 22px' }}>
+        <div style={{ width: 50, height: 50, borderRadius: 14, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <IconaVeicolo tipo={r.tipo_mezzo} />
+        </div>
+        <div style={{ flex: 1.4, minWidth: 0 }}>
+          <div style={{ fontWeight: 700, fontSize: 17, letterSpacing: '0.03em', color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.targa || 'Targa mancante'}</div>
+          <div style={{ fontSize: 13.5, color: '#6B7280', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {[[r.marca, r.modello].filter(Boolean).join(' '), r.tipo_mezzo ? r.tipo_mezzo.charAt(0).toUpperCase() + r.tipo_mezzo.slice(1) : ''].filter(Boolean).join(' · ') || '—'}
+          </div>
+        </div>
+        <div style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: '#6B7280' }}>Richiesta di valutazione</div>
+          <div style={{ fontSize: 13.5, color: '#374151', fontWeight: 600, marginTop: 2 }}>Inviata il {new Date(r.creato_il).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</div>
+        </div>
+        <div style={{ flex: 1.2, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
+          <span style={{ display: 'inline-block', fontSize: 11, fontWeight: 700, padding: '5px 12px', borderRadius: 999, background: pillola.bg, color: pillola.text, whiteSpace: 'nowrap' }}>{pillola.label}</span>
+          <div style={{ fontSize: 12.5, fontWeight: 600, marginTop: 5, color: '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {rifiutata ? 'Puoi cambiare idea qui sotto' : accettata ? 'Completa la pratica qui sotto' : proposta ? 'Leggi la proposta qui sotto' : 'A breve riceverai la tua proposta'}
+          </div>
+        </div>
+        {/* lo spazio della freccia delle pratiche, vuoto: tiene le zone allineate */}
+        <span style={{ width: 18, flexShrink: 0 }} />
+      </div>
+
+      {/* La riga sul telefono, come quella delle pratiche */}
+      <div className="flex sm:hidden" style={{ alignItems: 'center', gap: 11, padding: '14px 13px 14px 16px' }}>
         <div style={{ width: 46, height: 46, borderRadius: 13, background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <IconaCartellino />
         </div>
@@ -121,17 +165,61 @@ export default function CardValutazione({ r, onCambiata }: { r: RichiestaValutaz
 
       {/* In valutazione: solo il piede */}
       {r.stato === 'da_valutare' && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, background: '#F8FAFC', borderTop: '1px solid #F1F3F6', padding: '7px 13px 7px 16px', fontSize: 12.5, color: '#6B7280' }}>
-          <span>Ti rispondiamo entro un giorno lavorativo</span>
+        <div className="flex sm:hidden" style={{ justifyContent: 'space-between', gap: 10, background: '#F8FAFC', borderTop: '1px solid #F1F3F6', padding: '7px 13px 7px 16px', fontSize: 12.5, color: '#6B7280' }}>
+          {/* ⭐ 19/11 (Davide): niente promesse sui tempi */}
+          <span>A breve riceverai la tua proposta</span>
           <span style={{ color: '#9AA7B5', flexShrink: 0 }}>{dataBreve(r.creato_il)}</span>
         </div>
       )}
 
-      {/* La proposta, tutta nella card */}
+      {/* ⭐ 19/11 (Davide, mockup P1 "proposta-cliente-pc"): SU PC la proposta continua
+          LE STESSE ZONE della riga: sotto targa e mezzo COSA proponiamo, sotto
+          "Richiesta di valutazione" il PERCHÉ e cosa succede dopo, sotto la pillola
+          i due bottoni uno sopra l'altro ("Accetto" per primo). Niente riquadri. */}
       {proposta && (
-        <div style={{ padding: '0 14px 14px 16px' }}>
+        <div className="hidden sm:flex" style={{ gap: 16, alignItems: 'flex-start', borderTop: '1px solid #EEF1F5', padding: '16px 18px 18px 22px' }}>
+          <span style={{ width: 50, flexShrink: 0 }} />
+          <div style={{ flex: 1.4, minWidth: 0 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: '#1D4ED8' }}>La nostra proposta</div>
+            <div style={{ fontSize: r.offerta_tipo === 'acquisto' ? 30 : 20, fontWeight: 800, letterSpacing: r.offerta_tipo === 'acquisto' ? '-1px' : '-0.4px', color: '#0F172A', marginTop: 2, lineHeight: 1.1 }}>{cifra}</div>
+            {/* ⭐ 20/11 (Davide): cosa comprende, detto sempre uguale */}
+            {r.offerta_tipo === 'demolizione' && <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.5, marginTop: 6 }}>{INCLUSO_DEMOLIZIONE}</div>}
+          </div>
+          <div style={{ flex: 1.3, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
+            {r.offerta_messaggio && <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.55, whiteSpace: 'pre-line', marginBottom: 8 }}>{r.offerta_messaggio}</div>}
+            <div style={{ fontSize: 12, color: '#6B7280', lineHeight: 1.5 }}>
+              {r.offerta_tipo === 'acquisto'
+                ? 'Se accetti, ti chiediamo quattro cose in più e fissiamo il ritiro.'
+                : 'Se accetti, ti chiediamo quattro cose in più e la richiesta diventa una pratica di demolizione.'}
+            </div>
+          </div>
+          <div style={{ flex: 1.2, minWidth: 0, borderLeft: '1px solid #EEF1F5', paddingLeft: 16 }}>
+            {confermaNo ? (
+              <>
+                <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.5, marginBottom: 8 }}>Rifiuti la proposta? Potrai ripensarci dalla tua area personale.</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {bottonePc(lavoro ? '…' : 'Sì, rifiuto', () => rispondi('rifiuta'), true)}
+                  {bottonePc('Torna indietro', () => setConfermaNo(false))}
+                </div>
+              </>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {bottonePc(lavoro ? '…' : 'Accetto', () => rispondi('accetta'), true)}
+                {bottonePc('No, grazie', () => setConfermaNo(true))}
+              </div>
+            )}
+            {errore && <div style={{ marginTop: 8, fontSize: 12.5, color: '#9B1C1C' }}>{errore}</div>}
+          </div>
+          <span style={{ width: 18, flexShrink: 0 }} />
+        </div>
+      )}
+
+      {/* La proposta sul telefono, tutta nella card */}
+      {proposta && (
+        <div className="sm:hidden" style={{ padding: '0 14px 14px 16px' }}>
           <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: '0.8px', textTransform: 'uppercase', color: '#1D4ED8' }}>La nostra proposta</div>
           <div style={{ fontSize: r.offerta_tipo === 'acquisto' ? 30 : 20, fontWeight: 800, letterSpacing: r.offerta_tipo === 'acquisto' ? '-1px' : '-0.4px', color: '#0F172A', marginTop: 2, lineHeight: 1.1 }}>{cifra}</div>
+          {r.offerta_tipo === 'demolizione' && <div style={{ fontSize: 12.5, color: '#374151', lineHeight: 1.5, marginTop: 6 }}>{INCLUSO_DEMOLIZIONE}</div>}
           {r.offerta_messaggio && (
             <div style={{ marginTop: 8, fontSize: 13, color: '#374151', lineHeight: 1.55, background: '#F8FAFC', border: '1px solid #EEF1F5', borderRadius: 10, padding: '9px 11px', whiteSpace: 'pre-line' }}>{r.offerta_messaggio}</div>
           )}
